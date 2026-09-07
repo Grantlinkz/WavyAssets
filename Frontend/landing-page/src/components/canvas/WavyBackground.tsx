@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 
 /**
  * WavyBackground — Seamless Looping Diagonal Sine-Wave Stripes
- * Alternates between Licorice (#1B1212) and Jet Black (#343434).
+ * Alternates between Licorice (#08090B) and Jet Black (#0F1115).
  * Infinitely translates along the horizontal axis with a linear timing function.
  * Tiling is mathematically continuous across tile boundaries (CLS = 0, zero seam).
  */
@@ -63,7 +63,7 @@ export const WavyBackground: React.FC = () => {
       }
 
       const d = `M ${topPoints.join(' L ')} L ${bottomPoints.join(' L ')} Z`;
-      const fill = Math.abs(i) % 2 === 0 ? '#1B1212' : '#343434'; // Licorice & Jet Black
+      const fill = Math.abs(i) % 2 === 0 ? '#08090B' : '#0F1115'; // Licorice & Jet Black
 
       items.push({ d, fill, key: i });
     }
@@ -75,7 +75,7 @@ export const WavyBackground: React.FC = () => {
     <div
       data-testid="wavy-background"
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden select-none bg-[#1B1212]"
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden select-none bg-[#08090B]"
     >
       {/* 200% width sliding track with linear horizontal translation */}
       <div

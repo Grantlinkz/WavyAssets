@@ -45,12 +45,12 @@ describe('Navbar Sliding Dot Indicator & Wavy Background Integration Suite (SSR 
   });
 
   describe('Seamless Looping Wave Background', () => {
-    it('renders WavyBackground with Licorice (#1B1212) and Jet Black (#343434) palette', () => {
+    it('renders WavyBackground with Licorice (#08090B) and Jet Black (#0F1115) palette', () => {
       const html = renderToString(<WavyBackground />);
       expect(html).toContain('data-testid="wavy-background"');
       expect(html).toContain('data-testid="wavy-track"');
-      expect(html).toContain('#1B1212'); // Licorice
-      expect(html).toContain('#343434'); // Jet Black
+      expect(html).toContain('#08090B'); // Licorice
+      expect(html).toContain('#0F1115'); // Jet Black
       expect(html).toContain('animate-wave-seamless');
     });
 

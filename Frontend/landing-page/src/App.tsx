@@ -33,7 +33,7 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-surface text-on-surface flex flex-col selection:bg-primary-container selection:text-on-primary-container relative">
-      {/* Default Seamless Looping Sine-Wave Background (#1B1212 & #343434) */}
+      {/* Default Seamless Looping Sine-Wave Background (#08090B & #0F1115) */}
       <WavyBackground />
 
       {/* 3D Decoupled Ambient Mesh Canvas */}
