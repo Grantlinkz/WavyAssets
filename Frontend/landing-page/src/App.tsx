@@ -35,53 +35,71 @@ export const App: React.FC = () => {
       {/* 2. 7-Vertical Services Mega-Menu Flyout (Docked directly under header) */}
       <ServicesMegaMenu />
 
-      {/* 2. Global Syndicate Live Ticker Stream */}
-      <div className="w-full bg-surface-container-low border-b border-outline py-2 overflow-x-auto whitespace-nowrap">
-        <div className="max-w-7xl mx-auto px-4 flex items-center gap-4 text-xs font-mono">
-          <div className="flex items-center gap-2 shrink-0 text-primary font-bold uppercase tracking-wider text-[11px]">
-            <Activity className="w-3.5 h-3.5 text-secondary animate-pulse" />
-            <span>GLOBAL SYNDICATE FEED</span>
+      {/* 2. Global Syndicate Live Ticker Stream (Continuous Infinite Sliding Marquee) */}
+      <div
+        data-testid="syndicate-ticker-bar"
+        className="relative w-full bg-surface-container-low border-b border-outline py-2 overflow-hidden whitespace-nowrap"
+      >
+        <div className="max-w-7xl mx-auto px-4 flex items-center gap-4 text-xs font-mono relative">
+          {/* Static Title Badge */}
+          <div className="flex items-center gap-2 shrink-0 text-primary font-bold uppercase tracking-wider text-[11px] bg-surface-container-low z-10 pr-3 border-r border-outline/30">
+            <Activity className="w-3.5 h-3.5 text-secondary animate-pulse shrink-0" />
+            <span className="hidden sm:inline">GLOBAL SYNDICATE FEED</span>
+            <span className="sm:hidden">SYNDICATE</span>
           </div>
 
-          <div className="flex items-center gap-3 overflow-x-auto py-0.5">
-            {syndicateFeeds.map((feed, idx) => (
-              <div
-                key={idx}
-                className="inline-flex items-center gap-2 px-2.5 py-1 rounded-sm bg-surface-container border border-outline"
-              >
-                <span className="text-on-surface-variant font-medium">{feed.pair}</span>
-                {feed.price && (
-                  <span className="text-on-surface font-semibold">
-                    {formatCurrency(feed.price)}
-                  </span>
-                )}
-                {feed.delta !== undefined && (
-                  <span className={`font-semibold ${getDeltaColorClass(feed.delta)}`}>
-                    {formatPercent(feed.delta)}
-                  </span>
-                )}
-                {feed.apy !== undefined && (
-                  <span className="text-primary font-semibold">
-                    {formatPercent(feed.apy, false)} APY
-                  </span>
-                )}
-                {feed.capRate !== undefined && (
-                  <span className="text-secondary font-semibold">
-                    {formatPercent(feed.capRate, false)} NET
-                  </span>
-                )}
-                {feed.yieldRate !== undefined && (
-                  <span className="text-on-surface font-semibold">
-                    {formatPercent(feed.yieldRate, false)}
-                  </span>
-                )}
-                {feed.bps !== undefined && (
-                  <span className={`font-semibold ${getDeltaColorClass(-feed.bps)}`}>
-                    {formatBps(feed.bps)}
-                  </span>
-                )}
-              </div>
-            ))}
+          {/* Marquee Viewport with Left/Right Gradient Fade Masks */}
+          <div className="relative flex-1 overflow-hidden">
+            {/* Left fade edge */}
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-surface-container-low to-transparent z-10" />
+
+            {/* Right fade edge */}
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-surface-container-low to-transparent z-10" />
+
+            {/* Continuous Sliding Ribbon (Duplicated for seamless infinite loop) */}
+            <div
+              data-testid="syndicate-ticker-track"
+              className="animate-ticker-continuous flex items-center gap-3 py-0.5"
+            >
+              {[...syndicateFeeds, ...syndicateFeeds].map((feed, idx) => (
+                <div
+                  key={`${feed.pair}-${idx}`}
+                  className="inline-flex items-center gap-2 px-2.5 py-1 rounded-sm bg-surface-container border border-outline shrink-0 hover:border-primary/50 transition-colors"
+                >
+                  <span className="text-on-surface-variant font-medium">{feed.pair}</span>
+                  {feed.price && (
+                    <span className="text-on-surface font-semibold">
+                      {formatCurrency(feed.price)}
+                    </span>
+                  )}
+                  {feed.delta !== undefined && (
+                    <span className={`font-semibold ${getDeltaColorClass(feed.delta)}`}>
+                      {formatPercent(feed.delta)}
+                    </span>
+                  )}
+                  {feed.apy !== undefined && (
+                    <span className="text-primary font-semibold">
+                      {formatPercent(feed.apy, false)} APY
+                    </span>
+                  )}
+                  {feed.capRate !== undefined && (
+                    <span className="text-secondary font-semibold">
+                      {formatPercent(feed.capRate, false)} NET
+                    </span>
+                  )}
+                  {feed.yieldRate !== undefined && (
+                    <span className="text-on-surface font-semibold">
+                      {formatPercent(feed.yieldRate, false)}
+                    </span>
+                  )}
+                  {feed.bps !== undefined && (
+                    <span className={`font-semibold ${getDeltaColorClass(-feed.bps)}`}>
+                      {formatBps(feed.bps)}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

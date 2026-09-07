@@ -32,8 +32,15 @@ if (typeof window === 'undefined') {
     dispatchEvent: () => true,
   };
 
+  class ResizeObserverMock {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+
   const windowMock = {
     location: { hash: '' },
+    ResizeObserver: ResizeObserverMock,
     matchMedia: () => ({
       matches: false,
       media: '',
@@ -56,4 +63,5 @@ if (typeof window === 'undefined') {
   // @ts-expect-error polyfill globals for node test runner
   globalThis.document = documentMock;
   globalThis.localStorage = storageMock;
+  globalThis.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver;
 }
