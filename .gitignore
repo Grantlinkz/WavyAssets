@@ -1,0 +1,17 @@
+# Dependencies & Environments
+node_modules/
+dist/
+dist-ssr/
+*.local
+.env
+.env.*
+!.env.example
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+*.suo
+
+# Branch Isolation: Public landing page is maintained on its dedicated branch (Public-Landing-Page)
+Frontend/
