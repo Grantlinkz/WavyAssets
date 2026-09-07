@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { Sliders, Lock } from 'lucide-react';
 import { useTerminalStore } from '../../store/useTerminalStore';
 import { calculatePortfolioMetrics } from '../../lib/calculator';
 import { formatCurrency } from '../../lib/formatters';
 import { DonutChart3D } from './DonutChart3D';
+import { AnimatedNumber } from '../common/AnimatedNumber';
 
 const QUICK_CAPITALS = [
   { label: '$100K', value: 100000 },
@@ -33,11 +35,41 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
   );
   const openAuthModal = useTerminalStore((state) => state.openAuthModal);
 
+  // Specular Mouse Spotlight Tracking
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0, active: false });
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMousePos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      active: true,
+    });
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setMousePos((prev) => ({ ...prev, active: false }));
+  }, []);
+
   const metrics = calculatePortfolioMetrics(capital, aggressiveness);
 
   return (
-    <div className="w-full bg-surface-container-low rounded-lg p-6 lg:p-8 shadow-xl border border-outline/30">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <div
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className="relative w-full bg-surface-container-low rounded-lg p-6 lg:p-8 shadow-xl border border-outline/30 overflow-hidden"
+    >
+      {/* Dynamic Specular Spotlight Overlay */}
+      {mousePos.active && (
+        <div
+          className="pointer-events-none absolute -inset-px transition-opacity duration-300 opacity-100"
+          style={{
+            background: `radial-gradient(500px circle at ${mousePos.x}px ${mousePos.y}px, rgba(212, 175, 55, 0.04), transparent 75%)`,
+          }}
+        />
+      )}
+
+      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Sliders & Allocation Parameters */}
         <div className="lg:col-span-6 flex flex-col justify-between space-y-6">
           <div className="space-y-6">
@@ -62,7 +94,11 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
                   data-testid="capital-display"
                   className="font-mono text-2xl text-primary font-bold"
                 >
-                  {formatCurrency(capital)}
+                  <AnimatedNumber
+                    value={capital}
+                    formatter={formatCurrency}
+                    flashOnChange
+                  />
                 </span>
               </div>
 
@@ -87,34 +123,41 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
               {/* Quick Select Buttons */}
               <div className="flex flex-wrap gap-2 pt-1">
                 {QUICK_CAPITALS.map((quick) => (
-                  <button
+                  <motion.button
                     key={quick.value}
                     type="button"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: 'spring', stiffness: 450, damping: 25 }}
                     onClick={() => setSimulatorCapital(quick.value)}
                     className={`px-2.5 py-1 rounded-sm font-mono text-xs transition-colors border ${
                       capital === quick.value
-                        ? 'bg-primary-container text-on-primary-container border-primary font-semibold'
+                        ? 'bg-primary-container text-on-primary-container border-primary font-semibold shadow-[0_0_8px_rgba(212,175,55,0.3)]'
                         : 'bg-surface-container-high hover:bg-surface-bright text-on-surface border-transparent'
                     }`}
                   >
                     {quick.label}
-                  </button>
+                  </motion.button>
                 ))}
               </div>
             </div>
 
-            {/* Slider 2: Strategy Aggressiveness */}
+            {/* Slider 2: Strategy Mandate & Risk Posture */}
             <div className="space-y-3 bg-surface-container p-4 rounded-sm border border-outline/20">
               <div className="flex items-baseline justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-on-surface">
                   Strategy Mandate &amp; Risk Posture
                 </span>
-                <span
-                  data-testid="risk-posture-badge"
-                  className="font-mono text-[11px] uppercase px-2.5 py-0.5 rounded-sm bg-secondary/15 text-secondary font-semibold"
+                <motion.span
+                  key={metrics.posture.name}
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                  data-testid="risk-badge"
+                  className="font-mono text-xs px-2 py-0.5 rounded-sm bg-secondary/10 text-secondary border border-secondary/30 font-semibold"
                 >
-                  {metrics.posture.name} ({metrics.blendedApy}%)
-                </span>
+                  {metrics.posture.name.toUpperCase()} ({metrics.blendedApy}%)
+                </motion.span>
               </div>
 
               <input
@@ -206,7 +249,10 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
                   data-testid="monthly-runrate"
                   className="font-mono text-xs text-secondary font-semibold"
                 >
-                  +{formatCurrency(metrics.monthlyRunrate)} / Mo
+                  <AnimatedNumber
+                    value={metrics.monthlyRunrate}
+                    formatter={(val) => `+${formatCurrency(val)} / Mo`}
+                  />
                 </span>
               </div>
 
@@ -215,7 +261,11 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
                   data-testid="annual-return"
                   className="font-mono text-2xl sm:text-3xl text-secondary font-bold"
                 >
-                  {formatCurrency(metrics.annualReturn)}
+                  <AnimatedNumber
+                    value={metrics.annualReturn}
+                    formatter={formatCurrency}
+                    flashOnChange
+                  />
                 </span>
                 <span className="font-mono text-[10px] text-outline">
                   TAX ALPHA STRIPPED
@@ -254,21 +304,27 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
 
           {/* Action CTAs */}
           <div className="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-outline/20">
-            <button
+            <motion.button
               type="button"
+              whileHover={{ scale: 1.015 }}
+              whileTap={{ scale: 0.985 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
               onClick={() => openAuthModal('institutional')}
               className="w-full sm:flex-1 py-3 px-4 rounded-sm bg-primary-container text-on-primary-container text-xs uppercase font-bold tracking-wider hover:bg-primary-hover transition-colors flex items-center justify-center gap-2 shadow-sm"
             >
               <Lock className="w-3.5 h-3.5" />
               <span>Lock Mandate &amp; Export Simulation (PDF)</span>
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               type="button"
+              whileHover={{ scale: 1.015 }}
+              whileTap={{ scale: 0.985 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
               onClick={() => openAuthModal('institutional')}
               className="w-full sm:w-auto py-3 px-4 rounded-sm bg-surface-container-high hover:bg-surface-bright text-on-surface text-xs uppercase font-semibold tracking-wider transition-colors border border-outline/30"
             >
               <span>Custom Weights</span>
-            </button>
+            </motion.button>
           </div>
         </div>
       </div>
