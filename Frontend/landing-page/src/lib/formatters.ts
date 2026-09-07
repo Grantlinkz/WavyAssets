@@ -1,6 +1,6 @@
 /**
  * Institutional Financial Formatters
- * Formats monetary, percentage, and basis point metrics strictly for JetBrains Mono tabular figures.
+ * Formats monetary, percentage, and basis point metrics strictly for Inter tabular figures.
  */
 
 export interface CurrencyFormatOptions {

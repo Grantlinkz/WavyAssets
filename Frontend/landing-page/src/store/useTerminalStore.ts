@@ -54,9 +54,11 @@ export interface TerminalStore {
   closeAuthModal: () => void;
   setAuthStep: (step: 1 | 2) => void;
 
-  // Trust mode
+  // Trust mode & Client Tier
   trustMode: TrustMode;
   setTrustMode: (mode: TrustMode) => void;
+  clientTier: TrustMode;
+  setClientTier: (tier: TrustMode) => void;
 
   // Simulator
   simulator: SimulatorState;
@@ -146,7 +148,20 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     set((state) => ({ authModal: { ...state.authModal, step } })),
 
   trustMode: 'institutional',
-  setTrustMode: (mode: TrustMode) => set({ trustMode: mode }),
+  setTrustMode: (mode: TrustMode) => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('wavy_trust_mode', mode);
+      } catch {
+        // Storage quota silent fallback
+      }
+    }
+    set({ trustMode: mode, clientTier: mode });
+  },
+  clientTier: 'institutional',
+  setClientTier: (tier: TrustMode) => {
+    get().setTrustMode(tier);
+  },
 
   simulator: {
     capital: 250000,

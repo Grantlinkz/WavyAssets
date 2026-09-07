@@ -4,6 +4,10 @@ import { ServicesMegaMenu } from './components/nav/ServicesMegaMenu';
 import { AmbientCanvas } from './components/canvas/AmbientCanvas';
 import { PortfolioSimulator } from './components/simulator/PortfolioSimulator';
 import { AssetDiscoveryHub } from './components/discovery/AssetDiscoveryHub';
+import { TrustInfrastructure } from './components/trust/TrustInfrastructure';
+import { ClientVoices } from './components/trust/ClientVoices';
+import { CustodyNetworkGrid } from './components/trust/CustodyNetworkGrid';
+import { InstitutionalFooter } from './components/footer/InstitutionalFooter';
 import {
   formatCurrency,
   formatPercent,
@@ -191,21 +195,25 @@ export const App: React.FC = () => {
         <section className="w-full pt-4">
           <AssetDiscoveryHub />
         </section>
+
+        {/* Institutional Trust Infrastructure: Audited Returns & Enclave Telemetry */}
+        <section id="trust-infrastructure" className="w-full pt-4 scroll-mt-20">
+          <TrustInfrastructure />
+        </section>
+
+        {/* Client Voices: Verified Allocator Endorsements (Specular 3D Cards) */}
+        <section id="client-voices" className="w-full pt-4 scroll-mt-20">
+          <ClientVoices />
+        </section>
+
+        {/* Institutional Clearing & Custody Network */}
+        <section className="w-full pt-4 pb-4">
+          <CustodyNetworkGrid />
+        </section>
       </main>
 
-      {/* 4. Institutional Terminal Status Footer Strip */}
-      <footer className="w-full bg-surface-container-lowest border-t border-outline py-4 px-4 text-xs font-mono text-on-surface-variant">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div>VALIANCE_OS // NODE_09.NY // QUORUM_ACTIVE</div>
-          <div className="flex items-center gap-4 text-[11px]">
-            <span>SOC-2 TYPE II AUDITED</span>
-            <span>•</span>
-            <span>MPC MERKLE RESERVES VERIFIED</span>
-            <span>•</span>
-            <span>ZERO CLS ARCHITECTURE</span>
-          </div>
-        </div>
-      </footer>
+      {/* 4. Global Compliance-Ready Multi-Column Institutional Footer */}
+      <InstitutionalFooter />
     </div>
   );
 };
