@@ -4,6 +4,8 @@ import { ServicesMegaMenu } from './components/nav/ServicesMegaMenu';
 import { AmbientCanvas } from './components/canvas/AmbientCanvas';
 import { PortfolioSimulator } from './components/simulator/PortfolioSimulator';
 import { AssetDiscoveryHub } from './components/discovery/AssetDiscoveryHub';
+import { AssetContainer } from './components/panels/AssetContainer';
+import { UnifiedAuthModal } from './components/auth/UnifiedAuthModal';
 import { TrustInfrastructure } from './components/trust/TrustInfrastructure';
 import { ClientVoices } from './components/trust/ClientVoices';
 import { CustodyNetworkGrid } from './components/trust/CustodyNetworkGrid';
@@ -196,6 +198,11 @@ export const App: React.FC = () => {
           <AssetDiscoveryHub />
         </section>
 
+        {/* Dynamic Standardized Asset Sub-Views Terminal (#/services/:assetId) */}
+        <section id="asset-terminal" className="w-full pt-4">
+          <AssetContainer />
+        </section>
+
         {/* Institutional Trust Infrastructure: Audited Returns & Enclave Telemetry */}
         <section id="trust-infrastructure" className="w-full pt-4 scroll-mt-20">
           <TrustInfrastructure />
@@ -214,6 +221,9 @@ export const App: React.FC = () => {
 
       {/* 4. Global Compliance-Ready Multi-Column Institutional Footer */}
       <InstitutionalFooter />
+
+      {/* 5. Globally Mounted Unified 2FA Auth & Mandate Modal */}
+      <UnifiedAuthModal />
     </div>
   );
 };

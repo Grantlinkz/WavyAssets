@@ -64,6 +64,42 @@ export interface TerminalStore {
   simulator: SimulatorState;
   setSimulatorCapital: (capital: number) => void;
   setSimulatorAggressiveness: (aggressiveness: number) => void;
+
+  // View Switch Telemetry
+  telemetry: {
+    lastSwitchDurationMs: number;
+    switchHistory: ViewSwitchEvent[];
+  };
+  recordViewSwitch: (from: AssetVerticalId, to: AssetVerticalId, durationMs: number) => void;
+  syncFromHash: () => void;
+}
+
+export interface ViewSwitchEvent {
+  from: AssetVerticalId;
+  to: AssetVerticalId;
+  timestamp: number;
+  durationMs: number;
+}
+
+export const VALID_ASSET_VERTICALS: AssetVerticalId[] = [
+  'crypto',
+  'stocks',
+  'ai-funds',
+  'real-estate',
+  'vip-cards',
+  'cars',
+  'wallet',
+];
+
+export function parseAssetHash(hash: string): AssetVerticalId {
+  const match = hash.match(/^#\/services\/([a-z-]+)/i);
+  if (match && match[1]) {
+    const candidate = match[1].toLowerCase() as AssetVerticalId;
+    if (VALID_ASSET_VERTICALS.includes(candidate)) {
+      return candidate;
+    }
+  }
+  return 'crypto';
 }
 
 const THEME_STORAGE_KEY = 'wavy_theme';
@@ -121,12 +157,49 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     get().setTheme(nextTheme);
   },
 
-  activeAssetId: 'crypto',
+  activeAssetId: typeof window !== 'undefined' ? parseAssetHash(window.location.hash) : 'crypto',
   setActiveAssetId: (id: AssetVerticalId) => {
-    if (typeof window !== 'undefined') {
-      window.location.hash = `#/services/${id}`;
+    const prev = get().activeAssetId;
+    if (prev !== id) {
+      const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      if (typeof window !== 'undefined') {
+        window.location.hash = `#/services/${id}`;
+      }
+      const endTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      const durationMs = Math.max(0.1, Number((endTime - startTime).toFixed(2)));
+      get().recordViewSwitch(prev, id, durationMs);
+      set({ activeAssetId: id, isMegaMenuOpen: false });
+    } else {
+      set({ isMegaMenuOpen: false });
     }
-    set({ activeAssetId: id, isMegaMenuOpen: false });
+  },
+
+  telemetry: {
+    lastSwitchDurationMs: 0,
+    switchHistory: [],
+  },
+  recordViewSwitch: (from: AssetVerticalId, to: AssetVerticalId, durationMs: number) => {
+    set((state) => ({
+      telemetry: {
+        lastSwitchDurationMs: durationMs,
+        switchHistory: [
+          ...state.telemetry.switchHistory.slice(-19),
+          { from, to, timestamp: Date.now(), durationMs },
+        ],
+      },
+    }));
+  },
+  syncFromHash: () => {
+    if (typeof window === 'undefined') return;
+    const resolved = parseAssetHash(window.location.hash);
+    if (get().activeAssetId !== resolved) {
+      const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      const prev = get().activeAssetId;
+      const endTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      const durationMs = Math.max(0.1, Number((endTime - startTime).toFixed(2)));
+      get().recordViewSwitch(prev, resolved, durationMs);
+      set({ activeAssetId: resolved, isMegaMenuOpen: false });
+    }
   },
 
   isMegaMenuOpen: false,
