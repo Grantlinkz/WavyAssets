@@ -2,7 +2,7 @@
 
 ## Project Status
 
-- **Current Phase**: Sprint 4 (Trust Infrastructure, Client Voices & Global Compliance) Completed / Preparing Sprint 5 (Dynamic Asset Sub-Views & Unified Auth Modal)
+- **Current Phase**: Sprint 5 (Standardized Asset Panels, Hash-Routing Engine & Unified Auth Modal) Completed / Preparing Sprint 6 (Performance Profiling, Hardening & Go-Live)
 - **Overall Roadmap**: 6-Week Sprints defined in `tools/Implementation Strategy And Timeline.pdf`
 
 ---
@@ -56,11 +56,14 @@
 - [x] Implement mandatory multi-jurisdiction regulatory disclaimers and SEC Rule 206(4)-1 / GDPR / FinSA notices.
 - [x] Establish unit and integration test suites in `Tests/UnitTest/trustMetrics.test.ts` and `Tests/IntegrationTest/trustAndComplianceIntegration.test.tsx` (44/44 tests passing across 10 suites).
 
-### [ ] Sprint 5 (Prototype 5): Standardized Asset Panels, Hash-Routing Engine & Unified Auth Modal
-- [ ] Build standardized `AssetContainer` frame with explicit min-height (540px) to guarantee CLS = 0.
-- [ ] Implement client-side `#/services/:assetId` hash router with deep linking and lazy-loaded sub-view chunks for all 7 asset classes.
-- [ ] Construct root-mounted `UnifiedAuthModal` with Step 1 credentials and Step 2 6-digit Input-OTP.
-- [ ] Instrument view-switch telemetry and sub-50ms transition benchmark.
+### [x] Sprint 5 (Prototype 5): Standardized Asset Panels, Hash-Routing Engine & Unified Auth Modal
+- [x] Build standardized `AssetContainer` frame with explicit min-height (540px) to guarantee CLS = 0.
+- [x] Implement client-side `#/services/:assetId` hash router with deep linking and lazy-loaded sub-view chunks for all 7 asset classes.
+- [x] Construct root-mounted `UnifiedAuthModal` with Step 1 credentials and Step 2 6-digit Input-OTP.
+- [x] Instrument view-switch telemetry and sub-50ms transition benchmark.
+- [x] Implement dedicated modular asset class panels (`CryptoPanel`, `StocksPanel`, `AiFundsPanel`, `RealEstatePanel`, `CarsPanel`, `VipCardsPanel`, `WalletPanel`).
+- [x] Build `AssetNavRail` with horizontal tabs, index numbers (`01` through `07`), and active gold indicator.
+- [x] Establish automated unit and integration test suites in `Tests/UnitTest/hashRouter.test.ts` and `Tests/IntegrationTest/assetPanelsAndAuthIntegration.test.tsx` (56/56 tests passing across 12 suites).
 
 ### [ ] Sprint 6 (Week 6): Performance Profiling, Hardening & Go-Live
 - [ ] Implement WebGL render loop throttling on `document.hidden` and off-screen canvas culling.
@@ -72,7 +75,7 @@
 ## Completed Items
 
 - Scaffolded React 19 + TypeScript + Vite 8 project.
-- Configured Tailwind CSS v4 and initialized shadcn/ui primitives (`button`, `dialog`, `navigation-menu`, `skeleton`, `slider`).
+- Configured Tailwind CSS v4 and initialized shadcn/ui primitives (`button`, `dialog`, `navigation-menu`, `skeleton`, `slider`, `input-otp`).
 - Installed `@react-three/fiber`, `@react-three/drei`, `three`, `framer-motion`, `lucide-react`, `zustand`, `input-otp`.
 - Synthesized full platform requirements from `tools/` into `.ai/` and `GEMINI.md`.
 - Implemented complete Sovereign Institutional Terminal design tokens in `src/index.css` (Obsidian Dark `#08090B` & Luxury Light `#f9f9ff`, 4px/8px micro-chamfers, tabular lining figures).
@@ -86,12 +89,16 @@
 - Built `DonutChart3D` reactive visualizer and `PortfolioSimulator` dual-slider console.
 - Built `AssetDiscoveryHub` with horizontal 7-vault class tabs and active depository overview panel.
 - Enhanced terminal components with high-frequency kinetic animations: `AnimatedNumber` rolling counters, 3D gyroscope tilt, shared layout gliding tab indicators, and spotlight tracking.
-- Verified type safety (`tsc -b`), linting (`eslint`), and 31 passing Vitest unit & integration tests across 7 test suites.
+- Built live `TrustInfrastructure` Enclave status bar, Tier Switcher ($4.82B vs. $12.40B AUM), Audited Return Metrics strip, `ClientVoices` 3D tilt cards, `CustodyNetworkGrid` with 6 clearing nodes, and SEC/FINMA compliance `InstitutionalFooter`.
+- Built standardized `AssetContainer` with `min-height: 540px` zero-CLS frame, client-side hash routing (`#/services/:assetId`), and view-switch telemetry.
+- Built 7 dedicated modular sub-view panels: `CryptoPanel`, `StocksPanel`, `AiFundsPanel`, `RealEstatePanel`, `CarsPanel`, `VipCardsPanel`, and `WalletPanel`.
+- Built globally mounted 2-step `UnifiedAuthModal` with credentials (Step 1) and 6-digit `input-otp` (Step 2).
+- Verified complete type safety (`tsc -b`), linting (`eslint`), and 56 passing Vitest unit & integration tests across 12 test suites.
 
 ---
 
 ## Next Up
 
-- **Sprint 4 Task 1**: Build standardized `AssetContainer` frame with explicit min-height (540px) to guarantee CLS = 0.
-- **Sprint 4 Task 2**: Implement client-side `#/services/:assetId` hash router with deep linking and lazy loading.
-- **Sprint 4 Task 3**: Create dedicated sub-view panels for all 7 asset classes with sub-50ms transition telemetry.
+- **Sprint 6 Task 1**: WebGL render loop throttling on `document.hidden` and off-screen canvas culling.
+- **Sprint 6 Task 2**: WCAG 2.1 AA accessibility audit, keyboard navigation, focus trapping in dialogs, and screen reader announcements.
+- **Sprint 6 Task 3**: Production bundle optimization, Lighthouse verification, and sub-50ms panel swap benchmarking.
