@@ -2,16 +2,16 @@
 
 ## Technical Stack
 
-| Layer | Technology | Role |
-| :--- | :--- | :--- |
-| **Runtime & Bundler** | Vite 8 + React 19 + TypeScript (strict) | Ultra-fast HMR, ES module bundling, strict type safety |
-| **Styling & Tokens** | Tailwind CSS v4 (`@tailwindcss/postcss`) + `tw-animate-css` | Atomic utility styling, CSS custom property design tokens, dark/light modes |
-| **UI Primitives** | shadcn/ui + Radix UI Primitives | Accessible headless components (`Dialog`, `Slider`, `NavigationMenu`, `Skeleton`, `Input-OTP`) |
-| **3D & WebGL** | Three.js (0.185) + React Three Fiber (9.7) + Drei (10.7) | Non-blocking kinetic ambient cursor mesh, 3D radial allocation donut visualizer |
-| **Animations** | Framer Motion (13.2) | 60 FPS spring transitions, 3D card perspective tilt, layout crossfades |
-| **State Management** | Zustand (5.0) | High-performance reactive state (active asset route, simulator params, auth modal state) |
-| **Typography & Icons**| Lucide React + Google Fonts (`Inter` + `JetBrains Mono`) | Tabular financial monospace typography, institutional iconography |
-| **Testing** | Vitest + React Testing Library + jsdom | Isolated unit testing and DOM integration validation |
+| Layer                  | Technology                                                  | Role                                                                                           |
+| :--------------------- | :---------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
+| **Runtime & Bundler**  | Vite 8 + React 19 + TypeScript (strict)                     | Ultra-fast HMR, ES module bundling, strict type safety                                         |
+| **Styling & Tokens**   | Tailwind CSS v4 (`@tailwindcss/postcss`) + `tw-animate-css` | Atomic utility styling, CSS custom property design tokens, dark/light modes                    |
+| **UI Primitives**      | shadcn/ui + Radix UI Primitives                             | Accessible headless components (`Dialog`, `Slider`, `NavigationMenu`, `Skeleton`, `Input-OTP`) |
+| **3D & WebGL**         | Three.js (0.185) + React Three Fiber (9.7) + Drei (10.7)    | Non-blocking kinetic ambient cursor mesh, 3D radial allocation donut visualizer                |
+| **Animations**         | Framer Motion (13.2)                                        | 60 FPS spring transitions, 3D card perspective tilt, layout crossfades                         |
+| **State Management**   | Zustand (5.0)                                               | High-performance reactive state (active asset route, simulator params, auth modal state)       |
+| **Typography & Icons** | Lucide React + Google Fonts (`Noto Serif` + `Inter`)        | Sovereign serif navigation/headers, tabular financial monospace typography                     |
+| **Testing**            | Vitest + React Testing Library + jsdom                      | Isolated unit testing and DOM integration validation                                           |
 
 ---
 
@@ -76,7 +76,7 @@ src/
 3. **GPU & WebGL Lifecycle Safety**:
    - Three.js geometries, materials, textures, and custom shaders must be explicitly disposed of in `useEffect` cleanup hooks when unmounted.
    - The WebGL animation loop must throttle down to low refresh rates when the tab loses visibility (`document.hidden`) or when canvas elements are out of the viewport.
-4. **Tabular Lining Figures**: All financial figures, APYs, tickers, and balance numbers must render using `JetBrains Mono` with tabular lining numbers to prevent layout jitter during real-time updates.
+4. **Tabular Lining Figures**: All financial figures, APYs, tickers, and balance numbers must render using `Inter` with tabular lining numbers to prevent layout jitter during real-time updates.
 5. **Decoupled 3D Rendering**: Heavy Three.js computations must never block the main UI thread or interfere with DOM click/touch responsiveness.
 6. **Strict Error Boundaries**: Unhandled component rendering errors in dynamic sub-views or 3D canvases must be caught by an `ErrorBoundary` that renders a graceful fallback UI without crashing the global shell.
 7. **Secure Error Handling**: Client responses must never leak stack traces, internal errors, or infrastructure details. Handle exceptions or route to global handlers securely.
@@ -94,4 +94,3 @@ src/
   - `docs:` for documentation updates (e.g. `docs: update progress-tracker and architecture context`)
   - `tests:` for tests addition and modification (e.g. `tests: add pytest suite for confidence gate`)
   - `chore:` for maintenance tasks and environment setup (e.g. `chore: configure requirements.txt and dotenv`)
-

@@ -3,6 +3,7 @@
 ## Project Identity & Mission
 
 You are an institutional-grade frontend AI assistant working on **WavyAssets** (Valiance / Aura Assets Institutional Terminal). This platform is a sovereign multi-asset wealth management and institutional digital custody terminal, built to serve family offices, sovereign individuals, and high-net-worth institutional allocators across 7 asset verticals:
+
 1. **Crypto Investment & Yield Aggregation** (`crypto`)
 2. **Global Stocks & Pre-IPO Allocations** (`stocks`)
 3. **AI Systematic & Quantitative Funds** (`ai-funds`)
@@ -16,6 +17,7 @@ You are an institutional-grade frontend AI assistant working on **WavyAssets** (
 ## Single Source of Truth: The `tools/` Directory
 
 Every architectural decision, visual design token, and interaction model must strictly conform to the specifications and prototypes in `tools/`:
+
 - **`tools/Implementation Strategy And Timeline.pdf`**: 6-week sprint methodology, milestones, GPU lifecycle guardrails, and accessibility standards.
 - **`tools/Landing Page Implementation Plan.pdf`**: 3 architectural phases, core epics, SLA benchmarks (<50ms panel swaps, <100ms dropdowns, zero CLS), and state machine specifications.
 - **`tools/Stack Overview.pdf`**: Component primitives, Radix UI & shadcn selection rationale, and technical blueprint.
@@ -32,7 +34,7 @@ Every architectural decision, visual design token, and interaction model must st
 - **3D & WebGL**: Three.js (0.185) + React Three Fiber (9.7) + Drei (10.7)
 - **Animation & Physics**: Framer Motion (13.2)
 - **State Management**: Zustand (5.0)
-- **Typography**: Google Fonts (`Inter` for UI headers/navigation, `JetBrains Mono` for quantitative tabular metrics)
+- **Typography**: Google Fonts (`Noto Serif` for UI headers/navigation/body, `Inter` for quantitative tabular metrics)
 - **Icons**: Lucide React
 - **Testing**: Vitest + React Testing Library + jsdom
 
@@ -52,7 +54,7 @@ Every architectural decision, visual design token, and interaction model must st
   - Modals & Tooltips: `0.5rem` (`8px`).
   - **Prohibition**: Pill shapes (>8px) and generic rounded buttons are strictly forbidden.
 - **Typography**:
-  - Never use proportional fonts for prices, balances, APYs, or basis points. Always use `JetBrains Mono` with `tabular-nums`.
+  - Never use proportional fonts for prices, balances, APYs, or basis points. Always use `Inter` with `tabular-nums`.
 
 ---
 
@@ -87,10 +89,11 @@ Every architectural decision, visual design token, and interaction model must st
 ## AI Execution & Human-in-the-Loop Protocol
 
 Before writing or modifying implementation code:
+
 1. **Consult Approved Skills**: Use skills from `.agents/skills/` (`framer-motion`, `shadcn`, `threejs-fundamentals`, `vercel-react-best-practices`, `migrate-radix-to-base`).
 2. **Draft Implementation Prompt**: Create a prompt file in `prompts/<sprint-name>-<unit-name>.md` detailing goals, reference files in `tools/`, planned changes, and acceptance criteria.
 3. **Obtain Approval**: Ask the user:
-   > *"I prepared the implementation prompt at `prompts/<file-name>.md`. Is this good to execute?"*
+   > _"I prepared the implementation prompt at `prompts/<file-name>.md`. Is this good to execute?"_
 4. **Implement Strictly on Approval**: Do not deviate from approved prompt specifications.
 5. **Pre-Commit Verification**:
    - Run typechecking: `tsc -b`
@@ -98,4 +101,3 @@ Before writing or modifying implementation code:
    - Run automated tests in `Tests/UnitTest/` and `Tests/IntegrationTest/`
    - **Error Handling & Logging**: Verify that all new pathways have comprehensive error handling and secure, redacted logging.
    - Update `.ai/progress-tracker.md`
-

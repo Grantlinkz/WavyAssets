@@ -40,6 +40,12 @@
 - [x] Implement shared layout tab indicator (`layoutId="activeVaultTabIndicator"`) and staggered card presence transitions in `AssetDiscoveryHub`.
 - [x] Establish unit tests for `AnimatedNumber` and verify complete zero-CLS SSR parity (31/31 tests passing across 7 suites).
 
+### [x] Sprint 3C: Continuous Syndicate Ticker & Noto Serif Typography Migration
+- [x] Migrate system font tokens and Google Fonts import from `Inter` to `Noto Serif` across `index.html`, `src/index.css`, `GEMINI.md`, and the `.ai/` documentation suite.
+- [x] Implement continuous infinite sliding ticker stream (`.animate-ticker-continuous` with keyframe translations and duplicate feeds for seamless loop).
+- [x] Add hover pause and `prefers-reduced-motion` compliance to ticker marquee.
+- [x] Establish integration tests in `Tests/IntegrationTest/tickerIntegration.test.tsx` verifying animation tracks and quote duplication (32/32 tests passing across 8 suites).
+
 ### [ ] Sprint 4 (Week 4): Standardized Asset Panels & Hash-Routing Engine
 - [ ] Build standardized `AssetContainer` frame with explicit min-height (540px) to guarantee CLS = 0.
 - [ ] Implement client-side `#/services/:assetId` hash router with deep linking.

@@ -44,6 +44,7 @@ The platform merges Swiss typographic rigor, physical vault aesthetics, and ultr
 ## Scope
 
 ### In Scope
+
 - Client-side routed Single Page Application (SPA) using React 19, TypeScript, and Vite 8.
 - Full responsive implementation of the 4 core phases:
   - **Phase 1**: Global Header, 7-Vertical Mega-Menu, Ambient 3D Canvas, Hero Section, Live Metric Strips, and 2-Step Auth Modal (Radix Dialog + Input-OTP).
@@ -51,9 +52,10 @@ The platform merges Swiss typographic rigor, physical vault aesthetics, and ultr
   - **Phase 3**: Standardized Asset Panel Container with hash-routing (`#/services/:assetId`), skeleton loaders, and 7 vertical sub-views.
   - **Phase 4**: Trust Infrastructure (Private Wealth vs. Institutional mode toggle, specular audit cards, compliance-ready global footer with sitemap and newsletter capture).
 - Full Obsidian Dark and Luxury Light mode theme switching with system detection and persistence.
-- High-density financial typography using `Inter` and `JetBrains Mono`.
+- High-density financial typography using `Noto Serif` and `Inter`.
 
 ### Out of Scope (Landing Page Phase)
+
 - Live backend trade execution or settlement engine (simulated/mocked metrics and real-time feeds are used).
 - Actual bank wire / ACH fiat payment processing (onboarding captures intents and KYC tier).
 - Full user account management dashboard (handled in separate application portal).
