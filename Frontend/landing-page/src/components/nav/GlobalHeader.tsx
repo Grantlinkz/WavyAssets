@@ -1,21 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { BrandLogo } from '../common/BrandLogo';
 import { ThemeToggle } from './ThemeToggle';
 import { useTerminalStore } from '../../store/useTerminalStore';
 import { ChevronDown, Lock, Menu, X } from 'lucide-react';
+import { motion } from 'framer-motion';
 
-export const GlobalHeader: React.FC = () => {
-  const isMegaMenuOpen = useTerminalStore((state) => state.isMegaMenuOpen);
+const navLinks = [
+  { label: 'About', href: '#about' },
+  { label: 'Client Voices', href: '#client-voices' },
+  { label: 'Contact', href: '#contact' },
+  { label: 'Research', href: '#research' },
+];
+
+export interface GlobalHeaderProps {
+  isMegaMenuOpen?: boolean;
+}
+
+export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
+  isMegaMenuOpen: isMegaMenuOpenProp,
+}) => {
+  const storeIsMegaMenuOpen = useTerminalStore((state) => state.isMegaMenuOpen);
+  const isMegaMenuOpen =
+    isMegaMenuOpenProp !== undefined ? isMegaMenuOpenProp : storeIsMegaMenuOpen;
   const toggleMegaMenu = useTerminalStore((state) => state.toggleMegaMenu);
   const openAuthModal = useTerminalStore((state) => state.openAuthModal);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  const navLinks = [
-    { label: 'About', href: '#about' },
-    { label: 'Client Voices', href: '#client-voices' },
-    { label: 'Contact', href: '#contact' },
-    { label: 'Research', href: '#research' },
-  ];
+  // Sliding Dot Indicator State
+  const navRef = useRef<HTMLElement>(null);
+  const servicesBtnRef = useRef<HTMLButtonElement>(null);
+  const linkRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const [dotX, setDotX] = useState<number>(0);
+  const [isHovered, setIsHovered] = useState<boolean>(false);
+  const [activeX, setActiveX] = useState<number | null>(null);
+
+  // Helper to calculate centered dot coordinate relative to nav container
+  const computeCenter = useCallback((el: HTMLElement): number => {
+    if (!navRef.current) return 0;
+    const navRect = navRef.current.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    return elRect.left - navRect.left + elRect.width / 2;
+  }, []);
+
+  const handleMouseEnter = useCallback(
+    (el: HTMLElement) => {
+      const center = computeCenter(el);
+      setDotX(center);
+      setIsHovered(true);
+    },
+    [computeCenter]
+  );
+
+  const handleNavMouseLeave = useCallback(() => {
+    setIsHovered(false);
+  }, []);
+
+  // Synchronize active element (when mega-menu is open or hash matches)
+  useEffect(() => {
+    if (isMegaMenuOpen && servicesBtnRef.current) {
+      setActiveX(computeCenter(servicesBtnRef.current));
+      return;
+    }
+
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const activeIdx = navLinks.findIndex((l) => l.href === window.location.hash);
+      if (activeIdx !== -1 && linkRefs.current[activeIdx]) {
+        setActiveX(computeCenter(linkRefs.current[activeIdx]!));
+        return;
+      }
+    }
+
+    setActiveX(null);
+  }, [isMegaMenuOpen, computeCenter]);
 
   return (
     <header className="sticky top-0 z-50 w-full bg-surface-container-lowest/95 backdrop-blur-xl border-b border-outline">
@@ -32,13 +88,20 @@ export const GlobalHeader: React.FC = () => {
           </div>
         </div>
 
-        {/* Center: Desktop Navigation */}
-        <nav className="hidden lg:flex items-center gap-6" aria-label="Main Navigation">
+        {/* Center: Desktop Navigation with Sliding Dot Indicator */}
+        <nav
+          ref={navRef}
+          onMouseLeave={handleNavMouseLeave}
+          className="hidden lg:flex items-center gap-6 relative py-1"
+          aria-label="Main Navigation"
+        >
           {/* Services Mega-Menu Trigger */}
           <button
+            ref={servicesBtnRef}
             type="button"
             id="services-nav-trigger"
             onClick={toggleMegaMenu}
+            onMouseEnter={(e) => handleMouseEnter(e.currentTarget)}
             aria-expanded={isMegaMenuOpen}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-semibold uppercase tracking-wider transition-all border ${
               isMegaMenuOpen
@@ -55,15 +118,38 @@ export const GlobalHeader: React.FC = () => {
             />
           </button>
 
-          {navLinks.map((link) => (
+          {navLinks.map((link, idx) => (
             <a
               key={link.label}
+              ref={(el) => {
+                linkRefs.current[idx] = el;
+              }}
               href={link.href}
-              className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant hover:text-on-surface transition-colors py-1"
+              onMouseEnter={(e) => handleMouseEnter(e.currentTarget)}
+              className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant hover:text-on-surface transition-colors py-1 px-1"
             >
               {link.label}
             </a>
           ))}
+
+          {/* Sliding Dot Indicator: Centers under hovered link with smooth cubic-bezier easing */}
+          <motion.div
+            data-testid="navbar-sliding-dot"
+            aria-hidden="true"
+            initial={false}
+            animate={{
+              x: isHovered ? dotX - 3 : activeX !== null ? activeX - 3 : dotX - 3,
+              opacity: isHovered || activeX !== null ? 1 : 0,
+              scale: isHovered || activeX !== null ? 1 : 0.4,
+            }}
+            transition={{
+              x: { duration: 0.35, ease: [0.25, 1, 0.5, 1] },
+              opacity: { duration: 0.25, ease: [0.25, 1, 0.5, 1] },
+              scale: { duration: 0.25, ease: [0.25, 1, 0.5, 1] },
+            }}
+            style={{ willChange: 'transform, opacity' }}
+            className="pointer-events-none absolute bottom-0 left-0 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(212,175,55,0.8)]"
+          />
         </nav>
 
         {/* Right: Actions Cluster */}
