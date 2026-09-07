@@ -24,6 +24,12 @@ export interface SimulatorState {
   aggressiveness: number;
 }
 
+export type MegaMenuCategory =
+  | 'all'
+  | 'liquid-digital'
+  | 'dma-equities'
+  | 'physical-vaults';
+
 export interface TerminalStore {
   // Theme state
   theme: TerminalTheme;
@@ -34,6 +40,13 @@ export interface TerminalStore {
   // Asset routing
   activeAssetId: AssetVerticalId;
   setActiveAssetId: (id: AssetVerticalId) => void;
+
+  // Mega-menu state
+  isMegaMenuOpen: boolean;
+  setMegaMenuOpen: (open: boolean) => void;
+  toggleMegaMenu: () => void;
+  megaMenuCategory: MegaMenuCategory;
+  setMegaMenuCategory: (category: MegaMenuCategory) => void;
 
   // Auth modal
   authModal: AuthModalState;
@@ -111,8 +124,14 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     if (typeof window !== 'undefined') {
       window.location.hash = `#/services/${id}`;
     }
-    set({ activeAssetId: id });
+    set({ activeAssetId: id, isMegaMenuOpen: false });
   },
+
+  isMegaMenuOpen: false,
+  setMegaMenuOpen: (open: boolean) => set({ isMegaMenuOpen: open }),
+  toggleMegaMenu: () => set((state) => ({ isMegaMenuOpen: !state.isMegaMenuOpen })),
+  megaMenuCategory: 'all',
+  setMegaMenuCategory: (category: MegaMenuCategory) => set({ megaMenuCategory: category }),
 
   authModal: {
     isOpen: false,

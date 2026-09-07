@@ -1,6 +1,7 @@
 import React from 'react';
-import { BrandLogo } from './components/common/BrandLogo';
-import { ThemeToggle } from './components/nav/ThemeToggle';
+import { GlobalHeader } from './components/nav/GlobalHeader';
+import { ServicesMegaMenu } from './components/nav/ServicesMegaMenu';
+import { AmbientCanvas } from './components/canvas/AmbientCanvas';
 import { useTerminalStore } from './store/useTerminalStore';
 import {
   formatCurrency,
@@ -9,7 +10,7 @@ import {
   formatCompactNumber,
   getDeltaColorClass,
 } from './lib/formatters';
-import { ShieldCheck, Activity, Cpu, ArrowUpRight, Lock } from 'lucide-react';
+import { ShieldCheck, Activity, Cpu, ArrowUpRight } from 'lucide-react';
 
 const syndicateFeeds = [
   { pair: 'BTC/USD', price: 94240.5, delta: 2.84, type: 'crypto' },
@@ -24,41 +25,17 @@ const syndicateFeeds = [
 export const App: React.FC = () => {
   const resolvedTheme = useTerminalStore((state) => state.resolvedTheme);
   const activeAssetId = useTerminalStore((state) => state.activeAssetId);
-  const openAuthModal = useTerminalStore((state) => state.openAuthModal);
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface flex flex-col selection:bg-primary-container selection:text-on-primary-container">
-      {/* 1. Institutional Fixed Header */}
-      <header className="sticky top-0 z-50 w-full bg-surface-container-lowest/90 backdrop-blur-md border-b border-outline">
-        <div className="max-w-7xl mx-auto h-16 px-4 sm:px-6 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <BrandLogo showSecuredBadge={true} />
-            <div className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-sm bg-surface-container border border-outline text-xs text-on-surface-variant font-mono">
-              <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-              <span>TERMINAL ONLINE • NY FED / FIX ACTIVE</span>
-            </div>
-          </div>
+    <div className="min-h-screen bg-surface text-on-surface flex flex-col selection:bg-primary-container selection:text-on-primary-container relative">
+      {/* 3D Decoupled Ambient Mesh Canvas */}
+      <AmbientCanvas />
 
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <button
-              type="button"
-              onClick={() => openAuthModal('institutional')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-surface-container border border-outline hover:border-primary/60 text-xs uppercase font-sans font-semibold tracking-wider hover:text-primary transition-colors"
-            >
-              <Lock className="w-3.5 h-3.5 text-primary" />
-              <span>Terminal Login</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => openAuthModal('institutional')}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-sm bg-primary-container text-on-primary-container text-xs uppercase font-sans font-bold tracking-wider hover:bg-primary-hover transition-colors shadow-sm"
-            >
-              <span>Request Mandate</span>
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* 1. Institutional Fixed Global Header */}
+      <GlobalHeader />
+
+      {/* 2. 7-Vertical Services Mega-Menu Flyout (Docked directly under header) */}
+      <ServicesMegaMenu />
 
       {/* 2. Global Syndicate Live Ticker Stream */}
       <div className="w-full bg-surface-container-low border-b border-outline py-2 overflow-x-auto whitespace-nowrap">
