@@ -27,6 +27,9 @@ if (typeof window === 'undefined') {
         contains: (cls: string) => classList.has(cls),
       },
     },
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => true,
   };
 
   const windowMock = {
@@ -41,6 +44,9 @@ if (typeof window === 'undefined') {
       removeEventListener: () => {},
       dispatchEvent: () => true,
     }),
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => true,
     localStorage: storageMock,
     document: documentMock,
   };
