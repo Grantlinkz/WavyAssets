@@ -2,7 +2,7 @@
 
 ## Project Status
 
-- **Current Phase**: Sprint 3 (Week 3) Completed / Preparing Sprint 4 (Standardized Asset Panels & Hash-Routing Engine)
+- **Current Phase**: Sprint 3 & Sprint 3B Completed / Preparing Sprint 4 (Standardized Asset Panels & Hash-Routing Engine)
 - **Overall Roadmap**: 6-Week Sprints defined in `tools/Implementation Strategy And Timeline.pdf`
 
 ---
@@ -32,6 +32,13 @@
 - [x] Build 3D radial donut visualizer (`DonutChart3D`) with reactive segment animations and blended APY center readout.
 - [x] Build dynamic `AssetDiscoveryHub` with horizontal segmented tabs across the 7 vault classes and active depository card.
 - [x] Establish unit tests for calculation algorithms and integration tests for simulator and discovery hub (28/28 tests passing).
+
+### [x] Sprint 3B: High-Frequency Kinetic Motion & Institutional Animation Suite
+- [x] Build reusable physics-driven `AnimatedNumber` counter with Framer Motion springs and zero-CLS SSR rendering.
+- [x] Implement 3D mouse gyroscope tilt (`perspective: 800px`, `rotateX`, `rotateY`) and animated SVG stroke dashes on `DonutChart3D`.
+- [x] Implement cursor-following specular spotlight overlay and tactile micro-hover physics on `PortfolioSimulator`.
+- [x] Implement shared layout tab indicator (`layoutId="activeVaultTabIndicator"`) and staggered card presence transitions in `AssetDiscoveryHub`.
+- [x] Establish unit tests for `AnimatedNumber` and verify complete zero-CLS SSR parity (31/31 tests passing across 7 suites).
 
 ### [ ] Sprint 4 (Week 4): Standardized Asset Panels & Hash-Routing Engine
 - [ ] Build standardized `AssetContainer` frame with explicit min-height (540px) to guarantee CLS = 0.
@@ -67,7 +74,8 @@
 - Built mathematical compounding return engine (`src/lib/calculator.ts`) across Capital Preservation, Balanced Growth, and Maximum Alpha postures.
 - Built `DonutChart3D` reactive visualizer and `PortfolioSimulator` dual-slider console.
 - Built `AssetDiscoveryHub` with horizontal 7-vault class tabs and active depository overview panel.
-- Verified type safety (`tsc -b`), linting (`eslint`), and 28 passing Vitest unit & integration tests across 6 test suites.
+- Enhanced terminal components with high-frequency kinetic animations: `AnimatedNumber` rolling counters, 3D gyroscope tilt, shared layout gliding tab indicators, and spotlight tracking.
+- Verified type safety (`tsc -b`), linting (`eslint`), and 31 passing Vitest unit & integration tests across 7 test suites.
 
 ---
 
