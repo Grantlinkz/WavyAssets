@@ -2,7 +2,7 @@
 
 ## Project Status
 
-- **Current Phase**: Sprint 2 (Week 2) Completed / Preparing Sprint 3 (Interactive Portfolio Simulator & 3D Allocation Donut)
+- **Current Phase**: Sprint 3 (Week 3) Completed / Preparing Sprint 4 (Standardized Asset Panels & Hash-Routing Engine)
 - **Overall Roadmap**: 6-Week Sprints defined in `tools/Implementation Strategy And Timeline.pdf`
 
 ---
@@ -26,10 +26,12 @@
 - [x] Implement sub-50ms hash-routing integration (`#/services/:assetId`), ESC hotkey dismissal, and click-outside handling.
 - [x] Establish automated unit and integration tests (19/19 passing across 4 suites).
 
-### [ ] Sprint 3 (Week 3): Interactive Portfolio Simulator & 3D Allocation Donut
-- [ ] Build dual Radix Slider controls (Capital: $10k–$10M, Aggressiveness: 1–5).
-- [ ] Implement real-time compounding return calculation engine with tabular monospaced outputs.
-- [ ] Build 3D radial donut visualizer (`DonutChart3D`) with reactive segment animations.
+### [x] Sprint 3 (Week 3): Interactive Portfolio Simulator & 3D Allocation Donut
+- [x] Build dual slider controls (Capital: $50k–$10M, Aggressiveness: 1–3 modes with quick-selection chips).
+- [x] Implement real-time mathematical compounding return calculation engine (`src/lib/calculator.ts`) with tabular monospaced outputs.
+- [x] Build 3D radial donut visualizer (`DonutChart3D`) with reactive segment animations and blended APY center readout.
+- [x] Build dynamic `AssetDiscoveryHub` with horizontal segmented tabs across the 7 vault classes and active depository card.
+- [x] Establish unit tests for calculation algorithms and integration tests for simulator and discovery hub (28/28 tests passing).
 
 ### [ ] Sprint 4 (Week 4): Standardized Asset Panels & Hash-Routing Engine
 - [ ] Build standardized `AssetContainer` frame with explicit min-height (540px) to guarantee CLS = 0.
@@ -62,12 +64,15 @@
 - Mounted fixed institutional `GlobalHeader` with real-time FIX status, navigation links, and auth triggers.
 - Implemented 3D kinetic `AmbientCanvas` with mouse-following particle substrate, clean WebGL lifecycle, and tab visibility throttling.
 - Built 7-vertical `ServicesMegaMenu` flyout with category filtering, telemetry diagnostics rail, and ESC hotkey dismissal.
-- Verified type safety (`node ./node_modules/typescript/bin/tsc -b`), linting (`npm run lint`), and 19 passing Vitest unit & integration tests.
+- Built mathematical compounding return engine (`src/lib/calculator.ts`) across Capital Preservation, Balanced Growth, and Maximum Alpha postures.
+- Built `DonutChart3D` reactive visualizer and `PortfolioSimulator` dual-slider console.
+- Built `AssetDiscoveryHub` with horizontal 7-vault class tabs and active depository overview panel.
+- Verified type safety (`tsc -b`), linting (`eslint`), and 28 passing Vitest unit & integration tests across 6 test suites.
 
 ---
 
 ## Next Up
 
-- **Sprint 3 Task 1**: Build interactive capital allocation sliders ($10k–$10M, Aggressiveness 1–5).
-- **Sprint 3 Task 2**: Implement real-time compounding return calculation engine with monospaced tabular metrics.
-- **Sprint 3 Task 3**: Construct 3D radial donut visualizer (`DonutChart3D`) with interactive segment hover highlights.
+- **Sprint 4 Task 1**: Build standardized `AssetContainer` frame with explicit min-height (540px) to guarantee CLS = 0.
+- **Sprint 4 Task 2**: Implement client-side `#/services/:assetId` hash router with deep linking and lazy loading.
+- **Sprint 4 Task 3**: Create dedicated sub-view panels for all 7 asset classes with sub-50ms transition telemetry.
