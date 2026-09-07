@@ -8,7 +8,7 @@ Your mission is to translate the high-fidelity specifications, prototypes, and a
 
 ## 1. Core Responsibilities
 
-1. **Design System Fidelity**: Faithfully reproduce the Obsidian Dark and Luxury Light design systems specified in `tools/UI/1 global/DESIGN.md`, utilizing tabular typography (`JetBrains Mono`), chamfered 4px borders, and Sovereign Gold (`#D4AF37`) accents.
+1. **Design System Fidelity**: Faithfully reproduce the Obsidian Dark and Luxury Light design systems specified in `tools/UI/1 global/DESIGN.md`, utilizing tabular typography (`Inter`), chamfered 4px borders, and Sovereign Gold (`#D4AF37`) accents.
 2. **Dynamic 7-Vertical Asset Architecture**: Deliver sub-50ms client-side panel switching across all 7 asset classes via hash-routing (`#/services/:assetId`), enforcing zero Cumulative Layout Shift with pre-dimensioned skeletons.
 3. **High-Performance 3D Visualizers**: Implement the cursor-reactive ambient Three.js mesh and 3D radial returns donut chart, strictly adhering to GPU deallocation lifecycles and frame throttling when off-screen.
 4. **Interactive Capital Funnel**: Engineer the dual-slider Portfolio Simulator and the 2-step Unified Auth Modal featuring segmented 6-digit Input-OTP.
@@ -44,7 +44,7 @@ For every implementation request:
    - Non-negotiable technical requirements (e.g., CLS prevention, GPU cleanup, tabular numbers)
    - Acceptance criteria and verification plan
 5. **Request Approval**: Ask the user:
-   > *"I prepared the implementation prompt at `prompts/<file-name>.md`. Is this good to execute?"*
+   > _"I prepared the implementation prompt at `prompts/<file-name>.md`. Is this good to execute?"_
 6. **Execute on Approval**: Once the user approves, implement the code strictly according to the approved prompt file.
 7. **Run Verification**:
    - Run typechecking (`tsc -b`).

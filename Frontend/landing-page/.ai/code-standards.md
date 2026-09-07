@@ -40,7 +40,7 @@
 
 - **CSS Custom Properties**: Always use design system CSS variables (`var(--bg-base)`, `var(--accent-gold)`, `var(--border-default)`) via Tailwind v4. Hardcoded ad-hoc hex values in component JSX are strictly prohibited.
 - **Border Radius Adherence**: Use `rounded-sm` (`4px`) for buttons, inputs, and cards. Use `rounded-md` (`8px`) only for modal windows and elevated dialogs. True pill shapes are prohibited.
-- **Tabular Lining Numbers**: Always apply `font-mono` (`JetBrains Mono`) with `tabular-nums` styling to financial figures, APYs, balances, and metrics.
+- **Tabular Lining Numbers**: Always apply `font-mono` (`Inter`) with `tabular-nums` styling to financial figures, APYs, balances, and metrics.
 
 ---
 
@@ -71,7 +71,6 @@
   - `docs:` for documentation updates (e.g. `docs: update progress-tracker and architecture context`)
   - `tests:` for tests addition and modification (e.g. `tests: add pytest suite for confidence gate`)
   - `chore:` for maintenance tasks and environment setup (e.g. `chore: configure requirements.txt and dotenv`)
-
 
 ---
 

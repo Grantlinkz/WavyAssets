@@ -2,7 +2,7 @@
 
 ## Project Status
 
-- **Current Phase**: Sprint 3 & Sprint 3B Completed / Preparing Sprint 4 (Standardized Asset Panels & Hash-Routing Engine)
+- **Current Phase**: Sprint 4 (Trust Infrastructure, Client Voices & Global Compliance) Completed / Preparing Sprint 5 (Dynamic Asset Sub-Views & Unified Auth Modal)
 - **Overall Roadmap**: 6-Week Sprints defined in `tools/Implementation Strategy And Timeline.pdf`
 
 ---
@@ -46,16 +46,21 @@
 - [x] Add hover pause and `prefers-reduced-motion` compliance to ticker marquee.
 - [x] Establish integration tests in `Tests/IntegrationTest/tickerIntegration.test.tsx` verifying animation tracks and quote duplication (32/32 tests passing across 8 suites).
 
-### [ ] Sprint 4 (Week 4): Standardized Asset Panels & Hash-Routing Engine
-- [ ] Build standardized `AssetContainer` frame with explicit min-height (540px) to guarantee CLS = 0.
-- [ ] Implement client-side `#/services/:assetId` hash router with deep linking.
-- [ ] Create lazy-loaded sub-view chunks for all 7 asset classes (Crypto, Stocks, AI Funds, Real Estate, VIP Cards, Cars, Wallet).
-- [ ] Instrument view-switch telemetry and sub-50ms transition benchmark.
+### [x] Sprint 4 (Prototype 4): Trust Infrastructure, Client Voices & Regulatory Compliance Footprint
+- [x] Build live `TrustInfrastructure` Enclave status bar with Merkle root, HSM verification, and clearing latency.
+- [x] Construct dynamic `Private Wealth` vs. `Institutional & Funds` Tier Switcher with spring indicator and responsive metric morphing ($4.82B vs. $12.40B AUM).
+- [x] Implement 4-cell Audited Return Metrics strip with animated progress bars and live telemetry stream ribbon.
+- [x] Build `ClientVoices` 3D perspective specular tilt cards with cursor-following radial spotlight highlight and tier filtering.
+- [x] Construct `CustodyNetworkGrid` displaying 6 synchronized institutional clearing nodes (BNY Mellon, State Street, LGT, Equinix, Lloyd's, DTCC).
+- [x] Build compliance-ready 5-column `InstitutionalFooter` with SEC RIA (#801-128491), FINMA VQF, and MAS regulatory credentials, 7 asset links, and PGP newsletter dispatch.
+- [x] Implement mandatory multi-jurisdiction regulatory disclaimers and SEC Rule 206(4)-1 / GDPR / FinSA notices.
+- [x] Establish unit and integration test suites in `Tests/UnitTest/trustMetrics.test.ts` and `Tests/IntegrationTest/trustAndComplianceIntegration.test.tsx` (44/44 tests passing across 10 suites).
 
-### [ ] Sprint 5 (Week 5): Trust Infrastructure, Unified Auth Modal & Regulatory Footer
+### [ ] Sprint 5 (Prototype 5): Standardized Asset Panels, Hash-Routing Engine & Unified Auth Modal
+- [ ] Build standardized `AssetContainer` frame with explicit min-height (540px) to guarantee CLS = 0.
+- [ ] Implement client-side `#/services/:assetId` hash router with deep linking and lazy-loaded sub-view chunks for all 7 asset classes.
 - [ ] Construct root-mounted `UnifiedAuthModal` with Step 1 credentials and Step 2 6-digit Input-OTP.
-- [ ] Implement `ClientVoices` social proof grid with specular highlights and Private Wealth vs. Institutional filter toggle.
-- [ ] Assemble compliance-ready footer, multi-column sitemap, and regulatory legal disclaimers.
+- [ ] Instrument view-switch telemetry and sub-50ms transition benchmark.
 
 ### [ ] Sprint 6 (Week 6): Performance Profiling, Hardening & Go-Live
 - [ ] Implement WebGL render loop throttling on `document.hidden` and off-screen canvas culling.

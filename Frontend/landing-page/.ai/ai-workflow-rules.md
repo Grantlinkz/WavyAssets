@@ -34,7 +34,7 @@ All implementation work follows the structured 6-sprint roadmap defined in `tool
    - Reference files inspected in `tools/` (e.g., `tools/UI/<folder>/code.html`)
    - Files to create or modify
    - Acceptance criteria and verification plan
-2. **Approval Gateway**: Request user review: *"I prepared the implementation plan at prompts/<file-name>.md. Is this good to execute?"*
+2. **Approval Gateway**: Request user review: _"I prepared the implementation plan at prompts/<file-name>.md. Is this good to execute?"_
 3. **Strict Execution**: Implement only after receiving explicit user approval.
 4. **Demonstrate & Verify**: Provide clear automated test results, TypeScript typecheck confirmation, and manual verification steps after every step.
 
@@ -44,7 +44,7 @@ All implementation work follows the structured 6-sprint roadmap defined in `tool
 
 1. **Adherence to `tools/`**: Never invent arbitrary layouts, colors, or feature sets outside of what is documented in `tools/`.
 2. **Zero Hardcoded Colors**: All styling must utilize Tailwind CSS v4 variables mapped in `index.css` (`var(--bg-base)`, `var(--accent-gold)`, etc.).
-3. **Tabular Typography**: All quantitative figures and numbers must render in `JetBrains Mono` with tabular lining numbers.
+3. **Tabular Typography**: All quantitative figures and numbers must render in `Inter` with tabular lining numbers.
 4. **Performance Budgets**:
    - Mega-menu dropdown response: `< 100ms`
    - Dynamic asset panel swap: `< 50ms`
@@ -86,4 +86,3 @@ Before marking any task complete or committing changes:
 4. **Error Handling & Logging**: Verify that all new pathways have comprehensive error handling and secure, redacted logging.
 5. **CLS & Performance Check**: Verify layout stability during tab swaps and ensure WebGL resources dispose cleanly on unmount.
 6. **Progress Tracker**: Update `.ai/progress-tracker.md` with completed items and current state.
-
