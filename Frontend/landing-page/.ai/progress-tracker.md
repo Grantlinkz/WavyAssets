@@ -93,7 +93,9 @@
 - Built standardized `AssetContainer` with `min-height: 540px` zero-CLS frame, client-side hash routing (`#/services/:assetId`), and view-switch telemetry.
 - Built 7 dedicated modular sub-view panels: `CryptoPanel`, `StocksPanel`, `AiFundsPanel`, `RealEstatePanel`, `CarsPanel`, `VipCardsPanel`, and `WalletPanel`.
 - Built globally mounted 2-step `UnifiedAuthModal` with credentials (Step 1) and 6-digit `input-otp` (Step 2).
-- Verified complete type safety (`tsc -b`), linting (`eslint`), and 56 passing Vitest unit & integration tests across 12 test suites.
+- Implemented Navbar Sliding Dot Indicator with custom cubic-bezier easing (`cubic-bezier(0.25, 1, 0.5, 1)`), hover centering, and active/idle fade dynamics.
+- Created `WavyBackground` with mathematically seamless alternating diagonal sine-wave stripes in Licorice (`#1B1212`) and Jet Black (`#343434`), translating infinitely along horizontal axis with linear timing function as the default application background.
+- Verified complete type safety (`tsc -b`), linting (`eslint`), and 62 passing Vitest unit & integration tests across 13 test suites.
 
 ---
 
