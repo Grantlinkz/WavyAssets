@@ -23,8 +23,8 @@ describe('Portfolio Simulator & Asset Discovery Hub Integration', () => {
     );
 
     // Parameter header and slider title
-    expect(html).toContain('PORTFOLIO CALIBRATION PARAMETERS');
-    expect(html).toContain('Target Allocation Capital');
+    expect(html).toContain('PORTFOLIO ESTIMATION SETTINGS');
+    expect(html).toContain('Your Investment Amount');
     expect(html).toContain('$250,000.00');
 
     // Risk posture default (Balanced Growth 14.2%)
@@ -61,7 +61,7 @@ describe('Portfolio Simulator & Asset Discovery Hub Integration', () => {
     );
 
     expect(html).toContain('$1,000,000.00');
-    expect(html).toContain('Maximum Alpha');
+    expect(html).toContain('MAXIMUM ALPHA');
     expect(html).toContain('22.4');
     expect(html).toContain('$224,000.00');
     expect(html).toContain('$18,667.00');
@@ -85,8 +85,8 @@ describe('Portfolio Simulator & Asset Discovery Hub Integration', () => {
     expect(html).toContain('07 // TREASURY');
 
     // Default cars vault card
-    expect(html).toContain('Exotic Hypercars &amp; Horology Freeport Vaults');
-    expect(html).toContain('FREEPORT AUDITED (38 UNITS)');
+    expect(html).toContain('Browse &amp; Invest in Collector Cars');
+    expect(html).toContain('38 CARS IN CLIMATE VAULT');
     expect(html).toContain('$348,000,000');
   });
 
@@ -97,8 +97,8 @@ describe('Portfolio Simulator & Asset Discovery Hub Integration', () => {
     expect(window.location.hash).toBe('#/services/real-estate');
 
     const html = renderToString(<AssetDiscoveryHub activeId="real-estate" />);
-    expect(html).toContain('Tokenized Prime Commercial &amp; Freehold Real Estate');
-    expect(html).toContain('CADASTRE VERIFIED');
+    expect(html).toContain('Prime Commercial Property Shares &amp; Rental Income');
+    expect(html).toContain('NOTARIZED PROPERTY TITLE');
     expect(html).toContain('$485,000,000');
   });
 });

@@ -20,7 +20,7 @@ describe('Continuous Syndicate Ticker & Typography Integration', () => {
     expect(html).toContain('data-testid="syndicate-ticker-bar"');
 
     // Title badge
-    expect(html).toContain('GLOBAL SYNDICATE FEED');
+    expect(html).toContain('LIVE MARKET RATES');
 
     // Ticker continuous animation track
     expect(html).toContain('data-testid="syndicate-ticker-track"');
