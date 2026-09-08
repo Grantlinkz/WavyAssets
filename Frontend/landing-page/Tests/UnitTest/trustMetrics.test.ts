@@ -20,7 +20,7 @@ describe('Trust Infrastructure Data & Metrics Unit Tests', () => {
 
     const aumMetric = pwMetrics.find((m) => m.id === 'aum');
     expect(aumMetric?.value).toBe('$4.82B');
-    expect(aumMetric?.badge).toBe('[ VERIFIED // DELOITTE Q4 ]');
+    expect(aumMetric?.badge).toBe('VERIFIED BY DELOITTE');
 
     const uptimeMetric = pwMetrics.find((m) => m.id === 'uptime');
     expect(uptimeMetric?.value).toBe('99.998%');

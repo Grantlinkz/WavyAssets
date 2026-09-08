@@ -62,10 +62,10 @@ describe('Asset Panels & Unified Auth Modal Integration Suite (SSR / Node 24)', 
   it('renders all 7 dedicated modular asset class panels with verified metrics', () => {
     // 1. Crypto Panel
     const cryptoHtml = renderToString(<CryptoPanel />);
-    expect(cryptoHtml).toContain('Crypto Yield &amp; Algorithmic Execution');
+    expect(cryptoHtml).toContain('Crypto Yield &amp; Smart Automated Rules');
     expect(cryptoHtml).toContain('19.4%');
-    expect(cryptoHtml).toContain('BTC Institutional Basis Arbitrage');
-    expect(cryptoHtml).toContain('ETH Layer-1 Validator &amp; EigenLayer Restaking');
+    expect(cryptoHtml).toContain('Bitcoin Basis Growth Yield Account');
+    expect(cryptoHtml).toContain('Ethereum Staking &amp; Security Rewards');
 
     // 2. Stocks Panel
     const stocksHtml = renderToString(<StocksPanel />);

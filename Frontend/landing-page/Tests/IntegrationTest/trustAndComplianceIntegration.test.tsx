@@ -52,7 +52,7 @@ describe('Trust Infrastructure & Compliance Integration Suite (SSR / Node 24)', 
     expect(html).toContain('$4.82B');
     expect(html).toContain('99.998%');
     expect(html).toContain('Audited Cumulative Assets');
-    expect(html).toContain('[ VERIFIED // DELOITTE Q4 ]');
+    expect(html).toContain('VERIFIED BY DELOITTE');
   });
 
   it('renders ClientVoices with 3D specular cards reactive to active tier', () => {
@@ -119,9 +119,9 @@ describe('Trust Infrastructure & Compliance Integration Suite (SSR / Node 24)', 
 
     // Brand and Regulatory RIA
     expect(html).toContain('WAVYASSETS');
-    expect(html).toContain('SEC REGISTERED RIA (#801-128491)');
-    expect(html).toContain('FINMA REGULATED VQF (SWITZERLAND)');
-    expect(html).toContain('MAS EXEMPT INSTITUTIONAL OPERATOR');
+    expect(html).toContain('SEC REGISTERED RIA 801-128491');
+    expect(html).toContain('FINMA REGULATED VQF SWITZERLAND');
+    expect(html).toContain('MAS EXEMPT OPERATOR');
 
     // 7 Verticals
     expect(html).toContain('Crypto Yields &amp; Cold Storage');
@@ -137,8 +137,8 @@ describe('Trust Infrastructure & Compliance Integration Suite (SSR / Node 24)', 
     expect(html).toContain('REGULATORY DISCLOSURES &amp; FIDUCIARY GOVERNANCE:');
     expect(html).toContain('NO SOLICITATION &amp; RISK NOTICE:');
     expect(html).toContain('SEC Rule 206(4)-1');
-    expect(html).toContain('GDPR / FADP Compliant');
-    expect(html).toContain('FIX 4.4 Engine Rev 8.4');
+    expect(html).toContain('GDPR &amp; FADP Compliant');
+    expect(html).toContain('Institutional Order Engine');
   });
 
   it('renders complete App command deck with Trust Infrastructure and Institutional Footer integrated', () => {

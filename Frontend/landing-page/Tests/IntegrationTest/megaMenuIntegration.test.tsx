@@ -31,8 +31,8 @@ describe('GlobalHeader & ServicesMegaMenu Integration (Node 24 Engine)', () => {
     expect(html).toContain('Research');
 
     // Action buttons
-    expect(html).toContain('Terminal Login');
-    expect(html).toContain('Request Mandate');
+    expect(html).toContain('Welcome Back');
+    expect(html).toContain('Request Service');
   });
 
   it('renders closed mega-menu as empty output when isMegaMenuOpen is false', () => {

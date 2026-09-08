@@ -72,17 +72,17 @@ describe('Portfolio Simulator & Asset Discovery Hub Integration', () => {
     const html = renderToString(<AssetDiscoveryHub activeId="cars" />);
 
     // Hub tag & count
-    expect(html).toContain('[ DISCOVERY VERTICALS // VERIFIED PHYSICAL &amp; DIGITAL VAULTS ]');
-    expect(html).toContain('7 VAULT CLASSES ONLINE');
+    expect(html).toContain('DISCOVERY VERTICALS • VERIFIED ASSET VAULTS');
+    expect(html).toContain('ALL ONLINE');
 
     // 7 Tabs
-    expect(html).toContain('01 // CRYPTO');
-    expect(html).toContain('02 // EQUITIES');
-    expect(html).toContain('03 // COMPUTE');
-    expect(html).toContain('04 // ESTATES');
-    expect(html).toContain('05 // DEPOSITORY');
-    expect(html).toContain('06 // PRIVILEGE');
-    expect(html).toContain('07 // TREASURY');
+    expect(html).toContain('CRYPTO');
+    expect(html).toContain('EQUITIES');
+    expect(html).toContain('COMPUTE');
+    expect(html).toContain('ESTATES');
+    expect(html).toContain('DEPOSITORY');
+    expect(html).toContain('PRIVILEGE');
+    expect(html).toContain('TREASURY');
 
     // Default cars vault card
     expect(html).toContain('Browse &amp; Invest in Collector Cars');

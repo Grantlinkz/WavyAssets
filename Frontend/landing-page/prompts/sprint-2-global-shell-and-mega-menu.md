@@ -1,6 +1,7 @@
 # Sprint 2 Implementation Prompt: Global Shell, 3D Ambient Canvas & Services Mega-Menu
 
 ## Unit Overview
+
 - **Sprint**: Sprint 2 (Week 2)
 - **Unit**: Global Institutional Shell, 3D Ambient Mesh Canvas & 7-Vertical Services Mega-Menu
 - **Target Files**:
@@ -17,6 +18,7 @@
 ---
 
 ## 1. Context & Specifications Reference
+
 - **`tools/Implementation Strategy And Timeline.pdf`**: Sprint 2 milestones, GPU lifecycle guardrails, accessibility standards, and non-blocking WebGL requirements.
 - **`tools/UI/2 aura_assets_expanded_services_mega_menu_deep_dive/code.html`**: Complete layout, typography, tags, category filter buttons, 7 asset verticals with diagnostic telemetry panel, Merkle proof status badges, and ESC dismissal hotkey.
 - **`tools/UI/2 aura_assets_foundation_global_shell_terminal/code.html`**: Header navigation hierarchy, status chips (`TERMINAL ONLINE • SLA 99.999% • NYC / LON FIX`), action buttons (`Log In`, `Get Started`), and responsive drawer behaviors.
@@ -27,6 +29,7 @@
 ## 2. Planned Changes & Implementation Steps
 
 ### A. Terminal Store Enhancement (`src/store/useTerminalStore.ts`)
+
 - Add reactive mega-menu open/close state:
   - `isMegaMenuOpen: boolean`
   - `setMegaMenuOpen: (open: boolean) => void`
@@ -36,6 +39,7 @@
 - Ensure ESC key handling and hash change synchronization (`#/services/:assetId`) automatically update active state and close the menu.
 
 ### B. 3D Kinetic Ambient Canvas (`src/components/canvas/AmbientCanvas.tsx`)
+
 - Implement a lightweight, elegant React Three Fiber + Three.js background canvas.
 - Features:
   - Kinetic cursor-following geometry/points/wireframe grid with smooth lerp damping (`threejs-fundamentals`).
@@ -47,14 +51,16 @@
   - Theme-reactive color adjustments (gold/emerald highlights on dark obsidian vs. subtle champagne/slate on luxury light).
 
 ### C. Institutional Global Header (`src/components/nav/GlobalHeader.tsx`)
+
 - Fixed at the top (`sticky top-0 z-50 h-16 w-full backdrop-blur-xl border-b border-outline`).
 - Header contents:
   - Left: Scalable vector `BrandLogo`, live latency indicator (`TERMINAL ONLINE • SLA 99.999% • NYC / LON FIX`), SECURED enclave status.
   - Center: Nav anchors (`Services` with toggle chevron and active indicator, `About`, `Client Voices`, `Contact`, `Research`).
-  - Right: `ThemeToggle`, `Terminal Login` trigger (opens `UnifiedAuthModal` in login mode), and `Request Mandate` / `Get Started` trigger.
+  - Right: `ThemeToggle`, `Login` trigger (opens `UnifiedAuthModal` in login mode), and `Request Service` / `Get Started` trigger.
   - Mobile responsive hamburger toggle drawer.
 
 ### D. 7-Vertical Services Mega-Menu (`src/components/nav/ServicesMegaMenu.tsx`)
+
 - Positioned docked directly underneath the header with backdrop blur and micro-chamfer borders (`rounded-md border border-outline-variant/40 shadow-2xl`).
 - Built with Framer Motion spring physics animation (`opacity`, `y: -8` -> `y: 0`, `willChange: "transform, opacity"`).
 - Structural Components:
@@ -81,12 +87,14 @@
      - SEC Custody Reg #801-128491, Zurich Freeport Vault Deposit audited, ESC dismiss prompt.
 
 ### E. App Integration & Layout (`src/App.tsx`)
+
 - Mount `AmbientCanvas` in the background.
 - Mount `GlobalHeader` and integrate `ServicesMegaMenu` overlay.
 - Keep the live syndicate ticker stream below the header with smooth layout flow.
 - Maintain Zero CLS (`min-height: 540px`).
 
 ### F. Unit & Integration Testing (`Tests/UnitTest/megaMenu.test.ts`)
+
 - Unit test coverage:
   - Mega-menu open/close state machine transitions in Zustand.
   - Category filter filtering logic for the 7 asset verticals.
@@ -97,6 +105,7 @@
 ---
 
 ## 3. Acceptance Criteria
+
 1. **Visual Fidelity & Micro-Chamfer**: Adheres strictly to `tools/UI/2 aura_assets_expanded_services_mega_menu_deep_dive/code.html` and `GEMINI.md` (4px/8px micro-chamfers, no rounded pills >8px).
 2. **WebGL Decoupling & Lifecycle**: `AmbientCanvas` renders non-blockingly, disposes buffers/geometries on unmount, and throttles when `document.hidden`.
 3. **Accessibility**: Full keyboard support (ESC closes, Tab navigation works) and `prefers-reduced-motion` compliance.
