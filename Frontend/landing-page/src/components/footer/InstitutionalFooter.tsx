@@ -27,15 +27,14 @@ export const InstitutionalFooter: React.FC = () => {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <BrandLogo className="h-7 w-auto text-primary" />
-              <span className="font-headline-sm text-base text-on-surface uppercase tracking-wider font-bold">
-                WAVYASSETS
+              <span className="font-serif font-bold text-sm tracking-widest text-on-surface">
+                
               </span>
             </div>
 
             <p className="font-sans text-xs text-on-surface-variant leading-relaxed">
-              Sovereign institutional multi-asset custody, quantitative
-              execution, and cross-collateral wealth orchestration for
-              ultra-high-net-worth principals and family offices.
+              Transparent multi-asset investing, secure custody, and automated
+              portfolio growth across 7 asset classes for smart modern investors.
             </p>
 
             <div className="space-y-1.5 pt-1">

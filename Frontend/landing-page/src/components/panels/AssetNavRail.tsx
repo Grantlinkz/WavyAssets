@@ -34,10 +34,9 @@ export const AssetNavRail: React.FC = () => {
           </span>
           <span className="text-outline select-none">/</span>
           <span className="text-on-surface-variant tracking-wider truncate">
-            TERMINAL ONLINE <span className="text-outline mx-1">//</span> PROTOCOL FIX 4.4{' '}
-            <span className="text-outline mx-1">//</span> DEPOT: ZURICH-AIRPORT FREEPORT{' '}
+            SYSTEM ACTIVE <span className="text-outline mx-1">//</span> PROTOCOL FIX 4.4{' '}
             <span className="text-outline mx-1">//</span> VAULT SYNC: 100%{' '}
-            <span className="text-outline mx-1">//</span> LATENCY:{' '}
+            <span className="text-outline mx-1">//</span> SPEED:{' '}
             <span className="text-secondary font-bold">
               {telemetry.lastSwitchDurationMs > 0
                 ? `${telemetry.lastSwitchDurationMs}ms`
@@ -47,9 +46,9 @@ export const AssetNavRail: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 text-on-surface-variant shrink-0">
-          <span className="text-outline uppercase tracking-wider">WAVY TERMINAL</span>
+          <span className="text-outline uppercase tracking-wider">WAVY ASSETS</span>
           <span className="text-outline">&rsaquo;</span>
-          <span className="text-outline uppercase tracking-wider">DYNAMIC ASSET SUB-VIEWS</span>
+          <span className="text-outline uppercase tracking-wider">INVESTMENT SERVICES</span>
           <span className="text-outline">&rsaquo;</span>
           <span className="text-primary font-bold uppercase tracking-wider bg-surface-container px-2 py-0.5 rounded-sm border border-outline/20">
             [{currentTab.index}] {currentTab.name}

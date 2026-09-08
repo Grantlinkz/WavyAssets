@@ -50,8 +50,9 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
   const [isSuccess, setIsSuccess] = useState(false);
   const [countdown, setCountdown] = useState(45);
 
-  // Sync initial tier when modal opens
-  useEffect(() => {
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) {
       setTier(initialTier || 'institutional');
       setIsSuccess(false);
@@ -59,7 +60,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
       setOtpCode('');
       setCountdown(45);
     }
-  }, [isOpen, initialTier]);
+  }
 
   // Countdown timer in step 2
   useEffect(() => {
@@ -351,7 +352,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
   const isHeadless =
     forceInline ||
     typeof document === 'undefined' ||
-    typeof (document as any).body?.appendChild === 'undefined';
+    typeof (document as unknown as { body?: { appendChild?: unknown } }).body?.appendChild === 'undefined';
 
   if (isHeadless) {
     return (

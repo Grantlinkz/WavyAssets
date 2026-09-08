@@ -36,27 +36,27 @@ const DISCOVERY_VERTICALS: DiscoveryVertical[] = [
     id: 'crypto',
     tabNumber: '01 // CRYPTO',
     tabLabel: 'Crypto Investment',
-    title: 'Crypto Yields & Cold Storage Vaults',
-    badge: 'MPC COLD STORAGE',
+    title: 'Simple Crypto Investing & Insured Vault Storage',
+    badge: 'OFFLINE COLD STORAGE',
     description:
-      'Institutional multi-party computation staking, delta-neutral basis arbitrage, and isolated sub-second CeDeFi liquidity pools backed by algorithmic risk controls.',
+      'Buy and hold Bitcoin and Ethereum with bank-grade offline vaults. Earn steady, predictable returns without complicated technical setup.',
     navAum: '$540,200,000',
-    settlementRail: 'Instant On-Chain Merkle Hash',
-    slaMetric: '0.02ms Internal FIX 4.4',
-    custodyAuditor: 'FIPS 140-3 HSM Verified',
+    settlementRail: 'Instant On-Chain Transfer',
+    slaMetric: '19.4% Blended Return',
+    custodyAuditor: 'Insured Offline Vault',
     icon: Coins,
   },
   {
     id: 'stocks',
     tabNumber: '02 // EQUITIES',
     tabLabel: 'Global Stocks',
-    title: 'Direct Market Access Equities & Pre-IPO Allocations',
-    badge: '42 EXCHANGES DMA',
+    title: 'Invest in Stocks Online & Pre-IPO Shares',
+    badge: '42 GLOBAL EXCHANGES',
     description:
-      'Direct order routing across NYSE, LSE, SIX Swiss Exchange, and dark pools. Algorithmic VWAP order slicing with cross-broker net fills and zero information leakage.',
+      'Trade public shares across 42 global stock exchanges with transparent pricing. Access shares of private market leaders like SpaceX and Stripe before they go public.',
     navAum: '$820,500,000',
-    settlementRail: 'DTCC / Euroclear Direct',
-    slaMetric: '0.04ms Equinix NY4 Cross-Connect',
+    settlementRail: 'Same-Day Clearing',
+    slaMetric: '0.04ms Direct Connection',
     custodyAuditor: 'SEC & FINMA Registered',
     icon: TrendingUp,
   },
@@ -64,69 +64,69 @@ const DISCOVERY_VERTICALS: DiscoveryVertical[] = [
     id: 'ai-funds',
     tabNumber: '03 // COMPUTE',
     tabLabel: 'AI Systematic Funds',
-    title: 'Hardware-Backed AI Compute Yield Syndication',
-    badge: '12,400 H100s CLUSTERED',
+    title: 'Smart Automated Investing Backed by AI Hardware',
+    badge: '12,400 GPUS LEASED',
     description:
-      'Enterprise compute cluster leasing backed by physical Nvidia H100 hardware in Nordic hydro-powered data centers, combined with deep neural momentum trading algorithms.',
+      'Put your money to work with hands-free investing backed by physical Nvidia data center clusters leased to leading enterprise technology companies.',
     navAum: '$312,000,000',
-    settlementRail: 'Continuous Epoch Hash-Sweep',
-    slaMetric: '99.98% GPU Cluster Uptime',
-    custodyAuditor: 'Tier-IV Nordic Hydro Audit',
+    settlementRail: 'Daily Return Deposit',
+    slaMetric: '99.98% Hardware Uptime',
+    custodyAuditor: 'Verified Green Hydro Power',
     icon: Cpu,
   },
   {
     id: 'real-estate',
     tabNumber: '04 // ESTATES',
     tabLabel: 'Real Estate',
-    title: 'Tokenized Prime Commercial & Freehold Real Estate',
-    badge: 'CADASTRE VERIFIED',
+    title: 'Prime Commercial Property Shares & Rental Income',
+    badge: 'NOTARIZED PROPERTY TITLE',
     description:
-      'Tokenized ownership in trophy commercial properties in Manhattan, Zurich, and Geneva. Automated daily rental yield distribution directly into private USDC/EUR ledgers.',
+      'Invest in landmark commercial buildings in Zurich, London, and Manhattan. Receive quarterly rental deposits directly into your cash account.',
     navAum: '$485,000,000',
-    settlementRail: 'Daily Automated USDC Sweep',
-    slaMetric: '6.4% Net Annualized Yield',
-    custodyAuditor: 'PwC / Swiss Notarial Cadastre',
+    settlementRail: 'Quarterly Rental Payout',
+    slaMetric: '6.4% Net Annual Return',
+    custodyAuditor: 'PwC / Land Registry Certified',
     icon: Building2,
   },
   {
     id: 'cars',
     tabNumber: '05 // DEPOSITORY',
     tabLabel: 'Cars Inventory',
-    title: 'Exotic Hypercars & Horology Freeport Vaults',
-    badge: 'FREEPORT AUDITED (38 UNITS)',
+    title: 'Browse & Invest in Collector Cars',
+    badge: '38 CARS IN CLIMATE VAULT',
     description:
-      'Climate-monitored, tax-free Zurich & Geneva bonded freeport vaults. Fractionalized allocations or whole-chassis custody with biometric retina access protocol and SGS Lloyd underwriting.',
+      'Own fractional shares in rare classic Ferraris and McLarens kept in climate-regulated storage. Diversify with physical assets that have proven historical growth.',
     navAum: '$348,000,000',
-    settlementRail: 'Freeport Bonded Transfer',
-    slaMetric: '100% Climate / Humidity Monitored',
-    custodyAuditor: 'SGS / Lloyds Underwritten',
+    settlementRail: 'Secure Vault Title Transfer',
+    slaMetric: '100% Climate Monitored',
+    custodyAuditor: 'Lloyds Underwritten Insurance',
     icon: Car,
   },
   {
     id: 'vip-cards',
     tabNumber: '06 // PRIVILEGE',
     tabLabel: 'VIP Cards & Escrow',
-    title: 'Sovereign Titanium Concierge & Dynamic Credit Line',
-    badge: 'MASTERCARD WORLD ELITE',
+    title: 'Solid Titanium Card Backed by Your Portfolio',
+    badge: 'WORLDWIDE MASTERCARD',
     description:
-      'Physical solid titanium black cards linked to dynamic portfolio collateral. Instant global liquidity with 0% foreign exchange markups, private jet charters, and fine art escrow.',
+      'Spend your investment balance worldwide with zero foreign transaction fees. Use your portfolio as a flexible line of credit without selling your assets.',
     navAum: '$120,000,000 Line',
-    settlementRail: 'Multi-Currency Real-Time FX',
-    slaMetric: 'Zero FX Overspread',
-    custodyAuditor: 'FCA & BaFin Regulated Rail',
+    settlementRail: 'Instant Global Payments',
+    slaMetric: '0% Foreign Exchange Markup',
+    custodyAuditor: 'Regulated Global Card Rail',
     icon: CreditCard,
   },
   {
     id: 'wallet',
     tabNumber: '07 // TREASURY',
     tabLabel: 'Wallet & Finance',
-    title: 'Consolidated Institutional Multi-Sig MPC Treasury',
-    badge: '24/7 DUAL-SIGNATURE',
+    title: 'Digital Money Wallet for Daily Cash & Transfers',
+    badge: 'MULTI-KEY SECURITY',
     description:
-      'Hierarchical key management with multi-signature policies across Zurich, Singapore, and New York. Instant bridges to Fedwire, SWIFT, SEPA, and institutional crypto exchanges.',
+      'Hold dollars, euros, and pounds in one place. Send money worldwide in seconds with bank-grade multi-signature protection that guarantees you stay in control.',
     navAum: '$1,248,500,000 Cap',
-    settlementRail: 'Fedwire / SWIFT / SEPA / Blockchain',
-    slaMetric: 'Sub-Second Quorum Signing',
+    settlementRail: 'Wire / SWIFT / Instant Bank',
+    slaMetric: 'Under 1-Second Verification',
     custodyAuditor: 'SOC-2 Type II Certified',
     icon: Wallet,
   },
@@ -254,7 +254,7 @@ export const AssetDiscoveryHub: React.FC<AssetDiscoveryHubProps> = ({ activeId }
                 className="bg-surface-container-low p-3.5 rounded-sm border border-outline/20 space-y-1"
               >
                 <div className="font-mono text-[10px] text-outline uppercase tracking-wider">
-                  ALLOCATED VAULT NAV
+                  TOTAL ASSETS TRACKED
                 </div>
                 <div className="font-mono text-base sm:text-lg font-semibold text-on-surface">
                   {activeVertical.navAum}
@@ -270,13 +270,13 @@ export const AssetDiscoveryHub: React.FC<AssetDiscoveryHubProps> = ({ activeId }
                 className="bg-surface-container-low p-3.5 rounded-sm border border-outline/20 space-y-1"
               >
                 <div className="font-mono text-[10px] text-outline uppercase tracking-wider">
-                  SETTLEMENT RAIL
+                  PAYMENT &amp; SETTLEMENT
                 </div>
                 <div className="font-mono text-xs sm:text-sm font-semibold text-on-surface truncate">
                   {activeVertical.settlementRail}
                 </div>
                 <div className="text-[10px] text-on-surface-variant font-mono">
-                  Continuous Ledger
+                  Transparent Transfer
                 </div>
               </motion.div>
 
@@ -286,13 +286,13 @@ export const AssetDiscoveryHub: React.FC<AssetDiscoveryHubProps> = ({ activeId }
                 className="bg-surface-container-low p-3.5 rounded-sm border border-outline/20 space-y-1"
               >
                 <div className="font-mono text-[10px] text-outline uppercase tracking-wider">
-                  SLA / BENCHMARK
+                  TARGET PERFORMANCE
                 </div>
                 <div className="font-mono text-xs sm:text-sm font-semibold text-secondary truncate">
                   {activeVertical.slaMetric}
                 </div>
                 <div className="text-[10px] text-on-surface-variant font-mono">
-                  Audited Metric
+                  Verified Metric
                 </div>
               </motion.div>
 
@@ -302,13 +302,13 @@ export const AssetDiscoveryHub: React.FC<AssetDiscoveryHubProps> = ({ activeId }
                 className="bg-surface-container-low p-3.5 rounded-sm border border-outline/20 space-y-1"
               >
                 <div className="font-mono text-[10px] text-outline uppercase tracking-wider">
-                  LEGAL &amp; CUSTODY PROOF
+                  SECURITY &amp; AUDIT PROOF
                 </div>
                 <div className="font-mono text-xs sm:text-sm font-semibold text-primary truncate">
                   {activeVertical.custodyAuditor}
                 </div>
                 <div className="text-[10px] text-on-surface-variant font-mono">
-                  Enclave Verified
+                  Independently Verified
                 </div>
               </motion.div>
             </div>
@@ -317,7 +317,7 @@ export const AssetDiscoveryHub: React.FC<AssetDiscoveryHubProps> = ({ activeId }
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-outline/20">
               <div className="text-on-surface-variant font-mono text-[11px] flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                <span>DIRECT ENCLAVE ROUTING ACTIVE • HASH: {`#/services/${activeVertical.id}`}</span>
+                <span>DIRECT DASHBOARD VIEW ACTIVE • {`#/services/${activeVertical.id}`}</span>
               </div>
 
               <motion.a
@@ -328,7 +328,7 @@ export const AssetDiscoveryHub: React.FC<AssetDiscoveryHubProps> = ({ activeId }
                 onClick={() => setActiveAssetId(activeVertical.id)}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-sm bg-primary-container text-on-primary-container text-xs uppercase font-bold tracking-wider hover:bg-primary-hover transition-colors shadow-sm"
               >
-                <span>Inspect Full Asset Enclave</span>
+                <span>View Portfolio Service</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </motion.a>
             </div>

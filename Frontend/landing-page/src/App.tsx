@@ -54,8 +54,8 @@ export const App: React.FC = () => {
           {/* Static Title Badge */}
           <div className="flex items-center gap-2 shrink-0 text-primary font-bold uppercase tracking-wider text-[11px] bg-surface-container-low z-10 pr-3 border-r border-outline/30">
             <Activity className="w-3.5 h-3.5 text-secondary animate-pulse shrink-0" />
-            <span className="hidden sm:inline">GLOBAL SYNDICATE FEED</span>
-            <span className="sm:hidden">SYNDICATE</span>
+            <span className="hidden sm:inline">LIVE MARKET RATES</span>
+            <span className="sm:hidden">RATES</span>
           </div>
 
           {/* Marquee Viewport with Left/Right Gradient Fade Masks */}
@@ -123,50 +123,49 @@ export const App: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
                 <span className="font-mono text-[11px] uppercase tracking-widest text-secondary font-semibold">
-                  TERMINAL ONLINE
+                  SYSTEM ACTIVE
                 </span>
               </div>
               <span className="font-mono text-outline select-none">/</span>
               <span className="font-mono text-[11px] text-on-surface-variant truncate">
-                FIX 4.4 STREAM ROUTE: NY4.EQUINIX • MERKLE: 0x8F92...C41A
+                LIVE SECURE STREAM • VERIFIED MERKLE PROOF
               </span>
               <span className="hidden md:inline font-mono text-outline select-none">/</span>
               <span className="hidden md:inline font-mono text-[11px] text-outline">
-                LATENCY: 0.28ms
+                SPEED: 0.28ms
               </span>
             </div>
 
             <div className="flex items-center gap-3">
               <div className="hidden lg:flex items-center gap-2 font-mono text-[10px] text-on-surface-variant bg-surface-container-low px-2.5 py-1 rounded-sm border border-outline/20">
                 <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-                <span>TIER-1 MULTI-CUSTODY AUDITED</span>
+                <span>MULTI-KEY VAULT AUDITED</span>
               </div>
               <a
                 href="#portfolio-simulator"
                 className="px-3 py-1 rounded-sm bg-surface-container hover:bg-surface-container-high text-on-surface font-mono text-[11px] uppercase transition-colors border border-outline/20"
               >
-                Simulator Mode
+                Portfolio Simulator
               </a>
             </div>
           </div>
         </section>
 
-        {/* Section Hero: Eyebrow & Institutional Framing */}
+        {/* Section Hero: Eyebrow & Value Proposition */}
         <section className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-2">
           <div className="space-y-3 max-w-3xl">
             <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-sm bg-surface-container border border-outline/30 font-mono text-[11px] text-primary uppercase tracking-widest">
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
-              <span>[ INTERACTIVE ENGINE // REAL-TIME CROSS-ASSET YIELD MATRIX ]</span>
+              <span>[ SMART ASSET ALLOCATION // REAL-TIME ESTIMATES ]</span>
             </div>
 
             <h1 className="font-headline-xl text-3xl sm:text-4xl text-on-surface font-bold tracking-tight">
-              Institutional Portfolio Simulator &amp; Asset Discovery
+              Smart Multi-Asset Wealth &amp; Digital Money Wallet
             </h1>
 
             <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed">
-              Dynamic cross-collateralized modeling across sovereign bonded hypercars, GPU compute
-              lease clusters, and liquid Swiss multi-asset staking. Programmed for sovereign
-              balance sheets and family office treasuries.
+              Grow and protect your money across stocks, smart AI funds, classic cars, and commercial
+              properties. Model your balance with our interactive calculator, or open an account in minutes.
             </p>
           </div>
 
@@ -174,7 +173,7 @@ export const App: React.FC = () => {
           <div className="flex items-center gap-4 bg-surface-container-low p-3.5 rounded-sm border border-outline/20 self-start md:self-auto shrink-0">
             <div className="space-y-0.5">
               <div className="font-mono text-[10px] text-outline uppercase tracking-wider">
-                AUM Mapped
+                Total Assets Tracked
               </div>
               <div className="font-mono text-lg font-bold text-on-surface">
                 $1.482B
@@ -183,10 +182,10 @@ export const App: React.FC = () => {
             <div className="w-px h-8 bg-surface-container-highest" />
             <div className="space-y-0.5">
               <div className="font-mono text-[10px] text-outline uppercase tracking-wider">
-                Mean 3Y Sharpe
+                Average Annual Return
               </div>
               <div className="font-mono text-lg font-bold text-secondary">
-                2.91
+                14.2%
               </div>
             </div>
           </div>

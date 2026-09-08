@@ -77,10 +77,10 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
             <div className="flex items-center justify-between pb-3 bg-surface-container-lowest/60 px-3.5 py-2 rounded-sm border border-outline/20">
               <span className="text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant flex items-center gap-2 font-mono">
                 <Sliders className="w-3.5 h-3.5 text-primary" />
-                PORTFOLIO CALIBRATION PARAMETERS
+                PORTFOLIO ESTIMATION SETTINGS
               </span>
-              <span className="text-[10px] text-outline font-mono">
-                SLA: 0.04ms NY4 FIX
+              <span className="text-[10px] text-secondary font-mono">
+                REAL-TIME ESTIMATES
               </span>
             </div>
 
@@ -88,7 +88,7 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
             <div className="space-y-3 bg-surface-container p-4 rounded-sm border border-outline/20">
               <div className="flex items-baseline justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-on-surface">
-                  Target Allocation Capital
+                  Your Investment Amount
                 </span>
                 <span
                   data-testid="capital-display"
@@ -146,7 +146,7 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
             <div className="space-y-3 bg-surface-container p-4 rounded-sm border border-outline/20">
               <div className="flex items-baseline justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-on-surface">
-                  Strategy Mandate &amp; Risk Posture
+                  Investment Strategy &amp; Growth Goal
                 </span>
                 <motion.span
                   key={metrics.posture.name}
@@ -173,7 +173,7 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
 
               <div className="grid grid-cols-3 font-mono text-[10px] text-outline gap-1 pt-1">
                 <span className="text-left">
-                  1. Capital Preservation
+                  1. Steady &amp; Safe
                   <br />
                   <span className="text-on-surface-variant font-bold">8.6% Target</span>
                 </span>
@@ -183,7 +183,7 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
                   <span className="text-secondary font-bold">14.2% Target</span>
                 </span>
                 <span className="text-right">
-                  3. Maximum Alpha
+                  3. High Growth
                   <br />
                   <span className="text-primary font-bold">22.4% Target</span>
                 </span>
@@ -192,9 +192,8 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
 
             {/* Micro Fiduciary Description */}
             <p className="text-xs text-on-surface-variant leading-relaxed bg-surface-container-lowest/80 p-3 rounded-sm border border-outline/20">
-              Real-time programmatic cross-collateralization. Yields automatically harvest from
-              Zurich bonded hypercar appreciation, clustered H100 compute GPU revenue, and
-              liquid treasury arbitrage pooled under a single cross-margin vault.
+              See how your money can grow with a diversified portfolio across high-growth stocks,
+              smart automated AI funds, collector cars, and commercial properties.
             </p>
           </div>
 
@@ -313,7 +312,7 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
               className="w-full sm:flex-1 py-3 px-4 rounded-sm bg-primary-container text-on-primary-container text-xs uppercase font-bold tracking-wider hover:bg-primary-hover transition-colors flex items-center justify-center gap-2 shadow-sm"
             >
               <Lock className="w-3.5 h-3.5" />
-              <span>Lock Mandate &amp; Export Simulation (PDF)</span>
+              <span>Save Simulation &amp; Start Investing</span>
             </motion.button>
             <motion.button
               type="button"
@@ -323,7 +322,7 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
               onClick={() => openAuthModal('institutional')}
               className="w-full sm:w-auto py-3 px-4 rounded-sm bg-surface-container-high hover:bg-surface-bright text-on-surface text-xs uppercase font-semibold tracking-wider transition-colors border border-outline/30"
             >
-              <span>Custom Weights</span>
+              <span>Adjust Percentages</span>
             </motion.button>
           </div>
         </div>
