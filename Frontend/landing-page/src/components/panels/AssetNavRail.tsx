@@ -4,19 +4,18 @@ import { useTerminalStore, type AssetVerticalId } from '../../store/useTerminalS
 
 interface AssetTabMeta {
   id: AssetVerticalId;
-  index: string;
   name: string;
   countBadge?: string;
 }
 
 const assetTabsList: AssetTabMeta[] = [
-  { id: 'crypto', index: '01', name: 'CRYPTO INVESTMENT', countBadge: '19.4%' },
-  { id: 'stocks', index: '02', name: 'GLOBAL STOCKS', countBadge: 'DMA' },
-  { id: 'ai-funds', index: '03', name: 'AI SYSTEMATIC FUNDS', countBadge: 'H100' },
-  { id: 'real-estate', index: '04', name: 'REAL ESTATE', countBadge: 'SPV' },
-  { id: 'cars', index: '05', name: 'CARS INVENTORY', countBadge: '38' },
-  { id: 'vip-cards', index: '06', name: 'VIP CARDS', countBadge: 'TITANIUM' },
-  { id: 'wallet', index: '07', name: 'WALLET & MPC', countBadge: 'FIPS' },
+  { id: 'crypto', name: 'CRYPTO INVESTMENT', countBadge: '19.4%' },
+  { id: 'stocks', name: 'GLOBAL STOCKS', countBadge: 'DMA' },
+  { id: 'ai-funds', name: 'AI SYSTEMATIC FUNDS', countBadge: 'H100' },
+  { id: 'real-estate', name: 'REAL ESTATE', countBadge: 'SPV' },
+  { id: 'cars', name: 'CARS INVENTORY', countBadge: '38' },
+  { id: 'vip-cards', name: 'VIP CARDS', countBadge: 'TITANIUM' },
+  { id: 'wallet', name: 'WALLET & MPC', countBadge: 'FIPS' },
 ];
 
 export const AssetNavRail: React.FC = () => {
@@ -51,7 +50,7 @@ export const AssetNavRail: React.FC = () => {
           <span className="text-outline uppercase tracking-wider">INVESTMENT SERVICES</span>
           <span className="text-outline">&rsaquo;</span>
           <span className="text-primary font-bold uppercase tracking-wider bg-surface-container px-2 py-0.5 rounded-sm border border-outline/20">
-            [{currentTab.index}] {currentTab.name}
+           {currentTab.name}
           </span>
         </div>
       </div>
@@ -75,13 +74,6 @@ export const AssetNavRail: React.FC = () => {
                       : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
                   }`}
                 >
-                  <span
-                    className={`font-mono text-[10px] ${
-                      isActive ? 'text-primary' : 'text-outline group-hover:text-primary'
-                    }`}
-                  >
-                    {tab.index}
-                  </span>
                   <span>{tab.name}</span>
                   {tab.countBadge && (
                     <span
