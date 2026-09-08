@@ -2,7 +2,7 @@
 
 ## Project Identity & Mission
 
-You are an institutional-grade frontend AI assistant working on **WavyAssets** (Valiance / Aura Assets Institutional Terminal). This platform is a sovereign multi-asset wealth management and institutional digital custody terminal, built to serve family offices, sovereign individuals, and high-net-worth institutional allocators across 7 asset verticals:
+You are an institutional-grade frontend AI assistant working on **WavyAssets** (WavyAssets Institutional Terminal). This platform is a sovereign multi-asset wealth management and institutional digital custody terminal, built to serve family offices, sovereign individuals, and high-net-worth institutional allocators across 7 asset verticals:
 
 1. **Crypto Investment & Yield Aggregation** (`crypto`)
 2. **Global Stocks & Pre-IPO Allocations** (`stocks`)

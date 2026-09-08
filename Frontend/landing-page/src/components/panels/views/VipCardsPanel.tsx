@@ -8,7 +8,7 @@ export const VipCardsPanel: React.FC = () => {
   const cardTiers = [
     {
       id: 'titanium-black',
-      name: 'Valiance Sovereign Obsidian Titanium',
+      name: 'WavyAssets Sovereign Obsidian Titanium',
       material: 'Solid Grade-5 Laser-Etched Titanium (28g)',
       creditLine: 'Up to $10,000,000 Instant Line',
       collateral: '1:1 Multi-Asset Non-Liquidation Pledge',

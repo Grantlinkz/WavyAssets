@@ -96,7 +96,7 @@ describe('Asset Panels & Unified Auth Modal Integration Suite (SSR / Node 24)', 
     // 6. VIP Cards Panel
     const cardsHtml = renderToString(<VipCardsPanel />);
     expect(cardsHtml).toContain('VIP Concierge &amp; Collateral Metal Cards');
-    expect(cardsHtml).toContain('Valiance Sovereign Obsidian Titanium');
+    expect(cardsHtml).toContain('WavyAssets Sovereign Obsidian Titanium');
     expect(cardsHtml).toContain('0.00% Zero-FX in 140+ Jurisdictions');
 
     // 7. Wallet Panel
@@ -121,7 +121,7 @@ describe('Asset Panels & Unified Auth Modal Integration Suite (SSR / Node 24)', 
 
     expect(html).toContain('data-testid="unified-auth-modal"');
     expect(html).toContain('Institutional Terminal Access');
-    expect(html).toContain('VALIANCE SECURE GATEWAY // FIPS 140-3 LEVEL 4');
+    expect(html).toContain('WavyAssets SECURE GATEWAY // FIPS 140-3 LEVEL 4');
     expect(html).toContain('data-testid="tab-login"');
     expect(html).toContain('data-testid="tab-mandate"');
     expect(html).toContain('data-testid="auth-tier-private"');

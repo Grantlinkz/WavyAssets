@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface BrandLogoProps {
   className?: string;
@@ -6,7 +6,7 @@ interface BrandLogoProps {
 }
 
 export const BrandLogo: React.FC<BrandLogoProps> = ({
-  className = 'h-8 w-auto',
+  className = "h-8 w-auto",
   showSecuredBadge = true,
 }) => {
   return (
@@ -16,7 +16,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         className="h-full w-auto"
-        aria-label="Aura Assets Institutional Logo"
+        aria-label="WavyAssetss Institutional Logo"
       >
         {/* Vault Frame */}
         <rect
@@ -70,7 +70,13 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
             >
               SECURED
             </text>
-            <circle cx="147" cy="13" r="1.5" fill="#00C288" className="animate-pulse" />
+            <circle
+              cx="147"
+              cy="13"
+              r="1.5"
+              fill="#00C288"
+              className="animate-pulse"
+            />
           </g>
         )}
       </svg>

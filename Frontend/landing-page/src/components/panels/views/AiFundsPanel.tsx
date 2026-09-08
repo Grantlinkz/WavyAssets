@@ -28,7 +28,7 @@ export const AiFundsPanel: React.FC = () => {
       id: 'quant-mesh',
       name: 'Systematic High-Frequency Arbitrage Mesh',
       datacenter: 'Equinix NY4 / CME Aurora Cross-Connect',
-      client: 'Valiance Proprietary Quant Syndicate',
+      client: 'WavyAssets Proprietary Quant Syndicate',
       yieldRate: '21.4% Alpha',
       contractValue: '$40.0M Allocation',
       status: 'Real-Time Telemetry',

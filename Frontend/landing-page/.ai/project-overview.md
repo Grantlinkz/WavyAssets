@@ -1,8 +1,8 @@
-# Project Overview — WavyAssets (Valiance / Aura Institutional Terminal)
+# Project Overview — WavyAssets (WavyAssets / Aura Institutional Terminal)
 
 ## Overview
 
-**WavyAssets** (branded as **Valiance** / **Aura Assets Institutional Terminal**) is a high-discretion, sovereign digital wealth management and institutional custody platform. It provides sovereign individuals, family offices, and high-net-worth investors with an institutional-grade command terminal to monitor, allocate, and manage capital across 7 distinct asset classes: **Crypto & Staking Yield**, **Global Stocks & Pre-IPO**, **AI Systematic Funds**, **Real Estate**, **VIP Concierge Cards**, **Exotic Cars & Horology**, and **Digital Custody/Wallet**.
+**WavyAssets** (branded as **WavyAssets** / **WavyAssetss Institutional Terminal**) is a high-discretion, sovereign digital wealth management and institutional custody platform. It provides sovereign individuals, family offices, and high-net-worth investors with an institutional-grade command terminal to monitor, allocate, and manage capital across 7 distinct asset classes: **Crypto & Staking Yield**, **Global Stocks & Pre-IPO**, **AI Systematic Funds**, **Real Estate**, **VIP Concierge Cards**, **Exotic Cars & Horology**, and **Digital Custody/Wallet**.
 
 The platform merges Swiss typographic rigor, physical vault aesthetics, and ultra-high-performance financial terminal ergonomics, featuring real-time WebGL/Three.js 3D visualizers, client-side sub-50ms hash routing, and an interactive portfolio returns simulator.
 
