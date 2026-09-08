@@ -26,12 +26,12 @@ export const TrustInfrastructure: React.FC<TrustInfrastructureProps> = ({ initia
               <span className="inline-block w-2 h-2 rounded-full bg-secondary shadow-sm animate-pulse" />
               <span className="uppercase tracking-widest font-semibold">ENCLAVE ACTIVE</span>
             </div>
-            <span className="text-outline select-none">/</span>
+            <span className="text-outline select-none">•</span>
             <span className="text-on-surface-variant uppercase tracking-wider">
-              INSTITUTIONAL AUDIT PROOF <span className="text-outline">//</span> MERKLE ROOT:{' '}
+              INSTITUTIONAL AUDIT PROOF <span className="text-outline">•</span> MERKLE ROOT:{' '}
               <span className="text-primary font-bold">0x9B41...F73D</span>
             </span>
-            <span className="text-outline hidden lg:inline select-none">/</span>
+            <span className="text-outline hidden lg:inline select-none">•</span>
             <span className="text-on-surface-variant hidden lg:inline uppercase tracking-wider">
               FIPS 140-3 LEVEL 4 HSM CLUSTERS VERIFIED
             </span>
@@ -39,7 +39,7 @@ export const TrustInfrastructure: React.FC<TrustInfrastructureProps> = ({ initia
 
           <div className="flex items-center gap-4 text-outline uppercase tracking-wider">
             <span className="hidden sm:inline">
-              CLEARING NODES: <strong className="text-on-surface font-semibold">BNY MELLON</strong> /{' '}
+              CLEARING PARTNERS: <strong className="text-on-surface font-semibold">BNY MELLON</strong> &amp;{' '}
               <strong className="text-on-surface font-semibold">STATE STREET</strong>
             </span>
             <span className="bg-surface-container px-2 py-0.5 rounded-sm text-primary font-bold border border-outline/20">
@@ -54,7 +54,7 @@ export const TrustInfrastructure: React.FC<TrustInfrastructureProps> = ({ initia
         <div className="space-y-2.5 max-w-3xl">
           <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-sm bg-surface-container border border-outline/30 text-primary font-mono text-[11px] uppercase tracking-widest">
             <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-            <span>[ INSTITUTIONAL VERIFICATION // TRACK RECORD &amp; FIDUCIARY FOOTPRINT ]</span>
+            <span>INSTITUTIONAL VERIFICATION • TRACK RECORD &amp; FIDUCIARY STANDARDS</span>
           </div>
 
           <h2 className="font-headline-xl text-2xl sm:text-3xl text-on-surface tracking-tight font-bold uppercase">
@@ -62,12 +62,12 @@ export const TrustInfrastructure: React.FC<TrustInfrastructureProps> = ({ initia
           </h2>
 
           <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed">
-            Cryptographic proof of reserves, multi-jurisdiction regulatory compliance, and
-            deterministic settlement SLAs across{' '}
+            Independent proof of reserves, multi-jurisdiction regulatory compliance, and guaranteed
+            settlement across{' '}
             <span className="text-primary font-semibold font-mono">
               {trustMode === 'private-wealth' ? '$4.82B' : '$12.40B'}
             </span>{' '}
-            in multi-asset sovereign allocations.
+            in multi-asset allocations.
           </p>
         </div>
 

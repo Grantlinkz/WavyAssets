@@ -162,7 +162,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
             className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-sm bg-surface-container border border-outline hover:border-primary/60 text-xs uppercase font-sans font-semibold tracking-wider hover:text-primary transition-colors"
           >
             <Lock className="w-3.5 h-3.5 text-primary" />
-            <span>Terminal Login</span>
+            <span>Welcome Back</span>
           </button>
 
           <button
@@ -170,7 +170,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
             onClick={() => openAuthModal('institutional')}
             className="inline-flex items-center justify-center px-4 py-1.5 rounded-sm bg-primary-container text-on-primary-container text-xs uppercase font-sans font-bold tracking-wider hover:bg-primary-hover transition-colors shadow-sm"
           >
-            <span>Request Mandate</span>
+            <span>Request Service</span>
           </button>
 
           {/* Mobile Menu Toggle */}
@@ -224,7 +224,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
               className="w-full py-2 rounded-sm bg-surface-container border border-outline text-xs uppercase font-semibold text-on-surface flex items-center justify-center gap-2"
             >
               <Lock className="w-3.5 h-3.5 text-primary" />
-              <span>Terminal Login</span>
+              <span>Welcome Back</span>
             </button>
           </div>
         </div>

@@ -27,28 +27,26 @@ export const InstitutionalFooter: React.FC = () => {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <BrandLogo className="h-7 w-auto text-primary" />
-              <span className="font-serif font-bold text-sm tracking-widest text-on-surface">
-                
-              </span>
+              
             </div>
 
             <p className="font-sans text-xs text-on-surface-variant leading-relaxed">
-              Transparent multi-asset investing, secure custody, and automated
+              WAVYASSETS provides transparent multi-asset investing, secure custody, and automated
               portfolio growth across 7 asset classes for smart modern investors.
             </p>
 
             <div className="space-y-1.5 pt-1">
               <div className="font-mono text-[10px] px-2 py-1 rounded-sm bg-surface-container border border-outline/20 text-on-surface-variant flex items-center gap-1.5">
                 <ShieldCheck className="w-3 h-3 text-primary shrink-0" />
-                <span>SEC REGISTERED RIA (#801-128491)</span>
+                <span>SEC REGISTERED RIA 801-128491</span>
               </div>
               <div className="font-mono text-[10px] px-2 py-1 rounded-sm bg-surface-container border border-outline/20 text-on-surface-variant flex items-center gap-1.5">
                 <ShieldCheck className="w-3 h-3 text-secondary shrink-0" />
-                <span>FINMA REGULATED VQF (SWITZERLAND)</span>
+                <span>FINMA REGULATED VQF SWITZERLAND</span>
               </div>
               <div className="font-mono text-[10px] px-2 py-1 rounded-sm bg-surface-container border border-outline/20 text-on-surface-variant flex items-center gap-1.5">
                 <ShieldCheck className="w-3 h-3 text-primary shrink-0" />
-                <span>MAS EXEMPT INSTITUTIONAL OPERATOR</span>
+                <span>MAS EXEMPT OPERATOR</span>
               </div>
             </div>
           </div>
@@ -56,7 +54,7 @@ export const InstitutionalFooter: React.FC = () => {
           {/* Col 2: Asset Verticals (7 Classes) */}
           <div className="space-y-3">
             <div className="font-sans text-xs text-primary uppercase tracking-widest font-bold">
-              Asset Verticals (7 Classes)
+              Investment Services
             </div>
             <ul className="space-y-2 font-sans text-xs text-on-surface-variant">
               <li>
@@ -131,21 +129,21 @@ export const InstitutionalFooter: React.FC = () => {
           {/* Col 3: Institutional Protocol */}
           <div className="space-y-3">
             <div className="font-sans text-xs text-primary uppercase tracking-widest font-bold">
-              Institutional Protocol
+              Security &amp; Protocol
             </div>
             <ul className="space-y-2 font-sans text-xs text-on-surface-variant">
               <li className="hover:text-on-surface transition-colors cursor-pointer">
                 Cold Enclave MPC Custody
               </li>
               <li className="hover:text-on-surface transition-colors cursor-pointer flex items-center justify-between">
-                <span>Proof of Reserves (Hourly Merkle)</span>
+                <span>Proof of Reserves Hourly Attestation</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
               </li>
               <li className="hover:text-on-surface transition-colors cursor-pointer">
                 Audited Return Methodologies
               </li>
               <li className="hover:text-on-surface transition-colors cursor-pointer">
-                FIX 4.4 / REST API Documentation
+                Institutional REST API Documentation
               </li>
               <li className="hover:text-on-surface transition-colors cursor-pointer">
                 Direct Market Access (DMA) Routing
@@ -169,7 +167,7 @@ export const InstitutionalFooter: React.FC = () => {
                 Institutional Custody Agreement
               </li>
               <li className="hover:text-on-surface transition-colors cursor-pointer">
-                Anti-Money Laundering (AML/KYC)
+                Anti-Money Laundering &amp; KYC
               </li>
               <li className="hover:text-on-surface transition-colors cursor-pointer">
                 Form ADV Part 2A Disclosures
@@ -197,7 +195,7 @@ export const InstitutionalFooter: React.FC = () => {
               <strong className="text-on-surface font-semibold">
                 REGULATORY DISCLOSURES &amp; FIDUCIARY GOVERNANCE:
               </strong>{" "}
-              WavyAssets / WavyAssetss LLC is an investment adviser registered
+              WavyAssets  is an investment adviser registered
               with the U.S. Securities and Exchange Commission (SEC CRD
               #801-128491). SEC registration does not imply a certain level of
               skill or training. Custodial clearing and execution services are
@@ -237,11 +235,11 @@ export const InstitutionalFooter: React.FC = () => {
               </span>
               <span>&bull;</span>
               <span className="hover:text-on-surface transition-colors cursor-pointer">
-                GDPR / FADP Compliant
+                GDPR &amp; FADP Compliant
               </span>
               <span>&bull;</span>
               <span className="hover:text-on-surface transition-colors cursor-pointer">
-                FIX 4.4 Engine Rev 8.4
+                Institutional Order Engine
               </span>
             </div>
           </div>

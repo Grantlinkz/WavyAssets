@@ -127,17 +127,14 @@ export const ClientVoices: React.FC<ClientVoicesProps> = ({ initialTrustMode }) 
         <div>
           <div className="inline-flex items-center gap-2 font-mono text-[11px] text-primary uppercase tracking-widest mb-1.5">
             <Sparkles className="w-3.5 h-3.5 text-primary" />
-            <span>[ VERIFIED ALLOCATOR ENDORSEMENTS // CLIENT VOICES ]</span>
+            <span>VERIFIED INVESTOR REVIEWS • CLIENT VOICES</span>
           </div>
           <h3 className="font-headline-lg text-2xl sm:text-3xl text-on-surface uppercase tracking-tight font-bold">
-            Sovereign Syndicate Testimonials
+            Investor Testimonials
           </h3>
         </div>
 
-        <p className="text-xs sm:text-sm text-on-surface-variant max-w-md leading-relaxed">
-          Verified institutional executions across sovereign family offices, quant algorithmic
-          desks, and international treasuries.
-        </p>
+        
       </div>
 
       {/* Testimonial Cards 3D Specular Grid */}

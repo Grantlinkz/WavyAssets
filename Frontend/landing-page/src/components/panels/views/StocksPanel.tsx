@@ -56,7 +56,7 @@ export const StocksPanel: React.FC = () => {
           <div className="lg:col-span-7 space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <span className="px-2 py-0.5 bg-surface-container-high text-primary font-mono text-[10px] uppercase tracking-widest rounded-sm border border-outline/20">
-                [ INVEST IN STOCKS ONLINE // PRE-IPO EQUITIES ]
+                INVEST IN STOCKS ONLINE • PRE-IPO EQUITIES
               </span>
               <span className="px-2 py-0.5 bg-secondary/15 text-secondary font-mono text-[10px] uppercase tracking-wider rounded-sm flex items-center gap-1 border border-secondary/20">
                 <span className="h-1.5 w-1.5 rounded-full bg-secondary" />

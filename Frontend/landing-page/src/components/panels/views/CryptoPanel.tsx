@@ -8,7 +8,7 @@ export const CryptoPanel: React.FC = () => {
   const yieldStreams = [
     {
       id: 'btc-basis',
-      name: 'BTC Institutional Basis Arbitrage (CME vs Spot)',
+      name: 'Bitcoin Basis Growth Yield Account',
       apy: '14.8% APY',
       tvl: '$320.0M',
       risk: 'Ultra Low Risk',
@@ -16,7 +16,7 @@ export const CryptoPanel: React.FC = () => {
     },
     {
       id: 'eth-lst',
-      name: 'ETH Layer-1 Validator & EigenLayer Restaking',
+      name: 'Ethereum Staking & Security Rewards',
       apy: '9.2% APY',
       tvl: '$280.0M',
       risk: 'Principal Protected',
@@ -24,7 +24,7 @@ export const CryptoPanel: React.FC = () => {
     },
     {
       id: 'sol-mev',
-      name: 'SOL Institutional MEV Engine & Jito Sol Vault',
+      name: 'Solana High-Performance Staking',
       apy: '18.6% APY',
       tvl: '$140.0M',
       risk: 'Automated Rules',
@@ -32,7 +32,7 @@ export const CryptoPanel: React.FC = () => {
     },
     {
       id: 'quant-yield',
-      name: 'Multi-Asset Cross-Exchange Market Neutral Spread',
+      name: 'Multi-Asset Market-Neutral Yield',
       apy: '24.5% APY',
       tvl: '$200.5M',
       risk: 'Instant Settlement',
@@ -48,7 +48,7 @@ export const CryptoPanel: React.FC = () => {
           <div className="lg:col-span-7 space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <span className="px-2 py-0.5 bg-surface-container-high text-primary font-mono text-[10px] uppercase tracking-widest rounded-sm border border-outline/20">
-                [ SECURE CRYPTO VAULT // PREDICTABLE YIELDS ]
+                SECURE CRYPTO VAULT • PREDICTABLE YIELDS
               </span>
               <span className="px-2 py-0.5 bg-secondary/15 text-secondary font-mono text-[10px] uppercase tracking-wider rounded-sm flex items-center gap-1 border border-secondary/20">
                 <span className="h-1.5 w-1.5 rounded-full bg-secondary" />
@@ -66,7 +66,7 @@ export const CryptoPanel: React.FC = () => {
             </p>
 
             <div className="text-[11px] font-mono text-outline">
-              Strategy Category: <span className="text-on-surface font-semibold">Crypto Yield &amp; Algorithmic Execution</span>
+              Strategy Category: <span className="text-on-surface font-semibold">Crypto Yield &amp; Smart Automated Rules</span>
             </div>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">

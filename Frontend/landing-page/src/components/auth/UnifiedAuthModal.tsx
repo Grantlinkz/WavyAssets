@@ -174,7 +174,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
                   : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
-              Request Mandate
+              Request Service
             </button>
           </div>
 

@@ -156,7 +156,7 @@ export const App: React.FC = () => {
           <div className="space-y-3 max-w-3xl">
             <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-sm bg-surface-container border border-outline/30 font-mono text-[11px] text-primary uppercase tracking-widest">
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
-              <span>[ SMART ASSET ALLOCATION // REAL-TIME ESTIMATES ]</span>
+              <span>SMART ASSET ALLOCATION • REAL-TIME ESTIMATES</span>
             </div>
 
             <h1 className="font-headline-xl text-3xl sm:text-4xl text-on-surface font-bold tracking-tight">

@@ -16,7 +16,7 @@ export const trustMetricsData: Record<TrustMode, TrustMetricItem[]> = {
     {
       id: 'aum',
       label: 'Cross-Asset AUM',
-      badge: '[ VERIFIED // DELOITTE Q4 ]',
+      badge: 'VERIFIED BY DELOITTE',
       badgeType: 'emerald',
       value: '$4.82B',
       subtitle: 'Audited Cumulative Assets',
@@ -26,7 +26,7 @@ export const trustMetricsData: Record<TrustMode, TrustMetricItem[]> = {
     {
       id: 'uptime',
       label: 'Custody Uptime',
-      badge: '[ SOC2 TYPE II CERTIFIED ]',
+      badge: 'SOC2 TYPE II CERTIFIED',
       badgeType: 'gold',
       value: '99.998%',
       subtitle: 'Hardware Enclave Availability',
@@ -36,7 +36,7 @@ export const trustMetricsData: Record<TrustMode, TrustMetricItem[]> = {
     {
       id: 'reserves',
       label: 'Proof of Reserves',
-      badge: '[ REAL-TIME MERKLE PROOF ]',
+      badge: 'REAL-TIME MERKLE PROOF',
       badgeType: 'emerald',
       value: '100%',
       subtitle: 'Hourly Merkle Leaf Attestation',
@@ -46,7 +46,7 @@ export const trustMetricsData: Record<TrustMode, TrustMetricItem[]> = {
     {
       id: 'breaches',
       label: 'Security Breaches',
-      badge: "[ LLOYD'S UNDERWRITTEN ]",
+      badge: "LLOYD'S UNDERWRITTEN",
       badgeType: 'gold',
       value: '0',
       subtitle: 'Since Inception (2018)',
@@ -58,7 +58,7 @@ export const trustMetricsData: Record<TrustMode, TrustMetricItem[]> = {
     {
       id: 'aum',
       label: 'Cross-Asset AUM',
-      badge: '[ VERIFIED // DELOITTE Q4 ]',
+      badge: 'VERIFIED BY DELOITTE',
       badgeType: 'emerald',
       value: '$12.40B',
       subtitle: 'Institutional & Sovereign Balance Sheets',
@@ -68,7 +68,7 @@ export const trustMetricsData: Record<TrustMode, TrustMetricItem[]> = {
     {
       id: 'uptime',
       label: 'Custody Uptime',
-      badge: '[ SOC2 TYPE II CERTIFIED ]',
+      badge: 'SOC2 TYPE II CERTIFIED',
       badgeType: 'gold',
       value: '99.999%',
       subtitle: 'FIPS 140-3 Enclave Zero-Downtime SLA',
@@ -78,7 +78,7 @@ export const trustMetricsData: Record<TrustMode, TrustMetricItem[]> = {
     {
       id: 'reserves',
       label: 'Proof of Reserves',
-      badge: '[ REAL-TIME MERKLE PROOF ]',
+      badge: 'REAL-TIME MERKLE PROOF',
       badgeType: 'emerald',
       value: '100%',
       subtitle: 'Sub-Minute Merkle Attestation',
@@ -88,7 +88,7 @@ export const trustMetricsData: Record<TrustMode, TrustMetricItem[]> = {
     {
       id: 'breaches',
       label: 'Security Breaches',
-      badge: "[ LLOYD'S UNDERWRITTEN ]",
+      badge: "LLOYD'S UNDERWRITTEN",
       badgeType: 'gold',
       value: '0',
       subtitle: 'Zero Incidents Since Inception (2018)',

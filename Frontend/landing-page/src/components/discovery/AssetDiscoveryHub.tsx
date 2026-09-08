@@ -34,7 +34,7 @@ interface DiscoveryVertical {
 const DISCOVERY_VERTICALS: DiscoveryVertical[] = [
   {
     id: 'crypto',
-    tabNumber: '01 // CRYPTO',
+    tabNumber: ' • CRYPTO',
     tabLabel: 'Crypto Investment',
     title: 'Simple Crypto Investing & Insured Vault Storage',
     badge: 'OFFLINE COLD STORAGE',
@@ -48,7 +48,7 @@ const DISCOVERY_VERTICALS: DiscoveryVertical[] = [
   },
   {
     id: 'stocks',
-    tabNumber: '02 // EQUITIES',
+    tabNumber: ' • EQUITIES',
     tabLabel: 'Global Stocks',
     title: 'Invest in Stocks Online & Pre-IPO Shares',
     badge: '42 GLOBAL EXCHANGES',
@@ -62,7 +62,7 @@ const DISCOVERY_VERTICALS: DiscoveryVertical[] = [
   },
   {
     id: 'ai-funds',
-    tabNumber: '03 // COMPUTE',
+    tabNumber: ' • COMPUTE',
     tabLabel: 'AI Systematic Funds',
     title: 'Smart Automated Investing Backed by AI Hardware',
     badge: '12,400 GPUS LEASED',
@@ -76,7 +76,7 @@ const DISCOVERY_VERTICALS: DiscoveryVertical[] = [
   },
   {
     id: 'real-estate',
-    tabNumber: '04 // ESTATES',
+    tabNumber: ' • ESTATES',
     tabLabel: 'Real Estate',
     title: 'Prime Commercial Property Shares & Rental Income',
     badge: 'NOTARIZED PROPERTY TITLE',
@@ -85,12 +85,12 @@ const DISCOVERY_VERTICALS: DiscoveryVertical[] = [
     navAum: '$485,000,000',
     settlementRail: 'Quarterly Rental Payout',
     slaMetric: '6.4% Net Annual Return',
-    custodyAuditor: 'PwC / Land Registry Certified',
+    custodyAuditor: 'PwC & Land Registry Certified',
     icon: Building2,
   },
   {
     id: 'cars',
-    tabNumber: '05 // DEPOSITORY',
+    tabNumber: ' • DEPOSITORY',
     tabLabel: 'Cars Inventory',
     title: 'Browse & Invest in Collector Cars',
     badge: '38 CARS IN CLIMATE VAULT',
@@ -104,7 +104,7 @@ const DISCOVERY_VERTICALS: DiscoveryVertical[] = [
   },
   {
     id: 'vip-cards',
-    tabNumber: '06 // PRIVILEGE',
+    tabNumber: ' • PRIVILEGE',
     tabLabel: 'VIP Cards & Escrow',
     title: 'Solid Titanium Card Backed by Your Portfolio',
     badge: 'WORLDWIDE MASTERCARD',
@@ -118,14 +118,14 @@ const DISCOVERY_VERTICALS: DiscoveryVertical[] = [
   },
   {
     id: 'wallet',
-    tabNumber: '07 // TREASURY',
+    tabNumber: ' • TREASURY',
     tabLabel: 'Wallet & Finance',
     title: 'Digital Money Wallet for Daily Cash & Transfers',
     badge: 'MULTI-KEY SECURITY',
     description:
       'Hold dollars, euros, and pounds in one place. Send money worldwide in seconds with bank-grade multi-signature protection that guarantees you stay in control.',
     navAum: '$1,248,500,000 Cap',
-    settlementRail: 'Wire / SWIFT / Instant Bank',
+    settlementRail: 'Wire, SWIFT & Instant Bank',
     slaMetric: 'Under 1-Second Verification',
     custodyAuditor: 'SOC-2 Type II Certified',
     icon: Wallet,
@@ -157,11 +157,11 @@ export const AssetDiscoveryHub: React.FC<AssetDiscoveryHubProps> = ({ activeId }
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-outline/30 pb-3">
         <div className="font-mono text-[11px] text-outline uppercase tracking-widest flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-          <span>[ DISCOVERY VERTICALS // VERIFIED PHYSICAL &amp; DIGITAL VAULTS ]</span>
+          <span>DISCOVERY VERTICALS • VERIFIED ASSET VAULTS</span>
         </div>
         <div className="font-mono text-[11px] text-secondary flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
-          <span>7 VAULT CLASSES ONLINE</span>
+          <span>ALL ONLINE</span>
         </div>
       </div>
 
