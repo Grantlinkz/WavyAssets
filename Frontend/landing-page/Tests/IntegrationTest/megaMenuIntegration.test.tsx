@@ -45,7 +45,7 @@ describe('GlobalHeader & ServicesMegaMenu Integration (Node 24 Engine)', () => {
     const html = renderToString(<ServicesMegaMenu isOpen={true} category="all" />);
 
     // Header context and enclaves
-    expect(html).toContain('7 ACTIVE ENCLAVES');
+    expect(html).toContain('ACTIVE ENCLAVES');
     expect(html).toContain('Sovereign Multi-Asset Custody');
     expect(html).toContain('MERKLE PROOFS: HOURLY');
     expect(html).toContain('FIPS 140-3 HSM VERIFIED');

@@ -8,7 +8,7 @@ interface CategoryTab {
 }
 
 const CATEGORIES: CategoryTab[] = [
-  { id: 'all', label: 'All Verticals (7)' },
+  { id: 'all', label: 'All ACTIVE' },
   { id: 'liquid-digital', label: 'Liquid Digital' },
   { id: 'dma-equities', label: 'DMA Equities' },
   { id: 'physical-vaults', label: 'Physical Vaults' },
@@ -46,11 +46,7 @@ export const CategoryFilter: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 text-outline font-mono text-[10px] w-full sm:w-auto justify-end">
-        <span className="bg-surface-container-high px-2 py-0.5 rounded-sm text-on-surface-variant font-mono">
-          HOTKEY: ESC TO DISMISS
-        </span>
-      </div>
+     
     </div>
   );
 };

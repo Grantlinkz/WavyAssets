@@ -214,7 +214,7 @@ export const ServicesMegaMenu: React.FC<ServicesMegaMenuProps> = ({
                   </span>
                 </div>
                 <span className="font-mono text-[10px] px-2.5 py-0.5 rounded-sm bg-primary/20 text-primary border border-primary/30 font-semibold">
-                  7 ACTIVE ENCLAVES
+                  ACTIVE ENCLAVES
                 </span>
               </div>
 
