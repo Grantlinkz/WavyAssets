@@ -194,7 +194,7 @@ export const ServicesMegaMenu: React.FC<ServicesMegaMenuProps> = ({
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.18, ease: 'easeOut' }}
-      className="w-full absolute top-16 left-0 right-0 z-40 px-4 sm:px-6 pt-2 pb-6"
+      className="w-full fixed top-16 left-0 right-0 z-40 px-4 sm:px-6 pt-2 pb-6 max-h-[calc(100vh-4.5rem)] overflow-y-auto custom-scrollbar"
       data-testid="services-mega-menu"
     >
       <div
