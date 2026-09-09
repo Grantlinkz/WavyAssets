@@ -66,15 +66,7 @@ export const AssetNavRail: React.FC = () => {
             })}
           </div>
 
-          {/* Right Mode Filter Controls */}
-          <div className="flex items-center gap-1.5 pb-2 lg:pb-0 shrink-0 font-mono text-[10px]">
-            <span className="px-2.5 py-1 bg-surface-container-highest text-primary rounded-sm font-semibold tracking-wider">
-              DIRECT ALLOCATION
-            </span>
-            <span className="px-2.5 py-1 bg-surface-container text-outline rounded-sm tracking-wider hidden sm:inline-block">
-              100% MERKLE BACKED
-            </span>
-          </div>
+          
         </div>
       </div>
     </div>

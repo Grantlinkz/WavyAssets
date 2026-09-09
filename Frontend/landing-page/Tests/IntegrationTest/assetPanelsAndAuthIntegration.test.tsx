@@ -39,8 +39,6 @@ describe('Asset Panels & Unified Auth Modal Integration Suite (SSR / Node 24)', 
     expect(html).toContain('VIP CARDS');
     expect(html).toContain('WALLET &amp; MPC');
 
-    expect(html).toContain('DIRECT ALLOCATION');
-    expect(html).toContain('100% MERKLE BACKED');
   });
 
   it('renders AssetContainer enforcing locked min-height: 540px to eliminate CLS', () => {

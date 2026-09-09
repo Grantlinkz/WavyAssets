@@ -120,7 +120,7 @@ export const testimonialsData: Record<TrustMode, TestimonialItem[]> = {
       badgeType: 'emerald',
       identifier: 'FO-ZUR-091',
       quote:
-        '“Aura solved what Swiss private banks could not: programmatic cross-collateralization between our Geneva Freeport hypercar allocations and tokenized Zurich real estate, yielding continuous liquidity without tax liquidation events.”',
+        '“WAVY solved what Swiss private banks could not: programmatic cross-collateralization between our Geneva Freeport hypercar allocations and tokenized Zurich real estate, yielding continuous liquidity without tax liquidation events.”',
       initials: 'AK',
       name: 'Alexander Koenig',
       role: 'Principal, Koenig Family Office',

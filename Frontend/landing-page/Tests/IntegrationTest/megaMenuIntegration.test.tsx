@@ -19,7 +19,7 @@ describe('GlobalHeader & ServicesMegaMenu Integration (Node 24 Engine)', () => {
     const html = renderToString(<GlobalHeader />);
 
     // Brand
-    expect(html).toContain('AURA');
+    expect(html).toContain('WAVY');
     expect(html).toContain('ASSETS');
 
     // Navigation links

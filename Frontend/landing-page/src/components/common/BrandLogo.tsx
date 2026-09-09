@@ -46,7 +46,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
           className="fill-on-surface font-sans font-bold tracking-[0.1em]"
           fontSize="15"
         >
-          AURA
+          WAVY
         </text>
         <text
           x="88"

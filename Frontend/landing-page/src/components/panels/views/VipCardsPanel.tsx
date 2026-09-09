@@ -18,7 +18,7 @@ export const VipCardsPanel: React.FC = () => {
     },
     {
       id: 'pure-gold',
-      name: 'Aura 18K Solid Gold Fiduciary Card',
+      name: 'WAVY 18K Solid Gold Fiduciary Card',
       material: 'Hand-Milled 18K Yellow Gold with NFC Core',
       creditLine: 'Up to $25,000,000 Sovereign Line',
       collateral: 'Direct Geneva Freeport Vault Lien',
