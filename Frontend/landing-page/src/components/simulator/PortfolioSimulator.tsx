@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Sliders, Lock } from 'lucide-react';
 import { useTerminalStore } from '../../store/useTerminalStore';
 import { calculatePortfolioMetrics } from '../../lib/calculator';
@@ -51,6 +51,7 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
     setMousePos((prev) => ({ ...prev, active: false }));
   }, []);
 
+  const shouldReduceMotion = useReducedMotion();
   const metrics = calculatePortfolioMetrics(capital, aggressiveness);
 
   return (
@@ -70,8 +71,16 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
       )}
 
       <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Sliders & Allocation Parameters */}
-        <div className="lg:col-span-6 flex flex-col justify-between space-y-6">
+        {/* Left Column: Sliders & Allocation Parameters (Animates from Left) */}
+        <motion.div
+          data-testid="simulator-left-column"
+          initial={{ opacity: 0, x: shouldReduceMotion ? 0 : -80 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
+          style={{ willChange: 'transform, opacity' }}
+          className="lg:col-span-6 flex flex-col justify-between space-y-6"
+        >
           <div className="space-y-6">
             {/* Header / Parameter Bar */}
             <div className="flex items-center justify-between pb-3 bg-surface-container-lowest/60 px-3.5 py-2 rounded-sm border border-outline/20">
@@ -218,10 +227,22 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Right Column: Visual Return Matrix & SVG Donut */}
-        <div className="lg:col-span-6 bg-surface-container p-6 rounded-md flex flex-col justify-between space-y-6 border border-outline/20">
+        {/* Right Column: Visual Return Matrix & SVG Donut (Animates from Right) */}
+        <motion.div
+          data-testid="simulator-right-column"
+          initial={{ opacity: 0, x: shouldReduceMotion ? 0 : 80 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{
+            duration: 0.85,
+            delay: shouldReduceMotion ? 0 : 0.1,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+          style={{ willChange: 'transform, opacity' }}
+          className="lg:col-span-6 bg-surface-container p-6 rounded-md flex flex-col justify-between space-y-6 border border-outline/20"
+        >
           <div>
             <div className="flex items-center justify-between pb-3 bg-surface-container-low px-3 py-2 rounded-sm border border-outline/20">
               <span className="text-[11px] font-semibold uppercase tracking-widest text-on-surface">
@@ -325,7 +346,7 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
               <span>Adjust Investment Mix</span>
             </motion.button>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

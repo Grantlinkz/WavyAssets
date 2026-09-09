@@ -122,6 +122,8 @@
 - Stripped all enclosing card borders, metric strips, and HUD badges to present a clean, pure 3D floating visual effect integrated seamlessly into the hero section.
 - Built kinetic typography entrance effect (`KineticHeroTypography.tsx`) with word-by-word horizontal expansion, vertical slide (`translateY: 30px -> 0px`), Gaussian blur-to-clarity transition (`blur(14px) -> blur(0px)`), and custom cubic bezier easing curve (`[0.22, 1, 0.36, 1]`).
 - Established integration test suite in `Tests/IntegrationTest/hero3DAndTypographyIntegration.test.tsx` verifying SSR rendering, pure 3D viewport mounting, and zero CLS parity (74/74 tests passing across 15 test suites).
+- Implemented smooth opposing horizontal entrance animations for `PortfolioSimulator.tsx`: the Left Column (`PORTFOLIO ESTIMATION SETTINGS`, sliders, protocol chips) slides in from the left (`x: -80 -> 0`, `opacity: 0 -> 1`), while the Right Column (`PORTFOLIO BREAKDOWN & ESTIMATED RETURN`, 3D donut chart, returns, risk matrix, CTAs) slides in from the right (`x: 80 -> 0`, `opacity: 0 -> 1`) with Framer Motion viewport triggers (`amount: 0.2`, `once: true`), GPU `willChange` acceleration, and `useReducedMotion()` accessibility fallback.
+- Enhanced `Tests/IntegrationTest/simulatorIntegration.test.tsx` with assertions verifying both `simulator-left-column` and `simulator-right-column` render with zero layout shift (74/74 tests passing across 15 test suites).
 
 ---
 
