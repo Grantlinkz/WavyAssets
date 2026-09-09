@@ -60,12 +60,13 @@ describe('GlobalHeader & ServicesMegaMenu Integration (Node 24 Engine)', () => {
     expect(html).toContain('VIP Titanium Concierge Cards');
     expect(html).toContain('Sovereign Wallet &amp; Core Global Finance');
 
-    // Telemetry and diagnostics panel
-    expect(html).toContain('ACTIVE VERTICAL DIAGNOSTICS');
+    // Telemetry and diagnostics panel (Plain English)
+    expect(html).toContain('VAULT HEALTH &amp; PLATFORM STATUS');
     expect(html).toContain('$1,248,500,000');
-    expect(html).toContain('0.038ms MEAN TICK');
-    expect(html).toContain('Zurich (ZUR-01), NY4, SG1');
-    expect(html).toContain('Download Asset Class Mandate');
+    expect(html).toContain('Execution Speed:');
+    expect(html).toContain('Zurich, New York, Singapore');
+    expect(html).toContain('Download Safety &amp; Custody Guide');
+    expect(html).toContain('fixed top-16');
   });
 
   it('filters asset verticals by active category selection', () => {

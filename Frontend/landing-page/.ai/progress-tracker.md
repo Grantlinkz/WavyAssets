@@ -116,6 +116,8 @@
 - Made Services MegaMenu asset cards grid scrollable (`max-h-[60vh] sm:max-h-[520px] overflow-y-auto pr-1.5 custom-scrollbar`) so all 7 asset classes (Crypto, Stocks, AI Funds, Real Estate, Cars, VIP Cards, and Wallet) are fully accessible on any viewport height without clipping.
 - Fixed dark mode font color scheme in `InstitutionalFooter.tsx`: replaced low-contrast `text-outline` on disclaimers, `<p>` paragraphs, and compliance links with high-contrast `text-on-surface-variant` (`text-neutral-300` / `text-neutral-400` in dark mode) without modifying the dark mode wave background palette.
 - Restored missing `19.4% APY` badge on Crypto Yields in `InstitutionalFooter.tsx`, achieving 100% pass rate across 14 test suites (68/68 passing tests).
+- Rewrote `MegaMenuDiagnostics.tsx` in plain English per Fintech UX Content Strategy: upgraded headers, reserve capacity metrics, vault hubs, instant execution speed, reserve backing, and action buttons with high-contrast text tokens.
+- Fixed Services MegaMenu scroll glitch by transitioning from `absolute top-16` to `fixed top-16 left-0 right-0 z-40 max-h-[calc(100vh-4.5rem)] overflow-y-auto`, ensuring the menu is docked directly beneath the sticky header in the active viewport when opened after scrolling down.
 
 ---
 
