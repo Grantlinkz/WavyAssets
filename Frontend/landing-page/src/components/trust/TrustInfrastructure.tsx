@@ -18,37 +18,6 @@ export const TrustInfrastructure: React.FC<TrustInfrastructureProps> = ({ initia
 
   return (
     <div className="w-full space-y-6" data-testid="trust-infrastructure-section">
-      {/* 1. Top Live Protocol Status Bar */}
-      <div className="w-full bg-surface-container-lowest py-2.5 px-4 sm:px-6 rounded-sm border border-outline/30 shadow-sm">
-        <div className="w-full flex flex-col md:flex-row items-start md:items-center justify-between gap-3 font-mono text-[11px]">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-1.5 text-secondary">
-              <span className="inline-block w-2 h-2 rounded-full bg-secondary shadow-sm animate-pulse" />
-              <span className="uppercase tracking-widest font-semibold">ENCLAVE ACTIVE</span>
-            </div>
-            <span className="text-outline select-none">•</span>
-            <span className="text-on-surface-variant uppercase tracking-wider">
-              INSTITUTIONAL AUDIT PROOF <span className="text-outline">•</span> MERKLE ROOT:{' '}
-              <span className="text-primary font-bold">0x9B41...F73D</span>
-            </span>
-            <span className="text-outline hidden lg:inline select-none">•</span>
-            <span className="text-on-surface-variant hidden lg:inline uppercase tracking-wider">
-              FIPS 140-3 LEVEL 4 HSM CLUSTERS VERIFIED
-            </span>
-          </div>
-
-          <div className="flex items-center gap-4 text-outline uppercase tracking-wider">
-            <span className="hidden sm:inline">
-              CLEARING PARTNERS: <strong className="text-on-surface font-semibold">BNY MELLON</strong> &amp;{' '}
-              <strong className="text-on-surface font-semibold">STATE STREET</strong>
-            </span>
-            <span className="bg-surface-container px-2 py-0.5 rounded-sm text-primary font-bold border border-outline/20">
-              LATENCY: 0.042ms
-            </span>
-          </div>
-        </div>
-      </div>
-
       {/* 2. Header & Tier Switcher Section */}
       <div className="w-full flex flex-col lg:flex-row lg:items-end justify-between gap-6 pt-2 pb-2">
         <div className="space-y-2.5 max-w-3xl">

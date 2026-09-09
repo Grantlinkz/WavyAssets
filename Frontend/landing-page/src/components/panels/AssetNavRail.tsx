@@ -19,44 +19,12 @@ const assetTabsList: AssetTabMeta[] = [
 ];
 
 export const AssetNavRail: React.FC = () => {
-  const { activeAssetId, setActiveAssetId, telemetry } = useTerminalStore();
-  const currentTab = assetTabsList.find((t) => t.id === activeAssetId) || assetTabsList[0];
+  const { activeAssetId, setActiveAssetId } = useTerminalStore();
 
   return (
     <div className="w-full space-y-0" data-testid="asset-nav-rail">
-      {/* 1. Protocol Sub-Header & Live Feed Bar */}
-      <div className="w-full bg-surface-container-lowest px-4 sm:px-6 py-2.5 rounded-t-sm border-t border-x border-outline/30 flex flex-col xl:flex-row xl:items-center justify-between gap-2 text-[11px] font-mono">
-        <div className="flex items-center gap-3 overflow-x-auto whitespace-nowrap scrollbar-none">
-          <span className="flex items-center gap-1.5 uppercase text-primary font-bold tracking-widest shrink-0">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-            LIVE RUNTIME
-          </span>
-          <span className="text-outline select-none">/</span>
-          <span className="text-on-surface-variant tracking-wider truncate">
-            SYSTEM ACTIVE <span className="text-outline mx-1">//</span> PROTOCOL FIX 4.4{' '}
-            <span className="text-outline mx-1">//</span> VAULT SYNC: 100%{' '}
-            <span className="text-outline mx-1">//</span> SPEED:{' '}
-            <span className="text-secondary font-bold">
-              {telemetry.lastSwitchDurationMs > 0
-                ? `${telemetry.lastSwitchDurationMs}ms`
-                : '0.04ms'}
-            </span>
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2 text-on-surface-variant shrink-0">
-          <span className="text-outline uppercase tracking-wider">WAVY ASSETS</span>
-          <span className="text-outline">&rsaquo;</span>
-          <span className="text-outline uppercase tracking-wider">INVESTMENT SERVICES</span>
-          <span className="text-outline">&rsaquo;</span>
-          <span className="text-primary font-bold uppercase tracking-wider bg-surface-container px-2 py-0.5 rounded-sm border border-outline/20">
-           {currentTab.name}
-          </span>
-        </div>
-      </div>
-
-      {/* 2. Asset Class Navigation Tab Rail */}
-      <div className="w-full bg-surface-container-low px-4 sm:px-6 pt-2 border-b border-x border-outline/30 shadow-sm">
+      {/* Asset Class Navigation Tab Rail */}
+      <div className="w-full bg-surface-container-low px-4 sm:px-6 pt-2 rounded-t-sm border border-outline/30 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           {/* 7 Horizontal Verticals Tabs */}
           <div className="flex items-center gap-1 overflow-x-auto scrollbar-none -mb-px">

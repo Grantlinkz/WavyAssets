@@ -9,7 +9,6 @@ import { AssetContainer } from './components/panels/AssetContainer';
 import { UnifiedAuthModal } from './components/auth/UnifiedAuthModal';
 import { TrustInfrastructure } from './components/trust/TrustInfrastructure';
 import { ClientVoices } from './components/trust/ClientVoices';
-import { CustodyNetworkGrid } from './components/trust/CustodyNetworkGrid';
 import { InstitutionalFooter } from './components/footer/InstitutionalFooter';
 import {
   formatCurrency,
@@ -17,7 +16,7 @@ import {
   formatBps,
   getDeltaColorClass,
 } from './lib/formatters';
-import { ShieldCheck, Activity } from 'lucide-react';
+import { Activity } from 'lucide-react';
 
 const syndicateFeeds = [
   { pair: 'BTC/USD', price: 94240.5, delta: 2.84, type: 'crypto' },
@@ -116,41 +115,6 @@ export const App: React.FC = () => {
 
       {/* 3. Main Terminal Command Deck & Interactive Simulator */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 space-y-12 relative z-10 min-h-[540px]">
-        {/* Status Breadcrumb Strip */}
-        <section className="w-full bg-surface-container-lowest/80 backdrop-blur-md px-4 py-2.5 rounded-sm border border-outline/30">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-                <span className="font-mono text-[11px] uppercase tracking-widest text-secondary font-semibold">
-                  SYSTEM ACTIVE
-                </span>
-              </div>
-              <span className="font-mono text-outline select-none">/</span>
-              <span className="font-mono text-[11px] text-on-surface-variant truncate">
-                LIVE SECURE STREAM • VERIFIED MERKLE PROOF
-              </span>
-              <span className="hidden md:inline font-mono text-outline select-none">/</span>
-              <span className="hidden md:inline font-mono text-[11px] text-outline">
-                SPEED: 0.28ms
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="hidden lg:flex items-center gap-2 font-mono text-[10px] text-on-surface-variant bg-surface-container-low px-2.5 py-1 rounded-sm border border-outline/20">
-                <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-                <span>MULTI-KEY VAULT AUDITED</span>
-              </div>
-              <a
-                href="#portfolio-simulator"
-                className="px-3 py-1 rounded-sm bg-surface-container hover:bg-surface-container-high text-on-surface font-mono text-[11px] uppercase transition-colors border border-outline/20"
-              >
-                Portfolio Simulator
-              </a>
-            </div>
-          </div>
-        </section>
-
         {/* Section Hero: Eyebrow & Value Proposition */}
         <section className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-2">
           <div className="space-y-3 max-w-3xl">
@@ -212,13 +176,8 @@ export const App: React.FC = () => {
         </section>
 
         {/* Client Voices: Verified Allocator Endorsements (Specular 3D Cards) */}
-        <section id="client-voices" className="w-full pt-4 scroll-mt-20">
+        <section id="client-voices" className="w-full pt-4 pb-4 scroll-mt-20">
           <ClientVoices />
-        </section>
-
-        {/* Institutional Clearing & Custody Network */}
-        <section className="w-full pt-4 pb-4">
-          <CustodyNetworkGrid />
         </section>
       </main>
 

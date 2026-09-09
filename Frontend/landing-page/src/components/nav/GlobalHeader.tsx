@@ -76,16 +76,9 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
   return (
     <header className="sticky top-0 z-50 w-full bg-surface-container-lowest/95 backdrop-blur-xl border-b border-outline">
       <div className="max-w-7xl mx-auto h-16 px-4 sm:px-6 flex items-center justify-between gap-4">
-        {/* Left: Brand + Status Chip */}
+        {/* Left: Brand */}
         <div className="flex items-center gap-6">
           <BrandLogo showSecuredBadge={true} />
-
-          <div className="hidden xl:flex items-center gap-2 bg-surface-container px-3 py-1 rounded-sm border border-outline text-xs text-on-surface-variant font-mono">
-            <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
-            <span className="text-[11px] uppercase tracking-wider">
-              TERMINAL ONLINE • SLA 99.999% • NYC / LON FIX
-            </span>
-          </div>
         </div>
 
         {/* Center: Desktop Navigation with Sliding Dot Indicator */}
