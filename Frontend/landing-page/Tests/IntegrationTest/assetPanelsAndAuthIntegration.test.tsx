@@ -70,6 +70,11 @@ describe('Asset Panels & Unified Auth Modal Integration Suite (SSR / Node 24)', 
     expect(aiHtml).toContain('AI Systematic Funds &amp; GPU Compute Mesh');
     expect(aiHtml).toContain('NVIDIA H100 SXM5 80GB Cluster');
     expect(aiHtml).toContain('14.8%');
+    expect(aiHtml).toContain('data-testid="ai-funds-robot-video"');
+    expect(aiHtml).toMatch(/autoplay/i);
+    expect(aiHtml).toMatch(/loop/i);
+    expect(aiHtml).toMatch(/playsinline/i);
+    expect(aiHtml).not.toContain('controls');
 
     // 4. Real Estate Panel
     const reHtml = renderToString(<RealEstatePanel />);

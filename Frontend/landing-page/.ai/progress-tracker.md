@@ -124,6 +124,8 @@
 - Established integration test suite in `Tests/IntegrationTest/hero3DAndTypographyIntegration.test.tsx` verifying SSR rendering, pure 3D viewport mounting, and zero CLS parity (74/74 tests passing across 15 test suites).
 - Implemented smooth opposing horizontal entrance animations for `PortfolioSimulator.tsx`: the Left Column (`PORTFOLIO ESTIMATION SETTINGS`, sliders, protocol chips) slides in from the left (`x: -80 -> 0`, `opacity: 0 -> 1`), while the Right Column (`PORTFOLIO BREAKDOWN & ESTIMATED RETURN`, 3D donut chart, returns, risk matrix, CTAs) slides in from the right (`x: 80 -> 0`, `opacity: 0 -> 1`) with Framer Motion viewport triggers (`amount: 0.2`, `once: true`), GPU `willChange` acceleration, and `useReducedMotion()` accessibility fallback.
 - Enhanced `Tests/IntegrationTest/simulatorIntegration.test.tsx` with assertions verifying both `simulator-left-column` and `simulator-right-column` render with zero layout shift (74/74 tests passing across 15 test suites).
+- Replaced static `HARDWARE PERFORMANCE` metrics block in `AiFundsPanel.tsx` with a continuous autoplaying loop of `Robot.mp4` with no controls, custom telemetry overlay pill badge (`LIVE | AUTONOMOUS AI AGENT`), 100% automated execution bar, and Framer Motion opposing kinematics (`x: -30 -> 0` left column, `x: 30 -> 0` & `scale: 0.98 -> 1` video column) with full `useReducedMotion()` accessibility support.
+- Updated `Tests/IntegrationTest/assetPanelsAndAuthIntegration.test.tsx` asserting `data-testid="ai-funds-robot-video"`, continuous loop, autoplay, playsinline, and absence of controls (74/74 tests passing across 15 suites).
 
 ---
 
