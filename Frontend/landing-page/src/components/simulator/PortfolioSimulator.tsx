@@ -225,10 +225,10 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
           <div>
             <div className="flex items-center justify-between pb-3 bg-surface-container-low px-3 py-2 rounded-sm border border-outline/20">
               <span className="text-[11px] font-semibold uppercase tracking-widest text-on-surface">
-                BLENDED EXPOSURE &amp; RETURN MATRIX
+                PORTFOLIO BREAKDOWN &amp; ESTIMATED RETURN
               </span>
               <span className="font-mono text-[10px] px-2 py-0.5 rounded-sm bg-secondary/10 text-secondary font-bold">
-                SLA ACTIVE
+                LIVE ESTIMATE
               </span>
             </div>
 
@@ -242,7 +242,7 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
             <div className="bg-surface-container-lowest p-4 rounded-sm space-y-2 border border-outline/20 mt-2">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-outline font-mono">
-                  ESTIMATED 12-MONTH NET RETURN
+                  ESTIMATED 12-MONTH RETURN
                 </span>
                 <span
                   data-testid="monthly-runrate"
@@ -250,7 +250,7 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
                 >
                   <AnimatedNumber
                     value={metrics.monthlyRunrate}
-                    formatter={(val) => `+${formatCurrency(val)} / Mo`}
+                    formatter={(val) => `+${formatCurrency(val)} / mo`}
                   />
                 </span>
               </div>
@@ -267,7 +267,7 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
                   />
                 </span>
                 <span className="font-mono text-[10px] text-outline">
-                  TAX ALPHA STRIPPED
+                  AFTER ESTIMATED FEES
                 </span>
               </div>
             </div>
@@ -276,7 +276,7 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
             <div className="grid grid-cols-3 gap-2 mt-3 text-center">
               <div className="bg-surface-container-low p-2.5 rounded-sm border border-outline/20">
                 <div className="font-mono text-[10px] text-outline uppercase">
-                  MAX 3-YR DRAWDOWN
+                  MAX 3-YEAR DIP
                 </div>
                 <div className="font-mono text-xs text-on-surface font-bold mt-0.5">
                   {metrics.posture.maxDrawdown}%
@@ -284,7 +284,7 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
               </div>
               <div className="bg-surface-container-low p-2.5 rounded-sm border border-outline/20">
                 <div className="font-mono text-[10px] text-outline uppercase">
-                  SHARPE RATIO
+                  RISK-REWARD SCORE
                 </div>
                 <div className="font-mono text-xs text-secondary font-bold mt-0.5">
                   {metrics.posture.sharpeRatio}
@@ -292,7 +292,7 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
               </div>
               <div className="bg-surface-container-low p-2.5 rounded-sm border border-outline/20">
                 <div className="font-mono text-[10px] text-outline uppercase">
-                  CAPITAL SHIELD
+                  ASSET PROTECTION
                 </div>
                 <div className="font-mono text-xs text-primary font-bold mt-0.5">
                   {metrics.posture.capitalShield}
@@ -312,7 +312,7 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
               className="w-full sm:flex-1 py-3 px-4 rounded-sm bg-primary-container text-on-primary-container text-xs uppercase font-bold tracking-wider hover:bg-primary-hover transition-colors flex items-center justify-center gap-2 shadow-sm"
             >
               <Lock className="w-3.5 h-3.5" />
-              <span>Save Simulation &amp; Start Investing</span>
+              <span>Start Investing With This Mix</span>
             </motion.button>
             <motion.button
               type="button"
@@ -322,7 +322,7 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
               onClick={() => openAuthModal('institutional')}
               className="w-full sm:w-auto py-3 px-4 rounded-sm bg-surface-container-high hover:bg-surface-bright text-on-surface text-xs uppercase font-semibold tracking-wider transition-colors border border-outline/30"
             >
-              <span>Adjust Percentages</span>
+              <span>Adjust Investment Mix</span>
             </motion.button>
           </div>
         </div>

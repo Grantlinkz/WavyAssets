@@ -126,7 +126,7 @@ export const DonutChart3D: React.FC<DonutChart3DProps> = ({ blendedApy, weights 
               />
             </div>
             <span className="font-mono text-[9px] text-on-surface-variant uppercase tracking-widest mt-0.5">
-              Blended APY
+              Estimated Return
             </span>
           </div>
         </motion.div>

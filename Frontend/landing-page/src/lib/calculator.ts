@@ -50,14 +50,14 @@ export const POSTURES: Record<number, PostureConfig> = {
     level: 1,
     name: 'Capital Preservation',
     targetApy: 8.6,
-    description: 'Ultra-low volatility sovereign treasury with physical gold & freehold collateral.',
+    description: 'Low-volatility mix backed by physical gold, classic cars, and global treasury holdings.',
     maxDrawdown: -1.8,
     sharpeRatio: 3.42,
-    capitalShield: 'Tier-1 Lloyds',
+    capitalShield: 'Lloyd\'s Insured',
     weights: [
       {
         id: 'cars-gold',
-        name: 'Bonded Hypercars & Gold',
+        name: 'Luxury Cars & Gold',
         percentage: 50,
         color: '#d4af37', // Sovereign Gold
         dashOffset: preservationDashes[0].dashOffset,
@@ -65,7 +65,7 @@ export const POSTURES: Record<number, PostureConfig> = {
       },
       {
         id: 'gpu-lease',
-        name: 'AI H100 GPU Lease Arbitrage',
+        name: 'AI Computing Funds',
         percentage: 20,
         color: '#00c086', // Yield Teal
         dashOffset: preservationDashes[1].dashOffset,
@@ -73,7 +73,7 @@ export const POSTURES: Record<number, PostureConfig> = {
       },
       {
         id: 'equities-staking',
-        name: 'DMA Equities & Swiss Staking',
+        name: 'Global Stocks & Crypto',
         percentage: 30,
         color: '#42dfa3', // Secondary Emerald
         dashOffset: preservationDashes[2].dashOffset,
@@ -85,14 +85,14 @@ export const POSTURES: Record<number, PostureConfig> = {
     level: 2,
     name: 'Balanced Growth',
     targetApy: 14.2,
-    description: 'Equally weighted physical collateral, compute hardware lease, and market-neutral basis trading.',
+    description: 'Evenly balanced mix of physical assets, AI computing funds, and global stock investments.',
     maxDrawdown: -3.2,
     sharpeRatio: 2.86,
-    capitalShield: 'Tier-1 Lloyds',
+    capitalShield: 'Lloyd\'s Insured',
     weights: [
       {
         id: 'cars-gold',
-        name: 'Bonded Hypercars & Gold',
+        name: 'Luxury Cars & Gold',
         percentage: 35,
         color: '#d4af37',
         dashOffset: balancedDashes[0].dashOffset,
@@ -100,7 +100,7 @@ export const POSTURES: Record<number, PostureConfig> = {
       },
       {
         id: 'gpu-lease',
-        name: 'AI H100 GPU Lease Arbitrage',
+        name: 'AI Computing Funds',
         percentage: 40,
         color: '#00c086',
         dashOffset: balancedDashes[1].dashOffset,
@@ -108,7 +108,7 @@ export const POSTURES: Record<number, PostureConfig> = {
       },
       {
         id: 'equities-staking',
-        name: 'DMA Equities & Swiss Staking',
+        name: 'Global Stocks & Crypto',
         percentage: 25,
         color: '#42dfa3',
         dashOffset: balancedDashes[2].dashOffset,
@@ -120,14 +120,14 @@ export const POSTURES: Record<number, PostureConfig> = {
     level: 3,
     name: 'Maximum Alpha',
     targetApy: 22.4,
-    description: 'High-density H100 GPU compute clustering and non-linear neural network momentum strategies.',
+    description: 'Higher-growth strategy focused on high-demand AI computing and systematic equity models.',
     maxDrawdown: -6.4,
     sharpeRatio: 2.28,
-    capitalShield: 'Tier-1 Swiss Re',
+    capitalShield: 'Swiss Re Insured',
     weights: [
       {
         id: 'cars-gold',
-        name: 'Bonded Hypercars & Gold',
+        name: 'Luxury Cars & Gold',
         percentage: 20,
         color: '#d4af37',
         dashOffset: alphaDashes[0].dashOffset,
@@ -135,7 +135,7 @@ export const POSTURES: Record<number, PostureConfig> = {
       },
       {
         id: 'gpu-lease',
-        name: 'AI H100 GPU Lease Arbitrage',
+        name: 'AI Computing Funds',
         percentage: 55,
         color: '#00c086',
         dashOffset: alphaDashes[1].dashOffset,
@@ -143,7 +143,7 @@ export const POSTURES: Record<number, PostureConfig> = {
       },
       {
         id: 'equities-staking',
-        name: 'DMA Equities & Swiss Staking',
+        name: 'Global Stocks & Crypto',
         percentage: 25,
         color: '#42dfa3',
         dashOffset: alphaDashes[2].dashOffset,
