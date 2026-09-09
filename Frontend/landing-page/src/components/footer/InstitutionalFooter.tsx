@@ -64,9 +64,7 @@ export const InstitutionalFooter: React.FC = () => {
                   className="hover:text-primary transition-colors cursor-pointer w-full text-left flex items-center justify-between"
                 >
                   <span>Crypto Yields &amp; Cold Storage</span>
-                  <span className="font-mono text-[10px] text-secondary font-semibold">
-                    19.4% APY
-                  </span>
+                  
                 </button>
               </li>
               <li>
