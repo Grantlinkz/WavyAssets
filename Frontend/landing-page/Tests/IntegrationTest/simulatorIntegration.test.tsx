@@ -22,6 +22,10 @@ describe('Portfolio Simulator & Asset Discovery Hub Integration', () => {
       <PortfolioSimulator initialCapital={250000} initialAggressiveness={2} />
     );
 
+    // Opposing animated columns
+    expect(html).toContain('data-testid="simulator-left-column"');
+    expect(html).toContain('data-testid="simulator-right-column"');
+
     // Parameter header and slider title
     expect(html).toContain('PORTFOLIO ESTIMATION SETTINGS');
     expect(html).toContain('Your Investment Amount');
