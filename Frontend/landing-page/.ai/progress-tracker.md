@@ -118,6 +118,10 @@
 - Restored missing `19.4% APY` badge on Crypto Yields in `InstitutionalFooter.tsx`, achieving 100% pass rate across 14 test suites (68/68 passing tests).
 - Rewrote `MegaMenuDiagnostics.tsx` in plain English per Fintech UX Content Strategy: upgraded headers, reserve capacity metrics, vault hubs, instant execution speed, reserve backing, and action buttons with high-contrast text tokens.
 - Fixed Services MegaMenu scroll glitch by transitioning from `absolute top-16` to `fixed top-16 left-0 right-0 z-40 max-h-[calc(100vh-4.5rem)] overflow-y-auto`, ensuring the menu is docked directly beneath the sticky header in the active viewport when opened after scrolling down.
+- Built interactive, lightweight 3D web asset hero container (`HeroAssetGyroscope.tsx`) featuring a multi-layered orbital gyroscope representing the 7 asset tiers with continuous slow-axis rotation (0.2 rad/s), gentle vertical bobbing, pointer parallax tracking with smooth damping, low-polygon `torusGeometry` rings, and tab-blur loop throttling.
+- Stripped all enclosing card borders, metric strips, and HUD badges to present a clean, pure 3D floating visual effect integrated seamlessly into the hero section.
+- Built kinetic typography entrance effect (`KineticHeroTypography.tsx`) with word-by-word horizontal expansion, vertical slide (`translateY: 30px -> 0px`), Gaussian blur-to-clarity transition (`blur(14px) -> blur(0px)`), and custom cubic bezier easing curve (`[0.22, 1, 0.36, 1]`).
+- Established integration test suite in `Tests/IntegrationTest/hero3DAndTypographyIntegration.test.tsx` verifying SSR rendering, pure 3D viewport mounting, and zero CLS parity (74/74 tests passing across 15 test suites).
 
 ---
 

@@ -10,6 +10,8 @@ import { UnifiedAuthModal } from './components/auth/UnifiedAuthModal';
 import { TrustInfrastructure } from './components/trust/TrustInfrastructure';
 import { ClientVoices } from './components/trust/ClientVoices';
 import { InstitutionalFooter } from './components/footer/InstitutionalFooter';
+import { HeroAssetGyroscope } from './components/canvas/HeroAssetGyroscope';
+import { KineticHeroTypography } from './components/hero/KineticHeroTypography';
 import {
   formatCurrency,
   formatPercent,
@@ -115,44 +117,16 @@ export const App: React.FC = () => {
 
       {/* 3. Main Terminal Command Deck & Interactive Simulator */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 space-y-12 relative z-10 min-h-[540px]">
-        {/* Section Hero: Eyebrow & Value Proposition */}
-        <section className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-2">
-          <div className="space-y-3 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-sm bg-surface-container border border-outline/30 font-mono text-[11px] text-primary uppercase tracking-widest">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
-              <span>SMART ASSET ALLOCATION • REAL-TIME ESTIMATES</span>
-            </div>
+        {/* Section Hero: Kinetic Typography & Interactive 3D Asset Gyroscope */}
+        <section
+          data-testid="hero-section"
+          className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 pt-2"
+        >
+          {/* Left: Kinetic Typography Entrance */}
+          <KineticHeroTypography />
 
-            <h1 className="font-headline-xl text-3xl sm:text-4xl text-on-surface font-bold tracking-tight">
-              Smart Multi-Asset Wealth &amp; Digital Money Wallet
-            </h1>
-
-            <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed">
-              Grow and protect your money across stocks, smart AI funds, classic cars, and commercial
-              properties. Model your balance with our interactive calculator, or open an account in minutes.
-            </p>
-          </div>
-
-          {/* Quick Metrics Strip */}
-          <div className="flex items-center gap-4 bg-surface-container-low p-3.5 rounded-sm border border-outline/20 self-start md:self-auto shrink-0">
-            <div className="space-y-0.5">
-              <div className="font-mono text-[10px] text-outline uppercase tracking-wider">
-                Total Assets Tracked
-              </div>
-              <div className="font-mono text-lg font-bold text-on-surface">
-                $1.482B
-              </div>
-            </div>
-            <div className="w-px h-8 bg-surface-container-highest" />
-            <div className="space-y-0.5">
-              <div className="font-mono text-[10px] text-outline uppercase tracking-wider">
-                Average Annual Return
-              </div>
-              <div className="font-mono text-lg font-bold text-secondary">
-                14.2%
-              </div>
-            </div>
-          </div>
+          {/* Right: Interactive 3D Web Asset Hero Gyroscope Container */}
+          <HeroAssetGyroscope />
         </section>
 
         {/* 2-Column Obsidian Console: Portfolio Simulator */}
