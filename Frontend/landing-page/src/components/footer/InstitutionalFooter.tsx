@@ -64,7 +64,9 @@ export const InstitutionalFooter: React.FC = () => {
                   className="hover:text-primary transition-colors cursor-pointer w-full text-left flex items-center justify-between"
                 >
                   <span>Crypto Yields &amp; Cold Storage</span>
-                  
+                  <span className="font-mono text-[10px] text-secondary font-semibold">
+                    19.4% APY
+                  </span>
                 </button>
               </li>
               <li>
@@ -175,7 +177,7 @@ export const InstitutionalFooter: React.FC = () => {
               </li>
               <li className="hover:text-on-surface transition-colors cursor-pointer flex items-center gap-1.5">
                 <span>System Status Telemetry</span>
-                <ExternalLink className="w-3 h-3 text-outline" />
+                <ExternalLink className="w-3 h-3 text-on-surface-variant" />
               </li>
             </ul>
           </div>
@@ -188,7 +190,7 @@ export const InstitutionalFooter: React.FC = () => {
 
         {/* Mandatory Multi-Jurisdiction Regulatory Disclaimer */}
         <div className="pt-6 bg-surface-container-low/50 p-4 sm:p-5 rounded-sm border border-outline/20 space-y-3">
-          <div className="font-mono text-[11px] text-outline leading-relaxed space-y-2">
+          <div className="font-mono text-[11px] text-on-surface-variant dark:text-neutral-300 leading-relaxed space-y-2">
             <p>
               <strong className="text-on-surface font-semibold">
                 REGULATORY DISCLOSURES &amp; FIDUCIARY GOVERNANCE:
@@ -222,7 +224,7 @@ export const InstitutionalFooter: React.FC = () => {
           </div>
 
           {/* Sub-bar Copyright & Compliance tags */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-3 border-t border-outline/20 font-mono text-[11px] text-outline">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-3 border-t border-outline/20 font-mono text-[11px] text-on-surface-variant dark:text-neutral-400">
             <div>
               &copy; 2026 WavyAssets / WavyAssetss Global Limited. Engineered
               for Sovereign Capital. All rights reserved.

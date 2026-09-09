@@ -109,7 +109,13 @@
   - Replaced technical jargon with plain equivalents ("Trading Terminal" -> "Dashboard" / "Trade Screen", "Automated AI Execution" -> "Smart Rules" / "Hands-free Investing", "Liquidity Pool" -> "Available Balance", "Automotive Inventory Liquidation" -> "Browse & Invest in Cars").
   - Implemented high-intent SEO keywords (*invest in stocks online, auto investment platform, digital money wallet, smart automated investing*) across `<head>` meta tags and semantic H1/H2/H3 hierarchies.
   - Upgraded all 7 asset vertical panels with dedicated plain English headers, subdecks, primary & secondary active CTAs, 3 distinct feature benefit cards, accessible tooltips, and friendly status badges (*Active, Pending, Settled*).
-  - Maintained zero CLS (`min-h-[540px]`), full SSR parity, and 100% test suite passing rate (62/62 tests across 13 suites).
+- Maintained zero CLS (`min-h-[540px]`), full SSR parity, and 100% test suite passing rate (62/62 tests across 13 suites).
+- Designed new dynamic sovereign WavyAssets logo emblem featuring fluid sinusoidal waves intertwined with an ascending vault crest in Sovereign Gold (`#D4AF37`) and Emerald Accent (`#00C288`), applied as the default in `BrandLogo.tsx` and `public/favicon.svg`.
+- Enabled click-to-home navigation on `BrandLogo` (`window.scrollTo({ top: 0, behavior: 'smooth' })`, clearing hash routing deep-links and closing mega-menu).
+- Enhanced `WavyBackground.tsx` with theme responsiveness: renders Pure White (`#FFFFFF`) and Soft Alabaster (`#EDF2FB`) stripes with a light vignette in light mode, while preserving Licorice (`#08090B`) and Jet Black (`#0F1115`) in dark mode.
+- Made Services MegaMenu asset cards grid scrollable (`max-h-[60vh] sm:max-h-[520px] overflow-y-auto pr-1.5 custom-scrollbar`) so all 7 asset classes (Crypto, Stocks, AI Funds, Real Estate, Cars, VIP Cards, and Wallet) are fully accessible on any viewport height without clipping.
+- Fixed dark mode font color scheme in `InstitutionalFooter.tsx`: replaced low-contrast `text-outline` on disclaimers, `<p>` paragraphs, and compliance links with high-contrast `text-on-surface-variant` (`text-neutral-300` / `text-neutral-400` in dark mode) without modifying the dark mode wave background palette.
+- Restored missing `19.4% APY` badge on Crypto Yields in `InstitutionalFooter.tsx`, achieving 100% pass rate across 14 test suites (68/68 passing tests).
 
 ---
 
