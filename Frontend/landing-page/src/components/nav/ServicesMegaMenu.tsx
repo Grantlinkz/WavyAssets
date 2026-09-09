@@ -235,74 +235,80 @@ export const ServicesMegaMenu: React.FC<ServicesMegaMenuProps> = ({
             <CategoryFilter />
 
             {/* 3. Main Grid: 7 Verticals + Active Diagnostics Rail */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-              {/* Left Column: Asset Cards Grid */}
-              <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-3">
-                {filteredVerticals.map((vert) => {
-                  const Icon = vert.icon;
-                  const isCurrentActive = activeAssetId === vert.id;
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+              {/* Left Column: Asset Cards Grid (Scrollable for Full Vertical Accessibility) */}
+              <div
+                data-testid="services-scroll-container"
+                className="lg:col-span-8 max-h-[60vh] sm:max-h-[520px] overflow-y-auto pr-1.5 custom-scrollbar overscroll-contain focus:outline-none"
+                tabIndex={0}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {filteredVerticals.map((vert) => {
+                    const Icon = vert.icon;
+                    const isCurrentActive = activeAssetId === vert.id;
 
-                  return (
-                    <div
-                      key={vert.id}
-                      onClick={() => setActiveAssetId(vert.id)}
-                      data-testid={`vertical-card-${vert.id}`}
-                      className={`group relative bg-surface-container-low hover:bg-surface-container p-4 rounded-sm transition-all cursor-pointer border flex flex-col justify-between ${
-                        isCurrentActive
-                          ? 'border-primary shadow-sm bg-surface-container'
-                          : 'border-outline/20 hover:border-primary/40'
-                      } ${vert.span2 ? 'md:col-span-2' : ''}`}
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="p-1.5 rounded-sm bg-surface-container-high text-primary inline-flex">
-                              <Icon className="w-4 h-4" />
-                            </span>
-                            <span className="font-mono text-[10px] text-outline uppercase tracking-widest">
-                              {vert.categoryLabel}
+                    return (
+                      <div
+                        key={vert.id}
+                        onClick={() => setActiveAssetId(vert.id)}
+                        data-testid={`vertical-card-${vert.id}`}
+                        className={`group relative bg-surface-container-low hover:bg-surface-container p-4 rounded-sm transition-all cursor-pointer border flex flex-col justify-between ${
+                          isCurrentActive
+                            ? 'border-primary shadow-sm bg-surface-container'
+                            : 'border-outline/20 hover:border-primary/40'
+                        } ${vert.span2 ? 'md:col-span-2' : ''}`}
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="p-1.5 rounded-sm bg-surface-container-high text-primary inline-flex">
+                                <Icon className="w-4 h-4" />
+                              </span>
+                              <span className="font-mono text-[10px] text-outline uppercase tracking-widest">
+                                {vert.categoryLabel}
+                              </span>
+                            </div>
+                            <span
+                              className={`font-mono text-[10px] px-2 py-0.5 rounded-sm font-semibold ${
+                                vert.badgeType === 'emerald'
+                                  ? 'bg-secondary/15 text-secondary'
+                                  : vert.badgeType === 'gold'
+                                    ? 'bg-primary/20 text-primary'
+                                    : 'bg-surface-container-highest text-on-surface'
+                              }`}
+                            >
+                              {vert.badge}
                             </span>
                           </div>
-                          <span
-                            className={`font-mono text-[10px] px-2 py-0.5 rounded-sm font-semibold ${
-                              vert.badgeType === 'emerald'
-                                ? 'bg-secondary/15 text-secondary'
-                                : vert.badgeType === 'gold'
-                                  ? 'bg-primary/20 text-primary'
-                                  : 'bg-surface-container-highest text-on-surface'
-                            }`}
-                          >
-                            {vert.badge}
-                          </span>
+
+                          <div>
+                            <div className="text-sm font-semibold text-on-surface pt-1 group-hover:text-primary transition-colors">
+                              {vert.name}
+                            </div>
+                            <div className="font-mono text-[10px] text-secondary mt-0.5">
+                              {vert.subheading}
+                            </div>
+                          </div>
+
+                          <p className="text-xs text-on-surface-variant line-clamp-2 mt-1">
+                            {vert.description}
+                          </p>
                         </div>
 
-                        <div>
-                          <div className="text-sm font-semibold text-on-surface pt-1 group-hover:text-primary transition-colors">
-                            {vert.name}
-                          </div>
-                          <div className="font-mono text-[10px] text-secondary mt-0.5">
-                            {vert.subheading}
-                          </div>
+                        <div className="pt-3 mt-2 border-t border-outline/20 flex items-center justify-between text-on-surface-variant font-mono text-[10px]">
+                          <span className="uppercase tracking-wider text-outline">{vert.sla}</span>
+                          {vert.span2 ? (
+                            <span className="text-primary flex items-center gap-1 font-semibold uppercase text-[10px]">
+                              Inspect Architecture <ChevronRight className="w-3.5 h-3.5" />
+                            </span>
+                          ) : (
+                            <ArrowRight className="w-3.5 h-3.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                          )}
                         </div>
-
-                        <p className="text-xs text-on-surface-variant line-clamp-2 mt-1">
-                          {vert.description}
-                        </p>
                       </div>
-
-                      <div className="pt-3 mt-2 border-t border-outline/20 flex items-center justify-between text-on-surface-variant font-mono text-[10px]">
-                        <span className="uppercase tracking-wider text-outline">{vert.sla}</span>
-                        {vert.span2 ? (
-                          <span className="text-primary flex items-center gap-1 font-semibold uppercase text-[10px]">
-                            Inspect Architecture <ChevronRight className="w-3.5 h-3.5" />
-                          </span>
-                        ) : (
-                          <ArrowRight className="w-3.5 h-3.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Right Column: Diagnostics Telemetry Panel */}

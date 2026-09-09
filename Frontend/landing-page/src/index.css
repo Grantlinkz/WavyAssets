@@ -340,3 +340,29 @@ body {
     animation: none;
   }
 }
+
+/* Institutional Sleek Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(15, 17, 21, 0.5);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.35);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.7);
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 175, 55, 0.35) rgba(15, 17, 21, 0.5);
+}
+

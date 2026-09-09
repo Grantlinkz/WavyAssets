@@ -1,12 +1,22 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { useTerminalStore } from '../../store/useTerminalStore';
 
 /**
  * WavyBackground — Seamless Looping Diagonal Sine-Wave Stripes
- * Alternates between Licorice (#08090B) and Jet Black (#0F1115).
+ * Dark Mode: Alternates between Licorice (#08090B) and Jet Black (#0F1115).
+ * Light Mode: Alternates between Pure White (#FFFFFF) and Soft Alabaster (#EDF2FB).
  * Infinitely translates along the horizontal axis with a linear timing function.
  * Tiling is mathematically continuous across tile boundaries (CLS = 0, zero seam).
  */
-export const WavyBackground: React.FC = () => {
+export interface WavyBackgroundProps {
+  theme?: 'dark' | 'light';
+}
+
+export const WavyBackground: React.FC<WavyBackgroundProps> = ({ theme }) => {
+  const storeResolvedTheme = useTerminalStore((state) => state.resolvedTheme);
+  const resolvedTheme = theme || storeResolvedTheme;
+  const isLight = resolvedTheme === 'light';
+
   const [reducedMotion, setReducedMotion] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -44,6 +54,10 @@ export const WavyBackground: React.FC = () => {
 
     const items: { d: string; fill: string; key: number }[] = [];
 
+    // Theme-driven colors
+    const color1 = isLight ? '#FFFFFF' : '#08090B';
+    const color2 = isLight ? '#EDF2FB' : '#0F1115';
+
     // Cover vertical span from -800 to 1400 so diagonal fills any screen ratio
     for (let i = -16; i <= 24; i++) {
       const c1 = i * S;
@@ -63,19 +77,21 @@ export const WavyBackground: React.FC = () => {
       }
 
       const d = `M ${topPoints.join(' L ')} L ${bottomPoints.join(' L ')} Z`;
-      const fill = Math.abs(i) % 2 === 0 ? '#08090B' : '#0F1115'; // Licorice & Jet Black
+      const fill = Math.abs(i) % 2 === 0 ? color1 : color2;
 
       items.push({ d, fill, key: i });
     }
 
     return items;
-  }, []);
+  }, [isLight]);
 
   return (
     <div
       data-testid="wavy-background"
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden select-none bg-[#08090B]"
+      className={`pointer-events-none fixed inset-0 z-0 overflow-hidden select-none transition-colors duration-300 ${
+        isLight ? 'bg-[#FFFFFF]' : 'bg-[#08090B]'
+      }`}
     >
       {/* 200% width sliding track with linear horizontal translation */}
       <div
@@ -129,7 +145,13 @@ export const WavyBackground: React.FC = () => {
       </div>
 
       {/* Subtle institutional atmospheric vignette to anchor typography readability */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#08090B]/40 via-transparent to-[#08090B]/60" />
+      <div
+        className={`pointer-events-none absolute inset-0 ${
+          isLight
+            ? 'bg-gradient-to-b from-white/50 via-transparent to-white/70'
+            : 'bg-gradient-to-b from-[#08090B]/40 via-transparent to-[#08090B]/60'
+        }`}
+      />
     </div>
   );
 };
