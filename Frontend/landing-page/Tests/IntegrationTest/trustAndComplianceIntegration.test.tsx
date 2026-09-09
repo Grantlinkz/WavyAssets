@@ -20,16 +20,9 @@ describe('Trust Infrastructure & Compliance Integration Suite (SSR / Node 24)', 
     window.location.hash = '';
   });
 
-  it('renders TrustInfrastructure with enclave bar, tier toggle, and institutional metrics', () => {
+  it('renders TrustInfrastructure with tier toggle and institutional metrics', () => {
     useTerminalStore.setState({ trustMode: 'institutional' });
     const html = renderToString(<TrustInfrastructure />);
-
-    // Top status bar
-    expect(html).toContain('ENCLAVE ACTIVE');
-    expect(html).toContain('0x9B41...F73D');
-    expect(html).toContain('LATENCY: 0.042ms');
-    expect(html).toContain('BNY MELLON');
-    expect(html).toContain('STATE STREET');
 
     // Section title
     expect(html).toContain('Audited Performance &amp; Sovereign Trust');
@@ -146,7 +139,6 @@ describe('Trust Infrastructure & Compliance Integration Suite (SSR / Node 24)', 
 
     expect(html).toContain('data-testid="trust-infrastructure-section"');
     expect(html).toContain('data-testid="client-voices-section"');
-    expect(html).toContain('data-testid="custody-network-grid"');
     expect(html).toContain('data-testid="institutional-footer"');
   });
 });

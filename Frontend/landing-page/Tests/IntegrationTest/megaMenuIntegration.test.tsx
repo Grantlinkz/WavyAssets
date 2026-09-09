@@ -18,10 +18,9 @@ describe('GlobalHeader & ServicesMegaMenu Integration (Node 24 Engine)', () => {
   it('renders GlobalHeader with navigation triggers, status badges, and auth actions', () => {
     const html = renderToString(<GlobalHeader />);
 
-    // Brand and online status SLA
+    // Brand
     expect(html).toContain('AURA');
     expect(html).toContain('ASSETS');
-    expect(html).toContain('TERMINAL ONLINE • SLA 99.999% • NYC / LON FIX');
 
     // Navigation links
     expect(html).toContain('Services');

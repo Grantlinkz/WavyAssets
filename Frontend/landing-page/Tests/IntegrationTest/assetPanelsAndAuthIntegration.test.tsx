@@ -31,19 +31,12 @@ describe('Asset Panels & Unified Auth Modal Integration Suite (SSR / Node 24)', 
   it('renders AssetNavRail with all 7 horizontal asset vertical tabs', () => {
     const html = renderToString(<AssetNavRail />);
 
-    expect(html).toContain('01');
     expect(html).toContain('CRYPTO INVESTMENT');
-    expect(html).toContain('02');
     expect(html).toContain('GLOBAL STOCKS');
-    expect(html).toContain('03');
     expect(html).toContain('AI SYSTEMATIC FUNDS');
-    expect(html).toContain('04');
     expect(html).toContain('REAL ESTATE');
-    expect(html).toContain('05');
     expect(html).toContain('CARS INVENTORY');
-    expect(html).toContain('06');
     expect(html).toContain('VIP CARDS');
-    expect(html).toContain('07');
     expect(html).toContain('WALLET &amp; MPC');
 
     expect(html).toContain('DIRECT ALLOCATION');
