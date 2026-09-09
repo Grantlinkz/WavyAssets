@@ -32,20 +32,20 @@ describe('Portfolio Simulator & Asset Discovery Hub Integration', () => {
     expect(html).toContain('14.2');
 
     // Projected net returns
-    expect(html).toContain('ESTIMATED 12-MONTH NET RETURN');
+    expect(html).toContain('ESTIMATED 12-MONTH RETURN');
     expect(html).toContain('$35,500.00');
     expect(html).toContain('$2,958.00');
 
     // Donut chart segment names
-    expect(html).toContain('Bonded Hypercars &amp; Gold');
-    expect(html).toContain('AI H100 GPU Lease Arbitrage');
-    expect(html).toContain('DMA Equities &amp; Swiss Staking');
+    expect(html).toContain('Luxury Cars &amp; Gold');
+    expect(html).toContain('AI Computing Funds');
+    expect(html).toContain('Global Stocks &amp; Crypto');
 
     // Fiduciary badges
     expect(html).toContain('Continuous Epoch');
     expect(html).toContain('Zurich / NY4 Equinix');
     expect(html).toContain('1:1 Non-Hypothecated');
-    expect(html).toContain('Tier-1 Lloyds');
+    expect(html).toContain('Lloyd&#x27;s Insured');
   });
 
   it('dynamically recalculates outputs when capital and aggressiveness are adjusted', () => {
@@ -65,7 +65,7 @@ describe('Portfolio Simulator & Asset Discovery Hub Integration', () => {
     expect(html).toContain('22.4');
     expect(html).toContain('$224,000.00');
     expect(html).toContain('$18,667.00');
-    expect(html).toContain('Tier-1 Swiss Re');
+    expect(html).toContain('Swiss Re Insured');
   });
 
   it('renders AssetDiscoveryHub with 7 vault classes and active depository card', () => {
