@@ -3,6 +3,7 @@ import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { AboutSection } from '../../src/components/about/AboutSection';
 import { AboutVaultCanvas3D } from '../../src/components/about/AboutVaultCanvas3D';
+import { UnifiedFinanceInfographic3D } from '../../src/components/about/UnifiedFinanceInfographic3D';
 import { AssetDiscoveryHub } from '../../src/components/discovery/AssetDiscoveryHub';
 import { GlobalHeader } from '../../src/components/nav/GlobalHeader';
 import { parseAssetHash, useTerminalStore } from '../../src/store/useTerminalStore';
@@ -24,13 +25,14 @@ describe('About Section, Research Routing & Portfolio Service Action Integration
   });
 
   describe('1. 3D About Section & Senior UX Write-Up', () => {
-    it('renders AboutSection with id="about", headline, 3 pillars, and regulatory credentials', () => {
+    it('renders AboutSection with id="about", headline, 3 pillars, regulatory credentials, and 3D infographic', () => {
       const html = renderToString(<AboutSection />);
 
       expect(html).toContain('id="about"');
       expect(html).toContain('data-testid="about-section"');
       expect(html).toContain('ABOUT WAVYASSETS • INSTITUTIONAL SOVEREIGNTY');
       expect(html).toContain('Pioneering Multi-Asset Freedom and Cold-Storage Security');
+      expect(html).toContain('data-testid="unified-finance-infographic-3d"');
       expect(html).toContain('Unified Multi-Asset Depository');
       expect(html).toContain('Bank-Grade MPC Cold Storage');
       expect(html).toContain('Direct Liquidity &amp; Global Settlement');
@@ -39,6 +41,31 @@ describe('About Section, Research Routing & Portfolio Service Action Integration
       expect(html).toContain('SOC-2 TYPE II AUDITED');
       expect(html).toContain('Create Your Account');
       expect(html).toContain('Explore Simulator');
+    });
+
+    it('renders UnifiedFinanceInfographic3D verifying all core prompt specifications', () => {
+      const html = renderToString(<UnifiedFinanceInfographic3D />);
+
+      expect(html).toContain('data-testid="unified-finance-infographic-3d"');
+      expect(html).toContain('WAVYASSETS: THE FUTURE OF UNIFIED FINANCE');
+      expect(html).toContain(
+        'WAVYASSETS UNIFIES: GLOBAL WEALTH MANAGEMENT | DIGITAL ASSET CUSTODY | INSTITUTIONAL YIELD GENERATION'
+      );
+      expect(html).toContain('COLD-STORAGE SECURITY');
+      expect(html).toContain('PIONEERING MULTI-ASSET FREEDOM');
+      expect(html).toContain('Gold Bars &amp; Bullion Coins');
+      expect(html).toContain('₿ Bitcoin');
+      expect(html).toContain('Ξ Ethereum');
+      expect(html).toContain('TARGET CLIENT SEGMENTS');
+      expect(html).toContain('Family Offices');
+      expect(html).toContain('Institutions');
+      expect(html).toContain('Smart Individual Investors');
+      expect(html).toContain('ELIMINATES THE CHAOS');
+      expect(html).toContain('Scattered Charts');
+      expect(html).toContain('Bank Facade');
+      expect(html).toContain('Locked Safe');
+      expect(html).toContain('Pie Charts');
+      expect(html).toContain('TOTAL CONTROL, MATHEMATICAL TRANSPARENCY, AND PEACE OF MIND.');
     });
 
     it('renders AboutVaultCanvas3D container with sovereign custody telemetry', () => {
