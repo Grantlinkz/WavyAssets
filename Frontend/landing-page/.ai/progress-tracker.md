@@ -167,8 +167,12 @@
 - Compacted vertical spacing in `UnifiedFinanceInfographic3D.tsx`: eliminated dead space between narrative text and infographic cards (per reference screenshots), calibrated canvas container height to hug content, and eliminated excessive bottom dead space above the footer pill banner ("TOTAL CONTROL, MATHEMATICAL TRANSPARENCY, AND PEACE OF MIND.").
 - Enlarged 3D WebGL animation in `UnifiedFinanceInfographic3D.tsx`: scaled up central Shield & Wave (+30%), wireframe Globe & orbital rings (+22%), flow splines, and brought camera closer to create an expansive, high-impact centerpiece.
 - Separated and connected the two 3D infographic parts: positioned the Multi-Asset Globe on the far left (`x = -4.8`) and the 3D Vault Shield with Padlock close to the far right (`x = 3.6`), leaving open visual breathing room in the center while bridging them with a luminous dual-aura connection conduit and streaming energy photons.
-- Implemented direct visual scroll navigation for `/research`, `/#research`, and header Research click: automatically activates `vip-cards` panel in the `AssetContainer` and smoothly scrolls the viewport to `#asset-terminal` (with `scroll-mt-20` for fixed header clearance).
-- Verified 100% test pass rate across all 17 test suites (89/89 tests passing) with zero typecheck or lint errors.
+- Implemented dual-theme (Obsidian Dark & Luxury Light) support and compact modal footprint for Contact modal & About section:
+  1. Compact Contact Modal: Reduced modal max-width from `max-w-5xl` to `!max-w-lg sm:!max-w-2xl lg:!max-w-3xl w-[92vw] sm:w-[86vw] max-h-[85vh]`, streamlined form padding to `p-4 sm:p-5 lg:p-6`, condensed input containers to `px-2.5 py-1.5`, and scaled mascot silhouette for a balanced, elegant footprint without overflowing viewports.
+  2. Dual-Theme Contact Modal: Preserved dark mode palette (`dark:bg-[#08090B]`, `dark:bg-[#0F1115]`, `dark:bg-[#07080A]`, `dark:border-outline/20`) completely identical to current aesthetics, while adding clean Luxury Light styling (`bg-white`, `bg-[#F4F6FB]`, `bg-[#EDF2FB]`, high-contrast text, and refined borders).
+  3. Dual-Theme Sentinel Mascot Graphic: Preserved dark mode gradient and glows while adding Luxury Light background gradient (`bg-gradient-to-b from-[#F4F6FB] via-[#EDF2FB] to-[#E2E7F4]`) and compact minimum container height.
+  4. Dual-Theme About Section & 3D Infographic: Converted `UnifiedFinanceInfographic3D.tsx` container, top subheader, cards, badges, and footer pill to dual-theme tokens (`dark:bg-... bg-...`), and dynamically calibrated Three.js WebGL ambient lighting and metallic reflectivity for light mode while keeping dark mode 100% untouched.
+- Verified 100% test pass rate across all 17 test suites (89/89 tests passing) with zero regressions.
 
 ---
 
