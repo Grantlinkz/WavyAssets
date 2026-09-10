@@ -14,6 +14,10 @@ import { HeroAssetGyroscope } from './components/canvas/HeroAssetGyroscope';
 import { KineticHeroTypography } from './components/hero/KineticHeroTypography';
 import { AboutSection } from './components/about/AboutSection';
 import { ContactModal } from './components/contact/ContactModal';
+import { NotFoundPage } from './components/common/NotFoundPage';
+import { TerminalErrorBoundary } from './components/error/TerminalErrorBoundary';
+import { useTerminalStore } from './store/useTerminalStore';
+import { initSystemLanguage } from './lib/locale';
 import {
   formatCurrency,
   formatPercent,
@@ -32,33 +36,57 @@ const syndicateFeeds = [
   { pair: 'US 10Y SOV', yieldRate: 4.62, bps: -3, type: 'treasury' },
 ];
 
-export const App: React.FC = () => {
-  // Handle /research or /#research routing to /research#/services/vip-cards & scroll directly to VIP cards terminal
-  React.useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const isResearch =
-      window.location.pathname.includes('/research') ||
-      window.location.hash === '#research' ||
-      window.location.hash.includes('services/vip-cards');
+export interface AppProps {
+  is404?: boolean;
+}
 
-    if (isResearch) {
-      if (!window.location.hash.includes('services/vip-cards')) {
-        window.location.hash = '#/services/vip-cards';
-      }
-      const scrollToTerminal = () => {
-        const el = document.getElementById('asset-terminal');
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      };
-      scrollToTerminal();
-      const timer = setTimeout(scrollToTerminal, 150);
-      return () => clearTimeout(timer);
-    }
-  }, []);
+export const App: React.FC<AppProps> = ({ is404: is404Prop }) => {
+  const storeIs404 = useTerminalStore((state) => state.is404);
+  const is404 =
+    is404Prop !== undefined
+      ? is404Prop
+      : storeIs404 || useTerminalStore.getState().is404;
+  const setIs404 = useTerminalStore((state) => state.setIs404);
+  const activeAssetId = useTerminalStore((state) => state.activeAssetId);
+  const syncFromHash = useTerminalStore((state) => state.syncFromHash);
+
+  // Initialize system language and listen to hash / popstate routing changes
+  React.useEffect(() => {
+    initSystemLanguage();
+    syncFromHash();
+    const handleRoutingChange = () => syncFromHash();
+    window.addEventListener('hashchange', handleRoutingChange);
+    window.addEventListener('popstate', handleRoutingChange);
+    return () => {
+      window.removeEventListener('hashchange', handleRoutingChange);
+      window.removeEventListener('popstate', handleRoutingChange);
+    };
+  }, [syncFromHash]);
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface flex flex-col selection:bg-primary-container selection:text-on-primary-container relative">
+    <TerminalErrorBoundary sectionName="Sovereign Terminal Shell">
+      <div className="min-h-screen bg-surface text-on-surface flex flex-col selection:bg-primary-container selection:text-on-primary-container relative">
+        {/* WCAG 2.1 AA Keyboard Accessibility: Skip to Main Content Link */}
+        <a
+          href="#main-content"
+          data-testid="skip-to-content-link"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-on-primary focus:font-semibold focus:text-xs focus:rounded-sm focus:shadow-lg focus:outline-none"
+        >
+          Skip to main content
+        </a>
+
+        {/* Screen Reader ARIA Live Region for Route Announcements */}
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          className="sr-only"
+          data-testid="screen-reader-live-announcements"
+        >
+          {is404
+            ? 'Page or vault record not found. Error 404.'
+            : `Terminal active view: ${activeAssetId}`}
+        </div>
       {/* Default Seamless Looping Sine-Wave Background (#08090B & #0F1115) */}
       <WavyBackground />
 
@@ -141,47 +169,56 @@ export const App: React.FC = () => {
       </div>
 
       {/* 3. Main Terminal Command Deck & Interactive Simulator */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 space-y-12 relative z-10 min-h-[540px]">
-        {/* Section Hero: Kinetic Typography & Interactive 3D Asset Gyroscope */}
-        <section
-          data-testid="hero-section"
-          className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 pt-2"
-        >
-          {/* Left: Kinetic Typography Entrance */}
-          <KineticHeroTypography />
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 space-y-12 relative z-10 min-h-[540px] focus:outline-none"
+      >
+        {is404 ? (
+          <NotFoundPage onReset={() => setIs404(false)} />
+        ) : (
+          <>
+            {/* Section Hero: Kinetic Typography & Interactive 3D Asset Gyroscope */}
+            <section
+              data-testid="hero-section"
+              className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 pt-2"
+            >
+              {/* Left: Kinetic Typography Entrance */}
+              <KineticHeroTypography />
 
-          {/* Right: Interactive 3D Web Asset Hero Gyroscope Container */}
-          <HeroAssetGyroscope />
-        </section>
+              {/* Right: Interactive 3D Web Asset Hero Gyroscope Container */}
+              <HeroAssetGyroscope />
+            </section>
 
-        {/* About Section: 3D Vault Canvas (Left) & Institutional Editorial Write-Up (Right) */}
-        <AboutSection />
+            {/* About Section: 3D Vault Canvas (Left) & Institutional Editorial Write-Up (Right) */}
+            <AboutSection />
 
-        {/* 2-Column Obsidian Console: Portfolio Simulator */}
-        <section id="portfolio-simulator" className="w-full scroll-mt-20">
-          <PortfolioSimulator />
-        </section>
+            {/* 2-Column Obsidian Console: Portfolio Simulator */}
+            <section id="portfolio-simulator" className="w-full scroll-mt-20">
+              <PortfolioSimulator />
+            </section>
 
-        {/* Dynamic Asset Discovery Verticals Hub */}
-        <section className="w-full pt-4">
-          <AssetDiscoveryHub />
-        </section>
+            {/* Dynamic Asset Discovery Verticals Hub */}
+            <section className="w-full pt-4">
+              <AssetDiscoveryHub />
+            </section>
 
-        {/* Dynamic Standardized Asset Sub-Views Terminal (#/services/:assetId) */}
-        <section id="asset-terminal" className="w-full pt-4 scroll-mt-20">
-          <AssetContainer />
-        </section>
+            {/* Dynamic Standardized Asset Sub-Views Terminal (#/services/:assetId) */}
+            <section id="asset-terminal" className="w-full pt-4 scroll-mt-20">
+              <AssetContainer />
+            </section>
 
-        {/* Institutional Trust Infrastructure: Audited Returns & Enclave Telemetry */}
-        <section id="trust-infrastructure" className="w-full pt-4 scroll-mt-20">
-          <TrustInfrastructure />
-        </section>
+            {/* Institutional Trust Infrastructure: Audited Returns & Enclave Telemetry */}
+            <section id="trust-infrastructure" className="w-full pt-4 scroll-mt-20">
+              <TrustInfrastructure />
+            </section>
 
-        {/* Client Voices: Verified Allocator Endorsements (Specular 3D Cards) */}
-        <section id="client-voices" className="w-full pt-4 pb-4 scroll-mt-20">
-          <ClientVoices />
-        </section>
-
+            {/* Client Voices: Verified Allocator Endorsements (Specular 3D Cards) */}
+            <section id="client-voices" className="w-full pt-4 pb-4 scroll-mt-20">
+              <ClientVoices />
+            </section>
+          </>
+        )}
       </main>
 
       {/* 4. Global Compliance-Ready Multi-Column Institutional Footer */}
@@ -193,6 +230,7 @@ export const App: React.FC = () => {
       {/* 6. Globally Mounted Institutional B2B Contact Modal */}
       <ContactModal />
     </div>
+  </TerminalErrorBoundary>
   );
 };
 

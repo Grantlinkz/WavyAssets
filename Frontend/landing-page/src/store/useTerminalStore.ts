@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { getSystemLocale, setLocaleOverride, initSystemLanguage } from '../lib/locale';
 
 export type TerminalTheme = 'dark' | 'light' | 'system';
 
@@ -78,6 +79,14 @@ export interface TerminalStore {
   };
   recordViewSwitch: (from: AssetVerticalId, to: AssetVerticalId, durationMs: number) => void;
   syncFromHash: () => void;
+
+  // 404 Depository Route State
+  is404: boolean;
+  setIs404: (is404: boolean) => void;
+
+  // System Language & Locale
+  locale: string;
+  setLocale: (locale: string) => void;
 }
 
 export interface ViewSwitchEvent {
@@ -97,11 +106,88 @@ export const VALID_ASSET_VERTICALS: AssetVerticalId[] = [
   'wallet',
 ];
 
-export function parseAssetHash(hash: string): AssetVerticalId {
-  if (hash === '#research' || hash.includes('/research') || hash.includes('services/vip-cards')) {
+export const VALID_SECTION_HASHES: string[] = [
+  '',
+  '#',
+  '#about',
+  '#portfolio-simulator',
+  '#asset-terminal',
+  '#trust-infrastructure',
+  '#client-voices',
+  '#contact',
+  '#research',
+];
+
+export function isRoute404(pathname?: string, hash?: string): boolean {
+  const safePath =
+    pathname ||
+    (typeof window !== 'undefined' && window.location ? window.location.pathname : '/') ||
+    '/';
+  const safeHash =
+    hash !== undefined
+      ? hash
+      : typeof window !== 'undefined' && window.location
+        ? window.location.hash || ''
+        : '';
+
+  const cleanPath =
+    safePath.length > 1 && safePath.endsWith('/') ? safePath.slice(0, -1) : safePath;
+
+  if (safeHash === '#/404' || safeHash === '#404') {
+    return true;
+  }
+
+  const isValidPathname =
+    cleanPath === '' ||
+    cleanPath === '/' ||
+    cleanPath === '/index.html' ||
+    cleanPath === '/contact' ||
+    cleanPath === '/research';
+
+  if (!isValidPathname) {
+    return true;
+  }
+
+  // If path is /research, only empty hash, #, or #/services/vip-cards is allowed
+  if (cleanPath === '/research') {
+    if (
+      !safeHash ||
+      safeHash === '#' ||
+      safeHash === '#/services/vip-cards' ||
+      safeHash === '#research'
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  // Standard root path hash validation
+  if (!safeHash || safeHash === '#' || VALID_SECTION_HASHES.includes(safeHash)) {
+    return false;
+  }
+
+  const serviceMatch = safeHash.match(/^#\/services\/([a-z0-9-]+)$/i);
+  if (serviceMatch && serviceMatch[1]) {
+    const candidate = serviceMatch[1].toLowerCase() as AssetVerticalId;
+    return !VALID_ASSET_VERTICALS.includes(candidate);
+  }
+
+  return true;
+}
+
+export function parseAssetHash(hash?: string): AssetVerticalId {
+  const safeHash = hash || '';
+  if (safeHash === '#research' || safeHash === '/research' || safeHash.startsWith('/research')) {
+    const researchMatch = safeHash.match(/#\/services\/([a-z0-9-]+)/i);
+    if (researchMatch && researchMatch[1]) {
+      const candidate = researchMatch[1].toLowerCase() as AssetVerticalId;
+      if (VALID_ASSET_VERTICALS.includes(candidate)) {
+        return candidate;
+      }
+    }
     return 'vip-cards';
   }
-  const match = hash.match(/^#\/services\/([a-z-]+)/i);
+  const match = safeHash.match(/(?:^|#\/)services\/([a-z0-9-]+)/i);
   if (match && match[1]) {
     const candidate = match[1].toLowerCase() as AssetVerticalId;
     if (VALID_ASSET_VERTICALS.includes(candidate)) {
@@ -143,6 +229,11 @@ const initialTheme = getInitialTheme();
 const initialResolved = initialTheme === 'system' ? resolveSystemTheme() : initialTheme;
 applyThemeToDocument(initialResolved);
 
+// Initialize system language / locale
+if (typeof window !== 'undefined') {
+  initSystemLanguage();
+}
+
 export const useTerminalStore = create<TerminalStore>((set, get) => ({
   theme: initialTheme,
   resolvedTheme: initialResolved,
@@ -168,6 +259,7 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
 
   activeAssetId: typeof window !== 'undefined' ? parseAssetHash(window.location.hash) : 'crypto',
   setActiveAssetId: (id: AssetVerticalId) => {
+    set({ is404: false });
     const prev = get().activeAssetId;
     if (prev !== id) {
       const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
@@ -181,6 +273,18 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     } else {
       set({ isMegaMenuOpen: false });
     }
+  },
+
+  is404:
+    typeof window !== 'undefined'
+      ? isRoute404(window.location.pathname, window.location.hash)
+      : false,
+  setIs404: (is404: boolean) => set({ is404 }),
+
+  locale: typeof window !== 'undefined' ? getSystemLocale() : 'en-US',
+  setLocale: (locale: string) => {
+    setLocaleOverride(locale);
+    set({ locale });
   },
 
   telemetry: {
@@ -200,13 +304,23 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
   },
   syncFromHash: () => {
     if (typeof window === 'undefined' || !window.location) return;
-    const pathname = window.location.pathname || '';
+    const pathname = window.location.pathname || '/';
     const hash = window.location.hash || '';
-    const isResearch =
-      pathname.includes('/research') ||
-      hash === '#research' ||
-      hash.includes('/research');
-    const isContact = pathname.includes('/contact') || hash === '#contact';
+
+    if (isRoute404(pathname, hash)) {
+      set({ is404: true });
+      return;
+    }
+
+    if (get().is404) {
+      set({ is404: false });
+    }
+
+    const cleanPath =
+      pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+
+    const isResearch = cleanPath === '/research' || hash === '#research';
+    const isContact = cleanPath === '/contact' || hash === '#contact';
     if (isContact && !get().isContactModalOpen) {
       set({ isContactModalOpen: true });
     }
