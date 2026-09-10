@@ -56,7 +56,7 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
     // Scene, Camera, Renderer
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.set(0, 0.2, 8.8);
+    camera.position.set(0, 0.2, 9.6);
 
     const renderer = new THREE.WebGLRenderer({
       canvas,
@@ -89,11 +89,11 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
     scene.add(centerPointLight);
 
     // ==========================================
-    // 1. CENTERPIECE: 3D Shield + Cyan Wave + Padlock
+    // 1. RIGHT SIDE: 3D Shield + Cyan Wave + Padlock (Close to far right)
     // ==========================================
     const centerGroup = new THREE.Group();
-    centerGroup.scale.set(1.3, 1.3, 1.3);
-    centerGroup.position.set(0, 0.35, 0);
+    centerGroup.scale.set(1.18, 1.18, 1.18);
+    centerGroup.position.set(3.6, 0.25, 0);
     scene.add(centerGroup);
 
     // Shield base geometry
@@ -199,11 +199,11 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
     lockGroup.add(keyholeMesh);
 
     // ==========================================
-    // 2. LEFT SIDE: Glowing Globe & Orbital Rings
+    // 2. FAR LEFT: Glowing Globe & Orbital Rings (Far left)
     // ==========================================
     const leftGlobeGroup = new THREE.Group();
-    leftGlobeGroup.scale.set(1.22, 1.22, 1.22);
-    leftGlobeGroup.position.set(-3.9, 0.2, 0);
+    leftGlobeGroup.scale.set(1.15, 1.15, 1.15);
+    leftGlobeGroup.position.set(-4.8, 0.2, 0);
     scene.add(leftGlobeGroup);
 
     // Wireframe Globe Sphere
@@ -257,19 +257,55 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
     }
 
     // ==========================================
-    // 3. RIGHT PIPELINES: 3 Glowing Flow Splines
+    // 3. CONNECTING BRIDGE & PIPELINES: Dynamic connection between far left & far right
     // ==========================================
     const pipelinesGroup = new THREE.Group();
     pipelinesGroup.position.set(0, 0.2, 0);
     scene.add(pipelinesGroup);
 
-    // Pipeline 1: Center to Family Offices (Top Right)
-    const pipe1Curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(1.6, 0.7, 0),
-      new THREE.Vector3(2.7, 1.5, 0.2),
-      new THREE.Vector3(3.8, 1.6, 0),
+    // Dynamic Connection Bridge connecting Globe (far left) across open space to Shield (far right)
+    const connectCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-3.6, 0.2, 0),
+      new THREE.Vector3(-1.8, 0.5, 0.2),
+      new THREE.Vector3(0.0, 0.3, 0.15),
+      new THREE.Vector3(1.8, 0.55, 0.2),
+      new THREE.Vector3(2.6, 0.25, 0),
     ]);
-    const pipe1Geo = new THREE.TubeGeometry(pipe1Curve, 32, 0.035, 8, false);
+    const connectGeo = new THREE.TubeGeometry(connectCurve, 64, 0.038, 12, false);
+    const connectMat = new THREE.MeshStandardMaterial({
+      color: cyanColor,
+      emissive: new THREE.Color('#005577'),
+      roughness: 0.15,
+      metalness: 0.5,
+    });
+    const connectMesh = new THREE.Mesh(connectGeo, connectMat);
+    pipelinesGroup.add(connectMesh);
+
+    // Outer sovereign gold spiral aura around the connection bridge
+    const connectAuraCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-3.5, 0.12, 0),
+      new THREE.Vector3(-1.8, 0.38, -0.15),
+      new THREE.Vector3(0.0, 0.2, -0.1),
+      new THREE.Vector3(1.8, 0.42, -0.15),
+      new THREE.Vector3(2.7, 0.18, 0),
+    ]);
+    const connectAuraGeo = new THREE.TubeGeometry(connectAuraCurve, 48, 0.02, 8, false);
+    const connectAuraMat = new THREE.MeshStandardMaterial({
+      color: goldColor,
+      emissive: new THREE.Color('#332200'),
+      roughness: 0.25,
+      metalness: 0.8,
+    });
+    const connectAuraMesh = new THREE.Mesh(connectAuraGeo, connectAuraMat);
+    pipelinesGroup.add(connectAuraMesh);
+
+    // Pipeline 1: Shield to Family Offices
+    const pipe1Curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(2.8, 0.6, 0),
+      new THREE.Vector3(2.1, 1.1, 0.2),
+      new THREE.Vector3(1.5, 1.2, 0),
+    ]);
+    const pipe1Geo = new THREE.TubeGeometry(pipe1Curve, 32, 0.03, 8, false);
     const pipe1Mat = new THREE.MeshStandardMaterial({
       color: cyanColor,
       emissive: new THREE.Color('#004455'),
@@ -278,13 +314,13 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
     const pipe1 = new THREE.Mesh(pipe1Geo, pipe1Mat);
     pipelinesGroup.add(pipe1);
 
-    // Pipeline 2: Center to Institutions (Middle Right)
+    // Pipeline 2: Shield to Institutions
     const pipe2Curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(1.7, 0.0, 0),
-      new THREE.Vector3(2.8, 0.0, 0.2),
-      new THREE.Vector3(3.8, 0.0, 0),
+      new THREE.Vector3(2.7, 0.1, 0),
+      new THREE.Vector3(2.1, 0.1, 0.2),
+      new THREE.Vector3(1.5, 0.1, 0),
     ]);
-    const pipe2Geo = new THREE.TubeGeometry(pipe2Curve, 32, 0.04, 8, false);
+    const pipe2Geo = new THREE.TubeGeometry(pipe2Curve, 32, 0.035, 8, false);
     const pipe2Mat = new THREE.MeshStandardMaterial({
       color: goldColor,
       emissive: new THREE.Color('#443300'),
@@ -293,13 +329,13 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
     const pipe2 = new THREE.Mesh(pipe2Geo, pipe2Mat);
     pipelinesGroup.add(pipe2);
 
-    // Pipeline 3: Center to Smart Investors (Bottom Right)
+    // Pipeline 3: Shield to Smart Investors
     const pipe3Curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(1.6, -0.7, 0),
-      new THREE.Vector3(2.7, -1.5, 0.2),
-      new THREE.Vector3(3.8, -1.6, 0),
+      new THREE.Vector3(2.8, -0.4, 0),
+      new THREE.Vector3(2.1, -0.9, 0.2),
+      new THREE.Vector3(1.5, -1.0, 0),
     ]);
-    const pipe3Geo = new THREE.TubeGeometry(pipe3Curve, 32, 0.035, 8, false);
+    const pipe3Geo = new THREE.TubeGeometry(pipe3Curve, 32, 0.03, 8, false);
     const pipe3Mat = new THREE.MeshStandardMaterial({
       color: emeraldColor,
       emissive: new THREE.Color('#004422'),
@@ -317,7 +353,9 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
     const photon1 = new THREE.Mesh(photonGeo, photonMat1);
     const photon2 = new THREE.Mesh(photonGeo, photonMat2);
     const photon3 = new THREE.Mesh(photonGeo, photonMat3);
-    pipelinesGroup.add(photon1, photon2, photon3);
+    const bridgePhoton1 = new THREE.Mesh(photonGeo, photonMat1);
+    const bridgePhoton2 = new THREE.Mesh(photonGeo, photonMat2);
+    pipelinesGroup.add(photon1, photon2, photon3, bridgePhoton1, bridgePhoton2);
 
     // ==========================================
     // 4. AMBIENT PARTICLES
@@ -362,16 +400,17 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
       mouseY += (targetY - mouseY) * 0.05;
       camera.position.x = mouseX;
       camera.position.y = 0.2 + mouseY;
-      camera.position.z = 8.8;
+      camera.position.z = 9.6;
       camera.lookAt(0, 0.2, 0);
 
-      // Centerpiece gentle float & wave breathing
+      // Shield & Padlock gentle float & wave breathing (close to far right)
       if (!shouldReduceMotion) {
-        centerGroup.position.y = 0.35 + Math.sin(elapsed * 1.5) * 0.08;
+        centerGroup.position.x = 3.6;
+        centerGroup.position.y = 0.25 + Math.sin(elapsed * 1.5) * 0.08;
         centerGroup.rotation.y = Math.sin(elapsed * 0.8) * 0.06;
         waveMesh.rotation.z = Math.sin(elapsed * 1.2) * 0.04;
 
-        // Left Globe rotation
+        // Far Left Globe rotation
         globeMesh.rotation.y += 0.006;
         innerGlobe.rotation.y -= 0.003;
         ring1.rotation.z += 0.008;
@@ -394,6 +433,12 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
         photon1.position.copy(pipe1Curve.getPointAt(p1T));
         photon2.position.copy(pipe2Curve.getPointAt(p2T));
         photon3.position.copy(pipe3Curve.getPointAt(p3T));
+
+        // Animate connecting bridge photons (from Globe on far left to Shield on far right)
+        const bp1T = (elapsed * 0.28) % 1;
+        const bp2T = (elapsed * 0.28 + 0.5) % 1;
+        bridgePhoton1.position.copy(connectCurve.getPointAt(bp1T));
+        bridgePhoton2.position.copy(connectCurve.getPointAt(bp2T));
       }
 
       renderer.render(scene, camera);
@@ -461,6 +506,10 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
       pipe2Mat.dispose();
       pipe3Geo.dispose();
       pipe3Mat.dispose();
+      connectGeo.dispose();
+      connectMat.dispose();
+      connectAuraGeo.dispose();
+      connectAuraMat.dispose();
       photonGeo.dispose();
       photonMat1.dispose();
       photonMat2.dispose();
