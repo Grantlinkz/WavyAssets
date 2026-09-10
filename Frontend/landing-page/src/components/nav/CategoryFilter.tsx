@@ -8,10 +8,10 @@ interface CategoryTab {
 }
 
 const CATEGORIES: CategoryTab[] = [
-  { id: 'all', label: 'All ACTIVE' },
-  { id: 'liquid-digital', label: 'Liquid Digital' },
-  { id: 'dma-equities', label: 'DMA Equities' },
-  { id: 'physical-vaults', label: 'Physical Vaults' },
+  { id: 'all', label: 'All Services' },
+  { id: 'liquid-digital', label: 'Crypto & Digital' },
+  { id: 'dma-equities', label: 'Stocks & Pre-IPO' },
+  { id: 'physical-vaults', label: 'Real Estate & Vaults' },
 ];
 
 export const CategoryFilter: React.FC = () => {

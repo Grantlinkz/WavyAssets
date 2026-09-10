@@ -65,9 +65,9 @@ describe('Brand Identity, Wave Theme & Services Scroll Integration Suite (SSR / 
       expect(html).toContain('overflow-y-auto');
       expect(html).toContain('custom-scrollbar');
       // All 7 classes rendered inside
-      expect(html).toContain('Crypto Yields &amp; Cold Storage');
-      expect(html).toContain('Exotic Hypercar &amp; Horology Depots');
-      expect(html).toContain('Sovereign Wallet &amp; Core Global Finance');
+      expect(html).toContain('High-Yield Crypto Staking &amp; Cold Storage');
+      expect(html).toContain('Exotic Collector Cars &amp; Rare Horology Vault');
+      expect(html).toContain('Multi-Currency Sovereign Digital Wallet');
     });
   });
 

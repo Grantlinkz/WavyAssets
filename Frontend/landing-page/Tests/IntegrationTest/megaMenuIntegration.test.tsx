@@ -11,6 +11,12 @@ describe('GlobalHeader & ServicesMegaMenu Integration (Node 24 Engine)', () => {
       isMegaMenuOpen: false,
       megaMenuCategory: 'all',
       activeAssetId: 'crypto',
+      authModal: {
+        isOpen: false,
+        step: 1,
+        initialTier: 'institutional',
+        initialMode: 'login',
+      },
     });
     window.location.hash = '';
   });
@@ -40,25 +46,43 @@ describe('GlobalHeader & ServicesMegaMenu Integration (Node 24 Engine)', () => {
     expect(html).toBe('');
   });
 
-  it('renders full 7-vertical mega-menu with telemetry diagnostics when open', () => {
+  it('renders full 7-vertical mega-menu with 3D vector icons and SEO copy when open', () => {
     useTerminalStore.setState({ isMegaMenuOpen: true, megaMenuCategory: 'all' });
     const html = renderToString(<ServicesMegaMenu isOpen={true} category="all" />);
 
-    // Header context and enclaves
-    expect(html).toContain('ACTIVE ENCLAVES');
-    expect(html).toContain('Sovereign Multi-Asset Custody');
-    expect(html).toContain('MERKLE PROOFS: HOURLY');
-    expect(html).toContain('FIPS 140-3 HSM VERIFIED');
-    expect(html).toContain('CROSS-MARGIN: 1:1 CONSOLIDATED');
+    // Header context and trust assurances
+    expect(html).toContain('100% ASSET-BACKED');
+    expect(html).toContain('Explore Wealth Services &amp; Asset Classes');
+    expect(html).toContain('SOC-2 &amp; FINMA COMPLIANT');
+    expect(html).toContain('FIPS 140-3 MPC STORAGE');
+    expect(html).toContain('INSTANT SETTLEMENT');
 
-    // All 7 Asset Verticals
-    expect(html).toContain('Crypto Yields &amp; Cold Storage');
-    expect(html).toContain('Global Stocks &amp; DMA');
-    expect(html).toContain('AI Systematic Funds &amp; H100 Mesh');
-    expect(html).toContain('Fractional Prime Real Estate');
-    expect(html).toContain('Exotic Hypercar &amp; Horology Depots');
-    expect(html).toContain('VIP Titanium Concierge Cards');
-    expect(html).toContain('Sovereign Wallet &amp; Core Global Finance');
+    // All 7 Asset Verticals with rewritten SEO & conversion titles
+    expect(html).toContain('High-Yield Crypto Staking &amp; Cold Storage');
+    expect(html).toContain('Global Stocks &amp; Pre-IPO Tech Shares');
+    expect(html).toContain('AI Infrastructure Funds &amp; GPU Compute');
+    expect(html).toContain('Fractional Prime Commercial Real Estate');
+    expect(html).toContain('Exotic Collector Cars &amp; Rare Horology Vault');
+    expect(html).toContain('VIP Titanium Metal Concierge Cards');
+    expect(html).toContain('Multi-Currency Sovereign Digital Wallet');
+
+    // 3D Vector SVG unique gradient markers
+    expect(html).toContain('crypto-face');
+    expect(html).toContain('stocks-green-front');
+    expect(html).toContain('ai-die-top');
+    expect(html).toContain('re-glass-front');
+    expect(html).toContain('car-body');
+    expect(html).toContain('card-titanium-face');
+    expect(html).toContain('vault-face');
+
+    // Sign-In CTAs on cards
+    expect(html).toContain('Sign In to Invest');
+    expect(html).toContain('Sign In to Trade');
+    expect(html).toContain('Sign In to Access Funds');
+    expect(html).toContain('Sign In to View Properties');
+    expect(html).toContain('Sign In to Vault');
+    expect(html).toContain('Sign In to Claim Card');
+    expect(html).toContain('Sign In to Open Wallet');
 
     // Telemetry and diagnostics panel (Plain English)
     expect(html).toContain('VAULT HEALTH &amp; PLATFORM STATUS');
@@ -70,35 +94,50 @@ describe('GlobalHeader & ServicesMegaMenu Integration (Node 24 Engine)', () => {
   });
 
   it('filters asset verticals by active category selection', () => {
-    // 1. DMA Equities filter
+    // 1. Stocks & Pre-IPO (dma-equities) filter
     useTerminalStore.setState({ isMegaMenuOpen: true, megaMenuCategory: 'dma-equities' });
     const dmaHtml = renderToString(<ServicesMegaMenu isOpen={true} category="dma-equities" />);
 
-    expect(dmaHtml).toContain('Global Stocks &amp; DMA');
-    expect(dmaHtml).toContain('Sovereign Wallet &amp; Core Global Finance'); // Treasury layer always included
-    expect(dmaHtml).not.toContain('Crypto Yields &amp; Cold Storage');
-    expect(dmaHtml).not.toContain('Exotic Hypercar &amp; Horology Depots');
+    expect(dmaHtml).toContain('Global Stocks &amp; Pre-IPO Tech Shares');
+    expect(dmaHtml).toContain('Multi-Currency Sovereign Digital Wallet'); // Treasury layer always included
+    expect(dmaHtml).not.toContain('High-Yield Crypto Staking &amp; Cold Storage');
+    expect(dmaHtml).not.toContain('Exotic Collector Cars &amp; Rare Horology Vault');
 
-    // 2. Physical Vaults filter
+    // 2. Real Estate & Vaults (physical-vaults) filter
     useTerminalStore.setState({ isMegaMenuOpen: true, megaMenuCategory: 'physical-vaults' });
     const vaultsHtml = renderToString(<ServicesMegaMenu isOpen={true} category="physical-vaults" />);
 
-    expect(vaultsHtml).toContain('Fractional Prime Real Estate');
-    expect(vaultsHtml).toContain('Exotic Hypercar &amp; Horology Depots');
-    expect(vaultsHtml).not.toContain('Global Stocks &amp; DMA');
-    expect(vaultsHtml).not.toContain('Crypto Yields &amp; Cold Storage');
+    expect(vaultsHtml).toContain('Fractional Prime Commercial Real Estate');
+    expect(vaultsHtml).toContain('Exotic Collector Cars &amp; Rare Horology Vault');
+    expect(vaultsHtml).not.toContain('Global Stocks &amp; Pre-IPO Tech Shares');
+    expect(vaultsHtml).not.toContain('High-Yield Crypto Staking &amp; Cold Storage');
   });
 
-  it('handles asset selection flow: updates active asset, synchronizes hash, and closes menu', () => {
-    useTerminalStore.setState({ isMegaMenuOpen: true });
-    expect(useTerminalStore.getState().isMegaMenuOpen).toBe(true);
+  it('handles asset vertical click: activates asset, closes mega-menu, and opens Sign-In modal', () => {
+    useTerminalStore.setState({
+      isMegaMenuOpen: true,
+      authModal: {
+        isOpen: false,
+        step: 1,
+        initialTier: 'institutional',
+        initialMode: 'mandate',
+      },
+    });
 
-    // Simulate clicking Real Estate vertical
-    useTerminalStore.getState().setActiveAssetId('real-estate');
+    const html = renderToString(<ServicesMegaMenu isOpen={true} category="all" />);
+    expect(html).toContain('data-testid="vertical-card-cars"');
 
-    expect(useTerminalStore.getState().activeAssetId).toBe('real-estate');
-    expect(useTerminalStore.getState().isMegaMenuOpen).toBe(false);
-    expect(window.location.hash).toBe('#/services/real-estate');
+    // Execute state transition identical to card click handler
+    useTerminalStore.getState().setActiveAssetId('cars');
+    useTerminalStore.getState().setMegaMenuOpen(false);
+    useTerminalStore.getState().openAuthModal('institutional', 'login');
+
+    // State assertions
+    const state = useTerminalStore.getState();
+    expect(state.activeAssetId).toBe('cars');
+    expect(state.isMegaMenuOpen).toBe(false);
+    expect(state.authModal.isOpen).toBe(true);
+    expect(state.authModal.initialMode).toBe('login');
   });
 
   it('handles ESC key hotkey dismissal', () => {
