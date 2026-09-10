@@ -126,6 +126,8 @@
 - Enhanced `Tests/IntegrationTest/simulatorIntegration.test.tsx` with assertions verifying both `simulator-left-column` and `simulator-right-column` render with zero layout shift (74/74 tests passing across 15 test suites).
 - Replaced static `HARDWARE PERFORMANCE` metrics block in `AiFundsPanel.tsx` with a continuous autoplaying loop of `Robot.mp4` with no controls, custom telemetry overlay pill badge (`LIVE | AUTONOMOUS AI AGENT`), 100% automated execution bar, and Framer Motion opposing kinematics (`x: -30 -> 0` left column, `x: 30 -> 0` & `scale: 0.98 -> 1` video column) with full `useReducedMotion()` accessibility support.
 - Updated `Tests/IntegrationTest/assetPanelsAndAuthIntegration.test.tsx` asserting `data-testid="ai-funds-robot-video"`, continuous loop, autoplay, playsinline, and absence of controls (74/74 tests passing across 15 suites).
+- Replaced benchmark and metrics blocks across the remaining 6 asset vertical panels (`CryptoPanel`, `StocksPanel`, `RealEstatePanel`, `CarsPanel`, `VipCardsPanel`, `WalletPanel`) with corresponding continuous autoplaying MP4 video loops (`crypto.mp4`, `stock.mp4`, `real estate.mp4`, `cars.mp4`, `vip cards.mp4`, `wallet.mp4`) with zero controls, custom telemetry overlay pill badges, and Framer Motion opposing kinematics with `useReducedMotion()` fallback.
+- Enhanced `Tests/IntegrationTest/assetPanelsAndAuthIntegration.test.tsx` asserting all 7 vertical panel continuous video loops, autoplay, playsinline, and absence of controls (74/74 tests passing across 15 suites).
 
 ---
 

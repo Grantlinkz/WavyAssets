@@ -57,6 +57,11 @@ describe('Asset Panels & Unified Auth Modal Integration Suite (SSR / Node 24)', 
     expect(cryptoHtml).toContain('19.4%');
     expect(cryptoHtml).toContain('Bitcoin Basis Growth Yield Account');
     expect(cryptoHtml).toContain('Ethereum Staking &amp; Security Rewards');
+    expect(cryptoHtml).toContain('data-testid="crypto-video"');
+    expect(cryptoHtml).toMatch(/autoplay/i);
+    expect(cryptoHtml).toMatch(/loop/i);
+    expect(cryptoHtml).toMatch(/playsinline/i);
+    expect(cryptoHtml).not.toContain('controls');
 
     // 2. Stocks Panel
     const stocksHtml = renderToString(<StocksPanel />);
@@ -64,6 +69,11 @@ describe('Asset Panels & Unified Auth Modal Integration Suite (SSR / Node 24)', 
     expect(stocksHtml).toContain('SPACEX');
     expect(stocksHtml).toContain('STRIPE');
     expect(stocksHtml).toContain('ANTHROPIC');
+    expect(stocksHtml).toContain('data-testid="stocks-video"');
+    expect(stocksHtml).toMatch(/autoplay/i);
+    expect(stocksHtml).toMatch(/loop/i);
+    expect(stocksHtml).toMatch(/playsinline/i);
+    expect(stocksHtml).not.toContain('controls');
 
     // 3. AI Funds Panel
     const aiHtml = renderToString(<AiFundsPanel />);
@@ -81,6 +91,11 @@ describe('Asset Panels & Unified Auth Modal Integration Suite (SSR / Node 24)', 
     expect(reHtml).toContain('Tokenized Prime Real Estate &amp; SPV Deeds');
     expect(reHtml).toContain('Bahnhofstrasse Trophy Retail');
     expect(reHtml).toContain('Mayfair Fiduciary House');
+    expect(reHtml).toContain('data-testid="real-estate-video"');
+    expect(reHtml).toMatch(/autoplay/i);
+    expect(reHtml).toMatch(/loop/i);
+    expect(reHtml).toMatch(/playsinline/i);
+    expect(reHtml).not.toContain('controls');
 
     // 5. Cars Panel
     const carsHtml = renderToString(<CarsPanel />);
@@ -88,12 +103,22 @@ describe('Asset Panels & Unified Auth Modal Integration Suite (SSR / Node 24)', 
     expect(carsHtml).toContain('1964 Ferrari 250 GTO Series II');
     expect(carsHtml).toContain('1995 McLaren F1 LM Specification');
     expect(carsHtml).toContain('$48,500,000');
+    expect(carsHtml).toContain('data-testid="cars-video"');
+    expect(carsHtml).toMatch(/autoplay/i);
+    expect(carsHtml).toMatch(/loop/i);
+    expect(carsHtml).toMatch(/playsinline/i);
+    expect(carsHtml).not.toContain('controls');
 
     // 6. VIP Cards Panel
     const cardsHtml = renderToString(<VipCardsPanel />);
     expect(cardsHtml).toContain('VIP Concierge &amp; Collateral Metal Cards');
     expect(cardsHtml).toContain('WavyAssets Sovereign Obsidian Titanium');
     expect(cardsHtml).toContain('0.00% Zero-FX in 140+ Jurisdictions');
+    expect(cardsHtml).toContain('data-testid="vip-cards-video"');
+    expect(cardsHtml).toMatch(/autoplay/i);
+    expect(cardsHtml).toMatch(/loop/i);
+    expect(cardsHtml).toMatch(/playsinline/i);
+    expect(cardsHtml).not.toContain('controls');
 
     // 7. Wallet Panel
     const walletHtml = renderToString(<WalletPanel />);
@@ -101,6 +126,11 @@ describe('Asset Panels & Unified Auth Modal Integration Suite (SSR / Node 24)', 
     expect(walletHtml).toContain('Zurich Military Bunker Enclave');
     expect(walletHtml).toContain('$500M');
     expect(walletHtml).toContain('3-of-5');
+    expect(walletHtml).toContain('data-testid="wallet-video"');
+    expect(walletHtml).toMatch(/autoplay/i);
+    expect(walletHtml).toMatch(/loop/i);
+    expect(walletHtml).toMatch(/playsinline/i);
+    expect(walletHtml).not.toContain('controls');
   });
 
   it('renders closed UnifiedAuthModal as empty output when isOpen is false', () => {
