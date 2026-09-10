@@ -134,7 +134,6 @@ export const InstitutionalFooter: React.FC = () => {
               </li>
               <li className="hover:text-on-surface transition-colors cursor-pointer flex items-center justify-between">
                 <span>Proof of Reserves Hourly Attestation</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
               </li>
               <li className="hover:text-on-surface transition-colors cursor-pointer">
                 Audited Return Methodologies
