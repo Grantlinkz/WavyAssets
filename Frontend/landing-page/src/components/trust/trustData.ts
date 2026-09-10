@@ -1,4 +1,10 @@
 import type { TrustMode } from '../../store/useTerminalStore';
+import avatarTariq from '../../assets/testimonials/tariq-alzahrani.jpg';
+import avatarHendrik from '../../assets/testimonials/hendrik-weber.jpg';
+import avatarEleanor from '../../assets/testimonials/eleanor-de-broglie.jpg';
+import avatarKoenig from '../../assets/testimonials/alexander-koenig.jpg';
+import avatarLaurent from '../../assets/testimonials/victoria-laurent.jpg';
+import avatarThorne from '../../assets/testimonials/marcus-thorne.jpg';
 
 export interface TrustMetricItem {
   id: string;
@@ -105,6 +111,7 @@ export interface TestimonialItem {
   identifier: string;
   quote: string;
   initials: string;
+  avatarUrl?: string;
   name: string;
   role: string;
   location: string;
@@ -122,6 +129,7 @@ export const testimonialsData: Record<TrustMode, TestimonialItem[]> = {
       quote:
         '“WAVY solved what Swiss private banks could not: programmatic cross-collateralization between our Geneva Freeport hypercar allocations and tokenized Zurich real estate, yielding continuous liquidity without tax liquidation events.”',
       initials: 'AK',
+      avatarUrl: avatarKoenig,
       name: 'Alexander Koenig',
       role: 'Principal, Koenig Family Office',
       location: 'Geneva & Zurich',
@@ -136,6 +144,7 @@ export const testimonialsData: Record<TrustMode, TestimonialItem[]> = {
       quote:
         '“The deterministic FIX 4.4 routing to Equinix NY4 and clustered H100 compute syndication delivers institutional predictability. The hardware kill-switches and enclave multi-sig provide peace of mind for our systematic arbitrage strategies.”',
       initials: 'VL',
+      avatarUrl: avatarLaurent,
       name: 'Victoria Laurent',
       role: 'MD, Octave Quant Syndicate',
       location: 'London & New York',
@@ -150,6 +159,7 @@ export const testimonialsData: Record<TrustMode, TestimonialItem[]> = {
       quote:
         '“Deploying operating capital through the pure titanium VIP concierge cards with instant credit lines collateralized by our crypto and bond reserves has eliminated traditional FX spreads across seven jurisdictions.”',
       initials: 'MT',
+      avatarUrl: avatarThorne,
       name: 'Marcus Thorne',
       role: 'Founder & CIO, Thorne Capital',
       location: 'Singapore & Dubai',
@@ -166,6 +176,7 @@ export const testimonialsData: Record<TrustMode, TestimonialItem[]> = {
       quote:
         '“Managing liquidity across sovereign debt tranches, institutional GPU clusters, and tokenized commercial properties requires uncompromised deterministic settlement. WavyAssets enclave architecture sets the gold benchmark.”',
       initials: 'SZ',
+      avatarUrl: avatarTariq,
       name: 'Sheikh Tariq Al-Zahrani',
       role: 'Chief Investment Officer, Sovereign Capital Authority',
       location: 'Abu Dhabi & Riyadh',
@@ -180,6 +191,7 @@ export const testimonialsData: Record<TrustMode, TestimonialItem[]> = {
       quote:
         '“The sub-0.02ms co-location connection inside Equinix Frankfurt and London LD4 direct into institutional dark pools provides the sub-millisecond liquidity routing mandatory for our high-frequency market-making models.”',
       initials: 'HW',
+      avatarUrl: avatarHendrik,
       name: 'Dr. Hendrik Weber',
       role: 'Managing Director, Apex Systematic Quantitative Fund',
       location: 'Frankfurt & Zurich',
@@ -194,6 +206,7 @@ export const testimonialsData: Record<TrustMode, TestimonialItem[]> = {
       quote:
         '“Our ultra-high-net-worth consortium requires multi-sig MPC custody that complies seamlessly with Swiss FINMA VQF regulations. The real-time hourly Merkle leaf audit and Lloyd’s insurance backing provide complete fiduciary assurance.”',
       initials: 'EB',
+      avatarUrl: avatarEleanor,
       name: 'Eleanor de Broglie',
       role: 'Senior Partner, Consortium de Genève MFO',
       location: 'Geneva & Luxembourg',

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 import { useTerminalStore, type TrustMode } from '../../store/useTerminalStore';
 import { testimonialsData, type TestimonialItem } from './trustData';
@@ -8,9 +8,11 @@ export type { TestimonialItem };
 
 interface SpecularCardProps {
   item: TestimonialItem;
+  index: number;
 }
 
-const SpecularCard: React.FC<SpecularCardProps> = ({ item }) => {
+const SpecularCard: React.FC<SpecularCardProps> = ({ item, index }) => {
+  const shouldReduceMotion = useReducedMotion();
   const cardRef = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0, shineX: 50, shineY: 50, active: false });
 
@@ -38,75 +40,128 @@ const SpecularCard: React.FC<SpecularCardProps> = ({ item }) => {
 
   return (
     <motion.div
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      animate={{
-        rotateX: tilt.rotateX,
-        rotateY: tilt.rotateY,
+      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{
+        duration: 0.8,
+        delay: shouldReduceMotion ? 0 : index * 0.15,
+        ease: [0.16, 1, 0.3, 1],
       }}
-      transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-      style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
-      className="relative bg-surface-container-low rounded-sm p-6 flex flex-col justify-between gap-6 border border-outline/30 shadow-md hover:border-primary/50 transition-colors overflow-hidden group"
-      data-testid={`testimonial-card-${item.id}`}
+      style={{ willChange: 'transform, opacity' }}
+      className="h-full"
     >
-      {/* Specular Radial Spotlight Layer */}
-      {tilt.active && (
+      <motion.div
+        ref={cardRef}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        animate={{
+          rotateX: tilt.rotateX,
+          rotateY: tilt.rotateY,
+        }}
+        whileHover={{
+          y: shouldReduceMotion ? 0 : -6,
+        }}
+        transition={{
+          rotateX: { type: 'spring', stiffness: 350, damping: 25 },
+          rotateY: { type: 'spring', stiffness: 350, damping: 25 },
+          y: { duration: 0.25, ease: 'easeOut' },
+        }}
+        style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
+        className="relative h-full bg-surface-container-low rounded-sm p-6 flex flex-col justify-between gap-6 border border-outline/30 shadow-md hover:border-primary/50 transition-all duration-300 hover:shadow-[0_12px_36px_-4px_rgba(212,175,55,0.16),0_0_24px_rgba(0,194,136,0.1)] overflow-hidden group"
+        data-testid={`testimonial-card-${item.id}`}
+      >
+        {/* Continuous Border Beam Light-Trace along outer border path */}
         <div
-          className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-300"
+          data-testid="border-beam-trace"
+          className="pointer-events-none absolute inset-0 rounded-sm overflow-hidden z-20"
           style={{
-            background: `radial-gradient(circle 220px at ${tilt.shineX}% ${tilt.shineY}%, rgba(212, 175, 55, 0.12), transparent 70%)`,
+            padding: '1px',
+            mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+            WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+            maskComposite: 'exclude',
+            WebkitMaskComposite: 'xor',
           }}
-        />
-      )}
-
-      {/* Top Header Strip: Badge & Monospace ID */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between gap-2">
-          <span
-            className={`font-mono text-[10px] px-2 py-0.5 rounded-sm uppercase font-semibold tracking-wider ${
-              item.badgeType === 'emerald'
-                ? 'bg-secondary/15 text-secondary border border-secondary/20'
-                : 'bg-primary/15 text-primary border border-primary/20'
-            }`}
-          >
-            {item.badge}
-          </span>
-          <span className="font-mono text-[11px] text-outline tracking-wider font-semibold">
-            {item.identifier}
-          </span>
+        >
+          <motion.div
+            className="w-[200%] h-[200%] absolute -top-1/2 -left-1/2"
+            style={{
+              background:
+                'conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 280deg, rgba(212, 175, 55, 0.25) 320deg, rgba(212, 175, 55, 0.95) 348deg, rgba(0, 194, 136, 0.95) 358deg, transparent 360deg)',
+              willChange: 'transform',
+            }}
+            animate={shouldReduceMotion ? {} : { rotate: 360 }}
+            transition={{ duration: 6, ease: 'linear', repeat: Infinity }}
+          />
         </div>
 
-        {/* Quote Content */}
-        <p className="font-sans text-sm sm:text-[14px] text-on-surface leading-relaxed italic relative">
-          {item.quote}
-        </p>
-      </div>
+        {/* Specular Radial Spotlight Layer */}
+        {tilt.active && (
+          <div
+            className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-300"
+            style={{
+              background: `radial-gradient(circle 220px at ${tilt.shineX}% ${tilt.shineY}%, rgba(212, 175, 55, 0.12), transparent 70%)`,
+            }}
+          />
+        )}
 
-      {/* Bottom Allocator Profile Footer */}
-      <div className="pt-4 bg-surface-container-lowest/60 -mx-6 -mb-6 p-4 px-6 border-t border-outline/20 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-sm bg-primary/15 text-primary border border-primary/30 flex items-center justify-center font-sans font-bold text-sm shrink-0">
-            {item.initials}
+        {/* Top Header Strip: Badge & Monospace ID */}
+        <div className="space-y-4 relative z-10">
+          <div className="flex items-center justify-between gap-2">
+            <span
+              className={`font-mono text-[10px] px-2 py-0.5 rounded-sm uppercase font-semibold tracking-wider ${
+                item.badgeType === 'emerald'
+                  ? 'bg-secondary/15 text-secondary border border-secondary/20'
+                  : 'bg-primary/15 text-primary border border-primary/20'
+              }`}
+            >
+              {item.badge}
+            </span>
+            <span className="font-mono text-[11px] text-outline tracking-wider font-semibold">
+              {item.identifier}
+            </span>
           </div>
-          <div className="min-w-0">
-            <div className="font-sans text-sm text-on-surface font-semibold truncate">
-              {item.name}
+
+          {/* Quote Content */}
+          <p className="font-sans text-sm sm:text-[14px] text-on-surface leading-relaxed italic relative">
+            {item.quote}
+          </p>
+        </div>
+
+        {/* Bottom Allocator Profile Footer */}
+        <div className="pt-4 bg-surface-container-lowest/60 -mx-6 -mb-6 p-4 px-6 border-t border-outline/20 flex items-center justify-between gap-3 relative z-10">
+          <div className="flex items-center gap-3 min-w-0">
+            {item.avatarUrl ? (
+              <img
+                src={item.avatarUrl}
+                alt={item.name}
+                data-testid={`avatar-${item.id}`}
+                className="w-10 h-10 rounded-sm object-cover border border-primary/30 shrink-0 shadow-xs"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-sm bg-primary/15 text-primary border border-primary/30 flex items-center justify-center font-sans font-bold text-sm shrink-0">
+                {item.initials}
+              </div>
+            )}
+            <div className="min-w-0">
+              <div className="font-sans text-sm text-on-surface font-semibold truncate">
+                {item.name}
+              </div>
+              <div className="font-sans text-xs text-outline truncate">{item.role}</div>
+              <div className="font-mono text-[10px] text-on-surface-variant uppercase tracking-wider">
+                {item.location}
+              </div>
             </div>
-            <div className="font-sans text-xs text-outline truncate">{item.role}</div>
-            <div className="font-mono text-[10px] text-on-surface-variant uppercase tracking-wider">
-              {item.location}
-            </div>
           </div>
-        </div>
 
-        <div className="text-right shrink-0">
-          <div className="font-mono text-[10px] text-outline uppercase tracking-wider">
-            {item.allocatedLabel}
+          <div className="text-right shrink-0">
+            <div className="font-mono text-[10px] text-outline uppercase tracking-wider">
+              {item.allocatedLabel}
+            </div>
+            <div className="font-mono text-base font-bold text-primary">{item.allocatedAmount}</div>
           </div>
-          <div className="font-mono text-base font-bold text-primary">{item.allocatedAmount}</div>
         </div>
-      </div>
+      </motion.div>
     </motion.div>
   );
 };
@@ -133,15 +188,13 @@ export const ClientVoices: React.FC<ClientVoicesProps> = ({ initialTrustMode }) 
             Investor Testimonials
           </h3>
         </div>
-
-        
       </div>
 
       {/* Testimonial Cards 3D Specular Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <AnimatePresence>
-          {testimonials.map((item) => (
-            <SpecularCard key={`${trustMode}-${item.id}`} item={item} />
+          {testimonials.map((item, index) => (
+            <SpecularCard key={`${trustMode}-${item.id}`} item={item} index={index} />
           ))}
         </AnimatePresence>
       </div>
