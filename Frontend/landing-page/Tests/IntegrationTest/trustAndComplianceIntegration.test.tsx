@@ -61,6 +61,10 @@ describe('Trust Infrastructure & Compliance Integration Suite (SSR / Node 24)', 
     expect(instHtml).toContain('Eleanor de Broglie');
     expect(instHtml).toContain('MFO-GEN-501');
     expect(instHtml).toContain('$850M Multi-Sig');
+    expect(instHtml).toContain('data-testid="border-beam-trace"');
+    expect(instHtml).toContain('data-testid="avatar-al-zahrani"');
+    expect(instHtml).toContain('data-testid="avatar-weber"');
+    expect(instHtml).toContain('data-testid="avatar-broglie"');
 
     // 2. Private Wealth mode
     const pwHtml = renderToString(<ClientVoices initialTrustMode="private-wealth" />);
@@ -72,6 +76,9 @@ describe('Trust Infrastructure & Compliance Integration Suite (SSR / Node 24)', 
     expect(pwHtml).toContain('QUANT-LD4-118');
     expect(pwHtml).toContain('Marcus Thorne');
     expect(pwHtml).toContain('CORP-DXB-404');
+    expect(pwHtml).toContain('data-testid="avatar-koenig"');
+    expect(pwHtml).toContain('data-testid="avatar-laurent"');
+    expect(pwHtml).toContain('data-testid="avatar-thorne"');
   });
 
   it('renders CustodyNetworkGrid with all 6 synchronized clearing nodes', () => {

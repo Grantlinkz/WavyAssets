@@ -129,6 +129,13 @@
 - Replaced benchmark and metrics blocks across the remaining 6 asset vertical panels (`CryptoPanel`, `StocksPanel`, `RealEstatePanel`, `CarsPanel`, `VipCardsPanel`, `WalletPanel`) with corresponding continuous autoplaying MP4 video loops (`crypto.mp4`, `stock.mp4`, `real estate.mp4`, `cars.mp4`, `vip cards.mp4`, `wallet.mp4`) with zero controls, custom telemetry overlay pill badges, and Framer Motion opposing kinematics with `useReducedMotion()` fallback.
 - Enhanced `Tests/IntegrationTest/assetPanelsAndAuthIntegration.test.tsx` asserting all 7 vertical panel continuous video loops, autoplay, playsinline, and absence of controls (74/74 tests passing across 15 suites).
 
+- Enhanced `ClientVoices.tsx` with high-frequency kinetic animations and light-trace dynamics without altering structure, typography, or color scheme:
+  - Initial Entrance: Scroll-triggered staggered card entrance (`translateY(40px) -> 0`, `opacity: 0 -> 1`, ease-out curve `[0.16, 1, 0.3, 1]`, `0.15s` delay between cards).
+  - Border Beam Effect: Continuous moving glow/light-trace (`data-testid="border-beam-trace"`) along the outer 1px border path using a 4-second linear rotating conic-gradient sweep with CSS `mask-composite: exclude` / `WebkitMaskComposite: 'xor'`.
+  - Card Hover Reaction: On hover, elevates the card slightly (`translateY(-6px)`) with gold/emerald shadow intensification and smooth easing, fully compliant with `useReducedMotion()`.
+- Replaced initial avatar placeholders ("SZ", "HW", "EB", "AK", "VL", "MT") in `ClientVoices.tsx` and `trustData.ts` with photorealistic executive human face headshots in `src/assets/testimonials/` (Sheikh Tariq Al-Zahrani, Dr. Hendrik Weber, Eleanor de Broglie, Alexander Koenig, Victoria Laurent, Marcus Thorne), styled with a 4px micro-chamfer and gold hairline border while retaining accessible initials as an image fallback.
+- Enhanced `Tests/IntegrationTest/trustAndComplianceIntegration.test.tsx` asserting `border-beam-trace` and all avatar data-testids across both institutional and private wealth tiers (74/74 tests passing across 15 suites, zero lint errors, zero typecheck errors).
+
 ---
 
 ## Next Up
@@ -136,3 +143,4 @@
 - **Sprint 6 Task 1**: WebGL render loop throttling on `document.hidden` and off-screen canvas culling.
 - **Sprint 6 Task 2**: WCAG 2.1 AA accessibility audit, keyboard navigation, focus trapping in dialogs, and screen reader announcements.
 - **Sprint 6 Task 3**: Production bundle optimization, Lighthouse verification, and sub-50ms panel swap benchmarking.
+
