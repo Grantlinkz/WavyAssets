@@ -24,13 +24,10 @@ export const AssetNavRail: React.FC = () => {
   return (
     <div className="w-full space-y-0" data-testid="asset-nav-rail">
       {/* Asset Class Navigation Tab Rail */}
-      <div className="w-full bg-surface-container-low px-4 sm:px-6 pt-2 rounded-t-sm border border-outline/30 shadow-sm touch-pan-y">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          {/* 7 Horizontal Verticals Tabs */}
-          <div
-            className="flex items-center gap-1 overflow-x-auto scrollbar-none -mb-px touch-pan-y overscroll-x-contain"
-            style={{ touchAction: 'pan-x pan-y' }}
-          >
+      <div className="w-full bg-surface-container-low px-3 sm:px-6 pt-2 pb-1.5 rounded-t-sm border border-outline/30 shadow-sm">
+        {/* 7 Horizontal Verticals Tabs with visible scrollbar */}
+        <div className="w-full overflow-x-auto pb-1.5">
+          <div className="flex items-center gap-1.5 min-w-max -mb-px">
             {assetTabsList.map((tab) => {
               const isActive = tab.id === activeAssetId;
               return (
@@ -39,7 +36,7 @@ export const AssetNavRail: React.FC = () => {
                   type="button"
                   data-testid={`asset-tab-${tab.id}`}
                   onClick={() => setActiveAssetId(tab.id)}
-                  className={`group relative flex items-center gap-2 px-3 py-2.5 font-sans text-xs uppercase transition-colors shrink-0 cursor-pointer rounded-t-sm ${
+                  className={`group relative flex items-center gap-2 px-3.5 py-2.5 font-sans text-xs uppercase transition-colors shrink-0 cursor-pointer rounded-t-sm ${
                     isActive
                       ? 'text-primary font-bold bg-surface-container-high shadow-sm'
                       : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
@@ -68,8 +65,6 @@ export const AssetNavRail: React.FC = () => {
               );
             })}
           </div>
-
-          
         </div>
       </div>
     </div>
