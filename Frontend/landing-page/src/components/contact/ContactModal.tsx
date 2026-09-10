@@ -342,9 +342,9 @@ export const ContactModal: React.FC<ContactModalProps> = ({
     return (
       <div
         data-testid="contact-modal"
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+        className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto"
       >
-        <div className="max-w-lg sm:max-w-2xl lg:max-w-3xl w-full max-h-[85vh] overflow-y-auto my-auto">{modalBody}</div>
+        <div className="max-w-lg sm:max-w-2xl lg:max-w-3xl w-full max-h-[90dvh] sm:max-h-[88vh] overflow-y-auto my-auto overscroll-contain">{modalBody}</div>
       </div>
     );
   }
@@ -354,7 +354,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
       <DialogContent
         data-testid="contact-modal"
         showCloseButton={false}
-        className="p-0 border-none bg-transparent shadow-none !max-w-lg sm:!max-w-2xl lg:!max-w-3xl w-[92vw] sm:w-[86vw] max-h-[85vh] overflow-y-auto outline-none flex items-center justify-center my-auto"
+        className="p-0 border-none bg-transparent shadow-none !max-w-lg sm:!max-w-2xl lg:!max-w-3xl w-[92vw] sm:w-[86vw] max-h-[90dvh] sm:max-h-[88vh] overflow-y-auto outline-none block overscroll-contain"
       >
         {modalBody}
       </DialogContent>

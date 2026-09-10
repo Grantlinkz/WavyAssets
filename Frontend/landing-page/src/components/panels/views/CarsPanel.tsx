@@ -136,7 +136,7 @@ export const CarsPanel: React.FC = () => {
                 playsInline
                 preload="auto"
                 data-testid="cars-video"
-                className="w-full h-full object-cover rounded-sm"
+                className="w-full h-full object-cover rounded-sm pointer-events-none"
               />
 
               {/* Ambient Edge Vignette */}

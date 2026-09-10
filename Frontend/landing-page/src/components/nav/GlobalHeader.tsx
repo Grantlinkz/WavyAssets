@@ -23,6 +23,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
   const isMegaMenuOpen =
     isMegaMenuOpenProp !== undefined ? isMegaMenuOpenProp : storeIsMegaMenuOpen;
   const toggleMegaMenu = useTerminalStore((state) => state.toggleMegaMenu);
+  const setMegaMenuOpen = useTerminalStore((state) => state.setMegaMenuOpen);
   const openAuthModal = useTerminalStore((state) => state.openAuthModal);
   const openContactModal = useTerminalStore((state) => state.openContactModal);
   const setActiveAssetId = useTerminalStore((state) => state.setActiveAssetId);
@@ -220,6 +221,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
               href={link.href}
               onClick={(e) => {
                 setMobileNavOpen(false);
+                setMegaMenuOpen(false);
                 if (link.href === '#contact') {
                   e.preventDefault();
                   openContactModal();
@@ -247,6 +249,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
               onClick={() => {
                 openAuthModal('institutional');
                 setMobileNavOpen(false);
+                setMegaMenuOpen(false);
               }}
               className="w-full py-2 rounded-sm bg-surface-container border border-outline text-xs uppercase font-semibold text-on-surface flex items-center justify-center gap-2"
             >

@@ -125,7 +125,7 @@ export const AiFundsPanel: React.FC = () => {
                 playsInline
                 preload="auto"
                 data-testid="ai-funds-robot-video"
-                className="w-full h-full object-cover rounded-sm"
+                className="w-full h-full object-cover rounded-sm pointer-events-none"
               />
 
               {/* Ambient Edge Vignette */}

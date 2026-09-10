@@ -69,7 +69,7 @@ export const AssetContainer: React.FC<AssetContainerProps> = ({ initialAssetId }
       {/* Standardized Frame with locked min-height: 540px to strictly enforce CLS = 0 */}
       <div
         data-testid="asset-panel-viewport"
-        className="w-full min-h-[540px] bg-surface-container-lowest/50 border-b border-x border-outline/30 rounded-b-sm p-4 sm:p-6 relative overflow-hidden"
+        className="w-full min-h-[540px] bg-surface-container-lowest/50 border-b border-x border-outline/30 rounded-b-sm p-4 sm:p-6 relative overflow-hidden touch-pan-y"
       >
         <AnimatePresence mode="wait">
           <motion.div

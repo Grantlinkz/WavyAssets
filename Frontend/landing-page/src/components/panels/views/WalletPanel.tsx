@@ -116,7 +116,7 @@ export const WalletPanel: React.FC = () => {
                 playsInline
                 preload="auto"
                 data-testid="wallet-video"
-                className="w-full h-full object-cover rounded-sm"
+                className="w-full h-full object-cover rounded-sm pointer-events-none"
               />
 
               {/* Ambient Edge Vignette */}

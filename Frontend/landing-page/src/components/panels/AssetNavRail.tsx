@@ -24,10 +24,13 @@ export const AssetNavRail: React.FC = () => {
   return (
     <div className="w-full space-y-0" data-testid="asset-nav-rail">
       {/* Asset Class Navigation Tab Rail */}
-      <div className="w-full bg-surface-container-low px-4 sm:px-6 pt-2 rounded-t-sm border border-outline/30 shadow-sm">
+      <div className="w-full bg-surface-container-low px-4 sm:px-6 pt-2 rounded-t-sm border border-outline/30 shadow-sm touch-pan-y">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           {/* 7 Horizontal Verticals Tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none -mb-px">
+          <div
+            className="flex items-center gap-1 overflow-x-auto scrollbar-none -mb-px touch-pan-y overscroll-x-contain"
+            style={{ touchAction: 'pan-x pan-y' }}
+          >
             {assetTabsList.map((tab) => {
               const isActive = tab.id === activeAssetId;
               return (
