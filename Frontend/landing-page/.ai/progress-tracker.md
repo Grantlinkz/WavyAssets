@@ -157,7 +157,7 @@
   - Resolved all React 19 ESLint hook purity rules (`AboutVaultCanvas3D.tsx`) with zero lint errors and zero typecheck errors.
 - Built 3D Unified Finance Corporate Infographic (`src/components/about/UnifiedFinanceInfographic3D.tsx`) adhering strictly to user prompt specifications:
   - Header & Top Subheader: "WAVYASSETS: THE FUTURE OF UNIFIED FINANCE" & "WAVYASSETS UNIFIES: GLOBAL WEALTH MANAGEMENT | DIGITAL ASSET CUSTODY | INSTITUTIONAL YIELD GENERATION".
-  - Embedded Editorial Story: Placed "ABOUT WAVYASSETS • INSTITUTIONAL SOVEREIGNTY", headline "Pioneering Multi-Asset Freedom and Cold-Storage Security", and narrative writeup directly beneath the top subheader banner.
+  - Embedded Editorial Story: Placed "ABOUT WAVYASSETS ", headline "Pioneering Multi-Asset Freedom and Cold-Storage Security", and narrative writeup directly beneath the top subheader banner.
   - Centerpiece: 3D metallic glowing shield with sovereign gold bevel, cybernetic cyan ocean wave ribbon, heavy padlock with glowing cyan keyhole, and "COLD-STORAGE SECURITY" telemetry pill.
   - Left Side: Glowing wireframe globe with dual orbital rings carrying traditional fiat currencies ($, €, ¥, £), gold bullion coins, and cryptocurrencies (₿, Ξ), labeled "PIONEERING MULTI-ASSET FREEDOM".
   - Right Side: Three glowing pipeline flow splines with moving photons connecting from the central shield to Family Offices (tablet), Institutions (skyscrapers), and Smart Individual Investors (holographic charts).
@@ -181,4 +181,3 @@
 - **Sprint 6 Task 1**: WebGL render loop throttling on `document.hidden` and off-screen canvas culling.
 - **Sprint 6 Task 2**: WCAG 2.1 AA accessibility audit, keyboard navigation, focus trapping in dialogs, and screen reader announcements.
 - **Sprint 6 Task 3**: Production bundle optimization, Lighthouse verification, and sub-50ms panel swap benchmarking.
-

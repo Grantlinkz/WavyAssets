@@ -209,7 +209,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
           >
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
-              <span>Explore 7 Asset Verticals</span>
+              <span>Explore WavyAssets</span>
             </div>
             <ChevronDown className="w-4 h-4" />
           </button>

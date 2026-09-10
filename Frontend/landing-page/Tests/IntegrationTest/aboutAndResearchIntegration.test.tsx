@@ -30,7 +30,7 @@ describe('About Section, Research Routing & Portfolio Service Action Integration
 
       expect(html).toContain('id="about"');
       expect(html).toContain('data-testid="about-section"');
-      expect(html).toContain('ABOUT WAVYASSETS • INSTITUTIONAL SOVEREIGNTY');
+      expect(html).toContain('ABOUT WAVYASSETS ');
       expect(html).toContain('Pioneering Multi-Asset Freedom and Cold-Storage Security');
       expect(html).toContain('data-testid="unified-finance-infographic-3d"');
       expect(html).toContain('Unified Multi-Asset Depository');

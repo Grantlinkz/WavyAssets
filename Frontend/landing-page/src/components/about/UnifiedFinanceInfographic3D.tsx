@@ -533,7 +533,7 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
         <div className="space-y-1.5">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm bg-primary/10 border border-primary/30 font-mono text-[10px] sm:text-xs text-primary uppercase tracking-widest">
             <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-            <span>ABOUT WAVYASSETS • INSTITUTIONAL SOVEREIGNTY</span>
+            <span>ABOUT WAVYASSETS </span>
             <Sparkles className="w-3.5 h-3.5 text-primary" />
             <span>WAVYASSETS ARCHITECTURE</span>
           </div>

@@ -1,7 +1,9 @@
 # Implementation Prompt: UX Enhancements, Auth Modal UX Rewrite, Research Routing, 3D About Section & Footer Cleanup
 
 ## Objective
+
 Fulfill the user's 5 specific product enhancements across WavyAssets Institutional Terminal:
+
 1. **View Portfolio Service Action**: Route the "VIEW PORTFOLIO SERVICE >" button in `AssetDiscoveryHub.tsx` to launch the user-friendly Sign In modal.
 2. **Senior UX Writer Rewrite of Auth & Mandate Modal**:
    - Rewrite the Sign In and Request Mandate tabs with clear, modern, 8th-grade reading level plain English per Fintech UX Content Strategy.
@@ -22,12 +24,14 @@ Fulfill the user's 5 specific product enhancements across WavyAssets Institution
 ## Detailed Technical Specifications
 
 ### 1. View Portfolio Service Action (`AssetDiscoveryHub.tsx`)
+
 - Import `openAuthModal` from `useTerminalStore`.
 - Update the action button (`View Portfolio Service`):
   - Add `data-testid="discovery-view-portfolio-service-btn"`.
   - When clicked, open the authentication modal in Sign In mode (`openAuthModal('institutional', 'login')`).
 
 ### 2. Senior UX Writer Auth Modal Overhaul (`UnifiedAuthModal.tsx` & `useTerminalStore.ts`)
+
 - **Store Updates**:
   - Enhance `openAuthModal(initialTier?: TrustMode, initialMode?: 'login' | 'mandate')` to allow setting the initial tab directly.
   - Track `authMode: 'login' | 'mandate'` in `AuthModalState`.
@@ -55,6 +59,7 @@ Fulfill the user's 5 specific product enhancements across WavyAssets Institution
     - Success description: `"Redirecting you to your secure dashboard..."`
 
 ### 3. Research Hash & Path Routing (`GlobalHeader.tsx`, `useTerminalStore.ts`, `App.tsx`)
+
 - In `src/components/nav/GlobalHeader.tsx`:
   - Update `navLinks`: `{ label: 'Research', href: '/research#/services/vip-cards' }`.
 - In `src/store/useTerminalStore.ts`:
@@ -63,6 +68,7 @@ Fulfill the user's 5 specific product enhancements across WavyAssets Institution
   - Add route listener handling `/research` and `/#research` pathnames, smoothly rewriting/deep-linking to `/research#/services/vip-cards` and setting `activeAssetId = 'vip-cards'`.
 
 ### 4. Dedicated 3D About Section (`src/components/about/AboutSection.tsx` & `AboutVaultCanvas3D.tsx`)
+
 - **Structure**:
   - Main container `<section id="about" data-testid="about-section" className="w-full py-16 scroll-mt-20">`
   - Two-column responsive grid (`grid grid-cols-1 lg:grid-cols-12 gap-12 items-center`):
@@ -75,7 +81,7 @@ Fulfill the user's 5 specific product enhancements across WavyAssets Institution
     - Tab-blur loop throttling (`document.hidden`) and `useReducedMotion()` compliance.
     - Strict WebGL resource cleanup on unmount.
 - **Right Column (7 columns)**:
-  - Header Tag: `ABOUT WAVYASSETS • INSTITUTIONAL SOVEREIGNTY`
+  - Header Tag: `ABOUT WAVYASSETS `
   - Editorial H2 in `Noto Serif`: `"Built for Uncompromising Multi-Asset Freedom and Absolute Security"`
   - High-impact storytelling paragraphs explaining WavyAssets' fiduciary mission.
   - 3 Core Pillar Cards:
@@ -86,12 +92,14 @@ Fulfill the user's 5 specific product enhancements across WavyAssets Institution
   - Interactive CTAs: "Explore Services" and "Open an Account".
 
 ### 5. Remove 19.4% APY in Footer (`InstitutionalFooter.tsx`)
+
 - Remove the `19.4% APY` badge span from line 67 in `src/components/footer/InstitutionalFooter.tsx`.
 - Update test cases in `Tests/IntegrationTest/trustAndComplianceIntegration.test.tsx` and `Tests/IntegrationTest/brandAndThemeIntegration.test.tsx`.
 
 ---
 
 ## Pre-Commit Verification & Acceptance Criteria
+
 1. `npm test`: 100% test pass rate across all unit and integration test suites.
 2. `npm run lint`: Zero ESLint warnings or errors.
 3. `tsc -b`: Zero TypeScript compilation errors.
