@@ -1,9 +1,19 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useTerminalStore } from '../../../store/useTerminalStore';
 import { Lock, Building, FileCheck, Sparkles, HelpCircle, CheckCircle2, ShieldCheck, DollarSign } from 'lucide-react';
+import realEstateVideo from '../../../assets/verticals/real estate.mp4';
 
 export const RealEstatePanel: React.FC = () => {
   const { openAuthModal } = useTerminalStore();
+  const shouldReduceMotion = useReducedMotion();
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {});
+    }
+  }, []);
 
   const properties = [
     {
@@ -45,29 +55,36 @@ export const RealEstatePanel: React.FC = () => {
     <div className="w-full space-y-6" data-testid="panel-real-estate">
       {/* Hero Section */}
       <div className="w-full bg-surface-container-low p-6 rounded-sm border border-outline/30 shadow-md">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          <div className="lg:col-span-7 space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <motion.div
+            className="lg:col-span-7 space-y-4"
+            initial={{ opacity: 0, x: shouldReduceMotion ? 0 : -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+            style={{ willChange: 'transform, opacity' }}
+          >
             <div className="flex flex-wrap items-center gap-2">
               <span className="px-2 py-0.5 bg-surface-container-high text-primary font-mono text-[10px] uppercase tracking-widest rounded-sm border border-outline/20">
-                PRIME REAL ESTATE • COMMERCIAL PROPERTY SHARES
+                TOKENIZED PRIME REAL ESTATE • COMMERCIAL SPVS
               </span>
               <span className="px-2 py-0.5 bg-secondary/15 text-secondary font-mono text-[10px] uppercase tracking-wider rounded-sm flex items-center gap-1 border border-secondary/20">
                 <span className="h-1.5 w-1.5 rounded-full bg-secondary" />
-                100% NOTARIZED LAND REGISTRY
+                LEGALLY AUDITED DEED TITLE
               </span>
             </div>
 
             <h1 className="font-headline-xl text-2xl sm:text-3xl text-on-surface font-bold tracking-tight">
-              Invest in prime commercial real estate from your phone
+              Invest in prime real estate and earn reliable rental income
             </h1>
 
             <p className="font-sans text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-              Own shares of premium buildings in global cities like New York, London, and Zurich.
-              Earn rental payouts deposited directly to your cash balance.
+              Own fractional shares of landmark buildings in Zurich, London, and Geneva. Collect
+              regular rental payouts directly into your account with zero property management hassles.
             </p>
 
             <div className="text-[11px] font-mono text-outline">
-              Asset Category: <span className="text-on-surface font-semibold">Tokenized Prime Real Estate &amp; SPV Deeds</span>
+              Asset Class: <span className="text-on-surface font-semibold">Tokenized Prime Real Estate &amp; SPV Deeds</span>
             </div>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -89,36 +106,51 @@ export const RealEstatePanel: React.FC = () => {
                 <span>Download Property Deeds</span>
               </button>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="lg:col-span-5 bg-surface-container-lowest p-4 rounded-sm border border-outline/20 space-y-3">
-            <div className="flex items-center justify-between pb-1 border-b border-outline/20">
-              <span className="font-sans text-[11px] uppercase text-outline tracking-wider font-semibold">
-                PROPERTY PORTFOLIO STATS
-              </span>
-              <span className="font-mono text-[10px] text-secondary font-semibold">
-                TRIPLE NET (NNN)
-              </span>
-            </div>
+          <motion.div
+            className="lg:col-span-5 w-full flex items-center justify-center"
+            initial={{ opacity: 0, x: shouldReduceMotion ? 0 : 30, scale: shouldReduceMotion ? 1 : 0.98 }}
+            whileInView={{ opacity: 1, x: 0, scale: 1 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.85, delay: shouldReduceMotion ? 0 : 0.15, ease: [0.22, 1, 0.36, 1] }}
+            style={{ willChange: 'transform, opacity' }}
+          >
+            <div className="relative w-full h-[260px] sm:h-[280px] rounded-sm overflow-hidden bg-surface-container-lowest border border-outline/30 shadow-lg group hover:border-primary/50 transition-all duration-300">
+              <video
+                ref={videoRef}
+                src={realEstateVideo}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="auto"
+                data-testid="real-estate-video"
+                className="w-full h-full object-cover rounded-sm"
+              />
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
-              <div className="bg-surface-container-low p-2.5 rounded-sm border border-outline/20">
-                <div className="font-sans text-[10px] text-outline uppercase">RENTAL RETURN</div>
-                <div className="font-mono text-xl font-bold text-secondary pt-0.5">7.2%</div>
-                <div className="font-mono text-[9px] text-outline">Quarterly Cash Payout</div>
+              {/* Ambient Edge Vignette */}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-surface-container-lowest/70 via-transparent to-surface-container-lowest/20" />
+
+              {/* Top Status Pill Badge */}
+              <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-surface-container-lowest/80 backdrop-blur-xs border border-outline/30 text-[10px] font-mono text-on-surface shadow-xs">
+                <span className="h-1.5 w-1.5 rounded-full bg-secondary animate-pulse" />
+                <span className="font-semibold text-secondary">LIVE</span>
+                <span className="text-outline/40">|</span>
+                <span className="text-on-surface-variant uppercase tracking-wider text-[9px]">PRIME REAL ESTATE</span>
               </div>
-              <div className="bg-surface-container-low p-2.5 rounded-sm border border-outline/20">
-                <div className="font-sans text-[10px] text-outline uppercase">PORTFOLIO VALUE</div>
-                <div className="font-mono text-xl font-bold text-on-surface pt-0.5">$195.5M</div>
-                <div className="font-mono text-[9px] text-primary">Zurich &amp; London</div>
-              </div>
-              <div className="bg-surface-container-low p-2.5 rounded-sm border border-outline/20">
-                <div className="font-sans text-[10px] text-outline uppercase">OCCUPANCY</div>
-                <div className="font-mono text-xl font-bold text-secondary pt-0.5">99.4%</div>
-                <div className="font-mono text-[9px] text-outline">Top Tenants</div>
+
+              {/* Bottom Telemetry Bar */}
+              <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between px-3 py-1.5 rounded-sm bg-surface-container-lowest/80 backdrop-blur-xs border border-outline/30 shadow-xs">
+                <span className="font-mono text-[9px] text-outline uppercase tracking-wider">
+                  TOKENIZED TITLE DEEDS
+                </span>
+                <span className="font-mono text-[10px] font-bold text-primary">
+                  100% LEASED OCCUPANCY
+                </span>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 

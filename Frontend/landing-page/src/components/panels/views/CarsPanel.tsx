@@ -1,9 +1,19 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useTerminalStore } from '../../../store/useTerminalStore';
 import { FileText, Lock, Warehouse, Sparkles, HelpCircle, ShieldCheck, CheckCircle2, Car } from 'lucide-react';
+import carsVideo from '../../../assets/verticals/cars.mp4';
 
 export const CarsPanel: React.FC = () => {
   const { openAuthModal } = useTerminalStore();
+  const shouldReduceMotion = useReducedMotion();
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {});
+    }
+  }, []);
 
   const inventory = [
     {
@@ -50,28 +60,34 @@ export const CarsPanel: React.FC = () => {
 
   return (
     <div className="w-full space-y-6" data-testid="panel-cars">
-      {/* 1. Hero Block */}
+      {/* Hero Section */}
       <div className="w-full bg-surface-container-low p-6 rounded-sm border border-outline/30 shadow-md">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Metadata & Narrative */}
-          <div className="lg:col-span-7 space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <motion.div
+            className="lg:col-span-7 space-y-4"
+            initial={{ opacity: 0, x: shouldReduceMotion ? 0 : -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+            style={{ willChange: 'transform, opacity' }}
+          >
             <div className="flex flex-wrap items-center gap-2">
               <span className="px-2 py-0.5 bg-surface-container-high text-primary font-mono text-[10px] uppercase tracking-widest rounded-sm border border-outline/20">
-                AUTO INVESTMENT PLATFORM • COLLECTOR VEHICLES
+                EXOTIC CARS &amp; RARE WATCHES • ASSET VAULT
               </span>
               <span className="px-2 py-0.5 bg-secondary/15 text-secondary font-mono text-[10px] uppercase tracking-wider rounded-sm flex items-center gap-1 border border-secondary/20">
                 <span className="h-1.5 w-1.5 rounded-full bg-secondary" />
-                100% INSURED REPLACEMENT VALUE
+                CLIMATE-CONTROLLED STORAGE
               </span>
             </div>
 
             <h1 className="font-headline-xl text-2xl sm:text-3xl text-on-surface font-bold tracking-tight">
-              Browse and invest in cars with proven historical value
+              Invest in rare classic cars and collector timepieces
             </h1>
 
             <p className="font-sans text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-              Own shares in rare collector vehicles stored in climate-controlled vaults. Diversify your
-              money with tangible assets that have beaten market inflation.
+              Build your collection with verified, museum-grade automobiles and historic watches.
+              Stored in secure Swiss customs vaults with fully transparent ownership records.
             </p>
 
             <div className="text-[11px] font-mono text-outline">
@@ -100,38 +116,51 @@ export const CarsPanel: React.FC = () => {
                 INSPECTION ID: CHE-948.102.339
               </span>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Right Aggregate Vault Metrics */}
-          <div className="lg:col-span-5 bg-surface-container-lowest p-4 rounded-sm border border-outline/20 space-y-3">
-            <div className="flex items-center justify-between pb-1 border-b border-outline/20">
-              <span className="font-sans text-[11px] uppercase text-outline tracking-wider font-semibold">
-                CAR VAULT PERFORMANCE
-              </span>
-              <span className="font-mono text-[10px] text-secondary flex items-center gap-1 font-semibold">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-secondary animate-pulse" />
-                REAL-TIME INDEX
-              </span>
-            </div>
+          <motion.div
+            className="lg:col-span-5 w-full flex items-center justify-center"
+            initial={{ opacity: 0, x: shouldReduceMotion ? 0 : 30, scale: shouldReduceMotion ? 1 : 0.98 }}
+            whileInView={{ opacity: 1, x: 0, scale: 1 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.85, delay: shouldReduceMotion ? 0 : 0.15, ease: [0.22, 1, 0.36, 1] }}
+            style={{ willChange: 'transform, opacity' }}
+          >
+            <div className="relative w-full h-[260px] sm:h-[280px] rounded-sm overflow-hidden bg-surface-container-lowest border border-outline/30 shadow-lg group hover:border-primary/50 transition-all duration-300">
+              <video
+                ref={videoRef}
+                src={carsVideo}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="auto"
+                data-testid="cars-video"
+                className="w-full h-full object-cover rounded-sm"
+              />
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
-              <div className="bg-surface-container-low p-2.5 rounded-sm border border-outline/20">
-                <div className="font-sans text-[10px] text-outline uppercase">5-YR APPRECIATION</div>
-                <div className="font-mono text-xl font-bold text-secondary pt-0.5">+68.4%</div>
-                <div className="font-mono text-[9px] text-outline">Historical Average</div>
+              {/* Ambient Edge Vignette */}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-surface-container-lowest/70 via-transparent to-surface-container-lowest/20" />
+
+              {/* Top Status Pill Badge */}
+              <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-surface-container-lowest/80 backdrop-blur-xs border border-outline/30 text-[10px] font-mono text-on-surface shadow-xs">
+                <span className="h-1.5 w-1.5 rounded-full bg-secondary animate-pulse" />
+                <span className="font-semibold text-secondary">LIVE</span>
+                <span className="text-outline/40">|</span>
+                <span className="text-on-surface-variant uppercase tracking-wider text-[9px]">EXOTIC CAR VAULT</span>
               </div>
-              <div className="bg-surface-container-low p-2.5 rounded-sm border border-outline/20">
-                <div className="font-sans text-[10px] text-outline uppercase">STORED VEHICLES</div>
-                <div className="font-mono text-xl font-bold text-on-surface pt-0.5">38 Cars</div>
-                <div className="font-mono text-[9px] text-primary">$184.2M Value</div>
-              </div>
-              <div className="bg-surface-container-low p-2.5 rounded-sm border border-outline/20">
-                <div className="font-sans text-[10px] text-outline uppercase">VAULT CLIMATE</div>
-                <div className="font-mono text-xl font-bold text-on-surface pt-0.5">19&deg;C</div>
-                <div className="font-mono text-[9px] text-secondary">48% RH CONSTANT</div>
+
+              {/* Bottom Telemetry Bar */}
+              <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between px-3 py-1.5 rounded-sm bg-surface-container-lowest/80 backdrop-blur-xs border border-outline/30 shadow-xs">
+                <span className="font-mono text-[9px] text-outline uppercase tracking-wider">
+                  CLIMATE CONTROLLED
+                </span>
+                <span className="font-mono text-[10px] font-bold text-primary">
+                  19°C • HERITAGE HOROLOGY &amp; AUTO
+                </span>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 

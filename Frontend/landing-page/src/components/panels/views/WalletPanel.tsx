@@ -1,9 +1,19 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useTerminalStore } from '../../../store/useTerminalStore';
 import { Lock, ShieldCheck, Key, CheckCircle2, Sparkles, HelpCircle, Wallet, Globe } from 'lucide-react';
+import walletVideo from '../../../assets/verticals/wallet.mp4';
 
 export const WalletPanel: React.FC = () => {
   const { openAuthModal } = useTerminalStore();
+  const shouldReduceMotion = useReducedMotion();
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {});
+    }
+  }, []);
 
   const securityNodes = [
     {
@@ -36,8 +46,15 @@ export const WalletPanel: React.FC = () => {
     <div className="w-full space-y-6" data-testid="panel-wallet">
       {/* Hero Section */}
       <div className="w-full bg-surface-container-low p-6 rounded-sm border border-outline/30 shadow-md">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          <div className="lg:col-span-7 space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <motion.div
+            className="lg:col-span-7 space-y-4"
+            initial={{ opacity: 0, x: shouldReduceMotion ? 0 : -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+            style={{ willChange: 'transform, opacity' }}
+          >
             <div className="flex flex-wrap items-center gap-2">
               <span className="px-2 py-0.5 bg-surface-container-high text-primary font-mono text-[10px] uppercase tracking-widest rounded-sm border border-outline/20">
                 DIGITAL MONEY WALLET • MULTI-CURRENCY CASH
@@ -79,36 +96,51 @@ export const WalletPanel: React.FC = () => {
                 <span>Check Transfer Rates</span>
               </button>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="lg:col-span-5 bg-surface-container-lowest p-4 rounded-sm border border-outline/20 space-y-3">
-            <div className="flex items-center justify-between pb-1 border-b border-outline/20">
-              <span className="font-sans text-[11px] uppercase text-outline tracking-wider font-semibold">
-                WALLET SECURITY &amp; COVERAGE
-              </span>
-              <span className="font-mono text-[10px] text-secondary font-semibold">
-                100% PROOF OF RESERVES
-              </span>
-            </div>
+          <motion.div
+            className="lg:col-span-5 w-full flex items-center justify-center"
+            initial={{ opacity: 0, x: shouldReduceMotion ? 0 : 30, scale: shouldReduceMotion ? 1 : 0.98 }}
+            whileInView={{ opacity: 1, x: 0, scale: 1 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.85, delay: shouldReduceMotion ? 0 : 0.15, ease: [0.22, 1, 0.36, 1] }}
+            style={{ willChange: 'transform, opacity' }}
+          >
+            <div className="relative w-full h-[260px] sm:h-[280px] rounded-sm overflow-hidden bg-surface-container-lowest border border-outline/30 shadow-lg group hover:border-primary/50 transition-all duration-300">
+              <video
+                ref={videoRef}
+                src={walletVideo}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="auto"
+                data-testid="wallet-video"
+                className="w-full h-full object-cover rounded-sm"
+              />
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
-              <div className="bg-surface-container-low p-2.5 rounded-sm border border-outline/20">
-                <div className="font-sans text-[10px] text-outline uppercase">INSURANCE COVER</div>
-                <div className="font-mono text-xl font-bold text-primary pt-0.5">$500M</div>
-                <div className="font-mono text-[9px] text-outline">Underwritten Vault</div>
+              {/* Ambient Edge Vignette */}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-surface-container-lowest/70 via-transparent to-surface-container-lowest/20" />
+
+              {/* Top Status Pill Badge */}
+              <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-surface-container-lowest/80 backdrop-blur-xs border border-outline/30 text-[10px] font-mono text-on-surface shadow-xs">
+                <span className="h-1.5 w-1.5 rounded-full bg-secondary animate-pulse" />
+                <span className="font-semibold text-secondary">LIVE</span>
+                <span className="text-outline/40">|</span>
+                <span className="text-on-surface-variant uppercase tracking-wider text-[9px]">MULTI-SIG MPC CUSTODY</span>
               </div>
-              <div className="bg-surface-container-low p-2.5 rounded-sm border border-outline/20">
-                <div className="font-sans text-[10px] text-outline uppercase">SECURITY RULE</div>
-                <div className="font-mono text-xl font-bold text-on-surface pt-0.5">3-of-5</div>
-                <div className="font-mono text-[9px] text-secondary">Multi-Key Approval</div>
-              </div>
-              <div className="bg-surface-container-low p-2.5 rounded-sm border border-outline/20">
-                <div className="font-sans text-[10px] text-outline uppercase">TRANSFER SPEED</div>
-                <div className="font-mono text-xl font-bold text-secondary pt-0.5">&lt;1s</div>
-                <div className="font-mono text-[9px] text-outline">Instant Domestic</div>
+
+              {/* Bottom Telemetry Bar */}
+              <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between px-3 py-1.5 rounded-sm bg-surface-container-lowest/80 backdrop-blur-xs border border-outline/30 shadow-xs">
+                <span className="font-mono text-[9px] text-outline uppercase tracking-wider">
+                  3-of-5 MULTI-KEY
+                </span>
+                <span className="font-mono text-[10px] font-bold text-primary">
+                  $500M UNDERWRITTEN VAULT
+                </span>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 
