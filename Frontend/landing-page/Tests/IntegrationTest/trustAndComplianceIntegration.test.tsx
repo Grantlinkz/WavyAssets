@@ -125,7 +125,7 @@ describe('Trust Infrastructure & Compliance Integration Suite (SSR / Node 24)', 
 
     // 7 Verticals
     expect(html).toContain('Crypto Yields &amp; Cold Storage');
-    expect(html).toContain('19.4% APY');
+    expect(html).not.toContain('19.4% APY');
     expect(html).toContain('Global Stocks &amp; DMA Equities');
     expect(html).toContain('AI Systematic Funds &amp; H100 Mesh');
     expect(html).toContain('Fractional Prime Real Estate');

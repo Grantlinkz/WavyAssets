@@ -71,11 +71,11 @@ describe('Brand Identity, Wave Theme & Services Scroll Integration Suite (SSR / 
     });
   });
 
-  describe('4. InstitutionalFooter Dark Mode Text Contrast & APY Badge', () => {
-    it('renders disclaimers with text-on-surface-variant and restored 19.4% APY badge', () => {
+  describe('4. InstitutionalFooter Dark Mode Text Contrast & APY Removal', () => {
+    it('renders disclaimers with text-on-surface-variant and clean Crypto Yields without APY badge', () => {
       const html = renderToString(<InstitutionalFooter />);
       expect(html).toContain('Crypto Yields &amp; Cold Storage');
-      expect(html).toContain('19.4% APY');
+      expect(html).not.toContain('19.4% APY');
       expect(html).toContain('REGULATORY DISCLOSURES &amp; FIDUCIARY GOVERNANCE:');
       expect(html).toContain('text-on-surface-variant');
       expect(html).not.toContain('text-[11px] text-outline leading-relaxed');

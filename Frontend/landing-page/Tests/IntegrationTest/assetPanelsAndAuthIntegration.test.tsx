@@ -141,20 +141,32 @@ describe('Asset Panels & Unified Auth Modal Integration Suite (SSR / Node 24)', 
 
   it('renders open UnifiedAuthModal Step 1 with credentials and tier selection', () => {
     useTerminalStore.setState({
-      authModal: { isOpen: true, step: 1, initialTier: 'institutional' },
+      authModal: { isOpen: true, step: 1, initialTier: 'institutional', initialMode: 'login' },
     });
     const html = renderToString(<UnifiedAuthModal />);
 
     expect(html).toContain('data-testid="unified-auth-modal"');
-    expect(html).toContain('Institutional Terminal Access');
-    expect(html).toContain('WavyAssets SECURE GATEWAY // FIPS 140-3 LEVEL 4');
+    expect(html).toContain('Sign In to Your Account');
+    expect(html).toContain('WavyAssets SECURE ACCESS // 256-BIT ENCRYPTION');
     expect(html).toContain('data-testid="tab-login"');
     expect(html).toContain('data-testid="tab-mandate"');
     expect(html).toContain('data-testid="auth-tier-private"');
     expect(html).toContain('data-testid="auth-tier-institutional"');
     expect(html).toContain('data-testid="auth-email-input"');
     expect(html).toContain('data-testid="auth-password-input"');
-    expect(html).toContain('Proceed to 2FA Attestation');
+    expect(html).toContain('Continue to Verification');
+  });
+
+  it('renders open UnifiedAuthModal in Request Mandate mode with Full Name field', () => {
+    useTerminalStore.setState({
+      authModal: { isOpen: true, step: 1, initialTier: 'institutional', initialMode: 'mandate' },
+    });
+    const html = renderToString(<UnifiedAuthModal />);
+
+    expect(html).toContain('Create Your Account');
+    expect(html).toContain('data-testid="auth-fullname-input"');
+    expect(html).toContain('Full Name');
+    expect(html).toContain('Create Account &amp; Continue');
   });
 
   it('renders open UnifiedAuthModal Step 2 with 6-digit Input-OTP slots and countdown', () => {
@@ -163,11 +175,11 @@ describe('Asset Panels & Unified Auth Modal Integration Suite (SSR / Node 24)', 
     });
     const html = renderToString(<UnifiedAuthModal />);
 
-    expect(html).toContain('Hardware 2FA Quorum Attestation');
-    expect(html).toContain('6-Digit Security Enclave Code');
+    expect(html).toContain('Enter Verification Code');
+    expect(html).toContain('6-Digit Security Code');
     expect(html).toContain('data-testid="auth-otp-input"');
-    expect(html).toContain('Verify &amp; Authorize Session');
-    expect(html).toContain('Resend OTP');
+    expect(html).toContain('Verify &amp; Access Dashboard');
+    expect(html).toContain('Resend Code');
   });
 
   it('renders complete App command deck with AssetContainer and UnifiedAuthModal mounted', () => {
