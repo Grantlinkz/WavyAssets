@@ -56,7 +56,7 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
     // Scene, Camera, Renderer
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.set(0, 0, 11);
+    camera.position.set(0, 0.2, 8.8);
 
     const renderer = new THREE.WebGLRenderer({
       canvas,
@@ -92,6 +92,8 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
     // 1. CENTERPIECE: 3D Shield + Cyan Wave + Padlock
     // ==========================================
     const centerGroup = new THREE.Group();
+    centerGroup.scale.set(1.3, 1.3, 1.3);
+    centerGroup.position.set(0, 0.35, 0);
     scene.add(centerGroup);
 
     // Shield base geometry
@@ -200,7 +202,8 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
     // 2. LEFT SIDE: Glowing Globe & Orbital Rings
     // ==========================================
     const leftGlobeGroup = new THREE.Group();
-    leftGlobeGroup.position.set(-4.2, 0.2, 0);
+    leftGlobeGroup.scale.set(1.22, 1.22, 1.22);
+    leftGlobeGroup.position.set(-3.9, 0.2, 0);
     scene.add(leftGlobeGroup);
 
     // Wireframe Globe Sphere
@@ -257,15 +260,16 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
     // 3. RIGHT PIPELINES: 3 Glowing Flow Splines
     // ==========================================
     const pipelinesGroup = new THREE.Group();
+    pipelinesGroup.position.set(0, 0.2, 0);
     scene.add(pipelinesGroup);
 
     // Pipeline 1: Center to Family Offices (Top Right)
     const pipe1Curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(1.4, 0.6, 0),
-      new THREE.Vector3(2.5, 1.4, 0.2),
-      new THREE.Vector3(3.6, 1.5, 0),
+      new THREE.Vector3(1.6, 0.7, 0),
+      new THREE.Vector3(2.7, 1.5, 0.2),
+      new THREE.Vector3(3.8, 1.6, 0),
     ]);
-    const pipe1Geo = new THREE.TubeGeometry(pipe1Curve, 32, 0.03, 8, false);
+    const pipe1Geo = new THREE.TubeGeometry(pipe1Curve, 32, 0.035, 8, false);
     const pipe1Mat = new THREE.MeshStandardMaterial({
       color: cyanColor,
       emissive: new THREE.Color('#004455'),
@@ -276,11 +280,11 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
 
     // Pipeline 2: Center to Institutions (Middle Right)
     const pipe2Curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(1.5, 0.0, 0),
-      new THREE.Vector3(2.6, 0.0, 0.2),
-      new THREE.Vector3(3.6, 0.0, 0),
+      new THREE.Vector3(1.7, 0.0, 0),
+      new THREE.Vector3(2.8, 0.0, 0.2),
+      new THREE.Vector3(3.8, 0.0, 0),
     ]);
-    const pipe2Geo = new THREE.TubeGeometry(pipe2Curve, 32, 0.035, 8, false);
+    const pipe2Geo = new THREE.TubeGeometry(pipe2Curve, 32, 0.04, 8, false);
     const pipe2Mat = new THREE.MeshStandardMaterial({
       color: goldColor,
       emissive: new THREE.Color('#443300'),
@@ -291,11 +295,11 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
 
     // Pipeline 3: Center to Smart Investors (Bottom Right)
     const pipe3Curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(1.4, -0.6, 0),
-      new THREE.Vector3(2.5, -1.4, 0.2),
-      new THREE.Vector3(3.6, -1.5, 0),
+      new THREE.Vector3(1.6, -0.7, 0),
+      new THREE.Vector3(2.7, -1.5, 0.2),
+      new THREE.Vector3(3.8, -1.6, 0),
     ]);
-    const pipe3Geo = new THREE.TubeGeometry(pipe3Curve, 32, 0.03, 8, false);
+    const pipe3Geo = new THREE.TubeGeometry(pipe3Curve, 32, 0.035, 8, false);
     const pipe3Mat = new THREE.MeshStandardMaterial({
       color: emeraldColor,
       emissive: new THREE.Color('#004422'),
@@ -357,12 +361,13 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
       mouseX += (targetX - mouseX) * 0.05;
       mouseY += (targetY - mouseY) * 0.05;
       camera.position.x = mouseX;
-      camera.position.y = mouseY;
-      camera.lookAt(0, 0, 0);
+      camera.position.y = 0.2 + mouseY;
+      camera.position.z = 8.8;
+      camera.lookAt(0, 0.2, 0);
 
       // Centerpiece gentle float & wave breathing
       if (!shouldReduceMotion) {
-        centerGroup.position.y = 0.4 + Math.sin(elapsed * 1.5) * 0.08;
+        centerGroup.position.y = 0.35 + Math.sin(elapsed * 1.5) * 0.08;
         centerGroup.rotation.y = Math.sin(elapsed * 0.8) * 0.06;
         waveMesh.rotation.z = Math.sin(elapsed * 1.2) * 0.04;
 
@@ -470,14 +475,14 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
     <div
       ref={containerRef}
       data-testid="unified-finance-infographic-3d"
-      className="relative w-full rounded-md border border-outline/30 bg-[#08090B]/90 backdrop-blur-md overflow-hidden p-4 sm:p-6 lg:p-8 shadow-2xl space-y-4"
+      className="relative w-full rounded-md border border-outline/30 bg-[#08090B]/90 backdrop-blur-md overflow-hidden p-4 sm:p-6 lg:p-8 shadow-2xl space-y-3"
     >
       {/* 1. TOP HEADER & SUBHEADER BANNERS */}
-      <div className="space-y-3 text-center max-w-4xl mx-auto relative z-20">
+      <div className="space-y-2.5 text-center max-w-4xl mx-auto relative z-20">
         <div className="space-y-1.5">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm bg-primary/10 border border-primary/30 font-mono text-[10px] sm:text-xs text-primary uppercase tracking-widest">
             <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-            <span>ABOUT WAVYASSETS</span>
+            <span>ABOUT WAVYASSETS • INSTITUTIONAL SOVEREIGNTY</span>
             <Sparkles className="w-3.5 h-3.5 text-primary" />
             <span>WAVYASSETS ARCHITECTURE</span>
           </div>
@@ -496,7 +501,7 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
         </div>
 
         {/* Directly Under: Editorial Narrative & Headline (from First Screenshot) */}
-        <div className="pt-1 space-y-2 max-w-3xl mx-auto">
+        <div className="pt-0.5 space-y-1.5 max-w-3xl mx-auto">
 
           <h2 className="font-headline-lg text-2xl sm:text-3xl lg:text-4xl text-on-surface font-bold tracking-tight leading-tight">
             Pioneering Multi-Asset Freedom and Cold-Storage Security
@@ -514,7 +519,7 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
       {/* 2. MAIN INFOGRAPHIC 3D CANVAS & VECTOR OVERLAY GRID */}
       <div
         ref={canvasContainerRef}
-        className="relative w-full min-h-[520px] lg:min-h-[580px] flex items-center justify-center"
+        className="relative w-full min-h-[350px] lg:min-h-[370px] flex flex-col items-center justify-start pt-1 sm:pt-2 pb-1"
       >
         {/* Three.js 3D WebGL Canvas Layer */}
         <canvas
@@ -523,7 +528,7 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
         />
 
         {/* High-Tech Vector & Telemetry Layout Grid (Left, Center, Right, Far Right) */}
-        <div className="relative z-10 w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-center pointer-events-auto">
+        <div className="relative z-10 w-full grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start pointer-events-auto">
           {/* ========================================================= */}
           {/* LEFT SIDE: PIONEERING MULTI-ASSET FREEDOM (3 cols on desktop) */}
           {/* ========================================================= */}
@@ -594,7 +599,7 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
           {/* ========================================================= */}
           {/* CENTERPIECE: COLD-STORAGE SECURITY (3 cols on desktop) */}
           {/* ========================================================= */}
-          <div className="lg:col-span-3 flex flex-col items-center justify-end text-center pt-48 sm:pt-60 lg:pt-72">
+          <div className="lg:col-span-3 flex flex-col items-center justify-end text-center pt-32 sm:pt-36 lg:pt-40">
             <div className="p-3 rounded-sm bg-[#08090B]/90 border border-primary/40 shadow-[0_0_25px_rgba(212,175,55,0.15)] space-y-1.5 max-w-[240px]">
               <div className="flex items-center justify-center gap-1.5 text-primary font-mono text-xs font-black uppercase tracking-wider">
                 <ShieldCheck className="w-4 h-4 text-primary" />
@@ -734,7 +739,7 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
       </div>
 
       {/* 3. BOTTOM FOOTER PILL BANNER */}
-      <div className="pt-2 flex items-center justify-center">
+      <div className="pt-1 sm:pt-2 flex items-center justify-center">
         <motion.div
           whileHover={{ scale: 1.02 }}
           className="px-6 py-2.5 rounded-full bg-[#0F1115] border border-primary/50 text-center shadow-[0_0_20px_rgba(212,175,55,0.25)] flex items-center gap-2 cursor-pointer"

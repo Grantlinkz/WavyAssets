@@ -14,7 +14,6 @@ import { HeroAssetGyroscope } from './components/canvas/HeroAssetGyroscope';
 import { KineticHeroTypography } from './components/hero/KineticHeroTypography';
 import { AboutSection } from './components/about/AboutSection';
 import { ContactModal } from './components/contact/ContactModal';
-import { ContactSection } from './components/contact/ContactSection';
 import {
   formatCurrency,
   formatPercent,
@@ -169,8 +168,6 @@ export const App: React.FC = () => {
           <ClientVoices />
         </section>
 
-        {/* Dedicated Institutional B2B Contact Section */}
-        <ContactSection />
       </main>
 
       {/* 4. Global Compliance-Ready Multi-Column Institutional Footer */}

@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
-import { ContactSection } from '../../src/components/contact/ContactSection';
 import { ContactModal } from '../../src/components/contact/ContactModal';
 import { ContactSentinelGraphic } from '../../src/components/contact/ContactSentinelGraphic';
 import { GlobalHeader } from '../../src/components/nav/GlobalHeader';
@@ -24,23 +23,22 @@ describe('Contact Section & Modal Integration Suite (SSR / Node 24)', () => {
     window.location.hash = '';
   });
 
-  describe('1. ContactSection On-Page Component', () => {
-    it('renders ContactSection with id="contact", headline, inputs, and sentinel graphic (no B2B ONLY writeup)', () => {
-      const html = renderToString(<ContactSection />);
+  describe('1. ContactModal Direct Form Rendering', () => {
+    it('renders ContactModal with inputs and sentinel graphic when open (no B2B ONLY writeup)', () => {
+      const html = renderToString(<ContactModal isOpen={true} />);
 
-      expect(html).toContain('id="contact"');
-      expect(html).toContain('data-testid="contact-section"');
+      expect(html).toContain('data-testid="contact-modal"');
       expect(html).toContain('Fill out form and');
       expect(html).toContain('we contact you');
       expect(html).not.toContain('B2B ONLY');
-      expect(html).toContain('data-testid="contact-section-fullname-input"');
-      expect(html).toContain('data-testid="contact-section-email-input"');
-      expect(html).toContain('data-testid="contact-section-telegram-input"');
-      expect(html).toContain('data-testid="contact-section-company-input"');
-      expect(html).toContain('data-testid="contact-section-website-input"');
-      expect(html).toContain('data-testid="contact-section-service-select"');
-      expect(html).toContain('data-testid="contact-section-allocation-select"');
-      expect(html).toContain('data-testid="contact-section-submit-btn"');
+      expect(html).toContain('data-testid="contact-fullname-input"');
+      expect(html).toContain('data-testid="contact-email-input"');
+      expect(html).toContain('data-testid="contact-telegram-input"');
+      expect(html).toContain('data-testid="contact-company-input"');
+      expect(html).toContain('data-testid="contact-website-input"');
+      expect(html).toContain('data-testid="contact-service-select"');
+      expect(html).toContain('data-testid="contact-allocation-select"');
+      expect(html).toContain('data-testid="contact-submit-btn"');
       expect(html).toContain('SEND');
       expect(html).toContain('data-testid="contact-sentinel-graphic"');
       expect(html).toContain('AI DISPATCH SENTINEL ONLINE');
@@ -101,11 +99,11 @@ describe('Contact Section & Modal Integration Suite (SSR / Node 24)', () => {
   });
 
   describe('5. Full App Command Deck Mounting', () => {
-    it('mounts ContactSection and open ContactModal in App deck', () => {
+    it('mounts open ContactModal in App deck without on-page ContactSection', () => {
       useTerminalStore.setState({ isContactModalOpen: true });
       const html = renderToString(<App />);
 
-      expect(html).toContain('data-testid="contact-section"');
+      expect(html).not.toContain('data-testid="contact-section"');
       expect(html).toContain('data-testid="contact-modal"');
     });
   });
