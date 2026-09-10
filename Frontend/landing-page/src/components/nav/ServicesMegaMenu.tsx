@@ -158,17 +158,8 @@ export const ServicesMegaMenu: React.FC<ServicesMegaMenuProps> = ({
   const isMegaMenuOpen = isOpen !== undefined ? isOpen : storeIsOpen;
   const megaMenuCategory = category !== undefined ? category : storeCategory;
 
+  const overlayRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  // Lock body scroll when mega menu is open so page behind doesn't scroll
-  useEffect(() => {
-    if (!isMegaMenuOpen) return;
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, [isMegaMenuOpen]);
 
   // Close on Escape key
   useEffect(() => {
@@ -181,16 +172,18 @@ export const ServicesMegaMenu: React.FC<ServicesMegaMenuProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isMegaMenuOpen, setMegaMenuOpen]);
 
-  // Close on click outside
+  // Close on click outside (backdrop only)
   useEffect(() => {
     if (!isMegaMenuOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        // Only close if target isn't the nav trigger
-        const navTrigger = document.getElementById('services-nav-trigger');
-        if (navTrigger && navTrigger.contains(e.target as Node)) {
-          return;
-        }
+      const navTrigger = document.getElementById('services-nav-trigger');
+      if (navTrigger && navTrigger.contains(e.target as Node)) {
+        return;
+      }
+      if (menuRef.current && menuRef.current.contains(e.target as Node)) {
+        return;
+      }
+      if (overlayRef.current && e.target === overlayRef.current) {
         setMegaMenuOpen(false);
       }
     };
@@ -214,23 +207,24 @@ export const ServicesMegaMenu: React.FC<ServicesMegaMenuProps> = ({
   if (!isMegaMenuOpen) return null;
 
   return (
-    <motion.div
+    <div
+      ref={overlayRef}
       key="services-mega-menu-overlay"
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.18, ease: 'easeOut' }}
-      className="fixed top-16 inset-x-0 bottom-0 z-40 bg-black/75 backdrop-blur-md overflow-y-auto custom-scrollbar overscroll-contain px-3 sm:px-6 pt-3 pb-24"
+      className="fixed top-16 left-0 right-0 bottom-0 z-40 bg-black/80 backdrop-blur-md overflow-y-auto custom-scrollbar px-3 sm:px-6 pt-3 pb-32"
       data-testid="services-mega-menu"
       onClick={(e) => {
-        if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        if (e.target === e.currentTarget) {
           setMegaMenuOpen(false);
         }
       }}
     >
-      <div
+      <motion.div
         ref={menuRef}
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.18, ease: 'easeOut' }}
         onClick={(e) => e.stopPropagation()}
-        className="max-w-7xl mx-auto bg-surface-container-lowest/98 backdrop-blur-2xl rounded-md shadow-2xl p-5 sm:p-6 pb-8 relative overflow-hidden border border-outline/40 mb-10"
+        className="max-w-7xl mx-auto bg-surface-container-lowest/98 backdrop-blur-2xl rounded-md shadow-2xl p-5 sm:p-6 pb-8 relative overflow-hidden border border-outline/40 mb-16"
       >
         {/* Ambient Substrate Glow */}
         <div className="absolute -top-24 left-1/4 w-96 h-32 bg-primary/10 blur-3xl pointer-events-none" />
@@ -270,10 +264,9 @@ export const ServicesMegaMenu: React.FC<ServicesMegaMenuProps> = ({
           {/* Left Column: Asset Cards Grid */}
           <div
             data-testid="services-scroll-container"
-            className="lg:col-span-8 overflow-y-auto custom-scrollbar focus:outline-none"
-            tabIndex={0}
+            className="lg:col-span-8 custom-scrollbar"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pb-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pb-4">
               {filteredVerticals.map((vert) => {
                 const Icon = vert.icon;
                 const isCurrentActive = activeAssetId === vert.id;
@@ -362,7 +355,7 @@ export const ServicesMegaMenu: React.FC<ServicesMegaMenuProps> = ({
           </div>
           <div className="text-outline">CLICK ANY SERVICE TO SIGN IN • ESC TO CLOSE</div>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 };
