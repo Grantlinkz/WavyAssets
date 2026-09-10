@@ -163,7 +163,10 @@
   - Right Side: Three glowing pipeline flow splines with moving photons connecting from the central shield to Family Offices (tablet), Institutions (skyscrapers), and Smart Individual Investors (holographic charts).
   - Far Right: Vertical "ELIMINATES THE CHAOS" section with fragmented tools (charts, bank facade, locked safe, pie charts) consolidated into WavyAssets.
   - Bottom Footer: Pill-shaped glowing banner reading "TOTAL CONTROL, MATHEMATICAL TRANSPARENCY, AND PEACE OF MIND."
-  - Verified 100% test pass rate across all 17 test suites (89/89 tests), zero lint errors, and zero TypeScript compile errors.
+- Removed redundant on-page `ContactSection.tsx` while leaving `ContactModal.tsx` and `ContactSentinelGraphic.tsx` untouched; updated `GlobalHeader` and App command deck so `#contact` seamlessly activates the institutional `ContactModal`.
+- Compacted vertical spacing in `UnifiedFinanceInfographic3D.tsx`: eliminated dead space between narrative text and infographic cards (per reference screenshots), calibrated canvas container height to hug content, and eliminated excessive bottom dead space above the footer pill banner ("TOTAL CONTROL, MATHEMATICAL TRANSPARENCY, AND PEACE OF MIND.").
+- Enlarged 3D WebGL animation in `UnifiedFinanceInfographic3D.tsx`: scaled up central Shield & Wave (+30%), wireframe Globe & orbital rings (+22%), flow splines, and brought camera closer to create an expansive, high-impact centerpiece.
+- Verified 100% test pass rate across all 17 test suites (89/89 tests passing) with zero typecheck or lint errors.
 
 ---
 
@@ -172,3 +175,4 @@
 - **Sprint 6 Task 1**: WebGL render loop throttling on `document.hidden` and off-screen canvas culling.
 - **Sprint 6 Task 2**: WCAG 2.1 AA accessibility audit, keyboard navigation, focus trapping in dialogs, and screen reader announcements.
 - **Sprint 6 Task 3**: Production bundle optimization, Lighthouse verification, and sub-50ms panel swap benchmarking.
+
