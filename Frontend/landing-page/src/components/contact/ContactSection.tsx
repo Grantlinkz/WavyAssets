@@ -63,7 +63,7 @@ export const ContactSection: React.FC = () => {
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-primary font-mono text-[10px] uppercase tracking-widest">
                 <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-                <span>WAVYASSETS INSTITUTIONAL INQUIRY // DIRECT LINE</span>
+                <span>WAVYASSETS INSTITUTIONAL INQUIRY</span>
               </div>
 
               <div className="relative inline-block">

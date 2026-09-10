@@ -107,8 +107,8 @@
 - Rewrote copy across the entire platform in clear, 8th-grade reading level plain English per Fintech UX Content Strategy:
   - Eliminated forbidden buzzwords ("terminal", "leverage", "paradigm", "synergy", "disrupt", "algorithmic execution engine").
   - Replaced technical jargon with plain equivalents ("Trading Terminal" -> "Dashboard" / "Trade Screen", "Automated AI Execution" -> "Smart Rules" / "Hands-free Investing", "Liquidity Pool" -> "Available Balance", "Automotive Inventory Liquidation" -> "Browse & Invest in Cars").
-  - Implemented high-intent SEO keywords (*invest in stocks online, auto investment platform, digital money wallet, smart automated investing*) across `<head>` meta tags and semantic H1/H2/H3 hierarchies.
-  - Upgraded all 7 asset vertical panels with dedicated plain English headers, subdecks, primary & secondary active CTAs, 3 distinct feature benefit cards, accessible tooltips, and friendly status badges (*Active, Pending, Settled*).
+  - Implemented high-intent SEO keywords (_invest in stocks online, auto investment platform, digital money wallet, smart automated investing_) across `<head>` meta tags and semantic H1/H2/H3 hierarchies.
+  - Upgraded all 7 asset vertical panels with dedicated plain English headers, subdecks, primary & secondary active CTAs, 3 distinct feature benefit cards, accessible tooltips, and friendly status badges (_Active, Pending, Settled_).
 - Maintained zero CLS (`min-h-[540px]`), full SSR parity, and 100% test suite passing rate (62/62 tests across 13 suites).
 - Designed new dynamic sovereign WavyAssets logo emblem featuring fluid sinusoidal waves intertwined with an ascending vault crest in Sovereign Gold (`#D4AF37`) and Emerald Accent (`#00C288`), applied as the default in `BrandLogo.tsx` and `public/favicon.svg`.
 - Enabled click-to-home navigation on `BrandLogo` (`window.scrollTo({ top: 0, behavior: 'smooth' })`, clearing hash routing deep-links and closing mega-menu).
@@ -138,7 +138,7 @@
 - Implemented 5 major UX & feature enhancements per user directive:
   1. Connected "VIEW PORTFOLIO SERVICE >" in `AssetDiscoveryHub.tsx` (`data-testid="discovery-view-portfolio-service-btn"`) to open the Unified Auth modal in Sign In mode (`openAuthModal('institutional', 'login')`).
   2. Rewrote `UnifiedAuthModal.tsx` as a senior UX writer using clear, 8th-grade reading level plain English:
-     - Header: "WavyAssets SECURE ACCESS // 256-BIT ENCRYPTION"
+     - Header: "WavyAssets SECURE ACCESS"
      - Sign In: "Sign In to Your Account", "Welcome back. Access your dashboard, track live yields, and manage your portfolio.", "Email Address", "Password", "Continue to Verification ->"
      - Request Mandate: "Create Your Account", "Join qualified investors and institutions managing multi-asset wealth securely.", "Create Password", "Create Account & Continue ->"
      - Added required **Full Name** field (`data-testid="auth-fullname-input"`) with `User` icon and validation to the Request Mandate / Account Creation form.
@@ -172,5 +172,3 @@
 - **Sprint 6 Task 1**: WebGL render loop throttling on `document.hidden` and off-screen canvas culling.
 - **Sprint 6 Task 2**: WCAG 2.1 AA accessibility audit, keyboard navigation, focus trapping in dialogs, and screen reader announcements.
 - **Sprint 6 Task 3**: Production bundle optimization, Lighthouse verification, and sub-50ms panel swap benchmarking.
-
-

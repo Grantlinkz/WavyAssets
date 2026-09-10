@@ -112,7 +112,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
           {/* Top Security Telemetry Tag */}
           <div className="flex items-center gap-2 text-primary font-mono text-[10px] uppercase tracking-widest">
             <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-            <span>WAVYASSETS INSTITUTIONAL INQUIRY // DIRECT LINE</span>
+            <span>WAVYASSETS INSTITUTIONAL INQUIRY</span>
           </div>
 
           {/* Headline */}

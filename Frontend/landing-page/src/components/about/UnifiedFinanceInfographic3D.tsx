@@ -476,8 +476,10 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
       <div className="space-y-3 text-center max-w-4xl mx-auto relative z-20">
         <div className="space-y-1.5">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm bg-primary/10 border border-primary/30 font-mono text-[10px] sm:text-xs text-primary uppercase tracking-widest">
+            <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+            <span>ABOUT WAVYASSETS</span>
             <Sparkles className="w-3.5 h-3.5 text-primary" />
-            <span>WAVYASSETS ARCHITECTURE // UNIFIED ECOSYSTEM</span>
+            <span>WAVYASSETS ARCHITECTURE</span>
           </div>
 
           <h3 className="font-headline-lg text-xl sm:text-2xl lg:text-3xl font-extrabold text-on-surface tracking-tight uppercase">
@@ -495,10 +497,6 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
 
         {/* Directly Under: Editorial Narrative & Headline (from First Screenshot) */}
         <div className="pt-1 space-y-2 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-sm bg-primary/10 border border-primary/30 font-mono text-[10px] sm:text-[11px] text-primary uppercase tracking-widest">
-            <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-            <span>ABOUT WAVYASSETS • INSTITUTIONAL SOVEREIGNTY</span>
-          </div>
 
           <h2 className="font-headline-lg text-2xl sm:text-3xl lg:text-4xl text-on-surface font-bold tracking-tight leading-tight">
             Pioneering Multi-Asset Freedom and Cold-Storage Security

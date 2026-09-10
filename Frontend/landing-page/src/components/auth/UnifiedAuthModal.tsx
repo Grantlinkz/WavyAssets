@@ -124,7 +124,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-primary font-mono text-[10px] uppercase tracking-widest">
           <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-          <span>WavyAssets SECURE ACCESS // 256-BIT ENCRYPTION</span>
+          <span>WavyAssets SECURE ACCESS</span>
         </div>
 
         <div className="font-headline-sm text-xl text-on-surface font-bold">

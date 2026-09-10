@@ -43,7 +43,7 @@ describe('Contact Section & Modal Integration Suite (SSR / Node 24)', () => {
       expect(html).toContain('data-testid="contact-section-submit-btn"');
       expect(html).toContain('SEND');
       expect(html).toContain('data-testid="contact-sentinel-graphic"');
-      expect(html).toContain('AI DISPATCH SENTINEL // ONLINE');
+      expect(html).toContain('AI DISPATCH SENTINEL ONLINE');
     });
   });
 
@@ -79,7 +79,7 @@ describe('Contact Section & Modal Integration Suite (SSR / Node 24)', () => {
       const html = renderToString(<ContactSentinelGraphic />);
 
       expect(html).toContain('data-testid="contact-sentinel-graphic"');
-      expect(html).toContain('AI DISPATCH SENTINEL // ONLINE');
+      expect(html).toContain('AI DISPATCH SENTINEL ONLINE');
       expect(html).toContain('#A6FF00');
     });
   });

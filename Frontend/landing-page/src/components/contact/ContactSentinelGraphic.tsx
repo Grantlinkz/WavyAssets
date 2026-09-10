@@ -162,7 +162,7 @@ export const ContactSentinelGraphic: React.FC = () => {
         <div className="flex items-center gap-2 px-3 py-1 -mt-4 rounded-sm bg-surface-container/80 border border-outline/30 backdrop-blur-md">
           <span className="w-1.5 h-1.5 rounded-full bg-[#A6FF00] animate-pulse" />
           <span className="font-mono text-[10px] text-on-surface-variant uppercase tracking-wider">
-            AI DISPATCH SENTINEL // ONLINE
+            AI DISPATCH SENTINEL ONLINE
           </span>
         </div>
       </motion.div>

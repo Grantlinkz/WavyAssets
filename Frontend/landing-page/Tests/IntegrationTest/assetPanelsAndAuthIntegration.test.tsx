@@ -147,7 +147,7 @@ describe('Asset Panels & Unified Auth Modal Integration Suite (SSR / Node 24)', 
 
     expect(html).toContain('data-testid="unified-auth-modal"');
     expect(html).toContain('Sign In to Your Account');
-    expect(html).toContain('WavyAssets SECURE ACCESS // 256-BIT ENCRYPTION');
+    expect(html).toContain('WavyAssets SECURE ACCESS');
     expect(html).toContain('data-testid="tab-login"');
     expect(html).toContain('data-testid="tab-mandate"');
     expect(html).toContain('data-testid="auth-tier-private"');
