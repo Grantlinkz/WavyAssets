@@ -9,7 +9,7 @@ const navLinks = [
   { label: 'About', href: '#about' },
   { label: 'Client Voices', href: '#client-voices' },
   { label: 'Contact', href: '#contact' },
-  { label: 'Research', href: '#research' },
+  { label: 'Research', href: '/research#/services/vip-cards' },
 ];
 
 export interface GlobalHeaderProps {

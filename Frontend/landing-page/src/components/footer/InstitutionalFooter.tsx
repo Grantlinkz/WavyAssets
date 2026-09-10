@@ -61,12 +61,9 @@ export const InstitutionalFooter: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleAssetClick("crypto")}
-                  className="hover:text-primary transition-colors cursor-pointer w-full text-left flex items-center justify-between"
+                  className="hover:text-primary transition-colors cursor-pointer w-full text-left"
                 >
-                  <span>Crypto Yields &amp; Cold Storage</span>
-                  <span className="font-mono text-[10px] text-secondary font-semibold">
-                    19.4% APY
-                  </span>
+                  Crypto Yields &amp; Cold Storage
                 </button>
               </li>
               <li>

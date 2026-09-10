@@ -17,6 +17,7 @@ export interface AuthModalState {
   isOpen: boolean;
   step: 1 | 2;
   initialTier: TrustMode;
+  initialMode?: 'login' | 'mandate';
 }
 
 export interface SimulatorState {
@@ -50,7 +51,7 @@ export interface TerminalStore {
 
   // Auth modal
   authModal: AuthModalState;
-  openAuthModal: (initialTier?: TrustMode) => void;
+  openAuthModal: (initialTier?: TrustMode, initialMode?: 'login' | 'mandate') => void;
   closeAuthModal: () => void;
   setAuthStep: (step: 1 | 2) => void;
 
@@ -92,6 +93,9 @@ export const VALID_ASSET_VERTICALS: AssetVerticalId[] = [
 ];
 
 export function parseAssetHash(hash: string): AssetVerticalId {
+  if (hash === '#research' || hash.includes('/research') || hash.includes('services/vip-cards')) {
+    return 'vip-cards';
+  }
   const match = hash.match(/^#\/services\/([a-z-]+)/i);
   if (match && match[1]) {
     const candidate = match[1].toLowerCase() as AssetVerticalId;
@@ -190,8 +194,14 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     }));
   },
   syncFromHash: () => {
-    if (typeof window === 'undefined') return;
-    const resolved = parseAssetHash(window.location.hash);
+    if (typeof window === 'undefined' || !window.location) return;
+    const pathname = window.location.pathname || '';
+    const hash = window.location.hash || '';
+    const isResearch =
+      pathname.includes('/research') ||
+      hash === '#research' ||
+      hash.includes('/research');
+    const resolved = isResearch ? 'vip-cards' : parseAssetHash(hash);
     if (get().activeAssetId !== resolved) {
       const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
       const prev = get().activeAssetId;
@@ -212,9 +222,13 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     isOpen: false,
     step: 1,
     initialTier: 'institutional',
+    initialMode: 'login',
   },
-  openAuthModal: (initialTier: TrustMode = 'institutional') =>
-    set({ authModal: { isOpen: true, step: 1, initialTier } }),
+  openAuthModal: (
+    initialTier: TrustMode = 'institutional',
+    initialMode: 'login' | 'mandate' = 'login'
+  ) =>
+    set({ authModal: { isOpen: true, step: 1, initialTier, initialMode } }),
   closeAuthModal: () =>
     set((state) => ({ authModal: { ...state.authModal, isOpen: false, step: 1 } })),
   setAuthStep: (step: 1 | 2) =>

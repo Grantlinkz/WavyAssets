@@ -12,6 +12,7 @@ import { ClientVoices } from './components/trust/ClientVoices';
 import { InstitutionalFooter } from './components/footer/InstitutionalFooter';
 import { HeroAssetGyroscope } from './components/canvas/HeroAssetGyroscope';
 import { KineticHeroTypography } from './components/hero/KineticHeroTypography';
+import { AboutSection } from './components/about/AboutSection';
 import {
   formatCurrency,
   formatPercent,
@@ -31,6 +32,15 @@ const syndicateFeeds = [
 ];
 
 export const App: React.FC = () => {
+  // Handle /research or /#research routing to /research#/services/vip-cards
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.location.pathname.includes('/research') || window.location.hash === '#research') {
+      if (!window.location.hash.includes('services/vip-cards')) {
+        window.location.hash = '#/services/vip-cards';
+      }
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-surface text-on-surface flex flex-col selection:bg-primary-container selection:text-on-primary-container relative">
@@ -128,6 +138,9 @@ export const App: React.FC = () => {
           {/* Right: Interactive 3D Web Asset Hero Gyroscope Container */}
           <HeroAssetGyroscope />
         </section>
+
+        {/* About Section: 3D Vault Canvas (Left) & Institutional Editorial Write-Up (Right) */}
+        <AboutSection />
 
         {/* 2-Column Obsidian Console: Portfolio Simulator */}
         <section id="portfolio-simulator" className="w-full scroll-mt-20">

@@ -139,6 +139,7 @@ export interface AssetDiscoveryHubProps {
 export const AssetDiscoveryHub: React.FC<AssetDiscoveryHubProps> = ({ activeId }) => {
   const storeActiveAssetId = useTerminalStore((state) => state.activeAssetId);
   const setActiveAssetId = useTerminalStore((state) => state.setActiveAssetId);
+  const openAuthModal = useTerminalStore((state) => state.openAuthModal);
 
   const activeAssetId = activeId ?? storeActiveAssetId;
 
@@ -320,17 +321,20 @@ export const AssetDiscoveryHub: React.FC<AssetDiscoveryHubProps> = ({ activeId }
                 <span>DIRECT DASHBOARD VIEW ACTIVE • {`#/services/${activeVertical.id}`}</span>
               </div>
 
-              <motion.a
+              <motion.button
+                type="button"
+                data-testid="discovery-view-portfolio-service-btn"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                href={`#/services/${activeVertical.id}`}
-                onClick={() => setActiveAssetId(activeVertical.id)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-sm bg-primary-container text-on-primary-container text-xs uppercase font-bold tracking-wider hover:bg-primary-hover transition-colors shadow-sm"
+                onClick={() => {
+                  openAuthModal('institutional', 'login');
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-sm bg-primary-container text-on-primary-container text-xs uppercase font-bold tracking-wider hover:bg-primary-hover transition-colors shadow-sm cursor-pointer"
               >
                 <span>View Portfolio Service</span>
                 <ChevronRight className="w-3.5 h-3.5" />
-              </motion.a>
+              </motion.button>
             </div>
           </motion.div>
         </AnimatePresence>

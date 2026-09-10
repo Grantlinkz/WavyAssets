@@ -10,7 +10,7 @@ import {
   InputOTPSeparator,
 } from '../ui/input-otp';
 import { useTerminalStore, type TrustMode } from '../../store/useTerminalStore';
-import { ShieldCheck, KeyRound, Lock, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ShieldCheck, KeyRound, Lock, ArrowRight, CheckCircle2, AlertCircle, User } from 'lucide-react';
 
 interface UnifiedAuthModalProps {
   forceInline?: boolean;
@@ -41,8 +41,9 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
   const step = propStep ?? activeAuth.step;
   const initialTier = propInitialTier ?? activeAuth.initialTier;
 
-  const [authMode, setAuthMode] = useState<'login' | 'mandate'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'mandate'>(activeAuth.initialMode ?? 'login');
   const [tier, setTier] = useState<TrustMode>(initialTier || 'institutional');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [passphrase, setPassphrase] = useState('');
   const [otpCode, setOtpCode] = useState('');
@@ -54,9 +55,11 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
     if (isOpen) {
+      setAuthMode(activeAuth.initialMode ?? 'login');
       setTier(initialTier || 'institutional');
       setIsSuccess(false);
       setErrorMsg('');
+      setFullName('');
       setOtpCode('');
       setCountdown(45);
     }
@@ -74,13 +77,17 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
 
   const handleStep1Submit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (authMode === 'mandate' && (!fullName.trim() || fullName.trim().length < 2)) {
+      setErrorMsg('Please enter your full name.');
+      return;
+    }
     const trimmed = email.trim();
     if (!trimmed || !trimmed.includes('@')) {
-      setErrorMsg('Valid institutional allocation email required.');
+      setErrorMsg('Please enter a valid email address.');
       return;
     }
     if (passphrase.length < 6) {
-      setErrorMsg('Passphrase must be at least 6 characters.');
+      setErrorMsg('Password must be at least 6 characters.');
       return;
     }
 
@@ -95,11 +102,11 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
   const handleStep2Submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (otpCode.length !== 6) {
-      setErrorMsg('Please enter all 6 cryptographic OTP digits.');
+      setErrorMsg('Please enter the 6-digit verification code.');
       return;
     }
 
-    console.info('[Auth] FIPS 140-3 2FA Attestation verified.');
+    console.info('[Auth] Identity verified successfully.');
     setIsSuccess(true);
     setErrorMsg('');
 
@@ -117,21 +124,23 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-primary font-mono text-[10px] uppercase tracking-widest">
           <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-          <span>WavyAssets SECURE GATEWAY // FIPS 140-3 LEVEL 4</span>
+          <span>WavyAssets SECURE ACCESS // 256-BIT ENCRYPTION</span>
         </div>
 
         <div className="font-headline-sm text-xl text-on-surface font-bold">
           {step === 1
             ? authMode === 'login'
-              ? 'Institutional Terminal Access'
-              : 'Request Sovereign Allocation Mandate'
-            : 'Hardware 2FA Quorum Attestation'}
+              ? 'Sign In to Your Account'
+              : 'Create Your Account'
+            : 'Enter Verification Code'}
         </div>
 
         <p className="font-sans text-xs text-on-surface-variant leading-relaxed">
           {step === 1
-            ? 'Multi-sig authenticated portal for family offices, qualified allocators, and sovereign treasuries.'
-            : 'Enter the 6-digit cryptographic verification code dispatched to your hardware enclave device.'}
+            ? authMode === 'login'
+              ? 'Welcome back. Access your dashboard, track live yields, and manage your portfolio.'
+              : 'Join qualified investors and institutions managing multi-asset wealth securely.'
+            : 'Enter the 6-digit security code sent to your registered device to confirm your identity.'}
         </p>
       </div>
 
@@ -142,10 +151,10 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
         >
           <CheckCircle2 className="w-10 h-10 text-secondary animate-bounce" />
           <div className="font-headline-sm text-base text-on-surface font-semibold">
-            Quorum Identity Verified
+            Identity Verified
           </div>
-          <p className="font-mono text-xs text-secondary">
-            Session token signed: Merkle leaf 0x48FA...E129
+          <p className="font-sans text-xs text-secondary">
+            Redirecting you to your secure dashboard...
           </p>
         </div>
       ) : step === 1 ? (
@@ -181,7 +190,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
           {/* Client Tier Pill Selector */}
           <div className="space-y-1.5">
             <label className="font-sans text-[11px] text-outline uppercase tracking-wider block">
-              Allocation Tier
+              Account Tier
             </label>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -213,10 +222,31 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
             </div>
           </div>
 
+          {/* Full Name Field (Request Mandate / Open Account) */}
+          {authMode === 'mandate' && (
+            <div className="space-y-1.5">
+              <label className="font-sans text-[11px] text-outline uppercase tracking-wider block">
+                Full Name
+              </label>
+              <div className="flex items-center gap-2 bg-surface-container p-2 rounded-sm border border-outline/30 focus-within:border-primary/60 transition-colors">
+                <User className="w-4 h-4 text-outline shrink-0 ml-1" />
+                <input
+                  type="text"
+                  required
+                  data-testid="auth-fullname-input"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="e.g. Eleanor Vance"
+                  className="bg-transparent border-none outline-none font-sans text-xs text-on-surface w-full placeholder:text-outline"
+                />
+              </div>
+            </div>
+          )}
+
           {/* Email Field */}
           <div className="space-y-1.5">
             <label className="font-sans text-[11px] text-outline uppercase tracking-wider block">
-              Institutional Corporate Email
+              {authMode === 'login' ? 'Email Address' : 'Work or Personal Email'}
             </label>
             <div className="flex items-center gap-2 bg-surface-container p-2 rounded-sm border border-outline/30 focus-within:border-primary/60 transition-colors">
               <Lock className="w-4 h-4 text-outline shrink-0 ml-1" />
@@ -226,16 +256,16 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
                 data-testid="auth-email-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="principal@familyoffice.ch"
+                placeholder="name@company.com"
                 className="bg-transparent border-none outline-none font-mono text-xs text-on-surface w-full placeholder:text-outline"
               />
             </div>
           </div>
 
-          {/* Passphrase / Master Key Field */}
+          {/* Passphrase / Password Field */}
           <div className="space-y-1.5">
             <label className="font-sans text-[11px] text-outline uppercase tracking-wider block">
-              {authMode === 'login' ? 'Master Security Passphrase' : 'Set Fiduciary Key'}
+              {authMode === 'login' ? 'Password' : 'Create Password'}
             </label>
             <div className="flex items-center gap-2 bg-surface-container p-2 rounded-sm border border-outline/30 focus-within:border-primary/60 transition-colors">
               <KeyRound className="w-4 h-4 text-outline shrink-0 ml-1" />
@@ -245,7 +275,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
                 data-testid="auth-password-input"
                 value={passphrase}
                 onChange={(e) => setPassphrase(e.target.value)}
-                placeholder="••••••••••••"
+                placeholder={authMode === 'login' ? 'Enter your password' : 'Create a secure password (min. 6 characters)'}
                 className="bg-transparent border-none outline-none font-mono text-xs text-on-surface w-full placeholder:text-outline"
               />
             </div>
@@ -266,7 +296,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
             data-testid="auth-step1-submit"
             className="w-full py-2.5 rounded-sm bg-primary-container text-on-primary-container font-sans text-xs uppercase hover:bg-primary-hover transition-colors font-bold flex items-center justify-center gap-2 shadow-sm cursor-pointer"
           >
-            <span>Proceed to 2FA Attestation</span>
+            <span>{authMode === 'login' ? 'Continue to Verification' : 'Create Account & Continue'}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </form>
@@ -275,7 +305,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
         <form onSubmit={handleStep2Submit} className="space-y-5 pt-2">
           <div className="space-y-2 flex flex-col items-center">
             <label className="font-sans text-[11px] text-outline uppercase tracking-wider text-center">
-              6-Digit Security Enclave Code
+              6-Digit Security Code
             </label>
 
             <div className="py-2">
@@ -301,7 +331,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
 
             <div className="flex items-center justify-between w-full font-mono text-[11px] text-outline px-2">
               <span>
-                Expires in:{' '}
+                Code expires in:{' '}
                 <strong className="text-on-surface">
                   00:{countdown < 10 ? `0${countdown}` : countdown}
                 </strong>
@@ -311,7 +341,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
                 onClick={() => setCountdown(45)}
                 className="text-primary hover:underline cursor-pointer"
               >
-                Resend OTP
+                Resend Code
               </button>
             </div>
           </div>
@@ -340,7 +370,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
               className="flex-1 py-2.5 rounded-sm bg-primary-container text-on-primary-container font-sans text-xs uppercase hover:bg-primary-hover transition-colors font-bold flex items-center justify-center gap-2 shadow-sm cursor-pointer"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Verify &amp; Authorize Session</span>
+              <span>Verify &amp; Access Dashboard</span>
             </button>
           </div>
         </form>

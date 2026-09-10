@@ -135,6 +135,20 @@
   - Card Hover Reaction: On hover, elevates the card slightly (`translateY(-6px)`) with gold/emerald shadow intensification and smooth easing, fully compliant with `useReducedMotion()`.
 - Replaced initial avatar placeholders ("SZ", "HW", "EB", "AK", "VL", "MT") in `ClientVoices.tsx` and `trustData.ts` with photorealistic executive human face headshots in `src/assets/testimonials/` (Sheikh Tariq Al-Zahrani, Dr. Hendrik Weber, Eleanor de Broglie, Alexander Koenig, Victoria Laurent, Marcus Thorne), styled with a 4px micro-chamfer and gold hairline border while retaining accessible initials as an image fallback.
 - Enhanced `Tests/IntegrationTest/trustAndComplianceIntegration.test.tsx` asserting `border-beam-trace` and all avatar data-testids across both institutional and private wealth tiers (74/74 tests passing across 15 suites, zero lint errors, zero typecheck errors).
+- Implemented 5 major UX & feature enhancements per user directive:
+  1. Connected "VIEW PORTFOLIO SERVICE >" in `AssetDiscoveryHub.tsx` (`data-testid="discovery-view-portfolio-service-btn"`) to open the Unified Auth modal in Sign In mode (`openAuthModal('institutional', 'login')`).
+  2. Rewrote `UnifiedAuthModal.tsx` as a senior UX writer using clear, 8th-grade reading level plain English:
+     - Header: "WavyAssets SECURE ACCESS // 256-BIT ENCRYPTION"
+     - Sign In: "Sign In to Your Account", "Welcome back. Access your dashboard, track live yields, and manage your portfolio.", "Email Address", "Password", "Continue to Verification ->"
+     - Request Mandate: "Create Your Account", "Join qualified investors and institutions managing multi-asset wealth securely.", "Create Password", "Create Account & Continue ->"
+     - Added required **Full Name** field (`data-testid="auth-fullname-input"`) with `User` icon and validation to the Request Mandate / Account Creation form.
+     - Rewrote Step 2 2FA: "Enter Verification Code", "6-Digit Security Code", "Verify & Access Dashboard", and "Identity Verified" success feedback.
+  3. Linked `/research` and `/#research` to `/research#/services/vip-cards`, activating the VIP Cards asset vertical in `GlobalHeader.tsx`, `useTerminalStore.ts` (`parseAssetHash`, `syncFromHash`), and `App.tsx`.
+  4. Created responsive 3D `AboutSection.tsx` (`id="about"`, `data-testid="about-section"`):
+     - Left side: Pure 3D WebGL animation (`AboutVaultCanvas3D.tsx`) featuring a multi-faceted dodecahedron sovereign vault core, inner glowing emerald nucleus, three concentric multi-axis orbital rings, ambient particle dust, pointer parallax damping, tab visibility throttling (`document.hidden`), and `prefers-reduced-motion` compliance.
+     - Right side: Editorial UX write-up in `Noto Serif` covering WavyAssets' mission, 3 core institutional pillars (Unified Multi-Asset Depository, Bank-Grade MPC Cold Storage, Direct Liquidity & Global Settlement), SEC/FINMA/SOC-2 regulatory badges, and CTAs.
+  5. Cleaned up `InstitutionalFooter.tsx`: removed the `19.4% APY` badge next to "Crypto Yields & Cold Storage".
+- Expanded automated integration test coverage in `Tests/IntegrationTest/aboutAndResearchIntegration.test.tsx`, `Tests/IntegrationTest/assetPanelsAndAuthIntegration.test.tsx`, `Tests/IntegrationTest/trustAndComplianceIntegration.test.tsx`, and `Tests/IntegrationTest/brandAndThemeIntegration.test.tsx`, achieving 100% pass rate across 16 test suites (81/81 passing tests).
 
 ---
 
@@ -143,4 +157,5 @@
 - **Sprint 6 Task 1**: WebGL render loop throttling on `document.hidden` and off-screen canvas culling.
 - **Sprint 6 Task 2**: WCAG 2.1 AA accessibility audit, keyboard navigation, focus trapping in dialogs, and screen reader announcements.
 - **Sprint 6 Task 3**: Production bundle optimization, Lighthouse verification, and sub-50ms panel swap benchmarking.
+
 
