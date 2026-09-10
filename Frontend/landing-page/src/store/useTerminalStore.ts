@@ -211,6 +211,12 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
       set({ isContactModalOpen: true });
     }
     const resolved = isResearch ? 'vip-cards' : parseAssetHash(hash);
+    if (isResearch && typeof document !== 'undefined') {
+      const el = document.getElementById('asset-terminal');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
     if (get().activeAssetId !== resolved) {
       const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
       const prev = get().activeAssetId;

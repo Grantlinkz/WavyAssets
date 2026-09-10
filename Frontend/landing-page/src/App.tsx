@@ -33,13 +33,27 @@ const syndicateFeeds = [
 ];
 
 export const App: React.FC = () => {
-  // Handle /research or /#research routing to /research#/services/vip-cards
+  // Handle /research or /#research routing to /research#/services/vip-cards & scroll directly to VIP cards terminal
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (window.location.pathname.includes('/research') || window.location.hash === '#research') {
+    const isResearch =
+      window.location.pathname.includes('/research') ||
+      window.location.hash === '#research' ||
+      window.location.hash.includes('services/vip-cards');
+
+    if (isResearch) {
       if (!window.location.hash.includes('services/vip-cards')) {
         window.location.hash = '#/services/vip-cards';
       }
+      const scrollToTerminal = () => {
+        const el = document.getElementById('asset-terminal');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      };
+      scrollToTerminal();
+      const timer = setTimeout(scrollToTerminal, 150);
+      return () => clearTimeout(timer);
     }
   }, []);
 
@@ -154,7 +168,7 @@ export const App: React.FC = () => {
         </section>
 
         {/* Dynamic Standardized Asset Sub-Views Terminal (#/services/:assetId) */}
-        <section id="asset-terminal" className="w-full pt-4">
+        <section id="asset-terminal" className="w-full pt-4 scroll-mt-20">
           <AssetContainer />
         </section>
 

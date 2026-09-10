@@ -25,6 +25,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
   const toggleMegaMenu = useTerminalStore((state) => state.toggleMegaMenu);
   const openAuthModal = useTerminalStore((state) => state.openAuthModal);
   const openContactModal = useTerminalStore((state) => state.openContactModal);
+  const setActiveAssetId = useTerminalStore((state) => state.setActiveAssetId);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // Sliding Dot Indicator State
@@ -123,6 +124,16 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                 if (link.href === '#contact') {
                   e.preventDefault();
                   openContactModal();
+                } else if (link.label === 'Research' || link.href.includes('/research')) {
+                  e.preventDefault();
+                  setActiveAssetId('vip-cards');
+                  if (typeof window !== 'undefined') {
+                    window.location.hash = '#/services/vip-cards';
+                  }
+                  const el = document.getElementById('asset-terminal');
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
                 }
               }}
               onMouseEnter={(e) => handleMouseEnter(e.currentTarget)}
@@ -212,6 +223,16 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                 if (link.href === '#contact') {
                   e.preventDefault();
                   openContactModal();
+                } else if (link.label === 'Research' || link.href.includes('/research')) {
+                  e.preventDefault();
+                  setActiveAssetId('vip-cards');
+                  if (typeof window !== 'undefined') {
+                    window.location.hash = '#/services/vip-cards';
+                  }
+                  const el = document.getElementById('asset-terminal');
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
                 }
               }}
               className="block px-3 py-2 rounded-sm text-xs font-semibold uppercase tracking-wider text-on-surface hover:bg-surface-container transition-colors"
