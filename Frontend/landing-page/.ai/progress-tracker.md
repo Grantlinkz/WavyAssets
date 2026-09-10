@@ -196,8 +196,17 @@
   7. Expanded automated test suite with unit tests in `Tests/UnitTest/locale.test.ts` and comprehensive integration tests in `Tests/IntegrationTest/sprint6HardeningAnd404Integration.test.tsx`.
   8. Resolved SSR snapshot parity and routing prefix edge cases across `useTerminalStore.ts`, `App.tsx`, and `sprint6HardeningAnd404Integration.test.tsx`, achieving 100% pass rate across all 19 test suites (104/104 passing tests) with zero lint errors and zero TypeScript typecheck errors.
 
+- Completed Sprint 7 (Vercel Production Deployment, Robots.txt, Sitemap.xml & Security Hardening):
+  1. Created institutional `public/robots.txt` with standard crawler directives (`User-agent: *`, `Allow: /`, `Disallow: /api/`, `/admin/`, `/auth/`, `/private/`), crawl delay, and sitemap reference.
+  2. Created XML sitemap `public/sitemap.xml` indexing root and core asset vertical anchors (`/#services`, `/#about`, `/#trust`, `/#simulator`, `/#contact`).
+  3. Engineered production `vercel.json` with SPA routing rewrites (`/(.*) -> /index.html`), clean URLs, and immutable 1-year caching for `/assets/(.*)`.
+  4. Hardened security with strict Content-Security-Policy blocking `unsafe-eval` and unauthorized script injections while whitelisting Google Fonts and media blobs; added HSTS, X-Frame-Options DENY, nosniff, and strict referrer policy.
+  5. Diagnosed and verified console warnings: confirmed `contentscript.js:14083 MaxListenersExceededWarning` stems from injected Web3 wallet browser extensions and is external to application code; confirmed absence of `eval()` or `new Function()` in production build.
+  6. Optimized Vite build with Rollup `manualChunks` function, separating `three-vendor`, `motion-vendor`, `radix-vendor`, and `react-vendor` chunks, reducing main bundle size from 1.58MB to 328kB and cutting build time to 5.4s.
+  7. Built automated integration test suite in `Tests/IntegrationTest/sprint7VercelAndDeploymentIntegration.test.tsx` (113/113 tests passing across 20 test suites).
+
 ---
 
 ## Next Up
 
-- **Post-Sprint 6**: Production deployment, CDN caching headers, and multi-region edge DNS routing.
+- **Post-Sprint 7**: Connect custom production domain (`wavyassets.com`) in Vercel dashboard and configure DNS records.

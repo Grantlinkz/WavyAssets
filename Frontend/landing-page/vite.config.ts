@@ -11,6 +11,29 @@ export default defineConfig({
       '@': path.resolve(import.meta.dirname, './src'),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('three') || id.includes('@react-three')) {
+              return 'three-vendor';
+            }
+            if (id.includes('framer-motion')) {
+              return 'motion-vendor';
+            }
+            if (id.includes('@radix-ui') || id.includes('lucide-react')) {
+              return 'radix-vendor';
+            }
+            if (id.includes('react') || id.includes('zustand')) {
+              return 'react-vendor';
+            }
+          }
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'node',
