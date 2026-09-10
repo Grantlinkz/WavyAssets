@@ -72,15 +72,17 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
     const cyanColor = new THREE.Color('#00E5FF');
     const emeraldColor = new THREE.Color('#00C288');
 
+    const isLight = resolvedTheme === 'light';
+
     // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    const ambientLight = new THREE.AmbientLight(0xffffff, isLight ? 1.1 : 0.7);
     scene.add(ambientLight);
 
-    const goldLight = new THREE.DirectionalLight(goldColor, 1.8);
+    const goldLight = new THREE.DirectionalLight(goldColor, isLight ? 2.2 : 1.8);
     goldLight.position.set(-5, 6, 8);
     scene.add(goldLight);
 
-    const cyanLight = new THREE.DirectionalLight(cyanColor, 2.0);
+    const cyanLight = new THREE.DirectionalLight(cyanColor, isLight ? 2.4 : 2.0);
     cyanLight.position.set(5, -4, 8);
     scene.add(cyanLight);
 
@@ -117,7 +119,7 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
     shieldGeometry.center();
 
     const shieldMaterial = new THREE.MeshStandardMaterial({
-      color: 0x12151c,
+      color: isLight ? 0x242a36 : 0x12151c,
       metalness: 0.92,
       roughness: 0.22,
       envMapIntensity: 1.2,
@@ -524,7 +526,7 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
     <div
       ref={containerRef}
       data-testid="unified-finance-infographic-3d"
-      className="relative w-full rounded-md border border-outline/30 bg-[#08090B]/90 backdrop-blur-md overflow-hidden p-4 sm:p-6 lg:p-8 shadow-2xl space-y-3"
+      className="relative w-full rounded-md border border-slate-200 dark:border-outline/30 bg-white/95 dark:bg-[#08090B]/90 backdrop-blur-md overflow-hidden p-4 sm:p-6 lg:p-8 shadow-2xl space-y-3"
     >
       {/* 1. TOP HEADER & SUBHEADER BANNERS */}
       <div className="space-y-2.5 text-center max-w-4xl mx-auto relative z-20">
@@ -536,12 +538,12 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
             <span>WAVYASSETS ARCHITECTURE</span>
           </div>
 
-          <h3 className="font-headline-lg text-xl sm:text-2xl lg:text-3xl font-extrabold text-on-surface tracking-tight uppercase">
+          <h3 className="font-headline-lg text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-on-surface tracking-tight uppercase">
             WAVYASSETS: THE FUTURE OF UNIFIED FINANCE
           </h3>
 
           {/* Top Subheader Banner */}
-          <div className="p-2 sm:p-2.5 rounded-sm bg-[#0F1115] border border-outline/30 text-[10px] sm:text-xs font-mono font-bold text-on-surface-variant tracking-wider uppercase flex items-center justify-center gap-2">
+          <div className="p-2 sm:p-2.5 rounded-sm bg-[#F4F6FB] dark:bg-[#0F1115] border border-slate-200 dark:border-outline/30 text-[10px] sm:text-xs font-mono font-bold text-slate-700 dark:text-on-surface-variant tracking-wider uppercase flex items-center justify-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#00E5FF] animate-ping" />
             <span>
               WAVYASSETS UNIFIES: GLOBAL WEALTH MANAGEMENT | DIGITAL ASSET CUSTODY | INSTITUTIONAL YIELD GENERATION
@@ -552,11 +554,11 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
         {/* Directly Under: Editorial Narrative & Headline (from First Screenshot) */}
         <div className="pt-0.5 space-y-1.5 max-w-3xl mx-auto">
 
-          <h2 className="font-headline-lg text-2xl sm:text-3xl lg:text-4xl text-on-surface font-bold tracking-tight leading-tight">
+          <h2 className="font-headline-lg text-2xl sm:text-3xl lg:text-4xl text-slate-900 dark:text-on-surface font-bold tracking-tight leading-tight">
             Pioneering Multi-Asset Freedom and Cold-Storage Security
           </h2>
 
-          <p className="font-sans text-sm sm:text-base text-on-surface-variant leading-relaxed">
+          <p className="font-sans text-sm sm:text-base text-slate-600 dark:text-on-surface-variant leading-relaxed">
             WavyAssets unifies global wealth management, digital asset custody, and institutional
             yield generation into a single platform. We eliminate the chaos of juggling separate
             brokers, banks, and custodians—giving family offices, institutions, and smart individual
@@ -581,13 +583,13 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
           {/* ========================================================= */}
           {/* LEFT SIDE: PIONEERING MULTI-ASSET FREEDOM (3 cols on desktop) */}
           {/* ========================================================= */}
-          <div className="lg:col-span-3 space-y-3 p-4 rounded-sm bg-[#0F1115]/80 border border-outline/30 backdrop-blur-sm shadow-lg">
+          <div className="lg:col-span-3 space-y-3 p-4 rounded-sm bg-[#F4F6FB]/90 dark:bg-[#0F1115]/80 border border-slate-200 dark:border-outline/30 backdrop-blur-sm shadow-lg">
             <div className="flex items-center gap-2 text-primary font-mono text-[10px] font-black uppercase tracking-wider">
               <Globe2 className="w-4 h-4 text-primary" />
               <span>PIONEERING MULTI-ASSET FREEDOM</span>
             </div>
 
-            <p className="font-sans text-[11px] text-on-surface-variant leading-relaxed">
+            <p className="font-sans text-[11px] text-slate-600 dark:text-on-surface-variant leading-relaxed">
               Convergence of traditional sovereign wealth and liquid digital assets on a single ledger.
             </p>
 
@@ -595,14 +597,14 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
             <div className="space-y-2 pt-1">
               {/* Fiat Badges */}
               <div className="space-y-1">
-                <span className="font-mono text-[9px] text-outline uppercase tracking-wider block">
+                <span className="font-mono text-[9px] text-slate-500 dark:text-outline uppercase tracking-wider block">
                   Global Fiat Currencies
                 </span>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {['$', '€', '¥', '£'].map((fiat) => (
                     <span
                       key={fiat}
-                      className="px-2 py-0.5 rounded-sm bg-[#161920] border border-outline/30 font-mono text-xs font-bold text-on-surface"
+                      className="px-2 py-0.5 rounded-sm bg-white dark:bg-[#161920] border border-slate-200 dark:border-outline/30 font-mono text-xs font-bold text-slate-900 dark:text-on-surface"
                     >
                       {fiat}
                     </span>
@@ -612,12 +614,12 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
 
               {/* Physical Gold */}
               <div className="space-y-1">
-                <span className="font-mono text-[9px] text-outline uppercase tracking-wider block">
+                <span className="font-mono text-[9px] text-slate-500 dark:text-outline uppercase tracking-wider block">
                   Sovereign Metals
                 </span>
                 <div className="flex items-center gap-1.5">
-                  <span className="px-2 py-0.5 rounded-sm bg-[#D4AF37]/15 border border-[#D4AF37]/40 font-mono text-xs font-bold text-[#D4AF37] flex items-center gap-1">
-                    <Coins className="w-3 h-3 text-[#D4AF37]" />
+                  <span className="px-2 py-0.5 rounded-sm bg-[#D4AF37]/15 border border-[#D4AF37]/40 font-mono text-xs font-bold text-[#B38F1E] dark:text-[#D4AF37] flex items-center gap-1">
+                    <Coins className="w-3 h-3 text-[#B38F1E] dark:text-[#D4AF37]" />
                     <span>Gold Bars &amp; Bullion Coins</span>
                   </span>
                 </div>
@@ -625,22 +627,22 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
 
               {/* Crypto Assets */}
               <div className="space-y-1">
-                <span className="font-mono text-[9px] text-outline uppercase tracking-wider block">
+                <span className="font-mono text-[9px] text-slate-500 dark:text-outline uppercase tracking-wider block">
                   Digital Assets
                 </span>
                 <div className="flex items-center gap-1.5">
-                  <span className="px-2 py-0.5 rounded-sm bg-[#00E5FF]/10 border border-[#00E5FF]/30 font-mono text-xs font-bold text-[#00E5FF]">
+                  <span className="px-2 py-0.5 rounded-sm bg-[#00E5FF]/10 border border-[#00B4D8]/30 dark:border-[#00E5FF]/30 font-mono text-xs font-bold text-[#008BB0] dark:text-[#00E5FF]">
                     ₿ Bitcoin
                   </span>
-                  <span className="px-2 py-0.5 rounded-sm bg-[#00C288]/10 border border-[#00C288]/30 font-mono text-xs font-bold text-[#00C288]">
+                  <span className="px-2 py-0.5 rounded-sm bg-[#00C288]/10 border border-[#00C288]/30 font-mono text-xs font-bold text-[#009E6E] dark:text-[#00C288]">
                     Ξ Ethereum
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="font-mono text-[9px] text-[#00C288] flex items-center gap-1 pt-1">
-              <CheckCircle2 className="w-3 h-3 text-[#00C288]" />
+            <div className="font-mono text-[9px] text-[#009E6E] dark:text-[#00C288] flex items-center gap-1 pt-1 font-semibold">
+              <CheckCircle2 className="w-3 h-3 text-[#009E6E] dark:text-[#00C288]" />
               <span>Zero Settlement Slippage</span>
             </div>
           </div>
@@ -649,12 +651,12 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
           {/* CENTERPIECE: COLD-STORAGE SECURITY (3 cols on desktop) */}
           {/* ========================================================= */}
           <div className="lg:col-span-3 flex flex-col items-center justify-end text-center pt-32 sm:pt-36 lg:pt-40">
-            <div className="p-3 rounded-sm bg-[#08090B]/90 border border-primary/40 shadow-[0_0_25px_rgba(212,175,55,0.15)] space-y-1.5 max-w-[240px]">
+            <div className="p-3 rounded-sm bg-white/95 dark:bg-[#08090B]/90 border border-primary/40 shadow-[0_0_25px_rgba(212,175,55,0.15)] space-y-1.5 max-w-[240px]">
               <div className="flex items-center justify-center gap-1.5 text-primary font-mono text-xs font-black uppercase tracking-wider">
                 <ShieldCheck className="w-4 h-4 text-primary" />
                 <span>COLD-STORAGE SECURITY</span>
               </div>
-              <p className="font-sans text-[10px] text-on-surface-variant leading-tight">
+              <p className="font-sans text-[10px] text-slate-600 dark:text-on-surface-variant leading-tight">
                 Multi-signature MPC cryptographic hardware enclaves wrapped by institutional ocean wave isolation.
               </p>
               <div className="font-mono text-[9px] px-2 py-0.5 rounded-sm bg-primary/10 text-primary uppercase font-bold tracking-widest">
@@ -667,8 +669,8 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
           {/* RIGHT SIDE: TARGET CLIENT SEGMENTS (3 cols on desktop) */}
           {/* ========================================================= */}
           <div className="lg:col-span-3 space-y-2.5">
-            <div className="font-mono text-[10px] text-[#00E5FF] font-black uppercase tracking-widest flex items-center gap-1.5 px-1">
-              <Cpu className="w-3.5 h-3.5 text-[#00E5FF]" />
+            <div className="font-mono text-[10px] text-[#008BB0] dark:text-[#00E5FF] font-black uppercase tracking-widest flex items-center gap-1.5 px-1">
+              <Cpu className="w-3.5 h-3.5 text-[#008BB0] dark:text-[#00E5FF]" />
               <span>TARGET CLIENT SEGMENTS</span>
             </div>
 
@@ -678,17 +680,17 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
               onClick={() => setActiveSegment('family')}
               className={`p-3 rounded-sm border transition-all cursor-pointer ${
                 activeSegment === 'family'
-                  ? 'bg-[#161920] border-primary shadow-md'
-                  : 'bg-[#0F1115]/85 border-outline/30 hover:border-primary/50'
+                  ? 'bg-white dark:bg-[#161920] border-primary shadow-md'
+                  : 'bg-[#F4F6FB]/90 dark:bg-[#0F1115]/85 border-slate-200 dark:border-outline/30 hover:border-primary/50'
               }`}
             >
-              <div className="flex items-center gap-2 text-on-surface font-sans text-xs font-bold">
+              <div className="flex items-center gap-2 text-slate-900 dark:text-on-surface font-sans text-xs font-bold">
                 <div className="w-6 h-6 rounded-sm bg-primary/10 flex items-center justify-center text-primary">
                   <Users className="w-3.5 h-3.5" />
                 </div>
                 <span>Family Offices</span>
               </div>
-              <p className="font-sans text-[10px] text-on-surface-variant pt-1 leading-snug">
+              <p className="font-sans text-[10px] text-slate-600 dark:text-on-surface-variant pt-1 leading-snug">
                 Stylized family reviewing capital allocation and multi-generational mandates on digital tablet interfaces.
               </p>
             </motion.div>
@@ -699,17 +701,17 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
               onClick={() => setActiveSegment('institutions')}
               className={`p-3 rounded-sm border transition-all cursor-pointer ${
                 activeSegment === 'institutions'
-                  ? 'bg-[#161920] border-primary shadow-md'
-                  : 'bg-[#0F1115]/85 border-outline/30 hover:border-primary/50'
+                  ? 'bg-white dark:bg-[#161920] border-primary shadow-md'
+                  : 'bg-[#F4F6FB]/90 dark:bg-[#0F1115]/85 border-slate-200 dark:border-outline/30 hover:border-primary/50'
               }`}
             >
-              <div className="flex items-center gap-2 text-on-surface font-sans text-xs font-bold">
-                <div className="w-6 h-6 rounded-sm bg-[#00E5FF]/10 flex items-center justify-center text-[#00E5FF]">
+              <div className="flex items-center gap-2 text-slate-900 dark:text-on-surface font-sans text-xs font-bold">
+                <div className="w-6 h-6 rounded-sm bg-[#00E5FF]/10 flex items-center justify-center text-[#008BB0] dark:text-[#00E5FF]">
                   <Building2 className="w-3.5 h-3.5" />
                 </div>
                 <span>Institutions</span>
               </div>
-              <p className="font-sans text-[10px] text-on-surface-variant pt-1 leading-snug">
+              <p className="font-sans text-[10px] text-slate-600 dark:text-on-surface-variant pt-1 leading-snug">
                 Sleek, modern skyscrapers representing sovereign corporate treasuries, hedge funds, and prime brokers.
               </p>
             </motion.div>
@@ -720,17 +722,17 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
               onClick={() => setActiveSegment('investors')}
               className={`p-3 rounded-sm border transition-all cursor-pointer ${
                 activeSegment === 'investors'
-                  ? 'bg-[#161920] border-primary shadow-md'
-                  : 'bg-[#0F1115]/85 border-outline/30 hover:border-primary/50'
+                  ? 'bg-white dark:bg-[#161920] border-primary shadow-md'
+                  : 'bg-[#F4F6FB]/90 dark:bg-[#0F1115]/85 border-slate-200 dark:border-outline/30 hover:border-primary/50'
               }`}
             >
-              <div className="flex items-center gap-2 text-on-surface font-sans text-xs font-bold">
-                <div className="w-6 h-6 rounded-sm bg-[#00C288]/10 flex items-center justify-center text-[#00C288]">
+              <div className="flex items-center gap-2 text-slate-900 dark:text-on-surface font-sans text-xs font-bold">
+                <div className="w-6 h-6 rounded-sm bg-[#00C288]/10 flex items-center justify-center text-[#009E6E] dark:text-[#00C288]">
                   <UserCheck className="w-3.5 h-3.5" />
                 </div>
                 <span>Smart Individual Investors</span>
               </div>
-              <p className="font-sans text-[10px] text-on-surface-variant pt-1 leading-snug">
+              <p className="font-sans text-[10px] text-slate-600 dark:text-on-surface-variant pt-1 leading-snug">
                 Focused investor interacting with real-time floating holographic charts and algorithmic yield screens.
               </p>
             </motion.div>
@@ -739,48 +741,48 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
           {/* ========================================================= */}
           {/* FAR RIGHT: ELIMINATES THE CHAOS (3 cols on desktop) */}
           {/* ========================================================= */}
-          <div className="lg:col-span-3 space-y-3 p-4 rounded-sm bg-[#0F1115]/85 border border-outline/30 backdrop-blur-sm shadow-lg">
+          <div className="lg:col-span-3 space-y-3 p-4 rounded-sm bg-[#F4F6FB]/90 dark:bg-[#0F1115]/85 border border-slate-200 dark:border-outline/30 backdrop-blur-sm shadow-lg">
             <div className="flex items-center gap-2 text-[#FF4D4D] font-mono text-[10px] font-black uppercase tracking-wider">
               <TrendingDown className="w-4 h-4 text-[#FF4D4D]" />
               <span>ELIMINATES THE CHAOS</span>
             </div>
 
-            <p className="font-sans text-[11px] text-on-surface-variant leading-relaxed">
+            <p className="font-sans text-[11px] text-slate-600 dark:text-on-surface-variant leading-relaxed">
               Consolidates fragmented, scattered financial tools into a single, high-fidelity platform:
             </p>
 
             {/* Fragmented Tools Icons */}
             <div className="grid grid-cols-2 gap-2 pt-1">
-              <div className="p-2 rounded-sm bg-[#161920] border border-outline/20 space-y-1 text-center">
-                <LineChart className="w-4 h-4 mx-auto text-outline" />
-                <span className="font-sans text-[10px] text-on-surface-variant block">
+              <div className="p-2 rounded-sm bg-white dark:bg-[#161920] border border-slate-200 dark:border-outline/20 space-y-1 text-center">
+                <LineChart className="w-4 h-4 mx-auto text-slate-400 dark:text-outline" />
+                <span className="font-sans text-[10px] text-slate-600 dark:text-on-surface-variant block">
                   Scattered Charts
                 </span>
               </div>
 
-              <div className="p-2 rounded-sm bg-[#161920] border border-outline/20 space-y-1 text-center">
-                <Landmark className="w-4 h-4 mx-auto text-outline" />
-                <span className="font-sans text-[10px] text-on-surface-variant block">
+              <div className="p-2 rounded-sm bg-white dark:bg-[#161920] border border-slate-200 dark:border-outline/20 space-y-1 text-center">
+                <Landmark className="w-4 h-4 mx-auto text-slate-400 dark:text-outline" />
+                <span className="font-sans text-[10px] text-slate-600 dark:text-on-surface-variant block">
                   Bank Facade
                 </span>
               </div>
 
-              <div className="p-2 rounded-sm bg-[#161920] border border-outline/20 space-y-1 text-center">
-                <Lock className="w-4 h-4 mx-auto text-outline" />
-                <span className="font-sans text-[10px] text-on-surface-variant block">
+              <div className="p-2 rounded-sm bg-white dark:bg-[#161920] border border-slate-200 dark:border-outline/20 space-y-1 text-center">
+                <Lock className="w-4 h-4 mx-auto text-slate-400 dark:text-outline" />
+                <span className="font-sans text-[10px] text-slate-600 dark:text-on-surface-variant block">
                   Locked Safe
                 </span>
               </div>
 
-              <div className="p-2 rounded-sm bg-[#161920] border border-outline/20 space-y-1 text-center">
-                <PieChart className="w-4 h-4 mx-auto text-outline" />
-                <span className="font-sans text-[10px] text-on-surface-variant block">
+              <div className="p-2 rounded-sm bg-white dark:bg-[#161920] border border-slate-200 dark:border-outline/20 space-y-1 text-center">
+                <PieChart className="w-4 h-4 mx-auto text-slate-400 dark:text-outline" />
+                <span className="font-sans text-[10px] text-slate-600 dark:text-on-surface-variant block">
                   Pie Charts
                 </span>
               </div>
             </div>
 
-            <div className="pt-1 border-t border-outline/20 text-center font-mono text-[9px] text-[#00E5FF] uppercase font-bold tracking-wider">
+            <div className="pt-1 border-t border-slate-200 dark:border-outline/20 text-center font-mono text-[9px] text-[#008BB0] dark:text-[#00E5FF] uppercase font-bold tracking-wider">
               → Consolidated into WavyAssets
             </div>
           </div>
@@ -791,7 +793,7 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
       <div className="pt-1 sm:pt-2 flex items-center justify-center">
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="px-6 py-2.5 rounded-full bg-[#0F1115] border border-primary/50 text-center shadow-[0_0_20px_rgba(212,175,55,0.25)] flex items-center gap-2 cursor-pointer"
+          className="px-6 py-2.5 rounded-full bg-white dark:bg-[#0F1115] border border-primary/50 text-center shadow-[0_0_20px_rgba(212,175,55,0.25)] flex items-center gap-2 cursor-pointer"
         >
           <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
           <span className="font-mono text-xs sm:text-sm font-black uppercase text-primary tracking-widest">

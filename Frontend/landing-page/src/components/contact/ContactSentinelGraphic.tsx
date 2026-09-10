@@ -7,18 +7,18 @@ export const ContactSentinelGraphic: React.FC = () => {
   return (
     <div
       data-testid="contact-sentinel-graphic"
-      className="relative w-full h-full min-h-[360px] sm:min-h-[460px] lg:min-h-[520px] flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#0B0D11] via-[#08090B] to-[#050608] rounded-r-md select-none"
+      className="relative w-full h-full min-h-[280px] sm:min-h-[340px] lg:min-h-[380px] flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#F4F6FB] via-[#EDF2FB] to-[#E2E7F4] dark:from-[#0B0D11] dark:via-[#08090B] dark:to-[#050608] rounded-r-md select-none"
     >
       {/* 1. Atmospheric Ambient Green Smoke & Vignette Layers */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
       >
-        <div className="absolute top-1/4 right-0 w-80 h-80 rounded-full bg-[#00E5FF]/5 blur-[90px]" />
-        <div className="absolute bottom-1/4 left-1/4 w-72 h-72 rounded-full bg-[#A6FF00]/10 blur-[100px]" />
+        <div className="absolute top-1/4 right-0 w-80 h-80 rounded-full bg-[#00E5FF]/10 dark:bg-[#00E5FF]/5 blur-[70px] dark:blur-[90px]" />
+        <div className="absolute bottom-1/4 left-1/4 w-72 h-72 rounded-full bg-[#A6FF00]/15 dark:bg-[#A6FF00]/10 blur-[80px] dark:blur-[100px]" />
         {/* Subtle contour rings matching reference screenshot */}
-        <div className="absolute -top-12 -right-12 w-96 h-96 rounded-full border border-[#A6FF00]/10 blur-[1px]" />
-        <div className="absolute top-1/3 -right-6 w-80 h-80 rounded-full border border-[#A6FF00]/5" />
+        <div className="absolute -top-12 -right-12 w-96 h-96 rounded-full border border-[#A6FF00]/20 dark:border-[#A6FF00]/10 blur-[1px]" />
+        <div className="absolute top-1/3 -right-6 w-80 h-80 rounded-full border border-[#A6FF00]/15 dark:border-[#A6FF00]/5" />
       </div>
 
       {/* 2. Textured Dark Mascot Silhouette (SVGs with rich gradient and plush textures) */}
@@ -26,7 +26,7 @@ export const ContactSentinelGraphic: React.FC = () => {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 flex flex-col items-center justify-center w-full max-w-[340px]"
+        className="relative z-10 flex flex-col items-center justify-center w-full max-w-[250px]"
       >
         <svg
           viewBox="0 0 400 480"
@@ -159,9 +159,9 @@ export const ContactSentinelGraphic: React.FC = () => {
         </svg>
 
         {/* Mascot Status Telemetry Ribbon */}
-        <div className="flex items-center gap-2 px-3 py-1 -mt-4 rounded-sm bg-surface-container/80 border border-outline/30 backdrop-blur-md">
+        <div className="flex items-center gap-2 px-3 py-1 -mt-4 rounded-sm bg-white/80 dark:bg-surface-container/80 border border-slate-200 dark:border-outline/30 backdrop-blur-md shadow-sm">
           <span className="w-1.5 h-1.5 rounded-full bg-[#A6FF00] animate-pulse" />
-          <span className="font-mono text-[10px] text-on-surface-variant uppercase tracking-wider">
+          <span className="font-mono text-[10px] text-slate-700 dark:text-on-surface-variant uppercase tracking-wider font-semibold">
             AI DISPATCH SENTINEL ONLINE
           </span>
         </div>
