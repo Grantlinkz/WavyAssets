@@ -3,6 +3,7 @@ import {
   parseAssetHash,
   VALID_ASSET_VERTICALS,
   useTerminalStore,
+  isRoute404,
 } from '../../src/store/useTerminalStore';
 
 describe('Hash Router & Telemetry Unit Suite', () => {
@@ -67,5 +68,29 @@ describe('Hash Router & Telemetry Unit Suite', () => {
     useTerminalStore.getState().syncFromHash();
 
     expect(useTerminalStore.getState().activeAssetId).toBe('ai-funds');
+  });
+
+  it('correctly flags non-existing URLs and unknown hashes as 404', () => {
+    // Exact user test case: #client-voices/geme is not a valid section or service route
+    expect(isRoute404('/', '#client-voices/geme')).toBe(true);
+
+    // Non-existing service vertical
+    expect(isRoute404('/', '#/services/non-existing')).toBe(true);
+
+    // Non-existing pathname
+    expect(isRoute404('/services/vip-cards', '')).toBe(true);
+    expect(isRoute404('/random-unknown-page', '')).toBe(true);
+
+    // Explicit 404 hash
+    expect(isRoute404('/', '#/404')).toBe(true);
+    expect(isRoute404('/', '#404')).toBe(true);
+
+    // Valid routes should NOT be 404
+    expect(isRoute404('/', '#client-voices')).toBe(false);
+    expect(isRoute404('/', '#about')).toBe(false);
+    expect(isRoute404('/', '#/services/vip-cards')).toBe(false);
+    expect(isRoute404('/', '#/services/crypto')).toBe(false);
+    expect(isRoute404('/', '')).toBe(false);
+    expect(isRoute404('/research', '#/services/vip-cards')).toBe(false);
   });
 });

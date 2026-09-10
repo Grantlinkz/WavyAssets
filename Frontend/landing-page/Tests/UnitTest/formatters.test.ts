@@ -9,11 +9,21 @@ import {
 
 describe('Institutional Financial Formatters', () => {
   it('formats standard currency correctly', () => {
-    expect(formatCurrency(94240.5)).toBe('$94,240.50');
-    expect(formatCurrency(0)).toBe('$0.00');
+    expect(formatCurrency(94240.5, 'USD', 2, 'en-US')).toBe('$94,240.50');
+    expect(formatCurrency(0, 'USD', 2, 'en-US')).toBe('$0.00');
     expect(formatCurrency(undefined)).toBe('—');
     expect(formatCurrency(null)).toBe('—');
     expect(formatCurrency(NaN)).toBe('—');
+  });
+
+  it('formats currency according to specified locale with institutional fallback', () => {
+    // de-DE uses comma as decimal separator and period as thousands separator
+    const deFormatted = formatCurrency(12500.5, 'EUR', 2, 'de-DE');
+    expect(deFormatted).toContain('12.500,50');
+
+    // en-GB formatting
+    const gbFormatted = formatCurrency(5000, 'GBP', 2, 'en-GB');
+    expect(gbFormatted).toContain('£5,000.00');
   });
 
   it('formats percentages with proper signs and decimals', () => {

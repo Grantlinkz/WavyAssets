@@ -19,8 +19,14 @@ if (typeof window === 'undefined') {
 
   const classList = new Set<string>();
 
+  const navigatorMock = {
+    language: 'en-US',
+    languages: ['en-US'],
+  };
+
   const documentMock = {
     documentElement: {
+      lang: 'en',
       classList: {
         add: (cls: string) => classList.add(cls),
         remove: (cls: string) => classList.delete(cls),
@@ -39,7 +45,8 @@ if (typeof window === 'undefined') {
   }
 
   const windowMock = {
-    location: { hash: '' },
+    location: { pathname: '/', hash: '' },
+    navigator: navigatorMock,
     ResizeObserver: ResizeObserverMock,
     matchMedia: () => ({
       matches: false,
@@ -56,12 +63,16 @@ if (typeof window === 'undefined') {
     dispatchEvent: () => true,
     localStorage: storageMock,
     document: documentMock,
+    scrollTo: () => {},
+    history: { pushState: () => {} },
   };
 
   // @ts-expect-error polyfill globals for node test runner
   globalThis.window = windowMock;
   // @ts-expect-error polyfill globals for node test runner
   globalThis.document = documentMock;
+  // @ts-expect-error polyfill globals for node test runner
+  globalThis.navigator = navigatorMock;
   globalThis.localStorage = storageMock;
   globalThis.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver;
 }

@@ -166,6 +166,8 @@ export const HeroAssetGyroscope: React.FC = () => {
   const isClient = React.useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [isHovered, setIsHovered] = useState(false);
   const [isTabVisible, setIsTabVisible] = useState(true);
+  const [isIntersecting, setIsIntersecting] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const [reducedMotion, setReducedMotion] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -189,8 +191,25 @@ export const HeroAssetGyroscope: React.FC = () => {
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, []);
 
+  // Off-screen canvas culling via IntersectionObserver
+  useEffect(() => {
+    if (typeof window === 'undefined' || !containerRef.current) return;
+    if (!('IntersectionObserver' in window)) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsIntersecting(entry.isIntersecting);
+      },
+      { threshold: 0.05 }
+    );
+
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div
+      ref={containerRef}
       data-testid="hero-asset-gyroscope"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -201,7 +220,7 @@ export const HeroAssetGyroscope: React.FC = () => {
         data-testid="gyroscope-canvas-container"
         className="absolute inset-0 w-full h-full flex items-center justify-center"
       >
-        {isClient && isTabVisible ? (
+        {isClient && isTabVisible && isIntersecting ? (
           <Canvas
             camera={{ position: [0, 0, 5.5], fov: 42 }}
             gl={{
@@ -210,7 +229,7 @@ export const HeroAssetGyroscope: React.FC = () => {
               powerPreference: 'high-performance',
             }}
             dpr={[1, 1.5]}
-            frameloop={isTabVisible && !reducedMotion ? 'always' : 'demand'}
+            frameloop={isTabVisible && isIntersecting && !reducedMotion ? 'always' : 'demand'}
           >
             <ambientLight intensity={themeLightIntensity(resolvedTheme)} />
             <directionalLight position={[4, 5, 4]} intensity={1.4} color="#FFFFFF" />

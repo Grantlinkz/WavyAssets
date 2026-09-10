@@ -1,3 +1,5 @@
+import { getSystemLocale } from './locale';
+
 /**
  * Institutional Financial Formatters
  * Formats monetary, percentage, and basis point metrics strictly for Inter tabular figures.
@@ -7,31 +9,44 @@ export interface CurrencyFormatOptions {
   currency?: string;
   decimals?: number;
   notation?: 'standard' | 'compact';
+  locale?: string;
 }
 
 /**
  * Formats a numeric value into institutional currency format (default USD).
- * Ensures sanitized inputs and handles edge cases safely without throwing.
+ * Uses default system language/locale with sanitized inputs and handles edge cases safely without throwing.
  */
 export function formatCurrency(
   value: number | undefined | null,
   currency = 'USD',
-  decimals = 2
+  decimals = 2,
+  locale?: string
 ): string {
   if (value === undefined || value === null || Number.isNaN(value)) {
     return '—';
   }
 
+  const effectiveLocale = locale || getSystemLocale();
+
   try {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(effectiveLocale, {
       style: 'currency',
       currency,
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
     }).format(value);
   } catch {
-    // Fallback if invalid currency code
-    return `$${value.toFixed(decimals)}`;
+    // Fallback if invalid currency code or unsupported locale
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      }).format(value);
+    } catch {
+      return `$${value.toFixed(decimals)}`;
+    }
   }
 }
 
