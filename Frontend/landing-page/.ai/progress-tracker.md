@@ -149,6 +149,12 @@
      - Right side: Editorial UX write-up in `Noto Serif` covering WavyAssets' mission, 3 core institutional pillars (Unified Multi-Asset Depository, Bank-Grade MPC Cold Storage, Direct Liquidity & Global Settlement), SEC/FINMA/SOC-2 regulatory badges, and CTAs.
   5. Cleaned up `InstitutionalFooter.tsx`: removed the `19.4% APY` badge next to "Crypto Yields & Cold Storage".
 - Expanded automated integration test coverage in `Tests/IntegrationTest/aboutAndResearchIntegration.test.tsx`, `Tests/IntegrationTest/assetPanelsAndAuthIntegration.test.tsx`, `Tests/IntegrationTest/trustAndComplianceIntegration.test.tsx`, and `Tests/IntegrationTest/brandAndThemeIntegration.test.tsx`, achieving 100% pass rate across 16 test suites (81/81 passing tests).
+- Implemented Contact Form Modal & Section Centering and "B2B ONLY" writeup removal per user directive:
+  - Fixed Radix `DialogContent` max-width lock by importing `cn` with `tailwind-merge` in `src/components/ui/dialog.tsx` and applying `!max-w-4xl sm:!max-w-4xl lg:!max-w-5xl w-[92vw] max-h-[90vh] overflow-y-auto my-auto`, perfectly centering the contact form across both width and height.
+  - Centered on-page `ContactSection.tsx` (`id="contact"`) horizontally and vertically with `max-w-4xl lg:max-w-5xl mx-auto px-4`.
+  - Completely removed the `"B2B ONLY"` neon badge and right-padding from both `ContactModal.tsx` and `ContactSection.tsx`.
+  - Upgraded `Tests/IntegrationTest/contactIntegration.test.tsx` verifying absence of `"B2B ONLY"`, full input availability, sentinel mascot mounting, and App deck integration (88/88 tests passing across 17 test suites).
+  - Resolved all React 19 ESLint hook purity rules (`AboutVaultCanvas3D.tsx`) with zero lint errors and zero typecheck errors.
 
 ---
 
