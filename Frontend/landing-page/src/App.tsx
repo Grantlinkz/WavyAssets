@@ -13,6 +13,8 @@ import { InstitutionalFooter } from './components/footer/InstitutionalFooter';
 import { HeroAssetGyroscope } from './components/canvas/HeroAssetGyroscope';
 import { KineticHeroTypography } from './components/hero/KineticHeroTypography';
 import { AboutSection } from './components/about/AboutSection';
+import { ContactModal } from './components/contact/ContactModal';
+import { ContactSection } from './components/contact/ContactSection';
 import {
   formatCurrency,
   formatPercent,
@@ -166,6 +168,9 @@ export const App: React.FC = () => {
         <section id="client-voices" className="w-full pt-4 pb-4 scroll-mt-20">
           <ClientVoices />
         </section>
+
+        {/* Dedicated Institutional B2B Contact Section */}
+        <ContactSection />
       </main>
 
       {/* 4. Global Compliance-Ready Multi-Column Institutional Footer */}
@@ -173,6 +178,9 @@ export const App: React.FC = () => {
 
       {/* 5. Globally Mounted Unified 2FA Auth & Mandate Modal */}
       <UnifiedAuthModal />
+
+      {/* 6. Globally Mounted Institutional B2B Contact Modal */}
+      <ContactModal />
     </div>
   );
 };

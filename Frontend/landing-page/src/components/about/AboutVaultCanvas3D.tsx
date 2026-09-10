@@ -23,14 +23,17 @@ const VaultCoreMesh: React.FC<VaultMeshProps> = ({
   const particlesRef = useRef<THREE.Points>(null);
   const pointerRef = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
 
-  // Floating ambient particle dust
+  // Floating ambient particle dust with deterministic distribution
   const [particlePositions, particleCount] = useMemo(() => {
     const count = 48;
     const positions = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(Math.random() * 2 - 1);
-      const r = 2.0 + Math.random() * 1.5;
+      const seed1 = Math.abs(Math.sin(i * 12.9898 + 78.233) * 43758.5453) % 1;
+      const seed2 = Math.abs(Math.sin(i * 37.719 + 23.421) * 23421.631) % 1;
+      const seed3 = Math.abs(Math.sin(i * 91.317 + 54.123) * 12345.678) % 1;
+      const theta = seed1 * Math.PI * 2;
+      const phi = Math.acos(seed2 * 2 - 1);
+      const r = 2.0 + seed3 * 1.5;
       positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       positions[i * 3 + 2] = r * Math.cos(phi);
@@ -198,7 +201,10 @@ const VaultCoreMesh: React.FC<VaultMeshProps> = ({
 
 export const AboutVaultCanvas3D: React.FC = () => {
   const resolvedTheme = useTerminalStore((state) => state.resolvedTheme);
-  const [reducedMotion, setReducedMotion] = useState<boolean>(false);
+  const [reducedMotion, setReducedMotion] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  });
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const [isVisible, setIsVisible] = useState<boolean>(true);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -207,7 +213,6 @@ export const AboutVaultCanvas3D: React.FC = () => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReducedMotion(mediaQuery.matches);
 
     const listener = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     mediaQuery.addEventListener('change', listener);

@@ -55,6 +55,11 @@ export interface TerminalStore {
   closeAuthModal: () => void;
   setAuthStep: (step: 1 | 2) => void;
 
+  // Contact modal
+  isContactModalOpen: boolean;
+  openContactModal: () => void;
+  closeContactModal: () => void;
+
   // Trust mode & Client Tier
   trustMode: TrustMode;
   setTrustMode: (mode: TrustMode) => void;
@@ -201,6 +206,10 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
       pathname.includes('/research') ||
       hash === '#research' ||
       hash.includes('/research');
+    const isContact = pathname.includes('/contact') || hash === '#contact';
+    if (isContact && !get().isContactModalOpen) {
+      set({ isContactModalOpen: true });
+    }
     const resolved = isResearch ? 'vip-cards' : parseAssetHash(hash);
     if (get().activeAssetId !== resolved) {
       const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
@@ -233,6 +242,10 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     set((state) => ({ authModal: { ...state.authModal, isOpen: false, step: 1 } })),
   setAuthStep: (step: 1 | 2) =>
     set((state) => ({ authModal: { ...state.authModal, step } })),
+
+  isContactModalOpen: false,
+  openContactModal: () => set({ isContactModalOpen: true }),
+  closeContactModal: () => set({ isContactModalOpen: false }),
 
   trustMode: 'institutional',
   setTrustMode: (mode: TrustMode) => {

@@ -24,6 +24,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
     isMegaMenuOpenProp !== undefined ? isMegaMenuOpenProp : storeIsMegaMenuOpen;
   const toggleMegaMenu = useTerminalStore((state) => state.toggleMegaMenu);
   const openAuthModal = useTerminalStore((state) => state.openAuthModal);
+  const openContactModal = useTerminalStore((state) => state.openContactModal);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // Sliding Dot Indicator State
@@ -118,6 +119,12 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                 linkRefs.current[idx] = el;
               }}
               href={link.href}
+              onClick={(e) => {
+                if (link.href === '#contact') {
+                  e.preventDefault();
+                  openContactModal();
+                }
+              }}
               onMouseEnter={(e) => handleMouseEnter(e.currentTarget)}
               className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant hover:text-on-surface transition-colors py-1 px-1"
             >
@@ -200,7 +207,13 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
             <a
               key={link.label}
               href={link.href}
-              onClick={() => setMobileNavOpen(false)}
+              onClick={(e) => {
+                setMobileNavOpen(false);
+                if (link.href === '#contact') {
+                  e.preventDefault();
+                  openContactModal();
+                }
+              }}
               className="block px-3 py-2 rounded-sm text-xs font-semibold uppercase tracking-wider text-on-surface hover:bg-surface-container transition-colors"
             >
               {link.label}
