@@ -167,6 +167,7 @@
 - Compacted vertical spacing in `UnifiedFinanceInfographic3D.tsx`: eliminated dead space between narrative text and infographic cards (per reference screenshots), calibrated canvas container height to hug content, and eliminated excessive bottom dead space above the footer pill banner ("TOTAL CONTROL, MATHEMATICAL TRANSPARENCY, AND PEACE OF MIND.").
 - Enlarged 3D WebGL animation in `UnifiedFinanceInfographic3D.tsx`: scaled up central Shield & Wave (+30%), wireframe Globe & orbital rings (+22%), flow splines, and brought camera closer to create an expansive, high-impact centerpiece.
 - Separated and connected the two 3D infographic parts: positioned the Multi-Asset Globe on the far left (`x = -4.8`) and the 3D Vault Shield with Padlock close to the far right (`x = 3.6`), leaving open visual breathing room in the center while bridging them with a luminous dual-aura connection conduit and streaming energy photons.
+- Implemented direct visual scroll navigation for `/research`, `/#research`, and header Research click: automatically activates `vip-cards` panel in the `AssetContainer` and smoothly scrolls the viewport to `#asset-terminal` (with `scroll-mt-20` for fixed header clearance).
 - Verified 100% test pass rate across all 17 test suites (89/89 tests passing) with zero typecheck or lint errors.
 
 ---
