@@ -19,7 +19,7 @@ export class InitiateAuthDto {
     example: 'investor@familyoffice.ch',
   })
   @IsEmail({}, { message: 'email must be a valid institutional or personal email address' })
-  email: string;
+  email!: string;
 
   @ApiProperty({
     description: 'Cryptographic passphrase (minimum 8 characters)',
@@ -30,7 +30,7 @@ export class InitiateAuthDto {
   @IsString()
   @MinLength(8, { message: 'passphrase must be at least 8 characters long' })
   @MaxLength(128, { message: 'passphrase cannot exceed 128 characters' })
-  passphrase: string;
+  passphrase!: string;
 
   @ApiPropertyOptional({
     description: 'Full legal name or representative entity (required for registration)',
@@ -58,7 +58,7 @@ export class InitiateAuthDto {
     example: 'login',
   })
   @IsIn(['login', 'register'], { message: 'mode must be login or register' })
-  mode: AuthMode;
+  mode!: AuthMode;
 }
 
 export class VerifyOtpDto {
@@ -68,7 +68,7 @@ export class VerifyOtpDto {
   })
   @IsString()
   @IsNotEmpty({ message: 'challengeId is required' })
-  challengeId: string;
+  challengeId!: string;
 
   @ApiProperty({
     description: '6-digit numeric verification code dispatched to email or Telegram Enclave',
@@ -76,7 +76,7 @@ export class VerifyOtpDto {
   })
   @IsString()
   @Matches(/^\d{6}$/, { message: 'otpCode must be a 6-digit numeric string' })
-  otpCode: string;
+  otpCode!: string;
 }
 
 export class ExchangeTicketDto {
@@ -91,59 +91,59 @@ export class ExchangeTicketDto {
 
 export class UserDto {
   @ApiProperty({ example: 'usr_4a5b6c7d8e9f' })
-  id: string;
+  id!: string;
 
   @ApiProperty({ example: 'investor@familyoffice.ch' })
-  email: string;
+  email!: string;
 
   @ApiPropertyOptional({ example: 'Eleanor Vance' })
   fullName?: string | null;
 
   @ApiProperty({ example: 'INSTITUTIONAL' })
-  tier: string;
+  tier!: string;
 }
 
 export class InitiateAuthResponseDataDto {
   @ApiProperty({ example: 2, description: 'Next step required in auth modal' })
-  step: number;
+  step!: number;
 
   @ApiProperty({ example: 'f72b21c4-5412-4299-9685-6cf1be8972aa' })
-  challengeId: string;
+  challengeId!: string;
 
   @ApiProperty({ example: 300, description: 'Time-to-live in seconds (5 minutes)' })
-  expiresInSeconds: number;
+  expiresInSeconds!: number;
 
   @ApiProperty({ example: 'EMAIL', description: 'Active dispatch channel (EMAIL or TELEGRAM_ENCLAVE)' })
-  deliveryChannel: 'EMAIL' | 'TELEGRAM_ENCLAVE';
+  deliveryChannel!: 'EMAIL' | 'TELEGRAM_ENCLAVE';
 
   @ApiProperty({ example: 'i***r@familyoffice.ch' })
-  maskedDestination: string;
+  maskedDestination!: string;
 }
 
 export class VerifyOtpResponseDataDto {
   @ApiProperty({ type: UserDto })
-  user: UserDto;
+  user!: UserDto;
 
   @ApiProperty({ description: 'Short-lived signed JWT access token' })
-  accessToken: string;
+  accessToken!: string;
 
   @ApiProperty({
     description: 'Single-use dashboard exchange ticket (also set via secure cookie)',
     example: 'wavy_ticket_99a88b77c66d21e8...',
   })
-  handoffTicket: string;
+  handoffTicket!: string;
 
   @ApiProperty({
     description: 'Target dashboard redirect URL (out-of-band exchange)',
     example: 'http://localhost:5174/auth/exchange',
   })
-  dashboardUrl: string;
+  dashboardUrl!: string;
 }
 
 export class ExchangeResponseDataDto {
   @ApiProperty({ type: UserDto })
-  user: UserDto;
+  user!: UserDto;
 
   @ApiProperty({ description: 'Fresh signed JWT access token for dashboard session' })
-  accessToken: string;
+  accessToken!: string;
 }

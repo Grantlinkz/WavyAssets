@@ -12,7 +12,7 @@ export class ApiResponseDto<T = unknown> implements ApiResponse<T> {
     description: 'Denotes whether the requested operation succeeded or failed',
     example: true,
   })
-  success: boolean;
+  success!: boolean;
 
   @ApiPropertyOptional({
     description: 'Payload containing the operation result data when successful',
@@ -29,5 +29,5 @@ export class ApiResponseDto<T = unknown> implements ApiResponse<T> {
     description: 'ISO-8601 UTC timestamp of response generation',
     example: '2026-09-11T12:00:00.000Z',
   })
-  timestamp: string;
+  timestamp!: string;
 }

@@ -133,4 +133,21 @@ export class CryptoService {
     decrypted += decipher.final('utf8');
     return decrypted;
   }
+
+  /**
+   * Computes a deterministic HMAC-SHA256 blind index hash for indexed lookups on encrypted fields (e.g. workEmailHash).
+   * Strips whitespace and lowercases string for exact lookup consistency.
+   */
+  hashBlindIndex(value: string): string {
+    const normalized = value.toLowerCase().trim();
+    return crypto.createHmac('sha256', this.hmacSecret).update(normalized).digest('hex');
+  }
+
+  /**
+   * Deterministically hashes an IP address for GDPR-compliant zero-raw-IP audit logging.
+   */
+  hashIpAddress(ip: string): string {
+    const normalized = (ip || 'unknown').trim();
+    return crypto.createHmac('sha256', this.hmacSecret).update(normalized).digest('hex');
+  }
 }

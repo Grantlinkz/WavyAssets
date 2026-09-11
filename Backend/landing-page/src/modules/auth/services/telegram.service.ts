@@ -72,4 +72,38 @@ _Zero-Trust Hardware Enclave Alert (Node Geneva-01)_
       return false;
     }
   }
+
+  /**
+   * Dispatches a broadcast alert message (e.g. priority mandate alerts) to the Telegram Enclave channel.
+   */
+  async sendSecurityAlert(message: string): Promise<boolean> {
+    if (!this.enabled || !this.botToken || !this.chatId) {
+      return false;
+    }
+
+    try {
+      const url = `https://api.telegram.org/bot${this.botToken}/sendMessage`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: this.chatId,
+          text: message,
+          parse_mode: 'Markdown',
+        }),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        this.logger.warn(`Telegram alert dispatch returned error: ${errText}`);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      this.logger.error('Failed to dispatch alert message to Telegram Enclave', error);
+      return false;
+    }
+  }
 }
+

@@ -34,6 +34,6 @@ import { PrismaModule } from '../prisma/prisma.module';
     TelegramService,
     AuthGuard,
   ],
-  exports: [AuthService, CryptoService, AuthGuard, JwtModule],
+  exports: [AuthService, CryptoService, AuthGuard, JwtModule, EmailService, TelegramService],
 })
 export class AuthModule {}

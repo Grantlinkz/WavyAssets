@@ -55,7 +55,10 @@ async function bootstrap(): Promise<void> {
   ].filter(Boolean);
 
   app.enableCors({
-    origin: (origin, callback) => {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       // Allow requests with no origin (like mobile apps, curl, or container health probes)
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);

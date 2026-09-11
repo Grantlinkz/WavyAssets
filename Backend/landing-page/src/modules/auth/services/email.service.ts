@@ -158,4 +158,119 @@ export class EmailService {
       return false;
     }
   }
+
+  /**
+   * Generates the Swiss-typography HTML email template for double opt-in research newsletter.
+   */
+  private generateNewsletterConfirmationTemplate(verificationLink: string): string {
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WavyAssets Institutional Research Confirmation</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #08090B; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #FFFFFF;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #08090B; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="100%" max-width="540" cellpadding="0" cellspacing="0" style="max-width: 540px; background-color: #0D0F12; border: 1px solid #222632; border-radius: 8px; overflow: hidden; padding: 40px 32px;">
+          <!-- Header / Brand -->
+          <tr>
+            <td align="left" style="padding-bottom: 24px; border-bottom: 1px solid #1A1E26;">
+              <span style="font-size: 18px; font-weight: 700; letter-spacing: 2px; color: #D4AF37; text-transform: uppercase;">WavyAssets</span>
+              <span style="display: inline-block; margin-left: 8px; padding: 2px 8px; background: rgba(0, 194, 136, 0.15); border: 1px solid #00C288; border-radius: 4px; font-size: 10px; font-weight: 600; color: #00C288; letter-spacing: 1px;">RESEARCH ENCLAVE</span>
+            </td>
+          </tr>
+          
+          <!-- Subject & Body -->
+          <tr>
+            <td style="padding-top: 32px;">
+              <h1 style="font-size: 20px; font-weight: 600; color: #FFFFFF; margin: 0 0 12px 0;">Confirm Institutional Subscription</h1>
+              <p style="font-size: 14px; line-height: 22px; color: #8C96A5; margin: 0 0 28px 0;">
+                You have requested subscription to WavyAssets Macro & Sovereign Yield Intelligence. In accordance with SEC and FINMA transparency protocols, please confirm your double opt-in authorization below.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Confirmation Button -->
+          <tr>
+            <td align="center" style="padding: 20px 0;">
+              <a href="${verificationLink}" style="display: inline-block; background-color: #D4AF37; color: #08090B; font-size: 14px; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 6px; letter-spacing: 0.5px;">
+                CONFIRM RESEARCH SUBSCRIPTION
+              </a>
+            </td>
+          </tr>
+
+          <!-- Link fallback -->
+          <tr>
+            <td style="padding-top: 16px;">
+              <p style="font-size: 12px; line-height: 18px; color: #647082; word-break: break-all;">
+                Or copy and paste this verification URL into your browser:<br/>
+                <span style="color: #D4AF37;">${verificationLink}</span>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Security Notice -->
+          <tr>
+            <td style="padding-top: 24px; border-top: 1px solid #1A1E26;">
+              <p style="font-size: 11px; line-height: 16px; color: #505A69; margin: 0;">
+                If you did not request this research subscription, no further action is required. This link will safely expire in 48 hours.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `.trim();
+  }
+
+  /**
+   * Dispatches double opt-in confirmation email for newsletter subscriptions.
+   */
+  async sendNewsletterVerificationEmail(
+    toEmail: string,
+    verificationLink: string,
+  ): Promise<boolean> {
+    // Local Development Console Fallback
+    if (!this.isProduction && (this.emailProvider === 'console' || !this.resendClient)) {
+      this.logger.log(
+        `[NEWSLETTER-DEV-LINK] Verification link for ${toEmail}: ${verificationLink}`,
+      );
+      return true;
+    }
+
+    if (!this.resendClient) {
+      this.logger.warn(`Resend client not configured. Simulated newsletter link to ${toEmail}`);
+      return false;
+    }
+
+    try {
+      const html = this.generateNewsletterConfirmationTemplate(verificationLink);
+
+      const result = await this.resendClient.emails.send({
+        from: this.emailFrom,
+        to: toEmail,
+        subject: 'Confirm Your WavyAssets Research Subscription',
+        html,
+      });
+
+      if (result.error) {
+        this.logger.error(`Resend API rejected email dispatch: ${result.error.message}`);
+        return false;
+      }
+
+      this.logger.log(`Successfully dispatched newsletter verification email to ${toEmail}`);
+      return true;
+    } catch (error) {
+      this.logger.error('Unexpected error while sending newsletter verification email', error);
+      return false;
+    }
+  }
 }
+
