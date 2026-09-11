@@ -67,50 +67,50 @@ Interactive OpenAPI 3 / Swagger documentation is available at **`http://localhos
 
 ### 1. Authentication & Dashboard Hand-Off (`/api/v1/auth`)
 
-| Method | Endpoint | Description | Request Body / Query | Security & Invariants |
-| :--- | :--- | :--- | :--- | :--- |
-| `POST` | `/api/v1/auth/initiate` | Step 1: Validate credentials or register, dispatch 6-digit OTP | `{ email, passphrase, fullName?, tier?, mode }` | 5-minute sliding TTL; generic anti-enumeration responses |
-| `POST` | `/api/v1/auth/verify-otp` | Step 2: Verify OTP, issue JWT, set refresh cookie & handoff ticket | `{ challengeId, otpCode }` | **Production Sandbox Guard**: Rejects dev static OTP with `403 Forbidden` |
-| `POST` | `/api/v1/auth/exchange` | Burn single-use exchange ticket and issue dashboard JWT | `{ ticket? }` or `wavy_handoff` cookie | Single-use burned token at rest; 60s TTL |
-| `POST` | `/api/v1/auth/refresh` | Rotate session and issue fresh access token | HttpOnly `refreshToken` cookie | Silent session renewal |
-| `POST` | `/api/v1/auth/logout` | Revoke session and clear cookies | HttpOnly `refreshToken` cookie | Clears cookies across domains |
-| `GET` | `/api/v1/auth/me` | Fetch authenticated user profile | Bearer JWT token | Whitelisted UserDto response |
+| Method   | Endpoint                    | Description                                                        | Request Body / Query                              | Security & Invariants                                                             |
+| :------- | :-------------------------- | :----------------------------------------------------------------- | :------------------------------------------------ | :-------------------------------------------------------------------------------- |
+| `POST` | `/api/v1/auth/initiate`   | Step 1: Validate credentials or register, dispatch 6-digit OTP     | `{ email, passphrase, fullName?, tier?, mode }` | 5-minute sliding TTL; generic anti-enumeration responses                          |
+| `POST` | `/api/v1/auth/verify-otp` | Step 2: Verify OTP, issue JWT, set refresh cookie & handoff ticket | `{ challengeId, otpCode }`                      | **Production Sandbox Guard**: Rejects dev static OTP with `403 Forbidden` |
+| `POST` | `/api/v1/auth/exchange`   | Burn single-use exchange ticket and issue dashboard JWT            | `{ ticket? }` or `wavy_handoff` cookie        | Single-use burned token at rest; 60s TTL                                          |
+| `POST` | `/api/v1/auth/refresh`    | Rotate session and issue fresh access token                        | HttpOnly`refreshToken` cookie                   | Silent session renewal                                                            |
+| `POST` | `/api/v1/auth/logout`     | Revoke session and clear cookies                                   | HttpOnly`refreshToken` cookie                   | Clears cookies across domains                                                     |
+| `GET`  | `/api/v1/auth/me`         | Fetch authenticated user profile                                   | Bearer JWT token                                  | Whitelisted UserDto response                                                      |
 
 ### 2. Institutional Mandates & Lead Pipeline (`/api/v1/leads`)
 
-| Method | Endpoint | Description | Request Body | Security & Invariants |
-| :--- | :--- | :--- | :--- | :--- |
+| Method   | Endpoint                  | Description                          | Request Body                                                                                                  | Security & Invariants                                                                                                            |
+| :------- | :------------------------ | :----------------------------------- | :------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------- |
 | `POST` | `/api/v1/leads/inquire` | Ingest institutional capital mandate | `{ fullName, workEmail, companyName, websiteUrl?, telegram?, service, allocationRange, notes?, honeypot? }` | AES-256-GCM contact encryption; HMAC-SHA256 blind index (`workEmailHash`); blocks disposable domains; priority Telegram alerts |
 
 ### 3. Portfolio Simulation Intent (`/api/v1/simulation`)
 
-| Method | Endpoint | Description | Request Body / Params | Security & Invariants |
-| :--- | :--- | :--- | :--- | :--- |
-| `POST` | `/api/v1/simulation/save` | Tokenize simulator parameters for onboarding | `{ capitalAmount, riskPosture, projectedYield }` | Issues `sim_<hex>` token with 30-day sliding TTL |
-| `GET` | `/api/v1/simulation/:token` | Fetch simulated parameters for onboarding pre-fill | Route param `:token` | Validates expiration |
+| Method   | Endpoint                      | Description                                        | Request Body / Params                              | Security & Invariants                             |
+| :------- | :---------------------------- | :------------------------------------------------- | :------------------------------------------------- | :------------------------------------------------ |
+| `POST` | `/api/v1/simulation/save`   | Tokenize simulator parameters for onboarding       | `{ capitalAmount, riskPosture, projectedYield }` | Issues`sim_<hex>` token with 30-day sliding TTL |
+| `GET`  | `/api/v1/simulation/:token` | Fetch simulated parameters for onboarding pre-fill | Route param`:token`                              | Validates expiration                              |
 
 ### 4. Live Syndicate Telemetry & Ticker (`/api/v1/telemetry`, `/ws/ticker`)
 
-| Protocol | Route | Description | Benchmarks & Metrics |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/v1/telemetry/ticker` | Cached REST snapshot of 11 market benchmarks | Crypto (`BTC`, `ETH`, `SOL`, `WAVY-YIELD`), Equities (`AAPL`, `NVDA`, `TSLA`, `SPY`), Commodities & Treasuries (`US 10Y`, `XAU/USD`, `BRENT`) + 7-day sparklines |
-| `WS` | `/ws/ticker` | Real-time continuous WebSocket ticker stream | Broadcasts `ticker:quotes` event every 3 seconds to active subscribers |
-| `GET` | `/api/v1/telemetry/enclave` | Cryptographic proof-of-reserves & node telemetry | Deterministic SHA-256 Merkle root, 14.2ms clearing latency, Geneva/Zurich/New York HSM node statuses, $17.22B Tier AUM |
+| Protocol | Route                         | Description                                      | Benchmarks & Metrics                                                                                                                                                                   |
+| :------- | :---------------------------- | :----------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/api/v1/telemetry/ticker`  | Cached REST snapshot of 11 market benchmarks     | Crypto (`BTC`, `ETH`, `SOL`, `WAVY-YIELD`), Equities (`AAPL`, `NVDA`, `TSLA`, `SPY`), Commodities & Treasuries (`US 10Y`, `XAU/USD`, `BRENT`) + 7-day sparklines |
+| `WS`   | `/ws/ticker`                | Real-time continuous WebSocket ticker stream     | Broadcasts`ticker:quotes` event every 3 seconds to active subscribers                                                                                                                |
+| `GET`  | `/api/v1/telemetry/enclave` | Cryptographic proof-of-reserves & node telemetry | Deterministic SHA-256 Merkle root, 14.2ms clearing latency, Geneva/Zurich/New York HSM node statuses, $17.22B Tier AUM                                                                 |
 
 ### 5. Research Newsletter & Regulatory Compliance (`/api/v1/newsletter`, `/api/v1/compliance`)
 
-| Method | Endpoint | Description | Request Body / Query | Security & Invariants |
-| :--- | :--- | :--- | :--- | :--- |
-| `POST` | `/api/v1/newsletter/subscribe` | Register for research dispatches | `{ email }` | Dispatches Swiss double opt-in verification email via Resend |
-| `GET` | `/api/v1/newsletter/verify` | Activate double opt-in subscriber | Query param `?token=` | Confirms subscription |
-| `POST` | `/api/v1/newsletter/unsubscribe` | One-click unsubscribe | `{ email }` | Removes record |
-| `POST` | `/api/v1/compliance/ack` | Record regulatory disclosure acknowledgment | `{ action, actorId?, metadata? }` | Anonymizes IP via deterministic HMAC-SHA256 (`ipAddressHash`) |
+| Method   | Endpoint                           | Description                                 | Request Body / Query                | Security & Invariants                                           |
+| :------- | :--------------------------------- | :------------------------------------------ | :---------------------------------- | :-------------------------------------------------------------- |
+| `POST` | `/api/v1/newsletter/subscribe`   | Register for research dispatches            | `{ email }`                       | Dispatches Swiss double opt-in verification email via Resend    |
+| `GET`  | `/api/v1/newsletter/verify`      | Activate double opt-in subscriber           | Query param`?token=`              | Confirms subscription                                           |
+| `POST` | `/api/v1/newsletter/unsubscribe` | One-click unsubscribe                       | `{ email }`                       | Removes record                                                  |
+| `POST` | `/api/v1/compliance/ack`         | Record regulatory disclosure acknowledgment | `{ action, actorId?, metadata? }` | Anonymizes IP via deterministic HMAC-SHA256 (`ipAddressHash`) |
 
 ### 6. Health & Readiness Probes (`/health`)
 
-| Method | Endpoint | Description | Response Details |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/health/live` | Process liveness probe | Uptime seconds, status `ok` |
+| Method  | Endpoint          | Description                                     | Response Details                       |
+| :------ | :---------------- | :---------------------------------------------- | :------------------------------------- |
+| `GET` | `/health/live`  | Process liveness probe                          | Uptime seconds, status`ok`           |
 | `GET` | `/health/ready` | Process readiness & database connectivity probe | SQLite connectivity, memory heap usage |
 
 ---
