@@ -1,95 +1,170 @@
-# UI Context — WavyAssets Institutional Terminal
+# UI Context & Frontend Interoperability — WavyAssets Landing Page Backend
 
-## Visual Theme & Philosophy
+## 1. Frontend Interoperability Mandate
 
-The design system establishes a **Sovereign Institutional Terminal** for elite multi-asset wealth management and digital custody. Drawing from Swiss typographic rigor, physical vault architecture, and ultra-high-performance financial command terminals, this system prioritizes extreme information density without sensory fatigue.
-
-- **Obsidian Foundation**: Deep near-black background engineered to eliminate eye strain across marathon monitoring sessions.
-- **Architectural Depth**: Structural depth is achieved purely through **tonal stratification** and **subtle 1px hairline boundaries** (`#222632`) rather than heavy elevation dropshadows.
-- **Scarcity of Accent**: Bullion Gold (`#D4AF37`) is deployed with strict restraint—reserved exclusively for sovereign execution triggers, active states, and high-tier portfolio indicators.
-- **Dual Typographic Pairing**: Sovereign Swiss serif typography (`Noto Serif`) for structural navigation and headers combined with relentless tabular monospaced figures (`Inter`) for all financial data.
+The backend must deliver 100% interoperability with `Frontend/landing-page` (React 19, Vite 8, Zustand store, `UnifiedAuthModal`, and `ContactModal`). All API payloads, field naming conventions, and HTTP response envelopes must match the client-side expectations without necessitating breaking frontend rewrites.
 
 ---
 
-## Color Tokens (Obsidian Dark Mode — Default)
+## 2. Modal & Component Data Contracts
 
-| Token Role              | CSS Variable           | Value                      | Description                                  |
-| :---------------------- | :--------------------- | :------------------------- | :------------------------------------------- |
-| **Canvas Base**         | `--bg-base`            | `#08090B`                  | Primary zero-elevation background canvas     |
-| **Panel Surface**       | `--bg-surface-1`       | `#0F1115`                  | Secondary layer for data modules & grids     |
-| **Elevated Surface**    | `--bg-surface-2`       | `#161920`                  | Hover states, active tabs, nested cells      |
-| **Subtle Border**       | `--border-default`     | `#222632`                  | Crisp 1px structural dividing lines          |
-| **Active/Focus Border** | `--border-focus`       | `#3A4050`                  | Selected panes and focused input boundaries  |
-| **Sovereign Gold**      | `--accent-gold`        | `#D4AF37`                  | Primary brand accent & execution triggers    |
-| **Gold Hover**          | `--accent-gold-bright` | `#E5C158`                  | Hover state for gold triggers                |
-| **Gold Muted Wash**     | `--accent-gold-wash`   | `rgba(212, 175, 55, 0.08)` | Active matrix selection & tab highlight      |
-| **Emerald Yield**       | `--state-yield`        | `#00C288`                  | Positive delta, capital inflow, APY gains    |
-| **Emerald Wash**        | `--state-yield-wash`   | `rgba(0, 194, 136, 0.10)`  | Positive spread badge backgrounds            |
-| **Crimson Risk**        | `--state-risk`         | `#FF4D4D`                  | Negative delta, drawdown risk, margin alerts |
-| **Crimson Wash**        | `--state-risk-wash`    | `rgba(255, 77, 77, 0.10)`  | Risk indicator badge backgrounds             |
-| **Text Primary**        | `--text-primary`       | `#F3F4F6`                  | High-contrast headers, critical figures      |
-| **Text Secondary**      | `--text-secondary`     | `#9CA3AF`                  | Column headers, descriptions, metadata       |
-| **Text Tertiary**       | `--text-muted`         | `#4B5563`                  | Inactive timestamps, grid axes, units        |
+### 1. `UnifiedAuthModal` Interoperability Contract
 
-_(Luxury Light Mode shifts canvas to `#F8F9FA`, surfaces to `#FFFFFF`, borders to `#E5E7EB`, and text to `#111827`, with Gold shifting to `#B89324`.)_
+The modal operates as a 2-step state machine:
+
+#### Step 1: Credential Intake & Challenge Initiation
+- **Endpoint**: `POST /api/v1/auth/initiate`
+- **Frontend Request Payload**:
+  ```typescript
+  {
+    email: string;        // e.g. "investor@familyoffice.ch"
+    passphrase: string;   // e.g. "SovereignPass123!"
+    fullName?: string;    // Required if mode is "register"
+    tier?: "RETAIL" | "PRIVATE_WEALTH" | "INSTITUTIONAL";
+    mode: "login" | "register";
+  }
+  ```
+- **Backend Response**:
+  ```typescript
+  {
+    success: true,
+    data: {
+      step: 2,
+      challengeId: "chl_8f9e1b2c3d4e",
+      expiresInSeconds: 300,
+      deliveryChannel: "EMAIL", // or "TELEGRAM_ENCLAVE"
+      maskedDestination: "i***@familyoffice.ch"
+    },
+    timestamp: "2026-09-11T05:00:00.000Z"
+  }
+  ```
+
+#### Step 2: 6-Digit OTP Verification & Dashboard Handshake
+- **Endpoint**: `POST /api/v1/auth/verify-otp`
+- **Frontend Request Payload**:
+  ```typescript
+  {
+    challengeId: string;  // "chl_8f9e1b2c3d4e"
+    otpCode: string;      // "123456" (strict 6 numeric digits)
+  }
+  ```
+- **Backend Response**:
+  ```typescript
+  {
+    success: true,
+    data: {
+      user: {
+        id: "usr_4a5b6c7d8e9f",
+        email: "investor@familyoffice.ch",
+        fullName: "Eleanor Vance",
+        tier: "INSTITUTIONAL"
+      },
+      accessToken: "eyJhbGciOi...",
+      handoffTicket: "ticket_99a88b77c66d", // Used to redirect into user-dashboard
+      dashboardUrl: "http://localhost:5174/dashboard?ticket=ticket_99a88b77c66d"
+    },
+    timestamp: "2026-09-11T05:00:00.000Z"
+  }
+  ```
+- **Cookie Set**: `HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/api/v1/auth` refresh token cookie.
 
 ---
 
-## Typography
+### 2. `ContactModal` Mandate Ingestion Contract
 
-| Context                 | Font Family  | Size / Leading | Weight         | Letter Spacing        |
-| :---------------------- | :----------- | :------------- | :------------- | :-------------------- |
-| **Headline XL**         | `Noto Serif` | 32px / 38px    | 600 (Semibold) | `-0.02em`             |
-| **Headline LG**         | `Noto Serif` | 24px / 30px    | 600 (Semibold) | `-0.015em`            |
-| **Headline SM**         | `Noto Serif` | 18px / 24px    | 500 (Medium)   | `-0.01em`             |
-| **Label Caps (Badges)** | `Noto Serif` | 11px / 14px    | 600 (Semibold) | `+0.08em` (Uppercase) |
-| **Data Metric LG**      | `Inter`      | 28px / 32px    | 600 (Semibold) | `-0.02em` (Tabular)   |
-| **Data Metric MD**      | `Inter`      | 18px / 24px    | 500 (Medium)   | `-0.01em` (Tabular)   |
-| **Body MD (Data)**      | `Inter`      | 13px / 18px    | 400 (Regular)  | `0em`                 |
-| **Body SM (Data)**      | `Inter`      | 12px / 16px    | 400 (Regular)  | `0em`                 |
-| **Data Micro**          | `Inter`      | 10px / 12px    | 500 (Medium)   | `+0.02em`             |
+- **Endpoint**: `POST /api/v1/leads/inquire`
+- **Frontend Request Payload**:
+  ```typescript
+  {
+    fullName: string;     // e.g. "Marcus Thorne"
+    workEmail: string;    // Corporate domain required (e.g. "m.thorne@geneva-capital.ch")
+    telegram?: string;    // e.g. "@marcusthorne"
+    companyName: string;  // e.g. "Geneva Capital Management"
+    websiteUrl?: string;  // e.g. "https://geneva-capital.ch"
+    service: "CRYPTO" | "STOCKS" | "AI_FUNDS" | "REAL_ESTATE" | "VIP_CARDS" | "CARS" | "WALLET";
+    allocation: string;   // e.g. "$5M - $10M"
+  }
+  ```
+- **Backend Response**:
+  ```typescript
+  {
+    success: true,
+    data: {
+      leadId: "lead_71a2b3c4d5",
+      message: "Mandate recorded. An institutional relationship partner will contact you within 2 business hours."
+    },
+    timestamp: "2026-09-11T05:00:00.000Z"
+  }
+  ```
 
 ---
 
-## Border Radius & Shapes
+### 3. Continuous Syndicate Ticker Feed (`/api/v1/telemetry/ticker`, `/ws/ticker`)
 
-- **Precision Micro-Chamfer (`0.25rem` / `4px`)**: Mandatory for base surfaces, tabular rows, cards, inputs, and buttons. Maintains an instrument-grade, sharp terminal silhouette.
-- **Elevated Modals (`0.5rem` / `8px`)**: Reserved exclusively for modal dialogs (`UnifiedAuthModal`), floating context tooltips, and deep flyouts.
-- **Prohibition**: True pill shapes and heavy rounding (>8px) are **strictly forbidden** to prevent consumerization of the institutional aesthetic.
+The frontend's continuous sliding marquee (`.animate-ticker-continuous`) and matrix strips consume:
+```typescript
+interface TickerQuote {
+  symbol: string;      // "BTC/USD", "NVDA", "XAU/USD", "US 10Y"
+  price: number;       // 92450.00
+  change24h: number;   // 2.84 (percentage)
+  volume24h?: number;  // 482000000
+  assetClass: "CRYPTO" | "EQUITY" | "COMMODITY" | "TREASURY";
+}
+```
 
 ---
 
-## Component Specifications
+### 4. Portfolio Simulator Intent Persistence (`/api/v1/simulation`)
 
-### 1. Primary Sovereign CTA
+- **Endpoint**: `POST /api/v1/simulation/save`
+- **Frontend Request Payload**:
+  ```typescript
+  {
+    capitalAmount: number;   // $50,000 to $10,000,000
+    riskPosture: number;     // 1: Capital Preservation, 2: Balanced Growth, 3: Max Alpha
+    projectedYield: number;  // 8.4 to 19.4 (%)
+  }
+  ```
+- **Backend Response**:
+  ```typescript
+  {
+    success: true,
+    data: {
+      intentToken: "sim_tok_1a2b3c4d",
+      expiresAt: "2026-09-12T05:00:00.000Z"
+    },
+    timestamp: "2026-09-11T05:00:00.000Z"
+  }
+  ```
 
-- Background: `#D4AF37` (Gold), Text: `#08090B` (`Noto Serif` 12px semibold, uppercase).
-- Hover: `#E5C158`, Active: `#B89324`. Radius: `4px`.
+---
 
-### 2. Secondary Terminal Button
+## 3. Transactional Email Styling Guidelines (Resend Gateway)
 
-- Background: `#0F1115`, Border: `1px solid #222632`, Text: `#F3F4F6`.
-- Hover: Background `#161920`, Border `#3A4050`. Radius: `4px`.
+All transactional emails dispatched via Resend must embody Swiss typography and vault aesthetics:
 
-### 3. Financial Data Tables & Matrices
+- **Typography**: Clean, sans-serif Swiss structure (`Inter` or system fonts `Helvetica Neue`, `Arial`).
+- **Color Palette**:
+  - Background Canvas: Dark Obsidian (`#08090B`) or crisp white (`#FFFFFF`) with high-contrast card borders (`#222632`).
+  - Accent Color: Sovereign Gold (`#D4AF37`) for header banners and button accents.
+  - Security Notice Accent: Emerald (`#00C288`) for verified transmission badge.
+- **6-Digit OTP Presentation**: Displayed in large tabular monospaced numbers (`font-family: monospace; font-size: 32px; letter-spacing: 8px; color: #D4AF37; font-weight: 700;`).
+- **Security Context Ribbon**:
+  - Clear statement of 5-minute countdown validity.
+  - Requester metadata: Date/Time (UTC), Requester IP Hash, and approximate Geolocation.
+  - Warning: "WavyAssets personnel will never ask for this code over the phone or via Telegram."
 
-- Header: `11px` uppercase label-caps in `#9CA3AF`, flush left for names, right-aligned for numbers.
-- Row height: Fixed `1.75rem` (`28px`), bottom hairline border `1px solid rgba(34, 38, 50, 0.5)`.
-- Hover row: Background `#161920`. Selected row: Left border `2px solid #D4AF37`.
+---
 
-### 4. Chips & Delta Badges
+## 4. Swagger / OpenAPI Documentation Styling (`/api/docs`)
 
-- Positive: Background `rgba(0, 194, 136, 0.10)`, Text `#00C288`, `Inter` 11px.
-- Negative: Background `rgba(255, 77, 77, 0.10)`, Text `#FF4D4D`, `Inter` 11px.
-
-### 5. Unified Auth Modal (2-Step)
-
-- Root-mounted with Radix Dialog. Backdrop: `rgba(8, 9, 11, 0.85)` with `backdrop-filter: blur(12px)`.
-- Border: `1px solid #3A4050` with subtle inner gold hairline highlight.
-- Step 1: Institutional email & password / KYC tier selector.
-- Step 2: 6-digit segmented `Input-OTP` auto-focused with resend countdown.
-
-### 6. Portfolio Simulator
-
-- Dual Radix Sliders with linear track `#161920`, filled track `#D4AF37`, and micro-rounded square thumb in `#F3F4F6`.
-- Synchronized SVG / WebGL 3D radial donut visualizer with reactive stroke animations.
+- **Title**: `WavyAssets Institutional Gateway API`
+- **Description**: Institutional backend service specification for the WavyAssets Landing Page terminal, Enclave proof-of-reserves, and user-dashboard authentication gateway.
+- **Version**: `1.0.0`
+- **Tags**:
+  - `Authentication`: 2-Step OTP, session management, and dashboard hand-off
+  - `Institutional Leads`: Mandate inquiries and CRM dispatch
+  - `Telemetry`: Market tickers and cryptographic Enclave proof-of-reserves
+  - `Simulation`: Portfolio intent tokenization and pre-fill
+  - `Compliance`: Regulatory disclaimers and double opt-in research newsletter
+  - `Health`: Readiness and liveness telemetry probes
