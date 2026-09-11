@@ -28,21 +28,43 @@ describe('Foundational Environment & Security Utilities', () => {
     expect(/^\d{6}$/.test(otp)).toBe(true);
   });
 
-  it('should encrypt and decrypt using AES-256-GCM', () => {
+  it('should encrypt and decrypt sensitive lead PII including fullName using AES-256-GCM', () => {
     const key = crypto.randomBytes(32);
     const iv = crypto.randomBytes(12);
-    const text = 'allocator@zurich-familyoffice.ch';
+    const leadData = {
+      fullName: 'Eleanor Vance',
+      workEmail: 'allocator@zurich-familyoffice.ch',
+      telegram: '@eleanor_vance',
+    };
 
+    // Encrypt fullName
     const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-    let encrypted = cipher.update(text, 'utf8', 'hex');
+    let encrypted = cipher.update(leadData.fullName, 'utf8', 'hex');
     encrypted += cipher.final('hex');
     const authTag = cipher.getAuthTag();
 
+    // Decrypt fullName
     const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
     decipher.setAuthTag(authTag);
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
 
-    expect(decrypted).toBe(text);
+    expect(decrypted).toBe(leadData.fullName);
+  });
+
+  it('should compute deterministic cryptographic hash for bearer tokens (refreshToken, handoffTicket)', () => {
+    const bearerToken = 'wavy_refresh_' + crypto.randomBytes(32).toString('hex');
+    const secret = 'institutional-deterministic-hmac-secret-key-64-bytes-sample-value!';
+    const hash1 = crypto.createHmac('sha256', secret).update(bearerToken).digest('hex');
+    const hash2 = crypto.createHmac('sha256', secret).update(bearerToken).digest('hex');
+
+    expect(hash1).toBe(hash2);
+    expect(hash1).toHaveLength(64);
+    expect(hash1).not.toBe(bearerToken);
+
+    // Ensure distinct tokens produce distinct hashes
+    const differentToken = 'wavy_ticket_' + crypto.randomBytes(32).toString('hex');
+    const hashDifferent = crypto.createHmac('sha256', secret).update(differentToken).digest('hex');
+    expect(hashDifferent).not.toBe(hash1);
   });
 });

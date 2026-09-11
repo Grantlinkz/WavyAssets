@@ -72,7 +72,7 @@ Before planning, implementing, or modifying any architectural component or code 
 The AI coding assistant is authorized to invoke and consult the following specialized agent skills located in `.agents/skills/`:
 
 1. **`vitest`** (`.agents/skills/vitest`):
-   - Command: `npx skills add sanity-io/next-sanity --skill vitest` (or `npx skills add antfu/skills --skill vitest`)
+   - Command: `npx skills add antfu/skills --skill vitest`
    - Capabilities: Vitest test suite runner, mocking (`vi.mock`), assertion patterns, and coverage configuration.
 2. **`prisma-database-setup`** (`.agents/skills/prisma-database-setup`):
    - Command: `npx skills add prisma/skills --skill prisma-database-setup`

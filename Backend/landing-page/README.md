@@ -61,7 +61,7 @@ The **Landing Page Backend** (`Backend/landing-page`) serves as the secure gatew
 | Method | Endpoint | Description | Request Body / Params | Response |
 | :--- | :--- | :--- | :--- | :--- |
 | `POST` | `/api/v1/auth/initiate` | Step 1: Validate email/passphrase or initiate mandate creation | `{ email, passphrase, fullName?, tier?, mode }` | `{ success: true, step: 2, challengeId: string }` |
-| `POST` | `/api/v1/auth/verify-otp` | Step 2: Validate 6-digit OTP and issue JWT session | `{ challengeId, otpCode: "123456" }` | `{ success: true, user: { id, email, tier }, handoffTicket: string }` (Sets HttpOnly JWT Cookie) |
+| `POST` | `/api/v1/auth/verify-otp` | Step 2: Validate 6-digit OTP and issue JWT session | `{ challengeId, otpCode: "123456" }` | `{ success: true, user: { id, email, tier }, handoffTicket: string }` (Sets HttpOnly JWT & exchange cookies; ticket transferred out-of-band) |
 | `POST` | `/api/v1/auth/logout` | Revoke active session and clear cookies | None | `{ success: true }` |
 | `GET` | `/api/v1/auth/session` | Validate active session for client hydration | None (Bearer / Cookie) | `{ authenticated: boolean, user?: UserDto }` |
 
@@ -108,76 +108,93 @@ generator client {
 }
 
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  fullName      String?
-  passwordHash  String
-  tier          String    @default("institutional") // institutional | private-wealth
-  isVerified    Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  otps          OtpCode[]
+  id               String            @id @default(uuid())
+  email            String            @unique
+  fullName         String?
+  passphraseHash   String
+  tier             String            @default("PRIVATE_WEALTH") // RETAIL | PRIVATE_WEALTH | INSTITUTIONAL
+  isCorporate      Boolean           @default(false)
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  sessions         Session[]
+  otpCodes         OtpCode[]
+  simulationIntent SimulationIntent?
 }
 
 model Session {
-  id           String   @id @default(uuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash    String   @unique
-  expiresAt    DateTime
-  ipAddress    String?
-  userAgent    String?
-  createdAt    DateTime @default(now())
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash  String   @unique // Deterministic HMAC-SHA256 hash (never persist plaintext bearer tokens)
+  handoffTicketHash String?  @unique // Deterministic HMAC-SHA256 hash (never persist plaintext bearer tickets)
+  ipAddress         String?
+  userAgent         String?
+  expiresAt         DateTime
+  createdAt         DateTime @default(now())
 }
 
 model OtpCode {
   id         String   @id @default(uuid())
   userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   email      String
-  codeHash   String
+  hashedCode String
   attempts   Int      @default(0)
+  isConsumed Boolean  @default(false)
   expiresAt  DateTime
   createdAt  DateTime @default(now())
-  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email, expiresAt])
 }
 
 model LeadInquiry {
-  id          String   @id @default(uuid())
-  fullName    String
-  workEmail   String
-  companyName String
-  websiteUrl  String?
-  telegram    String?
-  service     String
-  allocation  String
-  riskScore   Float    @default(0.0)
-  status      String   @default("PENDING") // PENDING | CONTACTED | DISQUALIFIED
-  createdAt   DateTime @default(now())
+  id                 String   @id @default(uuid())
+  fullNameEncrypted  String   // AES-256-GCM encrypted
+  workEmailEncrypted String   // AES-256-GCM encrypted
+  workEmailHash      String   // Blind index HMAC-SHA256 for fast lookup
+  companyName        String
+  websiteUrl         String?
+  telegramEncrypted  String?  // AES-256-GCM encrypted
+  service            String   // CRYPTO | STOCKS | AI_FUNDS | REAL_ESTATE | VIP_CARDS | CARS | WALLET
+  allocationRange    String   // e.g. "$5M - $10M"
+  domainScore        Float    @default(1.0)
+  isSpam             Boolean  @default(false)
+  crmDispatched      Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  @@index([workEmailHash])
 }
 
 model SimulationIntent {
-  token          String   @id @default(uuid())
-  capital        Float
-  aggressiveness Int
+  id             String   @id @default(uuid())
+  token          String   @unique
+  userId         String?  @unique
+  user           User?    @relation(fields: [userId], references: [id])
+  capitalAmount  Float
+  riskPosture    Int      // 1: Capital Preservation, 2: Balanced Growth, 3: Max Alpha
   projectedYield Float
-  createdAt      DateTime @default(now())
   expiresAt      DateTime
+  createdAt      DateTime @default(now())
 }
 
 model NewsletterSubscriber {
-  id          String   @id @default(uuid())
-  email       String   @unique
-  isConfirmed Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id                String    @id @default(uuid())
+  email             String    @unique
+  verificationToken String?   @unique
+  isConfirmed       Boolean   @default(false)
+  confirmedAt       DateTime?
+  createdAt         DateTime  @default(now())
 }
 
-model ComplianceAuditLog {
-  id                String   @id @default(uuid())
-  disclosureVersion String
-  jurisdiction      String
-  ipHash            String
-  createdAt         DateTime @default(now())
+model AuditLog {
+  id            String   @id @default(uuid())
+  action        String
+  actorId       String?
+  ipAddressHash String
+  userAgent     String?
+  metadata      String?  // JSON string
+  createdAt     DateTime @default(now())
 }
 ```
 

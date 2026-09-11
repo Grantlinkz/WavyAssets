@@ -60,13 +60,15 @@ The modal operates as a 2-step state machine:
         tier: "INSTITUTIONAL"
       },
       accessToken: "eyJhbGciOi...",
-      handoffTicket: "ticket_99a88b77c66d", // Used to redirect into user-dashboard
-      dashboardUrl: "http://localhost:5174/dashboard?ticket=ticket_99a88b77c66d"
+      handoffTicket: "ticket_99a88b77c66d", // Single-use exchange ticket (hashed at rest)
+      dashboardUrl: "http://localhost:5174/auth/exchange" // Transferred out-of-band via secure exchange cookie/POST (never in URL query)
     },
     timestamp: "2026-09-11T05:00:00.000Z"
   }
   ```
-- **Cookie Set**: `HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/api/v1/auth` refresh token cookie.
+- **Cookies Set**:
+  - `refreshToken`: `HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/api/v1/auth` refresh token cookie.
+  - `wavy_handoff`: `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/auth/exchange` short-lived (60s TTL) exchange ticket cookie for zero-friction browser transition without leaking bearer tokens into URL queries, history, or access logs.
 
 ---
 

@@ -83,13 +83,25 @@ export interface ApiResponse<T = any> {
         ? exception.getStatus() 
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-      const message = exception instanceof HttpException
-        ? exception.getResponse()
+      const resObj = exception instanceof HttpException 
+        ? exception.getResponse() 
         : 'Internal institutional error';
+
+      let errorMessage = 'Request failed';
+      if (typeof resObj === 'string') {
+        errorMessage = resObj;
+      } else if (resObj && typeof resObj === 'object') {
+        const rawMsg = (resObj as Record<string, unknown>).message;
+        if (Array.isArray(rawMsg)) {
+          errorMessage = rawMsg.join('; ');
+        } else if (typeof rawMsg === 'string') {
+          errorMessage = rawMsg;
+        }
+      }
 
       response.status(status).json({
         success: false,
-        error: typeof message === 'string' ? message : (message as any).message || 'Request failed',
+        error: errorMessage,
         timestamp: new Date().toISOString(),
       });
     }

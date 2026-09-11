@@ -23,15 +23,15 @@ model User {
 }
 
 model Session {
-  id            String   @id @default(uuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  refreshToken  String   @unique
-  handoffTicket String?  @unique
-  ipAddress     String?
-  userAgent     String?
-  expiresAt     DateTime
-  createdAt     DateTime @default(now())
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash  String   @unique // Deterministic HMAC-SHA256 hash (never persist plaintext bearer tokens)
+  handoffTicketHash String?  @unique // Deterministic HMAC-SHA256 hash (never persist plaintext bearer tickets)
+  ipAddress         String?
+  userAgent         String?
+  expiresAt         DateTime
+  createdAt         DateTime @default(now())
 }
 
 model OtpCode {
@@ -50,7 +50,7 @@ model OtpCode {
 
 model LeadInquiry {
   id                 String   @id @default(uuid())
-  fullName           String
+  fullNameEncrypted  String   // AES-256-GCM encrypted
   workEmailEncrypted String   // AES-256-GCM encrypted
   workEmailHash      String   // Blind index HMAC-SHA256 for fast lookup
   companyName        String

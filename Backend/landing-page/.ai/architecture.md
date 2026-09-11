@@ -71,6 +71,8 @@ Backend/landing-page/
 
 The relational schema represents institutional entities, security credentials, and regulatory trails:
 
+> **Canonical Schema Reference**: See [`prisma/schema.prisma`](file:///c:/Users/ANIK/Desktop/WavyAssets/Backend/landing-page/prisma/schema.prisma) for the authoritative database schema definition.
+
 ```prisma
 datasource db {
   provider = "sqlite"
@@ -81,47 +83,31 @@ generator client {
   provider = "prisma-client-js"
 }
 
-enum TrustTier {
-  RETAIL
-  PRIVATE_WEALTH
-  INSTITUTIONAL
-}
-
-enum ServiceVertical {
-  CRYPTO
-  STOCKS
-  AI_FUNDS
-  REAL_ESTATE
-  VIP_CARDS
-  CARS
-  WALLET
-}
-
 model User {
-  id               String      @id @default(uuid())
-  email            String      @unique
-  passphraseHash   String
+  id               String            @id @default(uuid())
+  email            String            @unique
   fullName         String?
-  tier             TrustTier   @default(PRIVATE_WEALTH)
-  corporateDomain  Boolean     @default(false)
-  isActive         Boolean     @default(true)
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  passphraseHash   String
+  tier             String            @default("PRIVATE_WEALTH") // RETAIL | PRIVATE_WEALTH | INSTITUTIONAL
+  isCorporate      Boolean           @default(false)
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
   sessions         Session[]
   otpCodes         OtpCode[]
   simulationIntent SimulationIntent?
 }
 
 model Session {
-  id           String   @id @default(uuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  refreshToken String   @unique
-  handoffTicket String? @unique
-  userAgent    String?
-  ipAddress    String?
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash  String   @unique // Deterministic HMAC-SHA256 hash (bearer credentials never stored plaintext)
+  handoffTicketHash String?  @unique // Deterministic HMAC-SHA256 hash (bearer credentials never stored plaintext)
+  ipAddress         String?
+  userAgent         String?
+  expiresAt         DateTime
+  createdAt         DateTime @default(now())
 }
 
 model OtpCode {
@@ -139,19 +125,21 @@ model OtpCode {
 }
 
 model LeadInquiry {
-  id              String          @id @default(uuid())
-  fullName        String
-  workEmailEncrypted String       // AES-256-GCM encrypted
-  workEmailHash   String          // Blind index for lookups
-  companyName     String
-  websiteUrl      String?
-  telegramEncrypted String?       // AES-256-GCM encrypted
-  service         ServiceVertical
-  allocationRange String
-  domainScore     Float           @default(1.0)
-  isSpam          Boolean         @default(false)
-  crmDispatched   Boolean         @default(false)
-  createdAt       DateTime        @default(now())
+  id                 String   @id @default(uuid())
+  fullNameEncrypted  String   // AES-256-GCM encrypted
+  workEmailEncrypted String   // AES-256-GCM encrypted
+  workEmailHash      String   // Blind index HMAC-SHA256 for fast lookup
+  companyName        String
+  websiteUrl         String?
+  telegramEncrypted  String?  // AES-256-GCM encrypted
+  service            String   // CRYPTO | STOCKS | AI_FUNDS | REAL_ESTATE | VIP_CARDS | CARS | WALLET
+  allocationRange    String   // e.g. "$5M - $10M"
+  domainScore        Float    @default(1.0)
+  isSpam             Boolean  @default(false)
+  crmDispatched      Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  @@index([workEmailHash])
 }
 
 model SimulationIntent {
@@ -245,17 +233,24 @@ Landing Page (Client)               Backend Gateway                User Dashboar
      │ 1. POST /api/v1/auth/verify-otp    │                              │
      │───────────────────────────────────>│                              │
      │                                    │                              │
-     │ 2. Return handoffTicket & cookie   │                              │
+     │ 2. Return short-lived ticket &     │                              │
+     │    set HttpOnly secure exchange cookie                            │
      │<───────────────────────────────────│                              │
      │                                                                   │
-     │ 3. Redirect: /dashboard?ticket=handoff_abc123                    │
+     │ 3. Client navigates to /auth/exchange (No ticket in URL query)    │
      │──────────────────────────────────────────────────────────────────>│
      │                                                                   │
-     │                                    │ 4. Exchange ticket for session
+     │                                    │ 4. POST /api/v1/auth/exchange
+     │                                    │    (Reads secure cookie / body)
      │                                    │<─────────────────────────────│
-     │                                    │ 5. Session confirmed         │
+     │                                    │ 5. Session confirmed & ticket│
+     │                                    │    consumed (single-use)     │
      │                                    │─────────────────────────────>│
 ```
+
+> [!IMPORTANT]
+> **Zero Bearer Credentials in URL Queries**:
+> The `handoffTicket` must never appear in URL query parameters (`?ticket=...`). URL query strings are retained in browser history, proxy logs, Referer headers, and web analytics. Instead, tickets are securely transferred via short-lived `HttpOnly`, `SameSite=Lax`, `Secure` exchange cookies or an explicit POST body to the dashboard exchange endpoint, which immediately invalidates and consumes the ticket.
 
 ---
 
