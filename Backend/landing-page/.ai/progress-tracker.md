@@ -1,212 +1,87 @@
-# Progress Tracker — WavyAssets Institutional Terminal
+# Progress Tracker — WavyAssets Landing Page Backend
 
 ## Project Status
 
-- **Current Phase**: Sprint 5 (Standardized Asset Panels, Hash-Routing Engine & Unified Auth Modal) Completed / Preparing Sprint 6 (Performance Profiling, Hardening & Go-Live)
-- **Overall Roadmap**: 6-Week Sprints defined in `tools/Implementation Strategy And Timeline.pdf`
+- **Current Phase**: Sprint 1 (Architecture Foundation, Database & Core Security) — Foundation Setup Complete
+- **Overall Roadmap**: 4 Technical Sprints defined in `tools/WavyAssets LandingPage Backend Execution.md`
+- **Target SLA**: <50ms API response latency, 100,000+ MAU throughput, zero leaked stack traces
 
 ---
 
-## 6-Sprint Roadmap Status
+## 4-Sprint Technical Roadmap Status
 
-### [x] Sprint 1 (Week 1): Foundation, Design Tokens, Theme Engine & i18n
+### [x] Sprint 1 (Phase 1: Dependencies, Database & Foundations)
+- [x] Configure approved agent skills in `.agents/skills/` (`vitest`, `prisma-database-setup`, `prisma-cli`, `prisma-client-api`).
+- [x] Establish root governance in `GEMINI.MD` and synchronize `.ai/` documentation suite.
+- [x] Define environment variables and production security warnings in `.env.example`.
+- [x] Create institutional `package.json`, `tsconfig.json`, `tsconfig.build.json`, `nest-cli.json`, and `vitest.config.ts`.
+- [x] Install all production and development dependencies (NestJS 11, Prisma 6, Vitest, Argon2id, Helmet, Throttler, Swagger, Socket.IO, Resend, Class-Validator).
+- [x] Formulate `prisma/schema.prisma` with institutional models (`User`, `Session`, `OtpCode`, `LeadInquiry`, `SimulationIntent`, `NewsletterSubscriber`, `AuditLog`).
+- [x] Generate Prisma Client (`v6.19.3`) and synchronize local SQLite database (`dev.db`).
+- [x] Establish baseline Vitest unit test suite verifying Argon2id, crypto OTP, and AES-256-GCM ciphers (3/3 tests passing).
 
-- [x] Analyze `tools/` specifications, PDFs, and UI code prototypes.
-- [x] Update `.ai/` system context and `GEMINI.md` governance files.
-- [x] Migrate `tools/UI/1 global/DESIGN.md` CSS custom properties into `src/index.css` (Obsidian Dark & Luxury Light palettes).
-- [x] Implement system-first theme detector, localStorage cache, and theme toggle control in `src/store/useTerminalStore.ts` and `src/components/nav/ThemeToggle.tsx`.
-- [x] Configure tabular figure formatting rules and currency formatters with ISO fallbacks in `src/lib/formatters.ts`.
-- [x] Build scalable vector `BrandLogo` component based on `tools/UI/1a global logo/code.html`.
-- [x] Implement initial terminal shell in `src/App.tsx` featuring live syndicate ticker stream.
-- [x] Establish automated Vitest unit test suite covering formatters and terminal state transitions (9/9 passing).
+### [ ] Sprint 1 (Phase 2: Core Gateway Services & Middleware)
+- [ ] Implement global `ValidationPipe` (`whitelist: true`, `forbidNonWhitelisted: true`) and standardized JSON response envelope (`{ success, data, error, timestamp }`).
+- [ ] Implement global `AllExceptionsFilter` preventing stack trace leaks and sanitizing system errors.
+- [ ] Implement Helmet security headers, CORS origin whitelisting, and PII-redacted logger.
+- [ ] Scaffold `AppModule`, `PrismaService`, and health check controllers (`/health/live`, `/health/ready`).
 
-### [x] Sprint 2 (Week 2): Global Shell, 3D Ambient Mesh & Mega-Menu
+### [ ] Sprint 2: Authentication Gateway & User Dashboard Hand-off
+- [ ] Implement `AuthModule` with `/api/v1/auth/initiate` and `/api/v1/auth/verify-otp`.
+- [ ] Build Argon2id password hashing and constant-time verification service.
+- [ ] Implement cryptographically secure 6-digit OTP generator (`crypto.randomInt`) with 5-minute TTL and max 3-attempt invalidation.
+- [ ] Configure transactional email gateway via Resend API (`security@wavyassets.com`) with Swiss typography.
+- [ ] Configure encrypted enclave dispatch via Telegram bot for accredited/institutional tier accounts.
+- [ ] Implement **Production Sandbox Guard**: strictly reject `DEV_STATIC_OTP` and `EMAIL_PROVIDER=console` in production with HTTP 403 Forbidden.
+- [ ] Implement signed JWT access token issuance and `HttpOnly`, `Secure`, `SameSite=Strict` refresh cookies.
+- [ ] Implement dashboard hand-off exchange ticket mechanism for seamless client redirection to `user-dashboard`.
+- [ ] Establish unit and integration tests validating auth flows, password hashing, and brute-force lockouts in `Tests/UnitTest/auth/` and `Tests/IntegrationTest/auth-flow/`.
 
-- [x] Mount fixed `GlobalHeader` with brand logo, nav anchors, theme toggle, and auth triggers.
-- [x] Build Three.js / React Three Fiber `AmbientCanvas` with kinetic cursor-following mesh, visibility throttling (`document.hidden`), and `prefers-reduced-motion` compliance.
-- [x] Construct 7-vertical `ServicesMegaMenu` with spring physics, category filtering (`All`, `Liquid Digital`, `DMA Equities`, `Physical Vaults`), and active diagnostics telemetry.
-- [x] Implement sub-50ms hash-routing integration (`#/services/:assetId`), ESC hotkey dismissal, and click-outside handling.
-- [x] Establish automated unit and integration tests (19/19 passing across 4 suites).
+### [ ] Sprint 3: Lead Pipeline, Simulation Intent & Newsletter Modules
+- [ ] Implement `LeadModule` with `/api/v1/leads/inquire` validating corporate domains and filtering disposable email providers.
+- [ ] Build AES-256-GCM field encryption for sensitive contact PII (`workEmail`, `telegram`, phone) with blind index hashing (`workEmailHash`).
+- [ ] Implement anti-spam honeypot detection and mandate priority classifier.
+- [ ] Implement webhook dispatcher for institutional CRM / Slack / Telegram notifications.
+- [ ] Implement `SimulationModule` with `/api/v1/simulation/save` tokenizing capital allocation and risk posture for onboarding pre-fill.
+- [ ] Implement `NewsletterModule` with double opt-in verification links and `ComplianceModule` logging regulatory disclaimer acknowledgments.
+- [ ] Establish unit and integration test suites in `Tests/UnitTest/leads/`, `Tests/UnitTest/crypto/`, and `Tests/IntegrationTest/leads-pipeline/`.
 
-### [x] Sprint 3 (Week 3): Interactive Portfolio Simulator & 3D Allocation Donut
-
-- [x] Build dual slider controls (Capital: $50k–$10M, Aggressiveness: 1–3 modes with quick-selection chips).
-- [x] Implement real-time mathematical compounding return calculation engine (`src/lib/calculator.ts`) with tabular monospaced outputs.
-- [x] Build 3D radial donut visualizer (`DonutChart3D`) with reactive segment animations and blended APY center readout.
-- [x] Build dynamic `AssetDiscoveryHub` with horizontal segmented tabs across the 7 vault classes and active depository card.
-- [x] Establish unit tests for calculation algorithms and integration tests for simulator and discovery hub (28/28 tests passing).
-
-### [x] Sprint 3B: High-Frequency Kinetic Motion & Institutional Animation Suite
-
-- [x] Build reusable physics-driven `AnimatedNumber` counter with Framer Motion springs and zero-CLS SSR rendering.
-- [x] Implement 3D mouse gyroscope tilt (`perspective: 800px`, `rotateX`, `rotateY`) and animated SVG stroke dashes on `DonutChart3D`.
-- [x] Implement cursor-following specular spotlight overlay and tactile micro-hover physics on `PortfolioSimulator`.
-- [x] Implement shared layout tab indicator (`layoutId="activeVaultTabIndicator"`) and staggered card presence transitions in `AssetDiscoveryHub`.
-- [x] Establish unit tests for `AnimatedNumber` and verify complete zero-CLS SSR parity (31/31 tests passing across 7 suites).
-
-### [x] Sprint 3C: Continuous Syndicate Ticker & Noto Serif Typography Migration
-
-- [x] Migrate system font tokens and Google Fonts import from `Inter` to `Noto Serif` across `index.html`, `src/index.css`, `GEMINI.md`, and the `.ai/` documentation suite.
-- [x] Implement continuous infinite sliding ticker stream (`.animate-ticker-continuous` with keyframe translations and duplicate feeds for seamless loop).
-- [x] Add hover pause and `prefers-reduced-motion` compliance to ticker marquee.
-- [x] Establish integration tests in `Tests/IntegrationTest/tickerIntegration.test.tsx` verifying animation tracks and quote duplication (32/32 tests passing across 8 suites).
-
-### [x] Sprint 4 (Prototype 4): Trust Infrastructure, Client Voices & Regulatory Compliance Footprint
-
-- [x] Build live `TrustInfrastructure` Enclave status bar with Merkle root, HSM verification, and clearing latency.
-- [x] Construct dynamic `Private Wealth` vs. `Institutional & Funds` Tier Switcher with spring indicator and responsive metric morphing ($4.82B vs. $12.40B AUM).
-- [x] Implement 4-cell Audited Return Metrics strip with animated progress bars and live telemetry stream ribbon.
-- [x] Build `ClientVoices` 3D perspective specular tilt cards with cursor-following radial spotlight highlight and tier filtering.
-- [x] Construct `CustodyNetworkGrid` displaying 6 synchronized institutional clearing nodes (BNY Mellon, State Street, LGT, Equinix, Lloyd's, DTCC).
-- [x] Build compliance-ready 5-column `InstitutionalFooter` with SEC RIA (#801-128491), FINMA VQF, and MAS regulatory credentials, 7 asset links, and PGP newsletter dispatch.
-- [x] Implement mandatory multi-jurisdiction regulatory disclaimers and SEC Rule 206(4)-1 / GDPR / FinSA notices.
-- [x] Establish unit and integration test suites in `Tests/UnitTest/trustMetrics.test.ts` and `Tests/IntegrationTest/trustAndComplianceIntegration.test.tsx` (44/44 tests passing across 10 suites).
-
-### [x] Sprint 5 (Prototype 5): Standardized Asset Panels, Hash-Routing Engine & Unified Auth Modal
-
-- [x] Build standardized `AssetContainer` frame with explicit min-height (540px) to guarantee CLS = 0.
-- [x] Implement client-side `#/services/:assetId` hash router with deep linking and lazy-loaded sub-view chunks for all 7 asset classes.
-- [x] Construct root-mounted `UnifiedAuthModal` with Step 1 credentials and Step 2 6-digit Input-OTP.
-- [x] Instrument view-switch telemetry and sub-50ms transition benchmark.
-- [x] Implement dedicated modular asset class panels (`CryptoPanel`, `StocksPanel`, `AiFundsPanel`, `RealEstatePanel`, `CarsPanel`, `VipCardsPanel`, `WalletPanel`).
-- [x] Build `AssetNavRail` with horizontal tabs, index numbers (`01` through `07`), and active gold indicator.
-- [x] Establish automated unit and integration test suites in `Tests/UnitTest/hashRouter.test.ts` and `Tests/IntegrationTest/assetPanelsAndAuthIntegration.test.tsx` (56/56 tests passing across 12 suites).
-
-### [x] Sprint 6 (Week 6): Performance Profiling, Hardening & Go-Live
-
-- [x] Implement WebGL render loop throttling on `document.hidden` and off-screen canvas culling via `IntersectionObserver` across all Three.js scenes (`HeroAssetGyroscope`, `AmbientCanvas`, `AboutVaultCanvas3D`, `UnifiedFinanceInfographic3D`).
-- [x] Audit WCAG 2.1 AA accessibility: keyboard focus traps, skip-to-content link (`#main-content`), ARIA live announcements for screen readers, and `prefers-reduced-motion` compliance.
-- [x] Implement sovereign custom 404 depository page (`NotFoundPage.tsx`) with sanitized telemetry diagnostics, plain English UX copy, and functional recovery CTAs ("Return to Terminal", "Browse Services", "Contact Custody Desk").
-- [x] Implement default system language and locale detection engine (`src/lib/locale.ts`), syncing `<html lang="...">` dynamically at runtime and updating tabular currency formatters with robust international fallback support.
-- [x] Eliminate buggy research redirect hijack in `App.tsx` and establish strict URL hash & pathname validation (`isRoute404`), properly routing non-existing URLs (e.g. `/#client-voices/geme`, `/services/vip-cards`, `/#/404`) to the custom 404 page.
-- [x] Build root-level `TerminalErrorBoundary` isolating rendering exceptions with sanitized institutional fallback UI without leaking stack traces or credentials.
-- [x] Establish automated unit and integration test suites covering system locale detection, 404 routing, ErrorBoundary, and accessibility.
+### [ ] Sprint 4: Live Telemetry, WebSocket Ticker & Production Hardening
+- [ ] Implement `TelemetryModule` with REST endpoint `/api/v1/telemetry/ticker` and WebSocket gateway `/ws/ticker` broadcasting live multi-asset quotes.
+- [ ] Implement Enclave telemetry endpoint `/api/v1/telemetry/enclave` publishing Merkle root, HSM status, clearing latency, and Tier AUM.
+- [ ] Build in-memory quote caching engine with circuit-breaker protection against upstream API failures.
+- [ ] Configure interactive Swagger/OpenAPI documentation at `/api/docs`.
+- [ ] Final security audit, end-to-end integration test suite validation, and production Docker containerization.
 
 ---
 
 ## Completed Items
 
-- Scaffolded React 19 + TypeScript + Vite 8 project.
-- Configured Tailwind CSS v4 and initialized shadcn/ui primitives (`button`, `dialog`, `navigation-menu`, `skeleton`, `slider`, `input-otp`).
-- Installed `@react-three/fiber`, `@react-three/drei`, `three`, `framer-motion`, `lucide-react`, `zustand`, `input-otp`.
-- Synthesized full platform requirements from `tools/` into `.ai/` and `GEMINI.md`.
-- Implemented complete Sovereign Institutional Terminal design tokens in `src/index.css` (Obsidian Dark `#08090B` & Luxury Light `#f9f9ff`, 4px/8px micro-chamfers, tabular lining figures).
-- Built Zustand terminal store (`src/store/useTerminalStore.ts`) with theme detection, localStorage sync, modal state machine, and mega-menu states.
-- Created `src/lib/formatters.ts` for institutional currency, percentages, BPS, and compact figures.
-- Built vector `BrandLogo` and accessible `ThemeToggle`.
-- Mounted fixed institutional `GlobalHeader` with real-time FIX status, navigation links, and auth triggers.
-- Implemented 3D kinetic `AmbientCanvas` with mouse-following particle substrate, clean WebGL lifecycle, and tab visibility throttling.
-- Built 7-vertical `ServicesMegaMenu` flyout with category filtering, telemetry diagnostics rail, and ESC hotkey dismissal.
-- Built mathematical compounding return engine (`src/lib/calculator.ts`) across Capital Preservation, Balanced Growth, and Maximum Alpha postures.
-- Built `DonutChart3D` reactive visualizer and `PortfolioSimulator` dual-slider console.
-- Built `AssetDiscoveryHub` with horizontal 7-vault class tabs and active depository overview panel.
-- Enhanced terminal components with high-frequency kinetic animations: `AnimatedNumber` rolling counters, 3D gyroscope tilt, shared layout gliding tab indicators, and spotlight tracking.
-- Built live `TrustInfrastructure` Enclave status bar, Tier Switcher ($4.82B vs. $12.40B AUM), Audited Return Metrics strip, `ClientVoices` 3D tilt cards, `CustodyNetworkGrid` with 6 clearing nodes, and SEC/FINMA compliance `InstitutionalFooter`.
-- Built standardized `AssetContainer` with `min-height: 540px` zero-CLS frame, client-side hash routing (`#/services/:assetId`), and view-switch telemetry.
-- Built 7 dedicated modular sub-view panels: `CryptoPanel`, `StocksPanel`, `AiFundsPanel`, `RealEstatePanel`, `CarsPanel`, `VipCardsPanel`, and `WalletPanel`.
-- Built globally mounted 2-step `UnifiedAuthModal` with credentials (Step 1) and 6-digit `input-otp` (Step 2).
-- Implemented Navbar Sliding Dot Indicator with custom cubic-bezier easing (`cubic-bezier(0.25, 1, 0.5, 1)`), hover centering, and active/idle fade dynamics.
-- Created `WavyBackground` with mathematically seamless alternating diagonal sine-wave stripes in Licorice (`#08090B`) and Jet Black (`#0F1115`), translating infinitely along horizontal axis with linear timing function as the default application background.
-- Verified complete type safety (`tsc -b`), linting (`eslint`), and 62 passing Vitest unit & integration tests across 13 test suites.
-- Rewrote copy across the entire platform in clear, 8th-grade reading level plain English per Fintech UX Content Strategy:
-  - Eliminated forbidden buzzwords ("terminal", "leverage", "paradigm", "synergy", "disrupt", "algorithmic execution engine").
-  - Replaced technical jargon with plain equivalents ("Trading Terminal" -> "Dashboard" / "Trade Screen", "Automated AI Execution" -> "Smart Rules" / "Hands-free Investing", "Liquidity Pool" -> "Available Balance", "Automotive Inventory Liquidation" -> "Browse & Invest in Cars").
-  - Implemented high-intent SEO keywords (_invest in stocks online, auto investment platform, digital money wallet, smart automated investing_) across `<head>` meta tags and semantic H1/H2/H3 hierarchies.
-  - Upgraded all 7 asset vertical panels with dedicated plain English headers, subdecks, primary & secondary active CTAs, 3 distinct feature benefit cards, accessible tooltips, and friendly status badges (_Active, Pending, Settled_).
-- Maintained zero CLS (`min-h-[540px]`), full SSR parity, and 100% test suite passing rate (62/62 tests across 13 suites).
-- Designed new dynamic sovereign WavyAssets logo emblem featuring fluid sinusoidal waves intertwined with an ascending vault crest in Sovereign Gold (`#D4AF37`) and Emerald Accent (`#00C288`), applied as the default in `BrandLogo.tsx` and `public/favicon.svg`.
-- Enabled click-to-home navigation on `BrandLogo` (`window.scrollTo({ top: 0, behavior: 'smooth' })`, clearing hash routing deep-links and closing mega-menu).
-- Enhanced `WavyBackground.tsx` with theme responsiveness: renders Pure White (`#FFFFFF`) and Soft Alabaster (`#EDF2FB`) stripes with a light vignette in light mode, while preserving Licorice (`#08090B`) and Jet Black (`#0F1115`) in dark mode.
-- Made Services MegaMenu asset cards grid scrollable (`max-h-[60vh] sm:max-h-[520px] overflow-y-auto pr-1.5 custom-scrollbar`) so all 7 asset classes (Crypto, Stocks, AI Funds, Real Estate, Cars, VIP Cards, and Wallet) are fully accessible on any viewport height without clipping.
-- Fixed dark mode font color scheme in `InstitutionalFooter.tsx`: replaced low-contrast `text-outline` on disclaimers, `<p>` paragraphs, and compliance links with high-contrast `text-on-surface-variant` (`text-neutral-300` / `text-neutral-400` in dark mode) without modifying the dark mode wave background palette.
-- Restored missing `19.4% APY` badge on Crypto Yields in `InstitutionalFooter.tsx`, achieving 100% pass rate across 14 test suites (68/68 passing tests).
-- Rewrote `MegaMenuDiagnostics.tsx` in plain English per Fintech UX Content Strategy: upgraded headers, reserve capacity metrics, vault hubs, instant execution speed, reserve backing, and action buttons with high-contrast text tokens.
-- Fixed Services MegaMenu scroll glitch by transitioning from `absolute top-16` to `fixed top-16 left-0 right-0 z-40 max-h-[calc(100vh-4.5rem)] overflow-y-auto`, ensuring the menu is docked directly beneath the sticky header in the active viewport when opened after scrolling down.
-- Built interactive, lightweight 3D web asset hero container (`HeroAssetGyroscope.tsx`) featuring a multi-layered orbital gyroscope representing the 7 asset tiers with continuous slow-axis rotation (0.2 rad/s), gentle vertical bobbing, pointer parallax tracking with smooth damping, low-polygon `torusGeometry` rings, and tab-blur loop throttling.
-- Stripped all enclosing card borders, metric strips, and HUD badges to present a clean, pure 3D floating visual effect integrated seamlessly into the hero section.
-- Built kinetic typography entrance effect (`KineticHeroTypography.tsx`) with word-by-word horizontal expansion, vertical slide (`translateY: 30px -> 0px`), Gaussian blur-to-clarity transition (`blur(14px) -> blur(0px)`), and custom cubic bezier easing curve (`[0.22, 1, 0.36, 1]`).
-- Established integration test suite in `Tests/IntegrationTest/hero3DAndTypographyIntegration.test.tsx` verifying SSR rendering, pure 3D viewport mounting, and zero CLS parity (74/74 tests passing across 15 test suites).
-- Implemented smooth opposing horizontal entrance animations for `PortfolioSimulator.tsx`: the Left Column (`PORTFOLIO ESTIMATION SETTINGS`, sliders, protocol chips) slides in from the left (`x: -80 -> 0`, `opacity: 0 -> 1`), while the Right Column (`PORTFOLIO BREAKDOWN & ESTIMATED RETURN`, 3D donut chart, returns, risk matrix, CTAs) slides in from the right (`x: 80 -> 0`, `opacity: 0 -> 1`) with Framer Motion viewport triggers (`amount: 0.2`, `once: true`), GPU `willChange` acceleration, and `useReducedMotion()` accessibility fallback.
-- Enhanced `Tests/IntegrationTest/simulatorIntegration.test.tsx` with assertions verifying both `simulator-left-column` and `simulator-right-column` render with zero layout shift (74/74 tests passing across 15 test suites).
-- Replaced static `HARDWARE PERFORMANCE` metrics block in `AiFundsPanel.tsx` with a continuous autoplaying loop of `Robot.mp4` with no controls, custom telemetry overlay pill badge (`LIVE | AUTONOMOUS AI AGENT`), 100% automated execution bar, and Framer Motion opposing kinematics (`x: -30 -> 0` left column, `x: 30 -> 0` & `scale: 0.98 -> 1` video column) with full `useReducedMotion()` accessibility support.
-- Updated `Tests/IntegrationTest/assetPanelsAndAuthIntegration.test.tsx` asserting `data-testid="ai-funds-robot-video"`, continuous loop, autoplay, playsinline, and absence of controls (74/74 tests passing across 15 suites).
-- Replaced benchmark and metrics blocks across the remaining 6 asset vertical panels (`CryptoPanel`, `StocksPanel`, `RealEstatePanel`, `CarsPanel`, `VipCardsPanel`, `WalletPanel`) with corresponding continuous autoplaying MP4 video loops (`crypto.mp4`, `stock.mp4`, `real estate.mp4`, `cars.mp4`, `vip cards.mp4`, `wallet.mp4`) with zero controls, custom telemetry overlay pill badges, and Framer Motion opposing kinematics with `useReducedMotion()` fallback.
-- Enhanced `Tests/IntegrationTest/assetPanelsAndAuthIntegration.test.tsx` asserting all 7 vertical panel continuous video loops, autoplay, playsinline, and absence of controls (74/74 tests passing across 15 suites).
-
-- Enhanced `ClientVoices.tsx` with high-frequency kinetic animations and light-trace dynamics without altering structure, typography, or color scheme:
-  - Initial Entrance: Scroll-triggered staggered card entrance (`translateY(40px) -> 0`, `opacity: 0 -> 1`, ease-out curve `[0.16, 1, 0.3, 1]`, `0.15s` delay between cards).
-  - Border Beam Effect: Continuous moving glow/light-trace (`data-testid="border-beam-trace"`) along the outer 1px border path using a 4-second linear rotating conic-gradient sweep with CSS `mask-composite: exclude` / `WebkitMaskComposite: 'xor'`.
-  - Card Hover Reaction: On hover, elevates the card slightly (`translateY(-6px)`) with gold/emerald shadow intensification and smooth easing, fully compliant with `useReducedMotion()`.
-- Replaced initial avatar placeholders ("SZ", "HW", "EB", "AK", "VL", "MT") in `ClientVoices.tsx` and `trustData.ts` with photorealistic executive human face headshots in `src/assets/testimonials/` (Sheikh Tariq Al-Zahrani, Dr. Hendrik Weber, Eleanor de Broglie, Alexander Koenig, Victoria Laurent, Marcus Thorne), styled with a 4px micro-chamfer and gold hairline border while retaining accessible initials as an image fallback.
-- Enhanced `Tests/IntegrationTest/trustAndComplianceIntegration.test.tsx` asserting `border-beam-trace` and all avatar data-testids across both institutional and private wealth tiers (74/74 tests passing across 15 suites, zero lint errors, zero typecheck errors).
-- Implemented 5 major UX & feature enhancements per user directive:
-  1. Connected "VIEW PORTFOLIO SERVICE >" in `AssetDiscoveryHub.tsx` (`data-testid="discovery-view-portfolio-service-btn"`) to open the Unified Auth modal in Sign In mode (`openAuthModal('institutional', 'login')`).
-  2. Rewrote `UnifiedAuthModal.tsx` as a senior UX writer using clear, 8th-grade reading level plain English:
-     - Header: "WavyAssets SECURE ACCESS"
-     - Sign In: "Sign In to Your Account", "Welcome back. Access your dashboard, track live yields, and manage your portfolio.", "Email Address", "Password", "Continue to Verification ->"
-     - Request Mandate: "Create Your Account", "Join qualified investors and institutions managing multi-asset wealth securely.", "Create Password", "Create Account & Continue ->"
-     - Added required **Full Name** field (`data-testid="auth-fullname-input"`) with `User` icon and validation to the Request Mandate / Account Creation form.
-     - Rewrote Step 2 2FA: "Enter Verification Code", "6-Digit Security Code", "Verify & Access Dashboard", and "Identity Verified" success feedback.
-  3. Linked `/research` and `/#research` to `/research#/services/vip-cards`, activating the VIP Cards asset vertical in `GlobalHeader.tsx`, `useTerminalStore.ts` (`parseAssetHash`, `syncFromHash`), and `App.tsx`.
-  4. Created responsive 3D `AboutSection.tsx` (`id="about"`, `data-testid="about-section"`):
-     - Left side: Pure 3D WebGL animation (`AboutVaultCanvas3D.tsx`) featuring a multi-faceted dodecahedron sovereign vault core, inner glowing emerald nucleus, three concentric multi-axis orbital rings, ambient particle dust, pointer parallax damping, tab visibility throttling (`document.hidden`), and `prefers-reduced-motion` compliance.
-     - Right side: Editorial UX write-up in `Noto Serif` covering WavyAssets' mission, 3 core institutional pillars (Unified Multi-Asset Depository, Bank-Grade MPC Cold Storage, Direct Liquidity & Global Settlement), SEC/FINMA/SOC-2 regulatory badges, and CTAs.
-  5. Cleaned up `InstitutionalFooter.tsx`: removed the `19.4% APY` badge next to "Crypto Yields & Cold Storage".
-- Expanded automated integration test coverage in `Tests/IntegrationTest/aboutAndResearchIntegration.test.tsx`, `Tests/IntegrationTest/assetPanelsAndAuthIntegration.test.tsx`, `Tests/IntegrationTest/trustAndComplianceIntegration.test.tsx`, and `Tests/IntegrationTest/brandAndThemeIntegration.test.tsx`, achieving 100% pass rate across 16 test suites (81/81 passing tests).
-- Implemented Contact Form Modal & Section Centering and "B2B ONLY" writeup removal per user directive:
-  - Fixed Radix `DialogContent` max-width lock by importing `cn` with `tailwind-merge` in `src/components/ui/dialog.tsx` and applying `!max-w-4xl sm:!max-w-4xl lg:!max-w-5xl w-[92vw] max-h-[90vh] overflow-y-auto my-auto`, perfectly centering the contact form across both width and height.
-  - Centered on-page `ContactSection.tsx` (`id="contact"`) horizontally and vertically with `max-w-4xl lg:max-w-5xl mx-auto px-4`.
-  - Completely removed the `"B2B ONLY"` neon badge and right-padding from both `ContactModal.tsx` and `ContactSection.tsx`.
-  - Upgraded `Tests/IntegrationTest/contactIntegration.test.tsx` verifying absence of `"B2B ONLY"`, full input availability, sentinel mascot mounting, and App deck integration (88/88 tests passing across 17 test suites).
-  - Resolved all React 19 ESLint hook purity rules (`AboutVaultCanvas3D.tsx`) with zero lint errors and zero typecheck errors.
-- Built 3D Unified Finance Corporate Infographic (`src/components/about/UnifiedFinanceInfographic3D.tsx`) adhering strictly to user prompt specifications:
-  - Header & Top Subheader: "WAVYASSETS: THE FUTURE OF UNIFIED FINANCE" & "WAVYASSETS UNIFIES: GLOBAL WEALTH MANAGEMENT | DIGITAL ASSET CUSTODY | INSTITUTIONAL YIELD GENERATION".
-  - Embedded Editorial Story: Placed "ABOUT WAVYASSETS ", headline "Pioneering Multi-Asset Freedom and Cold-Storage Security", and narrative writeup directly beneath the top subheader banner.
-  - Centerpiece: 3D metallic glowing shield with sovereign gold bevel, cybernetic cyan ocean wave ribbon, heavy padlock with glowing cyan keyhole, and "COLD-STORAGE SECURITY" telemetry pill.
-  - Left Side: Glowing wireframe globe with dual orbital rings carrying traditional fiat currencies ($, €, ¥, £), gold bullion coins, and cryptocurrencies (₿, Ξ), labeled "PIONEERING MULTI-ASSET FREEDOM".
-  - Right Side: Three glowing pipeline flow splines with moving photons connecting from the central shield to Family Offices (tablet), Institutions (skyscrapers), and Smart Individual Investors (holographic charts).
-  - Far Right: Vertical "ELIMINATES THE CHAOS" section with fragmented tools (charts, bank facade, locked safe, pie charts) consolidated into WavyAssets.
-  - Bottom Footer: Pill-shaped glowing banner reading "TOTAL CONTROL, MATHEMATICAL TRANSPARENCY, AND PEACE OF MIND."
-- Removed redundant on-page `ContactSection.tsx` while leaving `ContactModal.tsx` and `ContactSentinelGraphic.tsx` untouched; updated `GlobalHeader` and App command deck so `#contact` seamlessly activates the institutional `ContactModal`.
-- Compacted vertical spacing in `UnifiedFinanceInfographic3D.tsx`: eliminated dead space between narrative text and infographic cards (per reference screenshots), calibrated canvas container height to hug content, and eliminated excessive bottom dead space above the footer pill banner ("TOTAL CONTROL, MATHEMATICAL TRANSPARENCY, AND PEACE OF MIND.").
-- Enlarged 3D WebGL animation in `UnifiedFinanceInfographic3D.tsx`: scaled up central Shield & Wave (+30%), wireframe Globe & orbital rings (+22%), flow splines, and brought camera closer to create an expansive, high-impact centerpiece.
-- Separated and connected the two 3D infographic parts: positioned the Multi-Asset Globe on the far left (`x = -4.8`) and the 3D Vault Shield with Padlock close to the far right (`x = 3.6`), leaving open visual breathing room in the center while bridging them with a luminous dual-aura connection conduit and streaming energy photons.
-- Implemented dual-theme (Obsidian Dark & Luxury Light) support and compact modal footprint for Contact modal & About section:
-  1. Compact Contact Modal: Reduced modal max-width from `max-w-5xl` to `!max-w-lg sm:!max-w-2xl lg:!max-w-3xl w-[92vw] sm:w-[86vw] max-h-[85vh]`, streamlined form padding to `p-4 sm:p-5 lg:p-6`, condensed input containers to `px-2.5 py-1.5`, and scaled mascot silhouette for a balanced, elegant footprint without overflowing viewports.
-  2. Dual-Theme Contact Modal: Preserved dark mode palette (`dark:bg-[#08090B]`, `dark:bg-[#0F1115]`, `dark:bg-[#07080A]`, `dark:border-outline/20`) completely identical to current aesthetics, while adding clean Luxury Light styling (`bg-white`, `bg-[#F4F6FB]`, `bg-[#EDF2FB]`, high-contrast text, and refined borders).
-  3. Dual-Theme Sentinel Mascot Graphic: Preserved dark mode gradient and glows while adding Luxury Light background gradient (`bg-gradient-to-b from-[#F4F6FB] via-[#EDF2FB] to-[#E2E7F4]`) and compact minimum container height.
-- Resolved mobile scroll clipping and vertical touch issues:
-  1. Contact Modal Mobile Top Start & Scroll: Removed `flex items-center justify-center my-auto` from `DialogContent` in `ContactModal.tsx` in favor of standard `block` layout with `max-h-[90dvh] sm:max-h-[88vh] overflow-y-auto overscroll-contain`. This permanently eliminates the CSS Flexbox cross-axis center clipping bug where content overflowed into negative scroll space, ensuring the full headline ("Fill out form and we contact you"), close button, and telemetry tag start right at the top (`scrollTop = 0`) and scroll smoothly down and back up.
-  2. Asset Terminal Mobile Vertical Scroll: Added `touch-pan-y touch-pan-x overscroll-x-contain` to `AssetNavRail.tsx` horizontal tabs and `touch-pan-y` to `AssetContainer.tsx` viewport. Ensured `GlobalHeader.tsx` always closes any open mega menu (`setMegaMenuOpen(false)`) on mobile navigation clicks so no fixed overlay blocks viewport scrolling. Added `pointer-events-none` to `<video>` across all 7 asset panels (`VipCardsPanel`, `CryptoPanel`, `StocksPanel`, `AiFundsPanel`, `RealEstatePanel`, `CarsPanel`, `WalletPanel`) so touch swipes over media pass seamlessly to native page scroll.
-- Verified 100% test pass rate across all 17 test suites (89/89 tests passing) with zero regressions.
-- Implemented Services Modal UX Rewrite, 3D Vector Icons, Sign-In Routing & Scroll-to-End Resolution:
-  1. Created bespoke, scalable 3D vector SVG icons (`Asset3DVectorIcons.tsx`) with isometric depth, surface gradients, and drop shadows for all 7 asset classes: `Crypto3DVectorIcon`, `Stocks3DVectorIcon`, `AiFunds3DVectorIcon`, `RealEstate3DVectorIcon`, `Cars3DVectorIcon`, `VipCards3DVectorIcon`, and `Wallet3DVectorIcon`.
-  2. Rewrote Services modal (`ServicesMegaMenu.tsx`) as a senior UX writer and digital marketing/SEO integration expert: plain English copy, high search-intent keywords (*Crypto Staking, Pre-IPO Shares, GPU Compute, Prime Commercial Real Estate, Exotic Collector Cars, Titanium Concierge Cards, Sovereign Digital Wallet*), and high-converting CTAs.
-  3. Routed all 7 asset vertical cards directly to the Sign-In modal on click (`openAuthModal('institutional', 'login')` and `setMegaMenuOpen(false)`).
-  4. Resolved scroll-to-end issue: converted modal to a full-viewport overlay (`fixed top-16 inset-x-0 bottom-0 bg-black/75 backdrop-blur-md overflow-y-auto pb-24`) with automatic background body scroll lock (`document.body.style.overflow = 'hidden'`), eliminating nested scroll traps so all 7 cards (including `Multi-Currency Sovereign Digital Wallet`), the diagnostics panel, and the regulatory footer bar scroll fully to the end with 96px bottom clearance.
-  5. Verified 100% test pass rate across all 17 test suites (89/89 tests passing).
-
-- Completed Sprint 6 (Week 6: Performance Profiling, WCAG Hardening, Custom 404 & Go-Live):
-  1. Built default system language and locale detection engine (`src/lib/locale.ts`), syncing `<html lang="...">` dynamically at runtime and updating currency formatters with system locale support.
-  2. Built sovereign custom 404 page (`NotFoundPage.tsx`) with sanitized telemetry diagnostics, plain English copy, and active recovery CTAs ("Return to Sovereign Terminal", "Browse Services", "Contact Custody Desk").
-  3. Replaced fragile research redirect in `App.tsx` with rigorous route validation engine (`isRoute404`), properly handling non-existing URLs (e.g. `/#client-voices/geme`, `/services/vip-cards`, `/#/404`) to render the custom 404 page without hijacking routes.
-  4. Implemented WebGL render loop culling via `IntersectionObserver` on `HeroAssetGyroscope.tsx` to stop GPU draw cycles when scrolled off-screen.
-  5. Built root-level `TerminalErrorBoundary.tsx` isolating runtime rendering crashes with an institutional fallback card, redacting internal stack traces and secrets per GEMINI.md security standards.
-  6. Added WCAG 2.1 AA keyboard accessibility skip-to-content link (`#main-content`) and ARIA live region for screen reader announcements.
-  7. Expanded automated test suite with unit tests in `Tests/UnitTest/locale.test.ts` and comprehensive integration tests in `Tests/IntegrationTest/sprint6HardeningAnd404Integration.test.tsx`.
-  8. Resolved SSR snapshot parity and routing prefix edge cases across `useTerminalStore.ts`, `App.tsx`, and `sprint6HardeningAnd404Integration.test.tsx`, achieving 100% pass rate across all 19 test suites (104/104 passing tests) with zero lint errors and zero TypeScript typecheck errors.
-
-- Completed Sprint 7 (Vercel Production Deployment, Robots.txt, Sitemap.xml & Security Hardening):
-  1. Created institutional `public/robots.txt` with standard crawler directives (`User-agent: *`, `Allow: /`, `Disallow: /api/`, `/admin/`, `/auth/`, `/private/`), crawl delay, and sitemap reference.
-  2. Created XML sitemap `public/sitemap.xml` indexing root and core asset vertical anchors (`/#services`, `/#about`, `/#trust`, `/#simulator`, `/#contact`).
-  3. Engineered production `vercel.json` with SPA routing rewrites (`/(.*) -> /index.html`), clean URLs, and immutable 1-year caching for `/assets/(.*)`.
-  4. Hardened security with strict Content-Security-Policy blocking `unsafe-eval` and unauthorized script injections while whitelisting Google Fonts and media blobs; added HSTS, X-Frame-Options DENY, nosniff, and strict referrer policy.
-  5. Diagnosed and verified console warnings: confirmed `contentscript.js:14083 MaxListenersExceededWarning` stems from injected Web3 wallet browser extensions and is external to application code; confirmed absence of `eval()` or `new Function()` in production build.
-  6. Optimized Vite build with Rollup `manualChunks` function, separating `three-vendor`, `motion-vendor`, `radix-vendor`, and `react-vendor` chunks, reducing main bundle size from 1.58MB to 328kB and cutting build time to 5.4s.
-  7. Built automated integration test suite in `Tests/IntegrationTest/sprint7VercelAndDeploymentIntegration.test.tsx` (113/113 tests passing across 20 test suites).
+- Installed approved project skills into `.agents/skills/`:
+  - `vitest`: Unit and integration testing orchestration.
+  - `prisma-database-setup`: SQLite and PostgreSQL datasource configuration.
+  - `prisma-cli`: Database CLI migrations and client generation.
+  - `prisma-client-api`: Type-safe queries, atomic transactions, and relation filters.
+- Created `GEMINI.MD` root governance file establishing documentation synchronization, global error handling, testing standards, and agent skills.
+- Created `.ai/agent.md` and updated `.ai/agents.md` defining the Principal Institutional Backend Engineer persona, workflows, and guardrails.
+- Formulated `.ai/project-overview.md` capturing target personas, problem definitions, 5 core modules, and operational SLAs (<50ms).
+- Formulated `.ai/architecture.md` defining NestJS modular structure, Prisma SQLite schema, standardized response envelope, and dashboard hand-off flow.
+- Formulated `.ai/code-standards.md` establishing DTO validation, Argon2id/AES-256-GCM standards, error boundaries, and test colocation rules.
+- Formulated `.ai/security.md` detailing the threat model, Zero PII logging, and the strict Production Sandbox Guard.
+- Formulated `.ai/ai-workflow-rules.md` structuring the 4-sprint roadmap, prompt-planning protocol, and pre-commit verification checklist.
+- Formulated `.ai/ui-context.md` aligning API data contracts with `Frontend/landing-page`, Resend email templates, and Swagger UI at `/api/docs`.
+- Synchronized root `.ai.md` with complete reading order and non-negotiable invariants.
+- Created `package.json` with NestJS 11, Prisma 6, Vitest, Argon2, Helmet, Throttler, Swagger, Socket.IO, Resend, and strict TypeScript.
+- Configured `tsconfig.json`, `tsconfig.build.json`, `nest-cli.json`, and `vitest.config.ts`.
+- Installed all 587 npm packages cleanly.
+- Formulated `prisma/schema.prisma`, generated Prisma Client, and pushed SQLite database (`dev.db`).
+- Verified baseline Vitest test suite in `Tests/UnitTest/foundation/environment.test.ts` (3/3 passing).
 
 ---
 
 ## Next Up
 
-- **Post-Sprint 7**: Connect custom production domain (`wavyassets.com`) in Vercel dashboard and configure DNS records.
+- **Sprint 1 Phase 2 Execution**:
+  1. Scaffold `src/main.ts` with global `ValidationPipe`, `AllExceptionsFilter`, Helmet, and Swagger setup.
+  2. Implement `PrismaService` and `HealthModule` (`/health/live`, `/health/ready`).
+  3. Wire PII-redacted logging and response transformation interceptor.

@@ -1,86 +1,183 @@
-# Code Standards — WavyAssets Institutional Terminal
+# Code Standards — WavyAssets Landing Page Backend
 
-## General Principles
+## General Engineering Principles
 
-1. **Precision & Single Responsibility**: Keep components, hooks, and mathematical modules small, well-scoped, and single-purpose.
-2. **Deterministic UI State**: The user interface must be a pure, predictable reflection of the global hash route and store state.
-3. **Zero Layout Shifts (CLS = 0)**: Pre-dimension all dynamic view containers (`min-height: 540px`) and skeleton frames to guarantee zero cumulative layout shift during asset transitions.
-
----
-
-## TypeScript Conventions
-
-- **Strict Type Checking**: Strict mode is enabled (`tsconfig.app.json`). Never use `any`. Use strict interfaces, discards, and unions.
-- **Normalized Data Schemas**: Define explicit TypeScript interfaces for all 7 asset classes (e.g., `CryptoAssetData`, `StockAssetData`, `RealEstateData`), ensuring strong typing across metric strips, order books, and inventory grids.
-- **Input Validation**: Validate and sanitize all numeric inputs and slider bounds before passing them to the compounding returns math engine.
+1. **Precision & Single Responsibility**: Every module, controller, service, and DTO must have a clear, isolated purpose and minimal surface area.
+2. **Defensive by Default**: Treat every incoming request as untrusted. Validate inputs via `class-validator`, sanitize outputs, and enforce security guards across all endpoints.
+3. **Deterministic Data Contracts**: Strictly adhere to defined API contracts, request payloads, and standardized JSON envelopes.
 
 ---
 
-## React 19 & Vite Standards
+## TypeScript & NestJS Standards
 
-- **Functional Components & Hooks**: Use modern React 19 hooks and patterns.
-- **Client-Side Hash Routing**: Listen to `hashchange` and `popstate` to synchronize URL hashes (`#/services/:assetId`) with the Zustand active tab state without causing hard browser reloads.
-- **Lazy Loading & Suspense**: Lazy-load heavy asset sub-views (`React.lazy`) and wrap them in `<Suspense fallback={<SkeletonPanel />}>` to keep the initial landing page bundle lightweight.
-
----
-
-## WebGL & Three.js Standards
-
-1. **Resource Lifecycle & Disposal**:
-   - Every Three.js geometry, material, texture, and custom shader instance must be explicitly deallocated (`geometry.dispose()`, `material.dispose()`) in component unmount / `useEffect` cleanup return functions.
-2. **Loop Throttling**:
-   - Throttle the `useFrame` or `requestAnimationFrame` render loop down to 5–10 FPS when the page is not visible (`document.hidden === true`).
-   - Use `IntersectionObserver` to pause 3D rendering when the canvas is scrolled out of the viewport.
-3. **Accessibility Fallback**:
-   - Check `window.matchMedia('(prefers-reduced-motion: reduce)')`. When active, bypass 3D camera animations, cursor-reactive mesh tilts, and perspective card hover effects, substituting subtle static CSS opacity transitions.
+- **Strict Type Checking**: Strict mode is enforced (`tsconfig.json`). The `any` type is strictly forbidden. Use explicit interfaces, generics, discriminated unions, and strong DTO typings.
+- **Explicit Return Types**: All controller methods and service functions must explicitly specify return types (e.g. `Promise<ApiResponse<InitiateAuthResponseDto>>`).
+- **Dependency Injection**: Use NestJS constructor-based dependency injection. Avoid global singletons or direct instantiations of injectable services.
+- **Lifecycle Management**: Properly implement NestJS lifecycle hooks (`onModuleInit`, `onModuleDestroy`) for services managing database pools (PrismaService) or background intervals (TickerGateway).
 
 ---
 
-## Styling & Token Discipline
+## DTOs & Input Validation Standards
 
-- **CSS Custom Properties**: Always use design system CSS variables (`var(--bg-base)`, `var(--accent-gold)`, `var(--border-default)`) via Tailwind v4. Hardcoded ad-hoc hex values in component JSX are strictly prohibited.
-- **Border Radius Adherence**: Use `rounded-sm` (`4px`) for buttons, inputs, and cards. Use `rounded-md` (`8px`) only for modal windows and elevated dialogs. True pill shapes are prohibited.
-- **Tabular Lining Numbers**: Always apply `font-mono` (`Inter`) with `tabular-nums` styling to financial figures, APYs, balances, and metrics.
+- **Validation Decorators**: All request payloads must be defined as class DTOs decorated with `class-validator` and `class-transformer`:
+  ```typescript
+  export class InquireLeadDto {
+    @ApiProperty({ example: 'Eleanor Vance' })
+    @IsString()
+    @MinLength(2)
+    @MaxLength(100)
+    fullName: string;
+
+    @ApiProperty({ example: 'vance@zurich-allocators.ch' })
+    @IsEmail()
+    @IsCorporateEmail() // Custom domain validator
+    workEmail: string;
+
+    @ApiProperty({ enum: ServiceVertical })
+    @IsEnum(ServiceVertical)
+    service: ServiceVertical;
+
+    @ApiProperty({ example: '$5M - $10M' })
+    @IsString()
+    allocation: string;
+  }
+  ```
+- **Global ValidationPipe Configuration**:
+  ```typescript
+  new ValidationPipe({
+    whitelist: true,              // Strip unwhitelisted payload fields
+    forbidNonWhitelisted: true,   // Abort with 400 if extra properties are sent
+    transform: true,              // Auto-transform primitive types
+    stopAtFirstError: false,
+  });
+  ```
+- **Honeypot Fields**: Include silent anti-spam fields (e.g. `website_hp`) in public forms; if populated, silently discard or flag as spam without failing noisily.
 
 ---
 
-## Error Handling & Resilience
+## Global Error Handling & Error Boundaries
 
-- **Component Error Boundaries**: Wrap all 3D WebGL canvases and dynamic asset sub-views in an `ErrorBoundary` that renders a graceful, dark-themed fallback banner with a manual reload trigger rather than crashing the page shell.
-- **Graceful Math Fallbacks**: Compounding returns math and currency formatters must catch NaN or out-of-range inputs and fail-safe to formatted default values (e.g., `$0.00`).
-- **Security Invariant**: Never leak internal component stack traces or unhandled promise rejections to the client UI.
-- 5. **Secure Error Handling**: Client responses must never leak stack traces, internal errors, or infrastructure details. Handle exceptions or route to global handlers securely.
+### 1. Standardized Response Envelope
+All HTTP endpoints must emit responses adhering to the institutional envelope:
+```typescript
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  timestamp: string;
+}
+```
+
+### 2. Global Exception Filter (`AllExceptionsFilter`)
+- Must catch both `HttpException` and unhandled system errors.
+- Never leak stack traces, database schema details, or system filepaths to client responses.
+- Return structured, sanitized JSON:
+  ```typescript
+  @Catch()
+  export class AllExceptionsFilter implements ExceptionFilter {
+    catch(exception: unknown, host: ArgumentsHost) {
+      const ctx = host.switchToHttp();
+      const response = ctx.getResponse<Response>();
+      
+      const status = exception instanceof HttpException 
+        ? exception.getStatus() 
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+
+      const message = exception instanceof HttpException
+        ? exception.getResponse()
+        : 'Internal institutional error';
+
+      response.status(status).json({
+        success: false,
+        error: typeof message === 'string' ? message : (message as any).message || 'Request failed',
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+  ```
+
+### 3. Domain Error Handling When Required
+- **Auth Service**:
+  - Failed credential verification must throw `UnauthorizedException('Invalid credentials or challenge expired')`.
+  - Exceeded OTP attempts (>3) must permanently invalidate the challenge and throw `UnauthorizedException('Verification challenge expired')`.
+  - Submission of dev static OTP in production must throw `ForbiddenException('Sandbox execution forbidden in production')`.
+- **External Integration Boundaries**:
+  - Resend email dispatches and Telegram bot alerts must be wrapped in `try/catch` blocks.
+  - If Resend experiences a transient API error, log the failure with redacted PII and fallback gracefully (or queue retry) without failing the customer's initiate challenge.
+  - Market data upstream queries (CoinGecko / financial APIs) must be protected with an in-memory circuit-breaker serving cached quotes on upstream degradation.
+- **Database Exceptions**:
+  - Intercept Prisma error codes (e.g. `P2002` unique constraint violation) and throw corresponding HTTP exceptions (`ConflictException`) rather than allowing raw database errors to bubble up.
 
 ---
 
-## Logging & Telemetry
+## Cryptographic & Security Coding Standards
 
-- Instrument view-swap telemetry (`telemetry.trackViewSwapped(assetId, source)`) to monitor navigation flows.
-- Sanitize and redact all user-entered email addresses, passwords, and 6-digit OTP codes prior to logging.
-- 6. **Secure Logging**: All emitted logs must redact PII, authorization tokens, secrets, and private credentials.
+- **Password & OTP Hashing**: Use Argon2id with memory-hard parameters:
+  ```typescript
+  import * as argon2 from 'argon2';
+  
+  // Hashing
+  const hash = await argon2.hash(plainText, {
+    type: argon2.argon2id,
+    memoryCost: 65536, // 64 MB
+    timeCost: 3,
+    parallelism: 4,
+  });
+  
+  // Verification (constant-time)
+  const isValid = await argon2.verify(hash, plainText);
+  ```
+- **Field-Level Encryption (AES-256-GCM)**:
+  - Use authenticated encryption with a 256-bit key, random 12-byte initialization vector (IV), and 16-byte authentication tag.
+  - Format storage payload as `iv:authTag:cipherText` (hex encoded).
+- **Secure Random Generation**:
+  - OTP numeric generation: `crypto.randomInt(100000, 1000000).toString()`.
+  - Session tokens: `crypto.randomBytes(32).toString('hex')`.
 
 ---
 
-## Git Commit Standards
+## Prisma ORM Database Standards
 
-- **Git Commit Frequency**: Commit code as you build. Every working session or phase must contain **at least two git commits**.
-- **Conventional Commit Patterns**: All git commit messages must strictly adhere to the following prefixes:
-  - `feat:` for new features (e.g. `feat: add Gemini structured vision output parser`)
-  - `fix:` for bug fixes (e.g. `fix: resolve Ollama embedding cosine distance score bug`)
-  - `refactor:` for code refactoring (e.g. `refactor: clean up Mismatch Guard validation logic`)
-  - `docs:` for documentation updates (e.g. `docs: update progress-tracker and architecture context`)
-  - `tests:` for tests addition and modification (e.g. `tests: add pytest suite for confidence gate`)
-  - `chore:` for maintenance tasks and environment setup (e.g. `chore: configure requirements.txt and dotenv`)
+- **Prisma Client Injection**: Always inject `PrismaService` into domain services; never instantiate new PrismaClient instances.
+- **Atomic Transactions**: Multi-model writes (e.g. creating user, writing session token, invalidating OTP challenge) must be executed inside `prisma.$transaction([...])`.
+- **No Raw SQL**: Raw SQL (`$queryRaw`) is prohibited unless performing high-performance aggregations, and even then, must use tagged template parameters to prevent SQL injection.
+- **Database Soft Invariants**:
+  - Sensitive lead fields must never be stored in plain text.
+  - OTP codes must always be hashed before persistence; never store plain text OTPs in SQLite.
 
 ---
 
-## Testing & Quality Assurance
+## Logging & Redaction Discipline
 
+- Use NestJS built-in logger or Winston with a custom PII Redaction Interceptor.
+- Strip or mask all occurrences of:
+  - `passphrase`, `password`, `otpCode`, `code`
+  - `authorization`, `cookie`, `token`
+  - `email`, `workEmail`, `telegram` (redact prefix: `a***@domain.com`)
+  - Full names and phone numbers.
+
+---
+
+## Testing Standards & Directory Layout
+
+All tests are executed via **Vitest**:
 - **Unit Tests (`Tests/UnitTest/<test-name>/`)**:
-  - `Tests/UnitTest/returns-math/`: Verify compounding returns calculations, APY logic, and slider boundary handling.
-  - `Tests/UnitTest/formatters/`: Verify currency, tabular lining figures, and BPS formatting across edge cases.
-  - `Tests/UnitTest/store/`: Validate Zustand state transitions (active tab, modal steps, theme changes).
+  - Test individual service methods, crypto ciphers, and DTO validators in complete isolation.
+  - Mock PrismaService and external network dependencies using `vi.mock` or mock factories.
+  - Fast execution benchmark: `< 10ms` per unit test.
 - **Integration Tests (`Tests/IntegrationTest/<test-name>/`)**:
-  - `Tests/IntegrationTest/hash-routing/`: Verify URL hash changes accurately swap the dynamic panel in under 50ms.
-  - `Tests/IntegrationTest/auth-modal/`: Verify the 2-step modal opens, switches between Step 1 and Step 2 OTP, and traps focus correctly.
-  - `Tests/IntegrationTest/theme-engine/`: Verify dark/light theme switching persists to `localStorage`.
+  - Test end-to-end controller flows using Supertest against a test NestJS instance.
+  - Validate database persistence, transaction rollbacks, rate limiting, and HTTP response envelopes.
+  - Verify the **Production Sandbox Guard** (`NODE_ENV=production` rejects `DEV_STATIC_OTP` with `403 Forbidden`).
+
+---
+
+## Pre-Commit Checklist
+
+Before committing any backend code or declaring a unit of work complete:
+1. **Typecheck**: `npx tsc --noEmit` with zero errors.
+2. **Linter**: `npm run lint` with zero errors or warnings.
+3. **Automated Tests**: `npm run test` ensuring all tests in `Tests/UnitTest/` and `Tests/IntegrationTest/` pass.
+4. **Error Handling & Envelope Check**: Confirm all endpoints return `{ success, data, error, timestamp }` and errors are sanitized.
+5. **PII Redaction Check**: Confirm no plain text credentials or PII appear in server logs.
+6. **Progress Tracker**: Update `.ai/progress-tracker.md` and OpenAPI documentation at `/api/docs`.
