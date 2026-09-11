@@ -13,5 +13,5 @@ dist-ssr/
 .DS_Store
 *.suo
 
-# Branch Isolation: Public landing page is maintained on its dedicated branch (Public-Landing-Page)
-Frontend/
+# Tools & custom directories
+tools/
