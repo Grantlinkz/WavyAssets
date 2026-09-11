@@ -26,16 +26,16 @@
 - [x] Implement Helmet security headers, CORS origin whitelisting, and PII-redacted logger.
 - [x] Scaffold `AppModule`, `PrismaService`, and health check controllers (`/health/live`, `/health/ready`).
 
-### [ ] Sprint 2: Authentication Gateway & User Dashboard Hand-off
-- [ ] Implement `AuthModule` with `/api/v1/auth/initiate` and `/api/v1/auth/verify-otp`.
-- [ ] Build Argon2id password hashing and constant-time verification service.
-- [ ] Implement cryptographically secure 6-digit OTP generator (`crypto.randomInt`) with 5-minute TTL and max 3-attempt invalidation.
-- [ ] Configure transactional email gateway via Resend API (`security@wavyassets.com`) with Swiss typography.
-- [ ] Configure encrypted enclave dispatch via Telegram bot for accredited/institutional tier accounts.
-- [ ] Implement **Production Sandbox Guard**: strictly reject `DEV_STATIC_OTP` and `EMAIL_PROVIDER=console` in production with HTTP 403 Forbidden.
-- [ ] Implement signed JWT access token issuance and `HttpOnly`, `Secure`, `SameSite=Strict` refresh cookies.
-- [ ] Implement dashboard hand-off exchange ticket mechanism for seamless client redirection to `user-dashboard`.
-- [ ] Establish unit and integration tests validating auth flows, password hashing, and brute-force lockouts in `Tests/UnitTest/auth/` and `Tests/IntegrationTest/auth-flow/`.
+### [x] Sprint 2: Authentication Gateway & User Dashboard Hand-off
+- [x] Implement `AuthModule` with `/api/v1/auth/initiate` and `/api/v1/auth/verify-otp`.
+- [x] Build Argon2id password hashing and constant-time verification service.
+- [x] Implement cryptographically secure 6-digit OTP generator (`crypto.randomInt`) with 5-minute TTL and max 3-attempt invalidation.
+- [x] Configure transactional email gateway via Resend API (`security@wavyassets.com`) with Swiss typography.
+- [x] Configure encrypted enclave dispatch via Telegram bot for accredited/institutional tier accounts.
+- [x] Implement **Production Sandbox Guard**: strictly reject `DEV_STATIC_OTP` and `EMAIL_PROVIDER=console` in production with HTTP 403 Forbidden.
+- [x] Implement signed JWT access token issuance and `HttpOnly`, `Secure`, `SameSite=Strict` refresh cookies.
+- [x] Implement dashboard hand-off exchange ticket mechanism for seamless client redirection to `user-dashboard`.
+- [x] Establish unit and integration tests validating auth flows, password hashing, and brute-force lockouts in `Tests/UnitTest/auth/` and `Tests/IntegrationTest/auth-flow/`.
 
 ### [ ] Sprint 3: Lead Pipeline, Simulation Intent & Newsletter Modules
 - [ ] Implement `LeadModule` with `/api/v1/leads/inquire` validating corporate domains and filtering disposable email providers.
@@ -83,16 +83,24 @@
 - Built `PrismaService` handling connection lifecycle and database readiness probes.
 - Built `HealthModule` exposing `/health/live` and `/health/ready` with process uptime, memory metrics, and database connectivity.
 - Configured `src/main.ts` with Helmet defensive headers, CORS whitelisting, Cookie Parser, global `ValidationPipe`, global prefix `/api/v1`, and OpenAPI/Swagger UI at `/api/docs`.
-- Verified complete Vitest test suite with 6 test files and 22/22 passing tests across unit and integration levels.
+- Verified complete Vitest test suite for Sprint 1 with 6 test files and 22/22 passing tests.
+- Built `CryptoService` implementing memory-hard Argon2id password hashing, constant-time verification, cryptographic 6-digit numeric OTP generation, and deterministic HMAC-SHA256 bearer token hashing.
+- Built `EmailService` rendering Swiss-typography HTML emails with 5-minute countdown expiry, security ribbon, and Resend API dispatch.
+- Built `TelegramService` delivering real-time Enclave dual-channel 2FA alerts for institutional and accredited wealth tiers.
+- Implemented `AuthModule` and `AuthController` with `/api/v1/auth/initiate`, `/api/v1/auth/verify-otp`, `/api/v1/auth/exchange`, `/api/v1/auth/refresh`, `/api/v1/auth/logout`, and `/api/v1/auth/me`.
+- Enforced strict **Production Sandbox Guard** rejecting `DEV_STATIC_OTP` in `NODE_ENV=production` with `HTTP 403 Forbidden`.
+- Implemented dashboard handoff exchange ticket mechanism issuing `wavy_handoff` cookie and single-use burned token at rest.
+- Verified complete Vitest test suite across 11 test files with 46/46 passing tests.
 
 ---
 
 ## Next Up
 
-- **Sprint 2: Authentication Gateway & User Dashboard Hand-off**:
-  1. Formulate prompt `prompts/sprint-2-auth-gateway.md` and obtain approval.
-  2. Implement `AuthModule` with `/api/v1/auth/initiate` and `/api/v1/auth/verify-otp`.
-  3. Implement Argon2id password hashing, cryptographic 6-digit OTP generator, and 3-attempt invalidation.
-  4. Configure Resend email gateway and Telegram Enclave alerts.
-  5. Enforce **Production Sandbox Guard** (`403 Forbidden` on sandbox flags in production).
-  6. Issue signed JWT tokens, `HttpOnly` refresh cookies, and dashboard handoff ticket mechanism.
+- **Sprint 3: Lead Pipeline, Simulation Intent & Newsletter Modules**:
+  1. Formulate prompt `prompts/sprint-3-leads-simulation.md` and obtain approval.
+  2. Implement `LeadModule` with `/api/v1/leads/inquire` validating corporate domains and filtering disposable email providers.
+  3. Implement AES-256-GCM field encryption for sensitive contact PII (`workEmail`, `telegram`, phone) with blind index hashing (`workEmailHash`).
+  4. Implement anti-spam honeypot detection and mandate priority classifier.
+  5. Implement webhook dispatcher for institutional CRM / Slack / Telegram notifications.
+  6. Implement `SimulationModule` with `/api/v1/simulation/save` tokenizing capital allocation and risk posture for onboarding pre-fill.
+  7. Implement `NewsletterModule` with double opt-in verification and `ComplianceModule` audit trail logging.
