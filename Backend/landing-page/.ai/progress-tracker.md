@@ -20,11 +20,11 @@
 - [x] Generate Prisma Client (`v6.19.3`) and synchronize local SQLite database (`dev.db`).
 - [x] Establish baseline Vitest unit test suite verifying Argon2id, crypto OTP, and AES-256-GCM ciphers (3/3 tests passing).
 
-### [ ] Sprint 1 (Phase 2: Core Gateway Services & Middleware)
-- [ ] Implement global `ValidationPipe` (`whitelist: true`, `forbidNonWhitelisted: true`) and standardized JSON response envelope (`{ success, data, error, timestamp }`).
-- [ ] Implement global `AllExceptionsFilter` preventing stack trace leaks and sanitizing system errors.
-- [ ] Implement Helmet security headers, CORS origin whitelisting, and PII-redacted logger.
-- [ ] Scaffold `AppModule`, `PrismaService`, and health check controllers (`/health/live`, `/health/ready`).
+### [x] Sprint 1 (Phase 2: Core Gateway Services & Middleware)
+- [x] Implement global `ValidationPipe` (`whitelist: true`, `forbidNonWhitelisted: true`) and standardized JSON response envelope (`{ success, data, error, timestamp }`).
+- [x] Implement global `AllExceptionsFilter` preventing stack trace leaks and sanitizing system errors.
+- [x] Implement Helmet security headers, CORS origin whitelisting, and PII-redacted logger.
+- [x] Scaffold `AppModule`, `PrismaService`, and health check controllers (`/health/live`, `/health/ready`).
 
 ### [ ] Sprint 2: Authentication Gateway & User Dashboard Hand-off
 - [ ] Implement `AuthModule` with `/api/v1/auth/initiate` and `/api/v1/auth/verify-otp`.
@@ -75,13 +75,24 @@
 - Configured `tsconfig.json`, `tsconfig.build.json`, `nest-cli.json`, and `vitest.config.ts`.
 - Installed all 587 npm packages cleanly.
 - Formulated `prisma/schema.prisma`, generated Prisma Client, and pushed SQLite database (`dev.db`).
-- Verified baseline Vitest test suite in `Tests/UnitTest/foundation/environment.test.ts` (3/3 passing).
+- Verified baseline Vitest test suite in `Tests/UnitTest/foundation/environment.test.ts` (4/4 passing).
+- Configured strongly typed configuration service and runtime environment validator with Production Sandbox Guard (`src/config/`).
+- Implemented global `TransformInterceptor` emitting standardized institutional API responses (`{ success, data, timestamp }`).
+- Implemented `PiiRedactionInterceptor` stripping credentials, tokens, OTPs, full names, and sensitive email prefixes from server traffic logs.
+- Implemented global `AllExceptionsFilter` preventing stack trace leaks, formatting sanitized error envelopes, and suppressing internal Prisma/SQLite database errors.
+- Built `PrismaService` handling connection lifecycle and database readiness probes.
+- Built `HealthModule` exposing `/health/live` and `/health/ready` with process uptime, memory metrics, and database connectivity.
+- Configured `src/main.ts` with Helmet defensive headers, CORS whitelisting, Cookie Parser, global `ValidationPipe`, global prefix `/api/v1`, and OpenAPI/Swagger UI at `/api/docs`.
+- Verified complete Vitest test suite with 6 test files and 22/22 passing tests across unit and integration levels.
 
 ---
 
 ## Next Up
 
-- **Sprint 1 Phase 2 Execution**:
-  1. Scaffold `src/main.ts` with global `ValidationPipe`, `AllExceptionsFilter`, Helmet, and Swagger setup.
-  2. Implement `PrismaService` and `HealthModule` (`/health/live`, `/health/ready`).
-  3. Wire PII-redacted logging and response transformation interceptor.
+- **Sprint 2: Authentication Gateway & User Dashboard Hand-off**:
+  1. Formulate prompt `prompts/sprint-2-auth-gateway.md` and obtain approval.
+  2. Implement `AuthModule` with `/api/v1/auth/initiate` and `/api/v1/auth/verify-otp`.
+  3. Implement Argon2id password hashing, cryptographic 6-digit OTP generator, and 3-attempt invalidation.
+  4. Configure Resend email gateway and Telegram Enclave alerts.
+  5. Enforce **Production Sandbox Guard** (`403 Forbidden` on sandbox flags in production).
+  6. Issue signed JWT tokens, `HttpOnly` refresh cookies, and dashboard handoff ticket mechanism.

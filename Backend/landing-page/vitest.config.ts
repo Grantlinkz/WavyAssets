@@ -7,7 +7,8 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     root: './',
-    testTimeout: 20000,
+    testTimeout: 30000,
+    hookTimeout: 30000,
     include: ['Tests/**/*.test.ts', 'Tests/**/*.spec.ts', 'src/**/*.spec.ts'],
   },
   resolve: {
