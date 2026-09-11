@@ -7,6 +7,11 @@ import { validateEnvironment } from './config/env.validation';
 import { PrismaModule } from './modules/prisma/prisma.module';
 import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { LeadsModule } from './modules/leads/leads.module';
+import { SimulationModule } from './modules/simulation/simulation.module';
+import { NewsletterModule } from './modules/newsletter/newsletter.module';
+import { ComplianceModule } from './modules/compliance/compliance.module';
+import { TelemetryModule } from './modules/telemetry/telemetry.module';
 
 @Module({
   imports: [
@@ -34,6 +39,11 @@ import { AuthModule } from './modules/auth/auth.module';
     PrismaModule,
     HealthModule,
     AuthModule,
+    LeadsModule,
+    SimulationModule,
+    NewsletterModule,
+    ComplianceModule,
+    TelemetryModule,
   ],
   providers: [
     {
