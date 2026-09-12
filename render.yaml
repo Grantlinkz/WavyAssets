@@ -11,7 +11,7 @@ services:
     plan: free
     region: oregon
     rootDir: Backend/landing-page
-    buildCommand: npm install && npm run build:render
+    buildCommand: npm install --include=dev && npm run build:render
     startCommand: npm run start:prod
     healthCheckPath: /health/live
     autoDeploy: true
