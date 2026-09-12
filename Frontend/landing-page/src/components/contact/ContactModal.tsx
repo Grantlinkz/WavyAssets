@@ -123,7 +123,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
 
       setSuccessMessage(
         res.data?.message ||
-          'Your mandate request has been securely routed to our institutional allocations desk.'
+          'We received your message and will get back to you shortly. A confirmation has been sent to your email.'
       );
       setIsSuccess(true);
 
@@ -136,7 +136,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
         setCompanyName('');
         setWebsiteUrl('');
         setSuccessMessage('');
-      }, 2500);
+      }, 4000);
     } catch (err: unknown) {
       const message =
         err instanceof ApiError
@@ -197,11 +197,11 @@ export const ContactModal: React.FC<ContactModalProps> = ({
           >
             <CheckCircle2 className="w-10 h-10 text-[#A6FF00] animate-bounce" />
             <div className="font-headline-sm text-base text-slate-900 dark:text-on-surface font-bold">
-              Inquiry Dispatched Successfully
+              We Received Your Message
             </div>
             <p className="font-sans text-[11px] text-slate-600 dark:text-on-surface-variant max-w-sm">
               {successMessage ||
-                'Your mandate request has been securely routed to our institutional allocations desk. A fiduciary director will contact you within 2 business hours.'}
+                'We received your message and will get back to you shortly. A confirmation has been sent to your email.'}
             </p>
           </motion.div>
         ) : (

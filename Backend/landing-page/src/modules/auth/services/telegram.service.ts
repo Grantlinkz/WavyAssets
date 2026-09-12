@@ -105,5 +105,47 @@ _Zero-Trust Hardware Enclave Alert (Node Geneva-01)_
       return false;
     }
   }
+
+  /**
+   * Dispatches contact inquiry notification to the Telegram Enclave channel for desk follow-up.
+   */
+  async sendContactInquiryNotification(options: {
+    inquiryId: string;
+    fullName: string;
+    companyName: string;
+    workEmail: string;
+    telegram?: string;
+    service: string;
+    allocationRange: string;
+    isPriority: boolean;
+  }): Promise<boolean> {
+    const maskedEmail = options.workEmail.replace(/^(.{2})(.*)(@.*)$/, '$1***$3');
+    const priorityBadge = options.isPriority ? '🚨 *[PRIORITY MANDATE]*' : '📬 *[NEW CONTACT INQUIRY]*';
+
+    const message = `
+${priorityBadge}
+━━━━━━━━━━━━━━━━━━━━━━━━
+*Status:* We received your message and we will get back to you
+*Reference ID:* \`${options.inquiryId.slice(0, 12)}\`
+*Client Name:* ${options.fullName}
+*Company / Fund:* ${options.companyName}
+*Email:* \`${maskedEmail}\`
+*Telegram:* ${options.telegram ? `\`${options.telegram}\`` : '_Not provided_'}
+*Service Focus:* ${options.service}
+*Allocation Tier:* ${options.allocationRange}
+*Timestamp (UTC):* ${new Date().toUTCString()}
+━━━━━━━━━━━━━━━━━━━━━━━━
+_Action Required: Auto-response confirmation dispatched to user. Desk follow-up required within 2h._
+    `.trim();
+
+    if (!this.enabled || !this.botToken || !this.chatId) {
+      this.logger.log(
+        `[TELEGRAM-DEV-NOTIFICATION] Contact inquiry alert: ${options.fullName} (${options.companyName}) - ${options.service} [${options.allocationRange}], Telegram: ${options.telegram || 'None'}`,
+      );
+      return true;
+    }
+
+    return this.sendSecurityAlert(message);
+  }
 }
 

@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CryptoService } from '../../common/utils/crypto.service';
 import { TelegramService } from '../auth/services/telegram.service';
+import { EmailService } from '../auth/services/email.service';
 import { LeadInquiryDto, LeadInquiryResponseDto } from './dto/lead.dto';
 import { maskEmail } from '../../common/interceptors/pii-redaction.interceptor';
 
@@ -42,6 +43,7 @@ export class LeadsService {
     private readonly prisma: PrismaService,
     private readonly crypto: CryptoService,
     private readonly telegramService: TelegramService,
+    private readonly emailService: EmailService,
   ) {}
 
   /**
@@ -118,17 +120,46 @@ export class LeadsService {
       },
     });
 
-    // Dual Notification for Priority Institutional Mandates
-    if (isPriority && !isSpam) {
+    // 1. Automated Response Email to User by Default
+    if (!isSpam) {
       try {
-        const priorityAlert = `🏛️ [PRIORITY MANDATE] ${dto.companyName.trim()} submitted inquiry for ${dto.service} with allocation ${dto.allocationRange} (Domain: ${domainEval.domain}, Score: ${domainEval.score})`;
-        await this.telegramService.sendSecurityAlert(priorityAlert);
+        await this.emailService.sendContactConfirmationEmail({
+          toEmail: normalizedEmail,
+          fullName: dto.fullName.trim(),
+          companyName: dto.companyName.trim(),
+          service: dto.service,
+          allocationRange: dto.allocationRange,
+          inquiryId: leadRecord.id,
+          telegram: dto.telegram?.trim(),
+          websiteUrl: dto.websiteUrl?.trim(),
+        });
+      } catch (err) {
+        this.logger.error(
+          `Failed to dispatch automated contact confirmation email to ${maskEmail(normalizedEmail)}`,
+          err,
+        );
+      }
+    }
+
+    // 2. Dual Notification for Institutional Mandates via Telegram Enclave
+    if (!isSpam) {
+      try {
+        await this.telegramService.sendContactInquiryNotification({
+          inquiryId: leadRecord.id,
+          fullName: dto.fullName.trim(),
+          companyName: dto.companyName.trim(),
+          workEmail: normalizedEmail,
+          telegram: dto.telegram?.trim(),
+          service: dto.service,
+          allocationRange: dto.allocationRange,
+          isPriority,
+        });
         await this.prisma.leadInquiry.update({
           where: { id: leadRecord.id },
           data: { crmDispatched: true },
         });
       } catch (err) {
-        this.logger.error('Failed to dispatch priority mandate alert to Telegram Enclave', err);
+        this.logger.error('Failed to dispatch mandate alert to Telegram Enclave', err);
       }
     }
 
@@ -141,9 +172,8 @@ export class LeadsService {
       status: isPriority ? 'PRIORITY_REVIEW' : 'ACCEPTED',
       priority: isPriority,
       receivedAt: leadRecord.createdAt.toISOString(),
-      message: isPriority
-        ? 'Your institutional mandate inquiry has been prioritized and routed to executive custody partners.'
-        : 'Your mandate inquiry has been safely ingested and queued for desk review.',
+      message:
+        'We received your message and we will get back to you shortly. A confirmation has been sent to your email.',
     };
   }
 }

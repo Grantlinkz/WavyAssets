@@ -4,12 +4,14 @@ import { LeadsService } from '../../../src/modules/leads/leads.service';
 import { PrismaService } from '../../../src/modules/prisma/prisma.service';
 import { CryptoService } from '../../../src/common/utils/crypto.service';
 import { TelegramService } from '../../../src/modules/auth/services/telegram.service';
+import { EmailService } from '../../../src/modules/auth/services/email.service';
 
 describe('LeadsService Unit Tests', () => {
   let leadsService: LeadsService;
   let mockPrisma: any;
   let mockCrypto: any;
   let mockTelegram: any;
+  let mockEmail: any;
 
   beforeEach(() => {
     mockPrisma = {
@@ -32,12 +34,18 @@ describe('LeadsService Unit Tests', () => {
 
     mockTelegram = {
       sendSecurityAlert: vi.fn().mockResolvedValue(true),
+      sendContactInquiryNotification: vi.fn().mockResolvedValue(true),
+    };
+
+    mockEmail = {
+      sendContactConfirmationEmail: vi.fn().mockResolvedValue(true),
     };
 
     leadsService = new LeadsService(
       mockPrisma as PrismaService,
       mockCrypto as CryptoService,
       mockTelegram as TelegramService,
+      mockEmail as EmailService,
     );
   });
 
@@ -84,8 +92,19 @@ describe('LeadsService Unit Tests', () => {
       }),
     );
 
-    // Verify priority telegram alert dispatched
-    expect(mockTelegram.sendSecurityAlert).toHaveBeenCalled();
+    // Verify auto-response confirmation email dispatched to user
+    expect(mockEmail.sendContactConfirmationEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        toEmail: 'beatrix@fischer-familyoffice.ch',
+        fullName: 'Dr. Beatrix Fischer',
+        companyName: 'Fischer Family Office AG',
+        service: 'AI_FUNDS',
+        allocationRange: '$5M - $10M',
+      }),
+    );
+
+    // Verify telegram notification dispatched
+    expect(mockTelegram.sendContactInquiryNotification).toHaveBeenCalled();
   });
 
   it('should flag inquiry as spam if honeypot field is filled without throwing exception', async () => {
@@ -107,7 +126,8 @@ describe('LeadsService Unit Tests', () => {
       }),
     );
 
-    // Telegram alert should NOT be sent for spam
-    expect(mockTelegram.sendSecurityAlert).not.toHaveBeenCalled();
+    // Confirmation email and Telegram alert should NOT be sent for spam
+    expect(mockEmail.sendContactConfirmationEmail).not.toHaveBeenCalled();
+    expect(mockTelegram.sendContactInquiryNotification).not.toHaveBeenCalled();
   });
 });
