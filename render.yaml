@@ -25,7 +25,7 @@ services:
       - key: CLIENT_URL
         value: https://wavy-assets.vercel.app
       - key: DATABASE_URL
-        value: file:./dev.db
+        sync: false # User enters their Prisma Postgres connection string in Render dashboard
       - key: JWT_SECRET
         generateValue: true
       - key: REFRESH_TOKEN_SECRET
