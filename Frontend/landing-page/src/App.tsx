@@ -25,8 +25,20 @@ import {
   getDeltaColorClass,
 } from './lib/formatters';
 import { Activity } from 'lucide-react';
+import { telemetryApi } from './lib/api';
 
-const syndicateFeeds = [
+export interface TickerFeedItem {
+  pair: string;
+  price?: number;
+  delta?: number;
+  apy?: number;
+  capRate?: number;
+  yieldRate?: number;
+  bps?: number;
+  type?: string;
+}
+
+const syndicateFeeds: TickerFeedItem[] = [
   { pair: 'BTC/USD', price: 94240.5, delta: 2.84, type: 'crypto' },
   { pair: 'ETH/USD', price: 3420.1, delta: 1.91, type: 'crypto' },
   { pair: 'SPX 500', price: 5980.2, delta: 0.42, type: 'stocks' },
@@ -41,6 +53,7 @@ export interface AppProps {
 }
 
 export const App: React.FC<AppProps> = ({ is404: is404Prop }) => {
+  const [liveFeeds, setLiveFeeds] = React.useState<TickerFeedItem[]>(syndicateFeeds);
   const storeIs404 = useTerminalStore((state) => state.is404);
   const is404 =
     is404Prop !== undefined
@@ -62,6 +75,37 @@ export const App: React.FC<AppProps> = ({ is404: is404Prop }) => {
       window.removeEventListener('popstate', handleRoutingChange);
     };
   }, [syncFromHash]);
+
+  // Fetch real-time market benchmark quotes from telemetry gateway
+  React.useEffect(() => {
+    let isMounted = true;
+    const fetchQuotes = async () => {
+      try {
+        const res = await telemetryApi.getTickerQuotes();
+        if (res.data?.quotes && res.data.quotes.length > 0 && isMounted) {
+          const mapped: TickerFeedItem[] = res.data.quotes.map((q) => {
+            const deltaVal = parseFloat(q.change24h.replace(/[^0-9.-]/g, '')) || 0;
+            return {
+              pair: q.symbol,
+              price: q.price,
+              delta: deltaVal,
+              type: q.category.toLowerCase(),
+            };
+          });
+          setLiveFeeds(mapped);
+        }
+      } catch {
+        // Resilient silent fallback to default syndicate benchmarks
+      }
+    };
+
+    fetchQuotes();
+    const interval = setInterval(fetchQuotes, 30000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   return (
     <TerminalErrorBoundary sectionName="Sovereign Terminal Shell">
@@ -125,7 +169,7 @@ export const App: React.FC<AppProps> = ({ is404: is404Prop }) => {
               data-testid="syndicate-ticker-track"
               className="animate-ticker-continuous flex items-center gap-3 py-0.5"
             >
-              {[...syndicateFeeds, ...syndicateFeeds].map((feed, idx) => (
+              {[...liveFeeds, ...liveFeeds].map((feed, idx) => (
                 <div
                   key={`${feed.pair}-${idx}`}
                   className="inline-flex items-center gap-2 px-2.5 py-1 rounded-sm bg-surface-container border border-outline shrink-0 hover:border-primary/50 transition-colors"

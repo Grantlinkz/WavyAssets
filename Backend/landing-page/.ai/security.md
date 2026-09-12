@@ -126,7 +126,7 @@ All responses must include hardened HTTP security headers:
 - `Content-Security-Policy`:
   - `default-src 'self'`
   - `script-src 'self'`
-  - `connect-src 'self' http://localhost:4000 http://localhost:5173 http://localhost:5174 wss: https:`
+  - `connect-src 'self' http://localhost:4000 http://localhost:5173 http://localhost:5174 https://api.wavyassets.com wss://api.wavyassets.com https://dashboard.wavyassets.com https://api.coingecko.com`
   - `frame-ancestors 'none'`
 
 ---

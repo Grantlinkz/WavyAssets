@@ -21,7 +21,7 @@ Your mission is to translate the institutional specifications, security boundari
 Only use and invoke the following approved project skills located in `.agents/skills/`:
 
 - **`.agents/skills/vitest`**: Vitest fast unit and integration testing framework powered by Vite with Jest-compatible API. Use when writing tests, mocking, configuring coverage, or working with test filtering and fixtures across `Tests/UnitTest/` and `Tests/IntegrationTest/`.
-  - *CLI command*: `npx skills add antfu/skills --skill vitest` (or `sanity-io/next-sanity --skill vitest` fallback)
+  - *CLI command*: `npx skills add antfu/skills --skill vitest`
 - **`.agents/skills/prisma-database-setup`**: Guides for configuring Prisma with database providers (SQLite local dev, PostgreSQL production). Use when configuring datasources, connection pools, and troubleshooting connectivity.
   - *CLI command*: `npx skills add prisma/skills --skill prisma-database-setup`
 - **`.agents/skills/prisma-cli`**: Prisma ORM CLI commands reference covering `prisma init`, `prisma generate`, `prisma migrate`, `prisma db`, `prisma studio`, and `prisma validate`. Use for database schema migrations, client generation, and introspection.
