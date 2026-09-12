@@ -267,22 +267,37 @@ npm run lint
 
 ---
 
-## 6. Production Docker Deployment
+## 6. Docker & Docker Compose Orchestration
 
-The repository includes a hardened, multi-stage production container running as an unprivileged `node` user with integrated Docker health checks:
+The repository includes a hardened, multi-stage production container running as an unprivileged `node` user with volume persistence, health probes, and Docker Compose orchestration:
 
+### 1. Production Deployment (Recommended)
 ```bash
-# 1. Build the production image
+# Start container in detached mode with persistent SQLite storage
+docker compose up -d --build
+
+# Inspect container health and readiness status
+docker compose ps
+curl -f http://localhost:4000/health/ready
+
+# View streaming logs
+docker compose logs -f backend
+
+# Graceful shutdown
+docker compose down
+```
+
+### 2. Local Development Orchestration (Live Hot-Reload)
+```bash
+# Start in development mode with live source-code mount
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+### 3. Standalone Docker Run
+```bash
+# Manual image build and container launch
 docker build -t wavyassets/landing-page-backend:latest .
-
-# 2. Run the containerized API Gateway
-docker run -d \
-  -p 4000:4000 \
-  --name wavyassets-backend \
-  --env-file .env \
-  wavyassets/landing-page-backend:latest
-
-# 3. Check health status
+docker run -d -p 4000:4000 --name wavyassets-backend --env-file .env wavyassets/landing-page-backend:latest
 docker inspect --format='{{json .State.Health.Status}}' wavyassets-backend
 ```
 

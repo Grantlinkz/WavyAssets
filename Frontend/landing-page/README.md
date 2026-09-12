@@ -6,9 +6,11 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4.3-38bdf8?logo=tailwindcss)](https://tailwindcss.com/)
 [![Three.js](https://img.shields.io/badge/Three.js-0.185-black?logo=three.js)](https://threejs.org/)
 [![Vitest](https://img.shields.io/badge/Tests-113%20Passing-brightgreen?logo=vitest)](https://vitest.dev/)
+[![Docker](https://img.shields.io/badge/Docker-Nginx_Alpine-blue?logo=docker)](https://www.docker.com/)
 [![Vercel](https://img.shields.io/badge/Deploy-Vercel_Ready-black?logo=vercel)](https://vercel.com)
 
 > Sovereign multi-asset wealth management and institutional digital custody terminal, built to serve family offices, sovereign individuals, and high-net-worth institutional allocators.
+
 
 ---
 
@@ -86,6 +88,7 @@
 ### Prerequisites
 - Node.js `v20+` or `v24+`
 - npm `v10+`
+- Docker & Docker Compose (optional, for paired backend services)
 
 ### Setup & Run
 
@@ -93,10 +96,13 @@
 # Navigate to landing-page directory
 cd Frontend/landing-page
 
+# Setup environment configuration
+cp .env.example .env
+
 # Install dependencies
 npm install
 
-# Start local development server
+# Start local development server (http://localhost:5173)
 npm run dev
 
 # Run automated Vitest test suite (113 tests)
@@ -112,9 +118,65 @@ npm run build
 npm run preview
 ```
 
+### Paired Backend Gateway Integration
+
+The frontend terminal is designed to operate seamlessly alongside the **Landing Page Backend** (`Backend/landing-page`), which provides two-step cryptographic authentication, institutional lead persistence, real-time WebSocket quotes, and portfolio simulation tokenization:
+
+1. **Vite Reverse Proxy**: In local development (`npm run dev`), `vite.config.ts` automatically proxies `/api` and `/ws` requests to `http://localhost:4000`.
+2. **Start Backend via Docker Compose**:
+   ```bash
+   # From repository root or Backend/landing-page
+   cd ../../Backend/landing-page
+   docker compose up -d --build
+   ```
+3. **Verify Connection**:
+   - Backend liveness probe: `http://localhost:4000/health/live`
+   - WebSocket ticker: streams quotes automatically to the frontend marquee and 3D visualizers.
+
+
 ---
 
-## 6. Production Deployment (Vercel)
+## 6. Docker & Containerized Orchestration
+
+The frontend repository includes a multi-stage production container compiling TypeScript via Node 22 Alpine and serving static assets through a hardened, lightweight Nginx web server:
+
+### Features
+- **SPA Fallback Routing**: `try_files $uri $uri/ /index.html` ensures browser navigation, reloads, and hash routes (`#/services/:id`) resolve without 404 errors.
+- **Dynamic API & WebSocket Proxy**: Proxies `/api/`, `/health/`, and `/ws/` streams directly to the containerized backend gateway (`BACKEND_HOST:BACKEND_PORT`).
+- **Institutional Compression & Caching**: Gzip compression and 1-year immutable caching on `/assets/` static chunks.
+- **Liveness Probe**: Integrated `/healthz` endpoint returning HTTP 200.
+
+### 1. Production Docker Compose Run
+```bash
+# Build and launch frontend container on port 5173
+docker compose up -d --build
+
+# Verify health status
+docker compose ps
+curl -f http://localhost:5173/healthz
+
+# Tail logs
+docker compose logs -f frontend
+
+# Stop container
+docker compose down
+```
+
+### 2. Local Development Orchestration (with Live Hot-Reloading)
+```bash
+# Run Vite dev server in container with volume-mounted source code
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+### 3. Standalone Docker Build & Run
+```bash
+docker build -t wavyassets/landing-page-frontend:latest .
+docker run -d -p 5173:80 --name wavyassets-frontend wavyassets/landing-page-frontend:latest
+```
+
+---
+
+## 7. Production Deployment (Vercel)
 
 This application is fully optimized for **Vercel** with zero configuration required:
 
@@ -136,6 +198,7 @@ This application is fully optimized for **Vercel** with zero configuration requi
 
 ---
 
-## 7. License & Rights
+## 8. License & Rights
 
 © WavyAssets Sovereign Institutional Terminal. All rights reserved.
+

@@ -7,8 +7,8 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Install build tools if required by native crypto modules (argon2)
-RUN apk add --no-cache python3 make g++
+# Install build tools and utilities
+RUN apk add --no-cache python3 make g++ curl
 
 # Copy dependency manifests
 COPY package*.json ./
@@ -17,8 +17,10 @@ COPY prisma ./prisma/
 # Install all dependencies including devDependencies for build
 RUN npm ci
 
-# Generate Prisma Client
+# Generate Prisma Client and initialize SQLite database schema template
 RUN npx prisma generate
+RUN npx prisma db push --skip-generate
+RUN cp ./prisma/dev.db ./prisma/dev.db.template
 
 # Copy source and configurations
 COPY tsconfig*.json nest-cli.json ./
@@ -39,8 +41,12 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=4000
 
-# Install curl for Docker health check
-RUN apk add --no-cache curl
+# Install runtime utilities
+RUN apk add --no-cache curl su-exec
+
+# Copy entrypoint script and set executable permissions
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Create unprivileged application user
 USER node
@@ -58,5 +64,7 @@ EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD curl -f http://localhost:4000/health/live || exit 1
 
-# Launch institutional NestJS API Gateway
+# Launch institutional NestJS API Gateway via entrypoint
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "dist/main.js"]
+

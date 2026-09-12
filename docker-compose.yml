@@ -1,0 +1,100 @@
+# ==============================================================================
+# WavyAssets Sovereign Institutional Platform — Unified Monorepo Docker Compose
+# ==============================================================================
+# Services:
+# - backend:  NestJS 11 Gateway, WebSocket Broadcaster & SQLite DB (:4000)
+# - frontend: React 19 / Vite 8 Terminal served via Nginx (:5173 -> :80)
+# ==============================================================================
+
+services:
+  backend:
+    build:
+      context: ./Backend/landing-page
+      dockerfile: Dockerfile
+      target: runner
+    image: wavyassets/landing-page-backend:1.0.0
+    container_name: wavyassets-landing-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-4000}:4000"
+    env_file:
+      - ./Backend/landing-page/.env
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - DATABASE_URL=file:./dev.db
+      - APP_URL=http://localhost:4000
+      - CLIENT_URL=http://localhost:5173
+      - DASHBOARD_URL=http://localhost:5174
+    volumes:
+      - backend_sqlite_data:/app/prisma
+    networks:
+      - wavyassets-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4000/health/live || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.50"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    build:
+      context: ./Frontend/landing-page
+      dockerfile: Dockerfile
+      target: runner
+    image: wavyassets/landing-page-frontend:1.0.0
+    container_name: wavyassets-landing-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    environment:
+      - PORT=80
+      - BACKEND_HOST=wavyassets-landing-backend
+      - BACKEND_PORT=4000
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - wavyassets-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 256M
+        reservations:
+          cpus: "0.10"
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  backend_sqlite_data:
+    name: wavyassets_landing_backend_data
+    driver: local
+
+networks:
+  wavyassets-network:
+    name: wavyassets_institutional_network
+    driver: bridge

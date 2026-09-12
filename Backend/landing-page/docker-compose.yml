@@ -1,0 +1,63 @@
+# ==============================================================================
+# WavyAssets Landing Page Backend — Institutional Docker Compose Configuration
+# ==============================================================================
+# Specification:
+# - High-availability NestJS API Gateway & WebSocket Telemetry Server
+# - SQLite Relational Database Engine with Volume Persistence
+# - Non-root execution security & integrated liveness/readiness probes
+# ==============================================================================
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    image: wavyassets/landing-page-backend:1.0.0
+    container_name: wavyassets-landing-backend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-4000}:4000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=4000
+      - DATABASE_URL=${DATABASE_URL:-file:./dev.db}
+      - APP_URL=${APP_URL:-http://localhost:4000}
+      - CLIENT_URL=${CLIENT_URL:-http://localhost:5173}
+      - DASHBOARD_URL=${DASHBOARD_URL:-http://localhost:5174}
+    volumes:
+      # Persistent named volume for SQLite database across container restarts
+      - backend_sqlite_data:/app/prisma
+    networks:
+      - wavyassets-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4000/health/live || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.50"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  backend_sqlite_data:
+    name: wavyassets_landing_backend_data
+    driver: local
+
+networks:
+  wavyassets-network:
+    name: wavyassets_institutional_network
+    driver: bridge
