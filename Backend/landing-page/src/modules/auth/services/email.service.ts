@@ -31,15 +31,28 @@ export class EmailService {
   constructor(private readonly configService: ConfigService) {
     this.emailProvider =
       this.configService.get<'resend' | 'console'>('email.provider') || 'resend';
-    this.emailFrom =
+    const rawFrom =
       this.configService.get<string>('email.emailFrom') ||
       'WavyAssets Security <security@wavyassets.com>';
+
+    if (!rawFrom.includes('@')) {
+      const sanitizedName = rawFrom.replace(/["']/g, '').trim();
+      this.emailFrom = `${sanitizedName} <onboarding@resend.dev>`;
+      this.logger.warn(
+        `[Resend Config] EMAIL_FROM "${rawFrom}" is missing an email address! Falling back to "${this.emailFrom}". Format must be "Friendly Name <user@domain.com>".`,
+      );
+    } else {
+      this.emailFrom = rawFrom.replace(/["']/g, '').trim();
+    }
+
     this.isProduction =
       this.configService.get<string>('server.nodeEnv') === 'production';
 
     const apiKey = this.configService.get<string>('email.resendApiKey');
     if (apiKey && apiKey.startsWith('re_')) {
       this.resendClient = new Resend(apiKey);
+    } else {
+      this.logger.warn('[Resend Config] Invalid or missing RESEND_API_KEY. It must begin with "re_".');
     }
   }
 
@@ -202,7 +215,9 @@ export class EmailService {
       });
 
       if (result.error) {
-        this.logger.error(`Resend API rejected email dispatch: ${result.error.message}`);
+        this.logger.error(`[Resend Error] Failed to dispatch OTP to ${toEmail} from "${this.emailFrom}": [${result.error.name}] ${result.error.message}`);
+        this.logger.error(`[Resend Diagnostic] 1. Ensure EMAIL_FROM has the format "Name <user@domain.com>".`);
+        this.logger.error(`[Resend Diagnostic] 2. If using unverified domain, Resend requires sender to be "onboarding@resend.dev" and only delivers to your Resend account email.`);
         return false;
       }
 
