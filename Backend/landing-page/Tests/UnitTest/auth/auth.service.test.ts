@@ -10,6 +10,8 @@ import {
   UnauthorizedException,
   ForbiddenException,
   BadRequestException,
+  ConflictException,
+  NotFoundException,
 } from '@nestjs/common';
 
 describe('AuthService (Two-Step Authentication & Gateway Logic)', () => {
@@ -56,6 +58,7 @@ describe('AuthService (Two-Step Authentication & Gateway Logic)', () => {
 
     mockEmailService = {
       sendOtpEmail: vi.fn().mockResolvedValue(true),
+      sendPasswordResetOtpEmail: vi.fn().mockResolvedValue(true),
     };
 
     mockTelegramService = {
@@ -141,6 +144,23 @@ describe('AuthService (Two-Step Authentication & Gateway Logic)', () => {
           mode: 'register',
         }),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject registration if email is already registered (duplicate registration guard)', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'usr_existing',
+        email: 'duplicate@firm.com',
+        isActive: true,
+      });
+
+      await expect(
+        authService.initiate({
+          email: 'duplicate@firm.com',
+          fullName: 'Existing User',
+          passphrase: 'SecurePassphrase123!',
+          mode: 'register',
+        }),
+      ).rejects.toThrow(ConflictException);
     });
   });
 
@@ -278,6 +298,103 @@ describe('AuthService (Two-Step Authentication & Gateway Logic)', () => {
 
       await expect(
         authService.exchangeTicket('invalid_or_consumed_ticket'),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('forgotPassword()', () => {
+    it('should dispatch reset OTP email if account exists', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'usr_reset',
+        email: 'resetme@firm.com',
+        fullName: 'Reset User',
+        isActive: true,
+      });
+      mockPrisma.otpCode.create.mockResolvedValue({
+        id: 'challenge_reset_1',
+      });
+
+      const res = await authService.forgotPassword({
+        email: 'resetme@firm.com',
+      });
+
+      expect(res.step).toBe(2);
+      expect(res.challengeId).toBe('challenge_reset_1');
+      expect(res.expiresInSeconds).toBe(300);
+      expect(mockEmailService.sendPasswordResetOtpEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ toEmail: 'resetme@firm.com' }),
+      );
+    });
+
+    it('should throw NotFoundException if account does not exist', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue(null);
+
+      await expect(
+        authService.forgotPassword({
+          email: 'nonexistent@firm.com',
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('resetPassword()', () => {
+    it('should verify reset OTP, update password hash, and revoke sessions', async () => {
+      mockPrisma.otpCode.findUnique.mockResolvedValue({
+        id: 'challenge_reset_1',
+        hashedCode: '$argon2id$hashedOtpCode',
+        isConsumed: false,
+        attempts: 0,
+        expiresAt: new Date(Date.now() + 60000),
+        email: 'resetme@firm.com',
+        user: {
+          id: 'usr_reset',
+          email: 'resetme@firm.com',
+          isActive: true,
+        },
+      });
+      mockCrypto.verifyOtp.mockResolvedValue(true);
+      mockCrypto.hashPassword.mockResolvedValue('$argon2id$newPasswordHash');
+
+      const res = await authService.resetPassword({
+        challengeId: 'challenge_reset_1',
+        otpCode: '654321',
+        newPassphrase: 'NewBrandSecurePass123!',
+      });
+
+      expect(res.message).toContain('Password reset successfully');
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'usr_reset' },
+        data: {
+          passphraseHash: '$argon2id$newPasswordHash',
+          isActive: true,
+        },
+      });
+      expect(mockPrisma.session.deleteMany).toHaveBeenCalledWith({
+        where: { userId: 'usr_reset' },
+      });
+    });
+
+    it('should reject invalid reset OTP', async () => {
+      mockPrisma.otpCode.findUnique.mockResolvedValue({
+        id: 'challenge_reset_1',
+        hashedCode: '$argon2id$hashedOtpCode',
+        isConsumed: false,
+        attempts: 0,
+        expiresAt: new Date(Date.now() + 60000),
+        email: 'resetme@firm.com',
+        user: {
+          id: 'usr_reset',
+          email: 'resetme@firm.com',
+        },
+      });
+      mockCrypto.verifyOtp.mockResolvedValue(false);
+
+      await expect(
+        authService.resetPassword({
+          challengeId: 'challenge_reset_1',
+          otpCode: '000000',
+          newPassphrase: 'NewBrandSecurePass123!',
+        }),
       ).rejects.toThrow(UnauthorizedException);
     });
   });

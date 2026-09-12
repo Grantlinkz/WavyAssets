@@ -18,7 +18,7 @@ export interface AuthModalState {
   isOpen: boolean;
   step: 1 | 2;
   initialTier: TrustMode;
-  initialMode?: 'login' | 'mandate';
+  initialMode?: 'login' | 'mandate' | 'forgot-password';
 }
 
 export interface SimulatorState {
@@ -52,7 +52,7 @@ export interface TerminalStore {
 
   // Auth modal
   authModal: AuthModalState;
-  openAuthModal: (initialTier?: TrustMode, initialMode?: 'login' | 'mandate') => void;
+  openAuthModal: (initialTier?: TrustMode, initialMode?: 'login' | 'mandate' | 'forgot-password') => void;
   closeAuthModal: () => void;
   setAuthStep: (step: 1 | 2) => void;
 
@@ -355,7 +355,7 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
   },
   openAuthModal: (
     initialTier: TrustMode = 'institutional',
-    initialMode: 'login' | 'mandate' = 'login'
+    initialMode: 'login' | 'mandate' | 'forgot-password' = 'login'
   ) =>
     set({ authModal: { isOpen: true, step: 1, initialTier, initialMode } }),
   closeAuthModal: () =>

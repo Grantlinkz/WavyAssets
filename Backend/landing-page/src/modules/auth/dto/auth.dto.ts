@@ -150,3 +150,58 @@ export class ExchangeResponseDataDto {
   @ApiProperty({ description: 'Fresh signed JWT access token for dashboard session' })
   accessToken!: string;
 }
+
+export class ForgotPasswordDto {
+  @ApiProperty({
+    description: 'Registered account email address',
+    example: 'investor@familyoffice.ch',
+  })
+  @IsEmail({}, { message: 'email must be a valid institutional or personal email address' })
+  email!: string;
+}
+
+export class ForgotPasswordResponseDataDto {
+  @ApiProperty({ example: 2, description: 'Next step required in auth modal' })
+  step!: number;
+
+  @ApiProperty({ example: 'f72b21c4-5412-4299-9685-6cf1be8972aa' })
+  challengeId!: string;
+
+  @ApiProperty({ example: 300, description: 'Time-to-live in seconds (5 minutes)' })
+  expiresInSeconds!: number;
+
+  @ApiProperty({ example: 'i***r@familyoffice.ch' })
+  maskedDestination!: string;
+}
+
+export class ResetPasswordDto {
+  @ApiProperty({
+    description: 'Unique challenge ID issued during forgot-password request',
+    example: 'f72b21c4-5412-4299-9685-6cf1be8972aa',
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'challengeId is required' })
+  challengeId!: string;
+
+  @ApiProperty({
+    description: '6-digit numeric verification code dispatched to email',
+    example: '492817',
+  })
+  @IsString()
+  @Matches(/^\d{6}$/, { message: 'otpCode must be a 6-digit numeric string' })
+  otpCode!: string;
+
+  @ApiProperty({
+    description: 'New password (minimum 6 characters)',
+    example: 'NewSecurePassword123!',
+  })
+  @IsString()
+  @MinLength(6, { message: 'newPassphrase must be at least 6 characters' })
+  @MaxLength(128, { message: 'newPassphrase cannot exceed 128 characters' })
+  newPassphrase!: string;
+}
+
+export class ResetPasswordResponseDataDto {
+  @ApiProperty({ example: 'Password reset successfully. You may now sign in.' })
+  message!: string;
+}

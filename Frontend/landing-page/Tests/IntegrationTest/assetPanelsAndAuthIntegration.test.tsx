@@ -154,7 +154,21 @@ describe('Asset Panels & Unified Auth Modal Integration Suite (SSR / Node 24)', 
     expect(html).toContain('data-testid="auth-tier-institutional"');
     expect(html).toContain('data-testid="auth-email-input"');
     expect(html).toContain('data-testid="auth-password-input"');
+    expect(html).toContain('data-testid="auth-toggle-password-btn"');
+    expect(html).toContain('data-testid="auth-forgot-password-btn"');
     expect(html).toContain('Continue to Verification');
+  });
+
+  it('renders open UnifiedAuthModal in Forgot Password mode', () => {
+    useTerminalStore.setState({
+      authModal: { isOpen: true, step: 1, initialTier: 'institutional', initialMode: 'forgot-password' },
+    });
+    const html = renderToString(<UnifiedAuthModal />);
+
+    expect(html).toContain('Reset Your Password');
+    expect(html).toContain('data-testid="auth-forgot-email-input"');
+    expect(html).toContain('Send Reset Code');
+    expect(html).toContain('Back to Sign In');
   });
 
   it('renders open UnifiedAuthModal in Request Mandate mode with Full Name field', () => {

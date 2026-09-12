@@ -76,6 +76,59 @@ describe('Institutional Gateway API Client Layer', () => {
         authApi.verifyOtp({ challengeId: 'chl_test123', otpCode: '999999' })
       ).rejects.toThrowError(ApiError);
     });
+
+    it('dispatches forgot-password request with email', async () => {
+      const mockResponse = {
+        success: true,
+        data: {
+          step: 2,
+          challengeId: 'chl_reset_456',
+          expiresInSeconds: 300,
+          maskedDestination: 'i***@familyoffice.ch',
+        },
+        timestamp: '2026-09-12T00:00:00.000Z',
+      };
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => mockResponse,
+      });
+
+      const res = await authApi.forgotPassword({ email: 'investor@familyoffice.ch' });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/auth/forgot-password'),
+        expect.objectContaining({ method: 'POST' }),
+      );
+      expect(res.data?.challengeId).toBe('chl_reset_456');
+    });
+
+    it('dispatches reset-password request with challengeId, otpCode, and newPassphrase', async () => {
+      const mockResponse = {
+        success: true,
+        data: { message: 'Password reset successfully' },
+        timestamp: '2026-09-12T00:00:00.000Z',
+      };
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => mockResponse,
+      });
+
+      const res = await authApi.resetPassword({
+        challengeId: 'chl_reset_456',
+        otpCode: '123456',
+        newPassphrase: 'NewSecurePassword123!',
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/auth/reset-password'),
+        expect.objectContaining({ method: 'POST' }),
+      );
+      expect(res.data?.message).toBe('Password reset successfully');
+    });
   });
 
   describe('2. Leads & Mandates Pipeline', () => {
