@@ -1,0 +1,43 @@
+# ==============================================================================
+# WavyAssets Landing Page Backend — Render Blueprint Specification
+# ==============================================================================
+
+services:
+  - type: web
+    name: wavyassets-backend
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install && npm run build:render
+    startCommand: npm run start:prod
+    healthCheckPath: /health/live
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: APP_URL
+        value: https://wavyassets-backend.onrender.com
+      - key: CLIENT_URL
+        value: https://wavy-assets.vercel.app
+      - key: DATABASE_URL
+        value: file:./dev.db
+      - key: JWT_SECRET
+        generateValue: true
+      - key: REFRESH_TOKEN_SECRET
+        generateValue: true
+      - key: FIELD_ENCRYPTION_KEY
+        value: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      - key: THROTTLE_TTL
+        value: 60
+      - key: THROTTLE_LIMIT
+        value: 120
+      - key: AUTH_THROTTLE_LIMIT
+        value: 5
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        value: WavyAssets Security <security@wavyassets.com>
