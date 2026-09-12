@@ -41,7 +41,11 @@ async function bootstrap(): Promise<void> {
   );
 
   // 2. Cookie Parser
-  app.use(cookieParser());
+  const cookieMiddleware =
+    typeof cookieParser === 'function'
+      ? cookieParser
+      : ((cookieParser as unknown as { default: typeof cookieParser }).default || cookieParser);
+  app.use(cookieMiddleware());
 
   // 3. Strict CORS Origin Whitelisting
   const allowedOrigins = [

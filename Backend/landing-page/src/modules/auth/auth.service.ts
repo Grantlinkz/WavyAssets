@@ -160,13 +160,15 @@ export class AuthService {
       });
     }
 
-    const deliveryChannel = tier === 'INSTITUTIONAL' ? 'TELEGRAM_ENCLAVE' : 'EMAIL';
+    const deliveryChannel = 'EMAIL';
+    const backupChannel = tier === 'INSTITUTIONAL' ? 'TELEGRAM_ENCLAVE' : null;
 
     return {
       step: 2,
       challengeId: challenge.id,
       expiresInSeconds: 300,
       deliveryChannel,
+      backupChannel,
       maskedDestination: maskEmail(email),
     };
   }

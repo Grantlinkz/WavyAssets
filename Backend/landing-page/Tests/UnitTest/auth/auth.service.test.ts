@@ -109,7 +109,8 @@ describe('AuthService (Two-Step Authentication & Gateway Logic)', () => {
       expect(result.step).toBe(2);
       expect(result.challengeId).toBe('challenge_1');
       expect(result.expiresInSeconds).toBe(300);
-      expect(result.deliveryChannel).toBe('TELEGRAM_ENCLAVE');
+      expect(result.deliveryChannel).toBe('EMAIL');
+      expect(result.backupChannel).toBe('TELEGRAM_ENCLAVE');
       expect(mockEmailService.sendOtpEmail).toHaveBeenCalled();
       expect(mockTelegramService.sendEnclaveOtpAlert).toHaveBeenCalled();
     });

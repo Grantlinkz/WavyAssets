@@ -85,7 +85,8 @@ describe('Auth Flow Integration Test (Two-Step Authentication & Dashboard Hand-O
     expect(res.body.success).toBe(true);
     expect(res.body.data.step).toBe(2);
     expect(res.body.data.challengeId).toBeDefined();
-    expect(res.body.data.deliveryChannel).toBe('TELEGRAM_ENCLAVE');
+    expect(res.body.data.deliveryChannel).toBe('EMAIL');
+    expect(res.body.data.backupChannel).toBe('TELEGRAM_ENCLAVE');
     expect(res.body.data.maskedDestination).toContain('i***r@swiss-vault.ch');
 
     challengeId = res.body.data.challengeId;

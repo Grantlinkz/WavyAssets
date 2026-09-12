@@ -113,8 +113,11 @@ export class InitiateAuthResponseDataDto {
   @ApiProperty({ example: 300, description: 'Time-to-live in seconds (5 minutes)' })
   expiresInSeconds!: number;
 
-  @ApiProperty({ example: 'EMAIL', description: 'Active dispatch channel (EMAIL or TELEGRAM_ENCLAVE)' })
+  @ApiProperty({ example: 'EMAIL', description: 'Primary dispatch channel (EMAIL)' })
   deliveryChannel!: 'EMAIL' | 'TELEGRAM_ENCLAVE';
+
+  @ApiPropertyOptional({ example: 'TELEGRAM_ENCLAVE', description: 'Secondary backup dispatch channel' })
+  backupChannel?: 'TELEGRAM_ENCLAVE' | null;
 
   @ApiProperty({ example: 'i***r@familyoffice.ch' })
   maskedDestination!: string;
