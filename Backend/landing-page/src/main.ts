@@ -51,6 +51,7 @@ async function bootstrap(): Promise<void> {
   const allowedOrigins = [
     clientUrl,
     dashboardUrl,
+    'https://wavy-assets.vercel.app',
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:3000',
@@ -131,8 +132,8 @@ async function bootstrap(): Promise<void> {
     customSiteTitle: 'WavyAssets Gateway API Docs',
   });
 
-  // 9. Start Server
-  await app.listen(port);
+  // 9. Start Server (bind to 0.0.0.0 for containerized & cloud host compatibility e.g. Render)
+  await app.listen(port, '0.0.0.0');
   logger.log(`WavyAssets Gateway active on port ${port} [NODE_ENV=${process.env.NODE_ENV || 'development'}]`);
   logger.log(`OpenAPI documentation accessible at http://localhost:${port}/api/docs`);
   logger.log(`Liveness probe: http://localhost:${port}/health/live`);
