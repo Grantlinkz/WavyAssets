@@ -113,6 +113,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
   // Monitor loading duration for cold-start UX (e.g. Render 50s spin-up)
   useEffect(() => {
     if (!isLoading) return;
+    setElapsedLoadingSecs(0);
     const interval = setInterval(() => {
       setElapsedLoadingSecs((prev) => prev + 1);
     }, 1000);
@@ -559,7 +560,6 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
               />
               <button
                 type="button"
-                tabIndex={-1}
                 data-testid="auth-toggle-new-password-btn"
                 onClick={() => setShowNewPassword((prev) => !prev)}
                 className="text-outline hover:text-on-surface transition-colors p-1 cursor-pointer focus:outline-none shrink-0"
@@ -611,7 +611,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
               ) : (
                 <>
                   <KeyRound className="w-3.5 h-3.5" />
-                  <span>Update Password &amp; Sign In</span>
+                  <span>Update Password</span>
                 </>
               )}
             </button>
@@ -762,7 +762,6 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
               />
               <button
                 type="button"
-                tabIndex={-1}
                 data-testid="auth-toggle-password-btn"
                 onClick={() => setShowPassword((prev) => !prev)}
                 className="text-outline hover:text-on-surface transition-colors p-1 cursor-pointer focus:outline-none shrink-0"

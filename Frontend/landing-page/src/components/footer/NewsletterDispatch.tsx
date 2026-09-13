@@ -11,6 +11,7 @@ export const NewsletterDispatch: React.FC = () => {
 
   React.useEffect(() => {
     if (!isLoading) return;
+    setElapsedSecs(0);
     const timer = setInterval(() => setElapsedSecs((s) => s + 1), 1000);
     return () => clearInterval(timer);
   }, [isLoading]);

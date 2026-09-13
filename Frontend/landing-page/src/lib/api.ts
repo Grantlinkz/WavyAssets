@@ -191,7 +191,7 @@ const getApiBaseUrl = (): string => {
   return '/api/v1';
 };
 
-async function request<T>(
+export async function request<T>(
   endpoint: string,
   options: RequestInit = {},
   timeoutMs = 60000,
@@ -209,14 +209,30 @@ async function request<T>(
     headers['Content-Type'] = 'application/json';
   }
 
+  let isTimeoutAbort = false;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const timeoutId = setTimeout(() => {
+    isTimeoutAbort = true;
+    controller.abort();
+  }, timeoutMs);
+
+  const onCallerAbort = () => {
+    controller.abort();
+  };
+
+  if (options.signal) {
+    if (options.signal.aborted) {
+      controller.abort();
+    } else {
+      options.signal.addEventListener('abort', onCallerAbort, { once: true });
+    }
+  }
 
   try {
     const response = await fetch(url, {
       ...options,
       headers,
-      signal: options.signal || controller.signal,
+      signal: controller.signal,
       credentials: options.credentials || 'include',
     });
 
@@ -248,15 +264,21 @@ async function request<T>(
       throw err;
     }
     if (err instanceof Error && err.name === 'AbortError') {
-      throw new ApiError(
-        408,
-        'Request timed out after 60 seconds. The server may be waking up from sleep. Please try again.',
-      );
+      if (isTimeoutAbort) {
+        throw new ApiError(
+          408,
+          'Request timed out after 60 seconds. The server may be waking up from sleep. Please try again.',
+        );
+      }
+      throw err;
     }
     const message = err instanceof Error ? err.message : 'Network failure or Gateway unreachable';
     throw new ApiError(0, message, err);
   } finally {
     clearTimeout(timeoutId);
+    if (options.signal) {
+      options.signal.removeEventListener('abort', onCallerAbort);
+    }
   }
 }
 

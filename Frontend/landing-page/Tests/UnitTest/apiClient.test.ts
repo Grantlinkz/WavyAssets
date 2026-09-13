@@ -6,6 +6,7 @@ import {
   simulationApi,
   telemetryApi,
   ApiError,
+  request,
 } from '../../src/lib/api';
 
 describe('Institutional Gateway API Client Layer', () => {
@@ -253,6 +254,44 @@ describe('Institutional Gateway API Client Layer', () => {
       const res = await telemetryApi.getTickerQuotes();
       expect(res.data?.quotes[0].symbol).toBe('BTC/USD');
       expect(res.data?.feedStatus).toBe('OPTIMAL');
+    });
+
+    it('returns 408 ApiError when request abort is triggered by timeout timer', async () => {
+      global.fetch = vi.fn().mockImplementation((_url, init) => {
+        return new Promise((_, reject) => {
+          init.signal.addEventListener('abort', () => {
+            const err = new Error('The operation was aborted');
+            err.name = 'AbortError';
+            reject(err);
+          });
+        });
+      });
+
+      await expect(
+        request('/test/timeout', {}, 10),
+      ).rejects.toSatisfy((err: unknown) => {
+        return err instanceof ApiError && err.statusCode === 408;
+      });
+    });
+
+    it('preserves caller cancellation and rethrows AbortError when caller aborts', async () => {
+      const controller = new AbortController();
+      global.fetch = vi.fn().mockImplementation((_url, init) => {
+        return new Promise((_, reject) => {
+          init.signal.addEventListener('abort', () => {
+            const err = new Error('The user aborted a request');
+            err.name = 'AbortError';
+            reject(err);
+          });
+        });
+      });
+
+      const requestPromise = request('/test/caller-abort', { signal: controller.signal }, 60000);
+      controller.abort();
+
+      await expect(requestPromise).rejects.toSatisfy((err: unknown) => {
+        return err instanceof Error && err.name === 'AbortError' && !(err instanceof ApiError);
+      });
     });
   });
 });
