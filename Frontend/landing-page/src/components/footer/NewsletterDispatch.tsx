@@ -1,12 +1,22 @@
 import React, { useState } from 'react';
-import { Mail, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Mail, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { newsletterApi, ApiError } from '../../lib/api';
 
 export const NewsletterDispatch: React.FC = () => {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [elapsedSecs, setElapsedSecs] = useState(0);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  React.useEffect(() => {
+    if (!isLoading) return;
+    setElapsedSecs(0);
+    const timer = setInterval(() => setElapsedSecs((s) => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, [isLoading]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = email.trim();
 
@@ -18,14 +28,30 @@ export const NewsletterDispatch: React.FC = () => {
       return;
     }
 
-    // In a production terminal, this would invoke a secure authenticated endpoint
-    // Redact email for secure logging invariant
-    const domain = trimmed.split('@')[1] || 'domain.com';
-    console.info(`[Audit] Institutional dispatch subscribed for domain: @${domain}`);
-
-    setStatus('success');
+    setStatus('idle');
     setErrorMessage('');
-    setEmail('');
+    setIsLoading(true);
+
+    try {
+      await newsletterApi.subscribe({ email: trimmed });
+      const domain = trimmed.split('@')[1] || 'domain.com';
+      console.info(`[Audit] Institutional dispatch subscribed for domain: @${domain}`);
+
+      setStatus('success');
+      setErrorMessage('');
+      setEmail('');
+    } catch (err: unknown) {
+      setStatus('error');
+      const msg =
+        err instanceof ApiError
+          ? err.error
+          : err instanceof Error
+          ? err.message
+          : 'Unable to process subscription. Whitelisted corporate emails only.';
+      setErrorMessage(msg);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -63,12 +89,26 @@ export const NewsletterDispatch: React.FC = () => {
             />
             <button
               type="submit"
+              disabled={isLoading}
               data-testid="newsletter-submit-btn"
-              className="px-3.5 py-1.5 rounded-sm bg-primary-container text-on-primary-container font-sans text-xs uppercase hover:bg-primary-hover transition-colors font-bold shrink-0 cursor-pointer shadow-sm"
+              className="px-3.5 py-1.5 rounded-sm bg-primary-container text-on-primary-container font-sans text-xs uppercase hover:bg-primary-hover transition-colors font-bold shrink-0 cursor-pointer shadow-sm disabled:opacity-50 flex items-center gap-1.5"
             >
-              Join
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>{elapsedSecs > 5 ? `Joining (${elapsedSecs}s)...` : 'Joining...'}</span>
+                </>
+              ) : (
+                'Join'
+              )}
             </button>
           </div>
+
+          {isLoading && elapsedSecs >= 5 && (
+            <div className="font-mono text-[10px] text-outline animate-pulse">
+              Connecting to institutional dispatch (cold server waking up)...
+            </div>
+          )}
 
           {status === 'error' && (
             <div

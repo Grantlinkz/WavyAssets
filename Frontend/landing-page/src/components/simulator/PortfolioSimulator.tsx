@@ -6,6 +6,7 @@ import { calculatePortfolioMetrics } from '../../lib/calculator';
 import { formatCurrency } from '../../lib/formatters';
 import { DonutChart3D } from './DonutChart3D';
 import { AnimatedNumber } from '../common/AnimatedNumber';
+import { simulationApi } from '../../lib/api';
 
 const QUICK_CAPITALS = [
   { label: '$100K', value: 100000 },
@@ -53,6 +54,22 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
 
   const shouldReduceMotion = useReducedMotion();
   const metrics = calculatePortfolioMetrics(capital, aggressiveness);
+
+  const handleProceed = async () => {
+    try {
+      const res = await simulationApi.saveSimulation({
+        capitalAmount: capital,
+        riskPosture: aggressiveness,
+        projectedYield: metrics.blendedApy,
+      });
+      if (res.data?.token) {
+        console.info(`[Simulator] Portfolio intent tokenized: ${res.data.token}`);
+      }
+    } catch (err) {
+      console.warn('[Simulator] Simulation intent persistence offline fallback active:', err);
+    }
+    openAuthModal('institutional');
+  };
 
   return (
     <div
@@ -329,7 +346,7 @@ export const PortfolioSimulator: React.FC<PortfolioSimulatorProps> = ({
               whileHover={{ scale: 1.015 }}
               whileTap={{ scale: 0.985 }}
               transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              onClick={() => openAuthModal('institutional')}
+              onClick={handleProceed}
               className="w-full sm:flex-1 py-3 px-4 rounded-sm bg-primary-container text-on-primary-container text-xs uppercase font-bold tracking-wider hover:bg-primary-hover transition-colors flex items-center justify-center gap-2 shadow-sm"
             >
               <Lock className="w-3.5 h-3.5" />

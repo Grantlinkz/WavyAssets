@@ -71,8 +71,16 @@ if (typeof window === 'undefined') {
   globalThis.window = windowMock;
   // @ts-expect-error polyfill globals for node test runner
   globalThis.document = documentMock;
-  // @ts-expect-error polyfill globals for node test runner
-  globalThis.navigator = navigatorMock;
+  try {
+    Object.defineProperty(globalThis, 'navigator', {
+      value: navigatorMock,
+      configurable: true,
+      writable: true,
+    });
+  } catch {
+    // @ts-expect-error fallback
+    globalThis.navigator = navigatorMock;
+  }
   globalThis.localStorage = storageMock;
   globalThis.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver;
 }

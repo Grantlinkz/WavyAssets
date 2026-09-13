@@ -1,0 +1,98 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id              String             @id @default(uuid())
+  email           String             @unique
+  fullName        String?
+  passphraseHash  String
+  tier            String             @default("PRIVATE_WEALTH") // RETAIL | PRIVATE_WEALTH | INSTITUTIONAL
+  isCorporate     Boolean            @default(false)
+  isActive        Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  sessions        Session[]
+  otpCodes        OtpCode[]
+  simulationIntent SimulationIntent?
+}
+
+model Session {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash  String   @unique // Deterministic HMAC-SHA256 hash (never persist plaintext bearer tokens)
+  handoffTicketHash String?  @unique // Deterministic HMAC-SHA256 hash (never persist plaintext bearer tickets)
+  ipAddress         String?
+  userAgent         String?
+  expiresAt         DateTime
+  createdAt         DateTime @default(now())
+}
+
+model OtpCode {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email      String
+  hashedCode String
+  attempts   Int      @default(0)
+  isConsumed Boolean  @default(false)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([email, expiresAt])
+}
+
+model LeadInquiry {
+  id                 String   @id @default(uuid())
+  fullNameEncrypted  String   // AES-256-GCM encrypted
+  workEmailEncrypted String   // AES-256-GCM encrypted
+  workEmailHash      String   // Blind index HMAC-SHA256 for fast lookup
+  companyName        String
+  websiteUrl         String?
+  telegramEncrypted  String?  // AES-256-GCM encrypted
+  service            String   // CRYPTO | STOCKS | AI_FUNDS | REAL_ESTATE | VIP_CARDS | CARS | WALLET
+  allocationRange    String   // e.g. "$5M - $10M"
+  domainScore        Float    @default(1.0)
+  isSpam             Boolean  @default(false)
+  crmDispatched      Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  @@index([workEmailHash])
+}
+
+model SimulationIntent {
+  id             String   @id @default(uuid())
+  token          String   @unique
+  userId         String?  @unique
+  user           User?    @relation(fields: [userId], references: [id])
+  capitalAmount  Float
+  riskPosture    Int      // 1: Capital Preservation, 2: Balanced Growth, 3: Max Alpha
+  projectedYield Float
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+}
+
+model NewsletterSubscriber {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  verificationToken String?   @unique
+  isConfirmed       Boolean   @default(false)
+  confirmedAt       DateTime?
+  createdAt         DateTime  @default(now())
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  action        String
+  actorId       String?
+  ipAddressHash String
+  userAgent     String?
+  metadata      String?  // JSON string
+  createdAt     DateTime @default(now())
+}

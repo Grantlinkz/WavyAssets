@@ -1,0 +1,46 @@
+# ==============================================================================
+# WavyAssets Sovereign Institutional Platform — Render Blueprint
+# ==============================================================================
+# Declarative Infrastructure-as-Code for hosting Backend/landing-page on Render Free Tier
+# ==============================================================================
+
+services:
+  - type: web
+    name: wavyassets-backend
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: Backend/landing-page
+    buildCommand: npm install --include=dev && npm run build:render
+    startCommand: npm run start:prod
+    healthCheckPath: /health/live
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: APP_URL
+        value: https://wavyassets-backend.onrender.com
+      - key: CLIENT_URL
+        value: https://wavy-assets.vercel.app
+      - key: DATABASE_URL
+        sync: false # User enters their Prisma Postgres connection string in Render dashboard
+      - key: JWT_SECRET
+        generateValue: true
+      - key: REFRESH_TOKEN_SECRET
+        generateValue: true
+      - key: FIELD_ENCRYPTION_KEY
+        value: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      - key: THROTTLE_TTL
+        value: 60
+      - key: THROTTLE_LIMIT
+        value: 120
+      - key: AUTH_THROTTLE_LIMIT
+        value: 5
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: RESEND_API_KEY
+        sync: false # User enters their own Resend API key in Render dashboard
+      - key: EMAIL_FROM
+        value: WavyAssets Security <security@wavyassets.com>

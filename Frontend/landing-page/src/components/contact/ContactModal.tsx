@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '../ui/dialog';
 import { useTerminalStore } from '../../store/useTerminalStore';
 import { ContactSentinelGraphic } from './ContactSentinelGraphic';
@@ -14,7 +14,9 @@ import {
   CheckCircle2,
   AlertCircle,
   ShieldCheck,
+  Loader2,
 } from 'lucide-react';
+import { leadsApi, ApiError, type LeadInquiryPayload } from '../../lib/api';
 import { motion } from 'framer-motion';
 
 export interface ContactModalProps {
@@ -51,8 +53,45 @@ export const ContactModal: React.FC<ContactModalProps> = ({
   const [agreeTerms, setAgreeTerms] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [elapsedSecs, setElapsedSecs] = useState(0);
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!isLoading) return;
+    setElapsedSecs(0);
+    const timer = setInterval(() => setElapsedSecs((s) => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, [isLoading]);
+
+  const mapServiceToBackend = (serviceStr: string): LeadInquiryPayload['service'] => {
+    switch (serviceStr) {
+      case 'Crypto Yield Aggregation':
+        return 'CRYPTO';
+      case 'Global Stocks DMA':
+        return 'STOCKS';
+      case 'AI Systematic Funds':
+        return 'AI_FUNDS';
+      case 'Tokenized Real Estate':
+        return 'REAL_ESTATE';
+      case 'VIP Metal Cards':
+        return 'VIP_CARDS';
+      case 'Institutional Custody & MPC':
+        return 'WALLET';
+      default:
+        return 'WALLET';
+    }
+  };
+
+  const mapAllocationToBackend = (allocStr: string): LeadInquiryPayload['allocationRange'] => {
+    if (allocStr.includes('€500 -') || allocStr.includes('500k')) return '$500K - $1M';
+    if (allocStr.includes('$3M') || allocStr.includes('$1M')) return '$1M - $5M';
+    if (allocStr.includes('$10M - $50M')) return '$5M - $10M';
+    if (allocStr.includes('>$50M')) return '$10M+';
+    return 'CUSTOM';
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim() || fullName.trim().length < 2) {
       setErrorMsg('Please enter your full name.');
@@ -74,21 +113,49 @@ export const ContactModal: React.FC<ContactModalProps> = ({
     }
 
     const domain = trimmedEmail.split('@')[1] || 'domain.com';
-    // PII Redacted Logging Invariant
-    console.info(`[Contact] Inquiry received from corporate domain: @${domain}`);
+    console.info(`[Contact] Ingesting inquiry for domain: @${domain}`);
 
     setErrorMsg('');
-    setIsSuccess(true);
+    setIsLoading(true);
 
-    setTimeout(() => {
-      closeContactModal();
-      setIsSuccess(false);
-      setFullName('');
-      setWorkEmail('');
-      setTelegram('');
-      setCompanyName('');
-      setWebsiteUrl('');
-    }, 2200);
+    try {
+      const res = await leadsApi.submitInquiry({
+        fullName: fullName.trim(),
+        workEmail: trimmedEmail,
+        companyName: companyName.trim(),
+        websiteUrl: websiteUrl.trim() || undefined,
+        telegram: telegram.trim() || undefined,
+        service: mapServiceToBackend(service),
+        allocationRange: mapAllocationToBackend(allocation),
+      });
+
+      setSuccessMessage(
+        res.data?.message ||
+          'We received your message and will get back to you shortly. A confirmation has been sent to your email.'
+      );
+      setIsSuccess(true);
+
+      setTimeout(() => {
+        closeContactModal();
+        setIsSuccess(false);
+        setFullName('');
+        setWorkEmail('');
+        setTelegram('');
+        setCompanyName('');
+        setWebsiteUrl('');
+        setSuccessMessage('');
+      }, 4000);
+    } catch (err: unknown) {
+      const message =
+        err instanceof ApiError
+          ? err.error
+          : err instanceof Error
+          ? err.message
+          : 'Failed to record mandate inquiry. Please try again.';
+      setErrorMsg(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -138,11 +205,11 @@ export const ContactModal: React.FC<ContactModalProps> = ({
           >
             <CheckCircle2 className="w-10 h-10 text-[#A6FF00] animate-bounce" />
             <div className="font-headline-sm text-base text-slate-900 dark:text-on-surface font-bold">
-              Inquiry Dispatched Successfully
+              We Received Your Message
             </div>
             <p className="font-sans text-[11px] text-slate-600 dark:text-on-surface-variant max-w-sm">
-              Your mandate request has been securely routed to our institutional allocations desk. A
-              fiduciary director will contact you within 2 business hours.
+              {successMessage ||
+                'We received your message and will get back to you shortly. A confirmation has been sent to your email.'}
             </p>
           </motion.div>
         ) : (
@@ -303,14 +370,30 @@ export const ContactModal: React.FC<ContactModalProps> = ({
             <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
               <motion.button
                 type="submit"
+                disabled={isLoading}
                 data-testid="contact-submit-btn"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                className="w-full sm:w-auto px-6 py-2 rounded-sm bg-[#A6FF00] hover:bg-[#b8ff1a] text-black font-mono font-black text-xs uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(166,255,0,0.35)] flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                className="w-full sm:w-auto px-6 py-2 rounded-sm bg-[#A6FF00] hover:bg-[#b8ff1a] text-black font-mono font-black text-xs uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(166,255,0,0.35)] flex items-center justify-center gap-2 cursor-pointer shrink-0 disabled:opacity-50"
               >
-                <span>SEND</span>
-                <Send className="w-3.5 h-3.5" />
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>{elapsedSecs > 5 ? `SENDING (${elapsedSecs}s)...` : 'SENDING...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <span>SEND</span>
+                    <Send className="w-3.5 h-3.5" />
+                  </>
+                )}
               </motion.button>
+
+              {isLoading && elapsedSecs >= 5 && (
+                <p className="text-[10px] font-mono text-outline animate-pulse w-full">
+                  Connecting to institutional gateway (cold server waking up, please wait)...
+                </p>
+              )}
 
               <label className="text-[10px] text-slate-600 dark:text-on-surface-variant font-sans leading-tight flex items-center gap-2 cursor-pointer select-none">
                 <input
