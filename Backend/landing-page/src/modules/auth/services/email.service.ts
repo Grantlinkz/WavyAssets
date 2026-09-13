@@ -6,7 +6,7 @@ export interface OtpEmailOptions {
   toEmail: string;
   otpCode: string;
   requesterIp?: string;
-  userFullName?: string;
+  userFullName?: string | null;
 }
 
 export interface ContactConfirmationEmailOptions {
@@ -31,15 +31,28 @@ export class EmailService {
   constructor(private readonly configService: ConfigService) {
     this.emailProvider =
       this.configService.get<'resend' | 'console'>('email.provider') || 'resend';
-    this.emailFrom =
+    const rawFrom =
       this.configService.get<string>('email.emailFrom') ||
       'WavyAssets Security <security@wavyassets.com>';
+
+    if (!rawFrom.includes('@')) {
+      const sanitizedName = rawFrom.replace(/["']/g, '').trim();
+      this.emailFrom = `${sanitizedName} <onboarding@resend.dev>`;
+      this.logger.warn(
+        `[Resend Config] EMAIL_FROM "${rawFrom}" is missing an email address! Falling back to "${this.emailFrom}". Format must be "Friendly Name <user@domain.com>".`,
+      );
+    } else {
+      this.emailFrom = rawFrom.replace(/["']/g, '').trim();
+    }
+
     this.isProduction =
       this.configService.get<string>('server.nodeEnv') === 'production';
 
     const apiKey = this.configService.get<string>('email.resendApiKey');
     if (apiKey && apiKey.startsWith('re_')) {
       this.resendClient = new Resend(apiKey);
+    } else {
+      this.logger.warn('[Resend Config] Invalid or missing RESEND_API_KEY. It must begin with "re_".');
     }
   }
 
@@ -202,7 +215,9 @@ export class EmailService {
       });
 
       if (result.error) {
-        this.logger.error(`Resend API rejected email dispatch: ${result.error.message}`);
+        this.logger.error(`[Resend Error] Failed to dispatch OTP to ${toEmail} from "${this.emailFrom}": [${result.error.name}] ${result.error.message}`);
+        this.logger.error(`[Resend Diagnostic] 1. Ensure EMAIL_FROM has the format "Name <user@domain.com>".`);
+        this.logger.error(`[Resend Diagnostic] 2. If using unverified domain, Resend requires sender to be "onboarding@resend.dev" and only delivers to your Resend account email.`);
         return false;
       }
 
@@ -210,6 +225,132 @@ export class EmailService {
       return true;
     } catch (error) {
       this.logger.error('Unexpected error while sending 2FA OTP email via Resend', error);
+      return false;
+    }
+  }
+
+  /**
+   * Generates the Swiss-typography HTML email template for Password Reset challenge.
+   */
+  private generateSwissPasswordResetTemplate(otpCode: string, requesterIp = 'Unknown'): string {
+    const timestampUtc = new Date().toUTCString();
+
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WavyAssets Password Reset Challenge</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #08090B; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #FFFFFF;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #08090B; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="100%" max-width="540" cellpadding="0" cellspacing="0" style="max-width: 540px; background-color: #0D0F12; border: 1px solid #222632; border-radius: 8px; overflow: hidden; padding: 40px 32px;">
+          <!-- Header / Brand -->
+          <tr>
+            <td align="left" style="padding-bottom: 24px; border-bottom: 1px solid #1A1E26;">
+              ${this.generateBrandHeader('PASSWORD RESET')}
+            </td>
+          </tr>
+          
+          <!-- Subject & Body -->
+          <tr>
+            <td style="padding-top: 32px;">
+              <h1 style="font-size: 20px; font-weight: 600; color: #FFFFFF; margin: 0 0 12px 0;">Password Reset Authorization</h1>
+              <p style="font-size: 14px; line-height: 22px; color: #8C96A5; margin: 0 0 28px 0;">
+                A password reset was requested for your WavyAssets account. Use the 6-digit authorization code below to verify your identity and set a new password. This challenge expires in <strong style="color: #FFFFFF;">5 minutes</strong>.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Monospace OTP Code Display -->
+          <tr>
+            <td align="center" style="padding: 24px 0;">
+              <div style="background-color: #12151B; border: 1px solid #A6FF00; border-radius: 6px; padding: 20px; text-align: center;">
+                <span style="font-family: 'Courier New', Courier, monospace; font-size: 36px; font-weight: 700; letter-spacing: 10px; color: #A6FF00;">${otpCode}</span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Security Metadata Ribbon -->
+          <tr>
+            <td style="padding: 24px 0; border-top: 1px solid #1A1E26; border-bottom: 1px solid #1A1E26;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="font-size: 12px; color: #647082; line-height: 18px;">
+                <tr>
+                  <td style="padding: 3px 0;">Timestamp (UTC):</td>
+                  <td align="right" style="color: #8C96A5;">${timestampUtc}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 3px 0;">Requester Origin:</td>
+                  <td align="right" style="color: #8C96A5;">${requesterIp}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 3px 0;">Cryptographic Algorithm:</td>
+                  <td align="right" style="color: #8C96A5;">Argon2id (Memory-Hard)</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Security Warning -->
+          <tr>
+            <td style="padding-top: 24px;">
+              <p style="font-size: 11px; line-height: 16px; color: #505A69; margin: 0;">
+                Security Notice: If you did not request a password reset, please ignore this email or notify custody security immediately. Your account remains secured with your existing password.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `.trim();
+  }
+
+  /**
+   * Dispatches the Password Reset OTP challenge via Resend or dev console fallback.
+   */
+  async sendPasswordResetOtpEmail(options: OtpEmailOptions): Promise<boolean> {
+    const { toEmail, otpCode, requesterIp } = options;
+
+    // Local Development Console Fallback
+    if (!this.isProduction && (this.emailProvider === 'console' || !this.resendClient)) {
+      this.logger.log(
+        `[AUTH-DEV-RESET-OTP] Password reset verification code for ${toEmail}: ${otpCode} (Expires in 5m, IP: ${requesterIp || 'local'})`,
+      );
+      return true;
+    }
+
+    if (!this.resendClient) {
+      this.logger.warn(
+        `Resend client not configured. Simulated dispatch of reset OTP to ${toEmail}`,
+      );
+      return false;
+    }
+
+    try {
+      const html = this.generateSwissPasswordResetTemplate(otpCode, requesterIp);
+
+      const result = await this.resendClient.emails.send({
+        from: this.emailFrom,
+        to: toEmail,
+        subject: 'WavyAssets Password Reset Challenge',
+        html,
+      });
+
+      if (result.error) {
+        this.logger.error(`[Resend Error] Failed to dispatch reset OTP to ${toEmail}: [${result.error.name}] ${result.error.message}`);
+        return false;
+      }
+
+      this.logger.log(`Successfully dispatched password reset OTP via Resend to ${toEmail}`);
+      return true;
+    } catch (error) {
+      this.logger.error('Unexpected error while sending password reset OTP email via Resend', error);
       return false;
     }
   }

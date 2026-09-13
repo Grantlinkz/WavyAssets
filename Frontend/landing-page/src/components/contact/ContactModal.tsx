@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '../ui/dialog';
 import { useTerminalStore } from '../../store/useTerminalStore';
 import { ContactSentinelGraphic } from './ContactSentinelGraphic';
@@ -54,7 +54,15 @@ export const ContactModal: React.FC<ContactModalProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [elapsedSecs, setElapsedSecs] = useState(0);
   const [successMessage, setSuccessMessage] = useState('');
+
+  useEffect(() => {
+    if (!isLoading) return;
+    setElapsedSecs(0);
+    const timer = setInterval(() => setElapsedSecs((s) => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, [isLoading]);
 
   const mapServiceToBackend = (serviceStr: string): LeadInquiryPayload['service'] => {
     switch (serviceStr) {
@@ -371,7 +379,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
                 {isLoading ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>SENDING...</span>
+                    <span>{elapsedSecs > 5 ? `SENDING (${elapsedSecs}s)...` : 'SENDING...'}</span>
                   </>
                 ) : (
                   <>
@@ -380,6 +388,12 @@ export const ContactModal: React.FC<ContactModalProps> = ({
                   </>
                 )}
               </motion.button>
+
+              {isLoading && elapsedSecs >= 5 && (
+                <p className="text-[10px] font-mono text-outline animate-pulse w-full">
+                  Connecting to institutional gateway (cold server waking up, please wait)...
+                </p>
+              )}
 
               <label className="text-[10px] text-slate-600 dark:text-on-surface-variant font-sans leading-tight flex items-center gap-2 cursor-pointer select-none">
                 <input

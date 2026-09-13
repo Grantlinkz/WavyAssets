@@ -7,6 +7,14 @@ export const NewsletterDispatch: React.FC = () => {
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [elapsedSecs, setElapsedSecs] = useState(0);
+
+  React.useEffect(() => {
+    if (!isLoading) return;
+    setElapsedSecs(0);
+    const timer = setInterval(() => setElapsedSecs((s) => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, [isLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,13 +96,19 @@ export const NewsletterDispatch: React.FC = () => {
               {isLoading ? (
                 <>
                   <Loader2 className="w-3 h-3 animate-spin" />
-                  <span>Joining...</span>
+                  <span>{elapsedSecs > 5 ? `Joining (${elapsedSecs}s)...` : 'Joining...'}</span>
                 </>
               ) : (
                 'Join'
               )}
             </button>
           </div>
+
+          {isLoading && elapsedSecs >= 5 && (
+            <div className="font-mono text-[10px] text-outline animate-pulse">
+              Connecting to institutional dispatch (cold server waking up)...
+            </div>
+          )}
 
           {status === 'error' && (
             <div

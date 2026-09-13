@@ -27,6 +27,10 @@ import {
   InitiateAuthResponseDataDto,
   VerifyOtpResponseDataDto,
   ExchangeResponseDataDto,
+  ForgotPasswordDto,
+  ForgotPasswordResponseDataDto,
+  ResetPasswordDto,
+  ResetPasswordResponseDataDto,
 } from './dto/auth.dto';
 import { AuthGuard } from './guards/auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -60,7 +64,7 @@ export class AuthController {
   })
   @SwaggerResponse({
     status: 401,
-    description: 'Invalid credentials or challenge expired',
+    description: 'Invalid email or password',
     type: ApiResponseDto,
   })
   @SwaggerResponse({
@@ -74,6 +78,56 @@ export class AuthController {
   ): Promise<InitiateAuthResponseDataDto> {
     const clientIp = req.ip || (req.headers['x-forwarded-for'] as string) || 'unknown';
     return this.authService.initiate(dto, clientIp);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Initiate password reset challenge',
+    description: 'Verifies account existence and delivers 6-digit password reset OTP challenge via email.',
+  })
+  @SwaggerResponse({
+    status: 200,
+    description: 'Password reset challenge initiated successfully',
+    type: ApiResponseDto,
+  })
+  @SwaggerResponse({
+    status: 404,
+    description: 'No account found with this email address',
+    type: ApiResponseDto,
+  })
+  async forgotPassword(
+    @Body() dto: ForgotPasswordDto,
+    @Req() req: Request,
+  ): Promise<ForgotPasswordResponseDataDto> {
+    const clientIp = req.ip || (req.headers['x-forwarded-for'] as string) || 'unknown';
+    return this.authService.forgotPassword(dto, clientIp);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Verify OTP and reset password',
+    description: 'Verifies password reset OTP, securely hashes new password, updates user credentials, and revokes active sessions.',
+  })
+  @SwaggerResponse({
+    status: 200,
+    description: 'Password reset successfully',
+    type: ApiResponseDto,
+  })
+  @SwaggerResponse({
+    status: 401,
+    description: 'Invalid OTP code or challenge expired',
+    type: ApiResponseDto,
+  })
+  async resetPassword(
+    @Body() dto: ResetPasswordDto,
+    @Req() req: Request,
+  ): Promise<ResetPasswordResponseDataDto> {
+    const clientIp = req.ip || (req.headers['x-forwarded-for'] as string) || 'unknown';
+    return this.authService.resetPassword(dto, clientIp);
   }
 
   @Post('verify-otp')

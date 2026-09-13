@@ -4,8 +4,10 @@ import {
   ConflictException,
   ForbiddenException,
   BadRequestException,
+  NotFoundException,
   Logger,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
@@ -18,6 +20,10 @@ import {
   InitiateAuthResponseDataDto,
   VerifyOtpResponseDataDto,
   ExchangeResponseDataDto,
+  ForgotPasswordDto,
+  ForgotPasswordResponseDataDto,
+  ResetPasswordDto,
+  ResetPasswordResponseDataDto,
 } from './dto/auth.dto';
 import { maskEmail } from '../../common/interceptors/pii-redaction.interceptor';
 
@@ -60,10 +66,9 @@ export class AuthService {
         where: { email },
       });
 
-      // Anti-account enumeration: return generic message on missing or inactive user
-      if (!existingUser || !existingUser.isActive) {
-        this.logger.warn(`Failed login initiation for non-existent or inactive email: ${maskEmail(email)}`);
-        throw new UnauthorizedException('Invalid credentials or challenge expired');
+      if (!existingUser) {
+        this.logger.warn(`Failed login initiation for non-existent email: ${maskEmail(email)}`);
+        throw new UnauthorizedException('Invalid email or password');
       }
 
       const isPasswordValid = await this.crypto.verifyPassword(
@@ -73,7 +78,7 @@ export class AuthService {
 
       if (!isPasswordValid) {
         this.logger.warn(`Invalid passphrase attempt for account: ${maskEmail(email)}`);
-        throw new UnauthorizedException('Invalid credentials or challenge expired');
+        throw new UnauthorizedException('Invalid email or password');
       }
 
       targetUserId = existingUser.id;
@@ -88,36 +93,23 @@ export class AuthService {
         where: { email },
       });
 
-      if (existingUser && existingUser.isActive) {
+      if (existingUser) {
         throw new ConflictException('Account already registered with this email address');
       }
 
       const passphraseHash = await this.crypto.hashPassword(dto.passphrase);
 
-      if (existingUser && !existingUser.isActive) {
-        // Update pending unverified registration
-        const updated = await this.prisma.user.update({
-          where: { id: existingUser.id },
-          data: {
-            fullName: dto.fullName.trim(),
-            passphraseHash,
-            tier,
-          },
-        });
-        targetUserId = updated.id;
-      } else {
-        // Create new pending user
-        const newUser = await this.prisma.user.create({
-          data: {
-            email,
-            fullName: dto.fullName.trim(),
-            passphraseHash,
-            tier,
-            isActive: false, // Activated upon OTP confirmation
-          },
-        });
-        targetUserId = newUser.id;
-      }
+      // Create new pending user
+      const newUser = await this.prisma.user.create({
+        data: {
+          email,
+          fullName: dto.fullName.trim(),
+          passphraseHash,
+          tier,
+          isActive: false, // Activated upon OTP confirmation
+        },
+      });
+      targetUserId = newUser.id;
     }
 
     // Generate cryptographic 6-digit OTP
@@ -448,5 +440,198 @@ export class AuthService {
     await this.prisma.session.deleteMany({
       where: { refreshTokenHash: tokenHash },
     });
+  }
+
+  /**
+   * Initiates a password reset challenge by verifying account existence and dispatching a 6-digit OTP.
+   */
+  async forgotPassword(
+    dto: ForgotPasswordDto,
+    requesterIp = 'unknown',
+  ): Promise<ForgotPasswordResponseDataDto> {
+    const email = dto.email.toLowerCase().trim();
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!existingUser) {
+      this.logger.warn(`Forgot password requested for non-existent email: ${maskEmail(email)}`);
+      return {
+        step: 2,
+        challengeId: randomUUID(),
+        expiresInSeconds: 300,
+        maskedDestination: maskEmail(email),
+      };
+    }
+
+    // Generate cryptographic 6-digit OTP
+    const rawOtp = this.crypto.generateOtp();
+    const hashedCode = await this.crypto.hashOtp(rawOtp);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes TTL
+
+    // Invalidate any existing unconsumed challenges for this email
+    await this.prisma.otpCode.updateMany({
+      where: { email, isConsumed: false },
+      data: { isConsumed: true },
+    });
+
+    // Create new challenge record
+    const challenge = await this.prisma.otpCode.create({
+      data: {
+        userId: existingUser.id,
+        email,
+        hashedCode,
+        attempts: 0,
+        isConsumed: false,
+        expiresAt,
+      },
+    });
+
+    // Dispatch OTP via reset email
+    const emailSent = await this.emailService.sendPasswordResetOtpEmail({
+      toEmail: email,
+      otpCode: rawOtp,
+      requesterIp,
+      userFullName: existingUser.fullName || undefined,
+    });
+
+    if (!emailSent) {
+      await this.prisma.otpCode.update({
+        where: { id: challenge.id },
+        data: { isConsumed: true },
+      });
+      throw new BadRequestException('Failed to deliver password reset verification code');
+    }
+
+    return {
+      step: 2,
+      challengeId: challenge.id,
+      expiresInSeconds: 300,
+      maskedDestination: maskEmail(email),
+    };
+  }
+
+  /**
+   * Verifies the password reset OTP challenge and updates the user's password.
+   */
+  async resetPassword(
+    dto: ResetPasswordDto,
+    requesterIp = 'unknown',
+  ): Promise<ResetPasswordResponseDataDto> {
+    // 1. Production Sandbox Guard
+    if (this.isProduction && (dto.otpCode === '123456' || dto.otpCode === this.devStaticOtp)) {
+      this.logger.error(
+        `[INTRUSION-ALERT] Production Sandbox Guard triggered: submission of dev static OTP in reset-password from IP ${requesterIp}`,
+      );
+      throw new ForbiddenException('Sandbox execution forbidden in production');
+    }
+
+    // 2. Fetch challenge record
+    const challenge = await this.prisma.otpCode.findUnique({
+      where: { id: dto.challengeId },
+      include: { user: true },
+    });
+
+    if (!challenge) {
+      throw new UnauthorizedException('Verification challenge expired or invalid');
+    }
+
+    if (challenge.isConsumed) {
+      throw new UnauthorizedException('Verification challenge expired');
+    }
+
+    if (challenge.expiresAt < new Date()) {
+      await this.prisma.otpCode.update({
+        where: { id: challenge.id },
+        data: { isConsumed: true },
+      });
+      throw new UnauthorizedException('Verification challenge expired');
+    }
+
+    if (challenge.attempts >= 3) {
+      await this.prisma.otpCode.update({
+        where: { id: challenge.id },
+        data: { isConsumed: true },
+      });
+      throw new UnauthorizedException(
+        'Verification challenge expired due to excessive failed attempts',
+      );
+    }
+
+    // 3. Verify OTP code
+    let isCodeValid = false;
+    if (!this.isProduction && this.devStaticOtp && dto.otpCode === this.devStaticOtp) {
+      isCodeValid = true;
+    } else {
+      isCodeValid = await this.crypto.verifyOtp(challenge.hashedCode, dto.otpCode);
+    }
+
+    if (!isCodeValid) {
+      const newAttempts = challenge.attempts + 1;
+      await this.prisma.otpCode.update({
+        where: { id: challenge.id },
+        data: {
+          attempts: newAttempts,
+          isConsumed: newAttempts >= 3,
+        },
+      });
+
+      if (newAttempts >= 3) {
+        throw new UnauthorizedException(
+          'Verification challenge expired due to excessive failed attempts',
+        );
+      }
+
+      throw new UnauthorizedException('Invalid verification code');
+    }
+
+    // 4. Fetch user
+    let user = challenge.user;
+    if (!user) {
+      user = await this.prisma.user.findUnique({
+        where: { email: challenge.email },
+      });
+    }
+
+    if (!user) {
+      throw new UnauthorizedException('Associated user account could not be found');
+    }
+
+    // 5. Hash new password
+    const passphraseHash = await this.crypto.hashPassword(dto.newPassphrase);
+
+    // 6. Atomically claim challenge, update user password, and revoke sessions in one database transaction
+    await this.prisma.$transaction(async (tx) => {
+      const claimResult = await tx.otpCode.updateMany({
+        where: {
+          id: challenge.id,
+          isConsumed: false,
+          attempts: { lt: 3 },
+        },
+        data: { isConsumed: true },
+      });
+
+      if (claimResult.count === 0) {
+        throw new UnauthorizedException('Verification challenge expired or already consumed');
+      }
+
+      await tx.user.update({
+        where: { id: user.id },
+        data: {
+          passphraseHash,
+          isActive: true,
+        },
+      });
+
+      await tx.session.deleteMany({
+        where: { userId: user.id },
+      });
+    });
+
+    this.logger.log(`Password reset completed successfully for account: ${maskEmail(user.email)}`);
+
+    return {
+      message: 'Password reset successfully. You may now sign in.',
+    };
   }
 }

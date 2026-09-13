@@ -63,6 +63,27 @@ export interface VerifyOtpResponseData {
   dashboardUrl?: string;
 }
 
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export interface ForgotPasswordResponseData {
+  step: 2;
+  challengeId: string;
+  expiresInSeconds: number;
+  maskedDestination: string;
+}
+
+export interface ResetPasswordPayload {
+  challengeId: string;
+  otpCode: string;
+  newPassphrase: string;
+}
+
+export interface ResetPasswordResponseData {
+  message: string;
+}
+
 // -------------------------------------------------------------
 // Leads & Institutional Mandates Contracts
 // -------------------------------------------------------------
@@ -170,7 +191,11 @@ const getApiBaseUrl = (): string => {
   return '/api/v1';
 };
 
-async function request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+export async function request<T>(
+  endpoint: string,
+  options: RequestInit = {},
+  timeoutMs = 60000,
+): Promise<ApiResponse<T>> {
   const baseUrl = getApiBaseUrl();
   const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = `${baseUrl}${normalizedEndpoint}`;
@@ -184,10 +209,30 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     headers['Content-Type'] = 'application/json';
   }
 
+  let isTimeoutAbort = false;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    isTimeoutAbort = true;
+    controller.abort();
+  }, timeoutMs);
+
+  const onCallerAbort = () => {
+    controller.abort();
+  };
+
+  if (options.signal) {
+    if (options.signal.aborted) {
+      controller.abort();
+    } else {
+      options.signal.addEventListener('abort', onCallerAbort, { once: true });
+    }
+  }
+
   try {
     const response = await fetch(url, {
       ...options,
       headers,
+      signal: controller.signal,
       credentials: options.credentials || 'include',
     });
 
@@ -218,8 +263,22 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     if (err instanceof ApiError) {
       throw err;
     }
+    if (err instanceof Error && err.name === 'AbortError') {
+      if (isTimeoutAbort) {
+        throw new ApiError(
+          408,
+          'Request timed out after 60 seconds. The server may be waking up from sleep. Please try again.',
+        );
+      }
+      throw err;
+    }
     const message = err instanceof Error ? err.message : 'Network failure or Gateway unreachable';
     throw new ApiError(0, message, err);
+  } finally {
+    clearTimeout(timeoutId);
+    if (options.signal) {
+      options.signal.removeEventListener('abort', onCallerAbort);
+    }
   }
 }
 
@@ -237,6 +296,20 @@ export const authApi = {
 
   verifyOtp: async (payload: VerifyOtpPayload): Promise<ApiResponse<VerifyOtpResponseData>> => {
     return request<VerifyOtpResponseData>('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  forgotPassword: async (payload: ForgotPasswordPayload): Promise<ApiResponse<ForgotPasswordResponseData>> => {
+    return request<ForgotPasswordResponseData>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  resetPassword: async (payload: ResetPasswordPayload): Promise<ApiResponse<ResetPasswordResponseData>> => {
+    return request<ResetPasswordResponseData>('/auth/reset-password', {
       method: 'POST',
       body: JSON.stringify(payload),
     });

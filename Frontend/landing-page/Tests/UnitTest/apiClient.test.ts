@@ -6,6 +6,7 @@ import {
   simulationApi,
   telemetryApi,
   ApiError,
+  request,
 } from '../../src/lib/api';
 
 describe('Institutional Gateway API Client Layer', () => {
@@ -75,6 +76,59 @@ describe('Institutional Gateway API Client Layer', () => {
       await expect(
         authApi.verifyOtp({ challengeId: 'chl_test123', otpCode: '999999' })
       ).rejects.toThrowError(ApiError);
+    });
+
+    it('dispatches forgot-password request with email', async () => {
+      const mockResponse = {
+        success: true,
+        data: {
+          step: 2,
+          challengeId: 'chl_reset_456',
+          expiresInSeconds: 300,
+          maskedDestination: 'i***@familyoffice.ch',
+        },
+        timestamp: '2026-09-12T00:00:00.000Z',
+      };
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => mockResponse,
+      });
+
+      const res = await authApi.forgotPassword({ email: 'investor@familyoffice.ch' });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/auth/forgot-password'),
+        expect.objectContaining({ method: 'POST' }),
+      );
+      expect(res.data?.challengeId).toBe('chl_reset_456');
+    });
+
+    it('dispatches reset-password request with challengeId, otpCode, and newPassphrase', async () => {
+      const mockResponse = {
+        success: true,
+        data: { message: 'Password reset successfully' },
+        timestamp: '2026-09-12T00:00:00.000Z',
+      };
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => mockResponse,
+      });
+
+      const res = await authApi.resetPassword({
+        challengeId: 'chl_reset_456',
+        otpCode: '123456',
+        newPassphrase: 'NewSecurePassword123!',
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/auth/reset-password'),
+        expect.objectContaining({ method: 'POST' }),
+      );
+      expect(res.data?.message).toBe('Password reset successfully');
     });
   });
 
@@ -200,6 +254,44 @@ describe('Institutional Gateway API Client Layer', () => {
       const res = await telemetryApi.getTickerQuotes();
       expect(res.data?.quotes[0].symbol).toBe('BTC/USD');
       expect(res.data?.feedStatus).toBe('OPTIMAL');
+    });
+
+    it('returns 408 ApiError when request abort is triggered by timeout timer', async () => {
+      global.fetch = vi.fn().mockImplementation((_url, init) => {
+        return new Promise((_, reject) => {
+          init.signal.addEventListener('abort', () => {
+            const err = new Error('The operation was aborted');
+            err.name = 'AbortError';
+            reject(err);
+          });
+        });
+      });
+
+      await expect(
+        request('/test/timeout', {}, 10),
+      ).rejects.toSatisfy((err: unknown) => {
+        return err instanceof ApiError && err.statusCode === 408;
+      });
+    });
+
+    it('preserves caller cancellation and rethrows AbortError when caller aborts', async () => {
+      const controller = new AbortController();
+      global.fetch = vi.fn().mockImplementation((_url, init) => {
+        return new Promise((_, reject) => {
+          init.signal.addEventListener('abort', () => {
+            const err = new Error('The user aborted a request');
+            err.name = 'AbortError';
+            reject(err);
+          });
+        });
+      });
+
+      const requestPromise = request('/test/caller-abort', { signal: controller.signal }, 60000);
+      controller.abort();
+
+      await expect(requestPromise).rejects.toSatisfy((err: unknown) => {
+        return err instanceof Error && err.name === 'AbortError' && !(err instanceof ApiError);
+      });
     });
   });
 });
