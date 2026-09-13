@@ -7,6 +7,7 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
@@ -455,7 +456,12 @@ export class AuthService {
 
     if (!existingUser) {
       this.logger.warn(`Forgot password requested for non-existent email: ${maskEmail(email)}`);
-      throw new NotFoundException('No account found with this email address');
+      return {
+        step: 2,
+        challengeId: randomUUID(),
+        expiresInSeconds: 300,
+        maskedDestination: maskEmail(email),
+      };
     }
 
     // Generate cryptographic 6-digit OTP
@@ -482,12 +488,20 @@ export class AuthService {
     });
 
     // Dispatch OTP via reset email
-    await this.emailService.sendPasswordResetOtpEmail({
+    const emailSent = await this.emailService.sendPasswordResetOtpEmail({
       toEmail: email,
       otpCode: rawOtp,
       requesterIp,
       userFullName: existingUser.fullName || undefined,
     });
+
+    if (!emailSent) {
+      await this.prisma.otpCode.update({
+        where: { id: challenge.id },
+        data: { isConsumed: true },
+      });
+      throw new BadRequestException('Failed to deliver password reset verification code');
+    }
 
     return {
       step: 2,
@@ -571,13 +585,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid verification code');
     }
 
-    // 4. Mark challenge consumed
-    await this.prisma.otpCode.update({
-      where: { id: challenge.id },
-      data: { isConsumed: true },
-    });
-
-    // 5. Fetch user
+    // 4. Fetch user
     let user = challenge.user;
     if (!user) {
       user = await this.prisma.user.findUnique({
@@ -589,19 +597,35 @@ export class AuthService {
       throw new UnauthorizedException('Associated user account could not be found');
     }
 
-    // 6. Update user's password and activate if inactive
+    // 5. Hash new password
     const passphraseHash = await this.crypto.hashPassword(dto.newPassphrase);
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        passphraseHash,
-        isActive: true,
-      },
-    });
 
-    // 7. Revoke all existing active sessions for security
-    await this.prisma.session.deleteMany({
-      where: { userId: user.id },
+    // 6. Atomically claim challenge, update user password, and revoke sessions in one database transaction
+    await this.prisma.$transaction(async (tx) => {
+      const claimResult = await tx.otpCode.updateMany({
+        where: {
+          id: challenge.id,
+          isConsumed: false,
+          attempts: { lt: 3 },
+        },
+        data: { isConsumed: true },
+      });
+
+      if (claimResult.count === 0) {
+        throw new UnauthorizedException('Verification challenge expired or already consumed');
+      }
+
+      await tx.user.update({
+        where: { id: user.id },
+        data: {
+          passphraseHash,
+          isActive: true,
+        },
+      });
+
+      await tx.session.deleteMany({
+        where: { userId: user.id },
+      });
     });
 
     this.logger.log(`Password reset completed successfully for account: ${maskEmail(user.email)}`);

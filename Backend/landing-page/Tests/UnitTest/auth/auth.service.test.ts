@@ -43,6 +43,9 @@ describe('AuthService (Two-Step Authentication & Gateway Logic)', () => {
         delete: vi.fn(),
         deleteMany: vi.fn(),
       },
+      $transaction: vi.fn().mockImplementation((cb: any) =>
+        typeof cb === 'function' ? cb(mockPrisma) : Promise.all(cb),
+      ),
     };
 
     mockCrypto = {
@@ -326,19 +329,47 @@ describe('AuthService (Two-Step Authentication & Gateway Logic)', () => {
       );
     });
 
-    it('should throw NotFoundException if account does not exist', async () => {
+    it('should return step 2 opaque challenge without sending email if account does not exist', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
+
+      const res = await authService.forgotPassword({
+        email: 'nonexistent@firm.com',
+      });
+
+      expect(res.step).toBe(2);
+      expect(res.challengeId).toBeDefined();
+      expect(res.expiresInSeconds).toBe(300);
+      expect(mockEmailService.sendPasswordResetOtpEmail).not.toHaveBeenCalled();
+      expect(mockPrisma.otpCode.create).not.toHaveBeenCalled();
+    });
+
+    it('should invalidate challenge and throw BadRequestException if email delivery fails', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'usr_reset',
+        email: 'resetme@firm.com',
+        fullName: 'Reset User',
+        isActive: true,
+      });
+      mockPrisma.otpCode.create.mockResolvedValue({
+        id: 'challenge_reset_1',
+      });
+      mockEmailService.sendPasswordResetOtpEmail.mockResolvedValue(false);
 
       await expect(
         authService.forgotPassword({
-          email: 'nonexistent@firm.com',
+          email: 'resetme@firm.com',
         }),
-      ).rejects.toThrow(NotFoundException);
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockPrisma.otpCode.update).toHaveBeenCalledWith({
+        where: { id: 'challenge_reset_1' },
+        data: { isConsumed: true },
+      });
     });
   });
 
   describe('resetPassword()', () => {
-    it('should verify reset OTP, update password hash, and revoke sessions', async () => {
+    it('should verify reset OTP, update password hash, and revoke sessions atomically', async () => {
       mockPrisma.otpCode.findUnique.mockResolvedValue({
         id: 'challenge_reset_1',
         hashedCode: '$argon2id$hashedOtpCode',
@@ -354,6 +385,7 @@ describe('AuthService (Two-Step Authentication & Gateway Logic)', () => {
       });
       mockCrypto.verifyOtp.mockResolvedValue(true);
       mockCrypto.hashPassword.mockResolvedValue('$argon2id$newPasswordHash');
+      mockPrisma.otpCode.updateMany.mockResolvedValue({ count: 1 });
 
       const res = await authService.resetPassword({
         challengeId: 'challenge_reset_1',
@@ -362,6 +394,15 @@ describe('AuthService (Two-Step Authentication & Gateway Logic)', () => {
       });
 
       expect(res.message).toContain('Password reset successfully');
+      expect(mockPrisma.$transaction).toHaveBeenCalled();
+      expect(mockPrisma.otpCode.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: 'challenge_reset_1',
+          isConsumed: false,
+          attempts: { lt: 3 },
+        },
+        data: { isConsumed: true },
+      });
       expect(mockPrisma.user.update).toHaveBeenCalledWith({
         where: { id: 'usr_reset' },
         data: {

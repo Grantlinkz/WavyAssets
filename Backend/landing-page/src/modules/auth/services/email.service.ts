@@ -338,7 +338,7 @@ export class EmailService {
       const result = await this.resendClient.emails.send({
         from: this.emailFrom,
         to: toEmail,
-        subject: `WavyAssets Password Reset Challenge: ${otpCode}`,
+        subject: 'WavyAssets Password Reset Challenge',
         html,
       });
 
