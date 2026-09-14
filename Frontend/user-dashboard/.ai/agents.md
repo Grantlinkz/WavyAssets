@@ -19,7 +19,7 @@ Your mission is to translate the high-fidelity architectural specifications, des
    - `vip-cards`: Obsidian 3D metal card visualizer, freeze controls, spend limits, biometric/2FA CVV & PIN reveal.
    - `wallet`: Unified multi-currency ledger (Available vs Invested), fiat on/off-ramp stepper, auto-sweep cash pots, transaction history.
 4. **Compliance & Security Command Center**: Implement tiered KYC/AML verification, unified tax packet aggregation (Form 8949 / Schedule D), active session management with remote revocation, WebAuthn / FIDO2 YubiKey triggers, and strict 24–48h address whitelist locking.
-5. **Session Lifecycle & Handoff Integration**: Implement single-use HMAC-SHA256 handoff ticket consumption (`/auth/callback?ticket=...`) from the landing page (`Frontend/landing-page`) and establish secure JWT / refresh token sessions.
+5. **Session Lifecycle & Handoff Integration**: Implement single-use HMAC-SHA256 handoff ticket consumption via secure `wavy_handoff` cookie exchange (`/auth/callback`) from the landing page (`Frontend/landing-page`) and establish secure JWT / refresh token sessions.
 6. **High-Performance 3D & Data Telemetry**: Implement Three.js asset visualizers with mandatory `.dispose()` memory deallocation, loop throttling on tab blur or off-screen scroll, and WebSocket ticker streaming (`/ws/ticker`).
 
 ---

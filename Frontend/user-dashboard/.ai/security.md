@@ -11,9 +11,9 @@
 ## Authentication & Session Lifecycle
 
 1. **Handoff Ticket Protocol**:
-   - Single-use, deterministic HMAC-SHA256 ticket passed from `Frontend/landing-page` via `/auth/callback?ticket=<handoffTicket>`.
-   - The ticket is immediately consumed via `POST /api/v1/auth/exchange-ticket` and burned by the backend.
-   - The backend returns a short-lived access JWT (15-minute expiry) and sets an HttpOnly refresh cookie.
+   - Single-use, deterministic HMAC-SHA256 exchange ticket delivered via secure `HttpOnly; SameSite=Lax` `wavy_handoff` cookie (with 60-second TTL) during landing-page authentication handoff to `/auth/callback`.
+   - The ticket is immediately consumed via `POST /api/v1/auth/exchange-ticket` and burned by the backend vault.
+   - The backend returns a short-lived access JWT (15-minute expiry) and clears the handoff cookie while setting an HttpOnly refresh cookie.
 2. **Auto-Purge on Inactivity / Logout**:
    - Explicit logout or session expiration immediately clears all user entity data and access tokens from `useAuthStore` and redirects to the landing page.
 

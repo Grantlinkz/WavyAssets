@@ -34,10 +34,9 @@ The interface merges Swiss typographic rigor (`Noto Serif`), high-contrast finan
 The user dashboard operates in tight coordination with `Frontend/landing-page` (port `5173`) and the backend gateway (port `4000`):
 
 1. **Authentication on Marketing Site**: User completes email / OTP verification on the landing page.
-2. **Handoff Ticket Generation**: Backend generates a single-use, deterministic HMAC-SHA256 hashed handoff ticket and redirects to:  
-   `http://localhost:5174/auth/callback?ticket=<handoffTicket>`
+2. **Handoff Ticket Generation**: Backend generates a single-use, deterministic HMAC-SHA256 hashed handoff ticket secured in an `HttpOnly; SameSite=Lax` `wavy_handoff` cookie (60s TTL) and redirects to `/auth/callback`.
 3. **Ticket Exchange**: Dashboard client exchanges the ticket via `POST /api/v1/auth/exchange-ticket`.
-4. **Session Establishment**: Backend burns the ticket, issues a 15-minute access JWT, and sets an HttpOnly refresh cookie. The client initializes `useAuthStore` with user identity, tier (`RETAIL`, `PRIVATE_WEALTH`, `INSTITUTIONAL`), and permissions.
+4. **Session Establishment**: Backend validates and burns the ticket, clears the handoff cookie, issues a 15-minute access JWT, and sets an HttpOnly refresh cookie. The client initializes `useAuthStore` with user identity, tier (`RETAIL`, `PRIVATE_WEALTH`, `INSTITUTIONAL`), and permissions.
 
 ---
 

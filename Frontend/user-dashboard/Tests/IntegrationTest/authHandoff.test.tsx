@@ -1,11 +1,17 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderToString } from 'react-dom/server';
 import { AuthCallback } from '../../src/components/auth/AuthCallback';
 import { useAuthStore } from '../../src/store/useAuthStore';
 
 describe('Auth Handoff Ticket Exchange Integration Suite (Node 24 / SSR Parity)', () => {
+  const originalFetch = globalThis.fetch;
+
   beforeEach(() => {
     useAuthStore.getState().logout();
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
   });
 
   it('renders auth callback container and enclave verification header', () => {
@@ -20,6 +26,22 @@ describe('Auth Handoff Ticket Exchange Integration Suite (Node 24 / SSR Parity)'
   it('successfully exchanges ticket via store action and hydrates user identity', async () => {
     useAuthStore.getState().logout();
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        accessToken: 'mock_jwt_123',
+        user: {
+          id: 'usr_sov_99182',
+          email: 'allocator@sovereign-vault.ch',
+          fullName: 'Geneva Alpha Mandate',
+          tier: 'PRIVATE_WEALTH',
+          isCorporate: true,
+          kycTier: 'TIER_3',
+        },
+      }),
+    }) as unknown as typeof fetch;
 
     const response = await useAuthStore.getState().consumeTicket('valid-handoff-ticket-77');
 

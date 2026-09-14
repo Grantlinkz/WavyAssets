@@ -1,9 +1,15 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useAuthStore } from '../../src/store/useAuthStore';
 
 describe('useAuthStore', () => {
+  const originalFetch = globalThis.fetch;
+
   beforeEach(() => {
     useAuthStore.getState().logout();
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
   });
 
   it('initializes with logged-out state after logout', () => {
@@ -35,6 +41,22 @@ describe('useAuthStore', () => {
   });
 
   it('successfully consumes a valid handoff ticket', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        accessToken: 'mock_jwt_token_abc',
+        user: {
+          id: 'usr_sov_99182',
+          email: 'allocator@sovereign-vault.ch',
+          fullName: 'Geneva Alpha Mandate',
+          tier: 'PRIVATE_WEALTH',
+          isCorporate: true,
+          kycTier: 'TIER_3',
+        },
+      }),
+    }) as unknown as typeof fetch;
+
     const response = await useAuthStore.getState().consumeTicket('valid-handoff-ticket-xyz');
     expect(response.success).toBe(true);
     expect(response.accessToken).toBeDefined();
@@ -44,6 +66,24 @@ describe('useAuthStore', () => {
     expect(state.user).not.toBeNull();
     expect(state.isExchangingTicket).toBe(false);
     expect(state.ticketExchangeError).toBeNull();
+  });
+
+  it('rejects ticket consumption when backend reports failure', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: false,
+        message: 'Ticket already consumed',
+      }),
+    }) as unknown as typeof fetch;
+
+    await expect(useAuthStore.getState().consumeTicket('expired-ticket')).rejects.toThrow(
+      'Ticket already consumed'
+    );
+
+    const state = useAuthStore.getState();
+    expect(state.isAuthenticated).toBe(false);
+    expect(state.ticketExchangeError).toBe('Ticket already consumed');
   });
 
   it('clears state on logout', () => {

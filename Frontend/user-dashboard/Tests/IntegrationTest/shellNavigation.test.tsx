@@ -76,12 +76,22 @@ describe('Shell Navigation Integration Suite (Node 24 / SSR Parity)', () => {
     expect(html).toContain('SHARPE 2.84');
   });
 
-  it('renders full App shell with clean layout and sub-50ms reactive structure', () => {
-    const html = renderToString(<App />);
+  it('renders full App shell with clean layout and validates sub-50ms reactive transition SLA', () => {
+    useDashboardStore.setState({ activeVertical: 'overview' });
+    const initialHtml = renderToString(<App />);
 
-    expect(html).toContain('data-testid="top-header"');
-    expect(html).toContain('data-testid="dashboard-sidebar"');
-    expect(html).toContain('id="main-content"');
-    expect(html).toContain('min-h-[540px]');
+    expect(initialHtml).toContain('data-testid="top-header"');
+    expect(initialHtml).toContain('data-testid="dashboard-sidebar"');
+    expect(initialHtml).toContain('id="main-content"');
+    expect(initialHtml).toContain('min-h-[540px]');
+
+    const start = performance.now();
+    useDashboardStore.getState().setActiveVertical('crypto');
+    const updatedHtml = renderToString(<App />);
+    const duration = performance.now() - start;
+
+    expect(useDashboardStore.getState().activeVertical).toBe('crypto');
+    expect(updatedHtml).toContain('Crypto &amp; Staking');
+    expect(duration).toBeLessThan(50);
   });
 });
