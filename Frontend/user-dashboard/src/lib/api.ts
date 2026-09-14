@@ -21,35 +21,31 @@ export async function exchangeHandoffTicket(ticket: string): Promise<AuthExchang
     throw new Error('Handoff ticket is required for session exchange.');
   }
 
-  try {
-    const res = await fetch('/api/v1/auth/exchange-ticket', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ ticket }),
-    });
+  const res = await fetch('/api/v1/auth/exchange-ticket', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ ticket }),
+  });
 
-    if (res.ok) {
-      const data = await res.json();
-      return data;
+  if (!res.ok) {
+    let errorMessage = `Authentication handoff exchange failed with status ${res.status}`;
+    try {
+      const errBody = await res.json();
+      if (errBody?.message) {
+        errorMessage = errBody.message;
+      }
+    } catch {
+      // ignore json parse error
     }
-  } catch {
-    // Network or offline dev fallback
+    throw new Error(errorMessage);
   }
 
-  // Graceful fallback for offline development & mock testing
-  return {
-    success: true,
-    accessToken: `mock_jwt_${Date.now()}`,
-    user: {
-      id: 'usr_sov_99182',
-      email: 'allocator@sovereign-vault.ch',
-      fullName: 'Geneva Alpha Mandate',
-      tier: 'PRIVATE_WEALTH',
-      isCorporate: true,
-      kycTier: 'TIER_3',
-    },
-    expiresIn: 900,
-  };
+  const data = (await res.json()) as AuthExchangeResponse;
+  if (!data || data.success === false) {
+    throw new Error((data as { message?: string })?.message || 'Authentication handoff exchange rejected.');
+  }
+
+  return data;
 }

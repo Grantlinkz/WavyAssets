@@ -24,16 +24,9 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  user: {
-    id: 'usr_sov_99182',
-    email: 'allocator@sovereign-vault.ch',
-    fullName: 'Geneva Alpha Mandate',
-    tier: 'PRIVATE_WEALTH',
-    isCorporate: true,
-    kycTier: 'TIER_3',
-  },
-  accessToken: 'initial_demo_token',
-  isAuthenticated: true,
+  user: null,
+  accessToken: null,
+  isAuthenticated: false,
   isExchangingTicket: false,
   ticketExchangeError: null,
 

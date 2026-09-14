@@ -5,7 +5,6 @@ import {
   Sun,
   Eye,
   EyeOff,
-  Shield,
   UserCheck,
   Menu,
 } from 'lucide-react';
@@ -22,6 +21,21 @@ export const TopHeader: React.FC = () => {
     setMobileMenuOpen,
   } = useDashboardStore();
   const { user } = useAuthStore();
+
+  const userInitials = React.useMemo(() => {
+    const name = user?.fullName;
+    if (!name) return 'GA';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return parts[0].slice(0, 2).toUpperCase();
+  }, [user]);
+
+  const kycLabel = React.useMemo(() => {
+    if (!user?.kycTier) return 'KYC Tier 3';
+    return user.kycTier.replace('_', ' ');
+  }, [user]);
 
   return (
     <header
@@ -49,54 +63,46 @@ export const TopHeader: React.FC = () => {
         </div>
       </div>
 
-      {/* Center: Command Search Input */}
-      <div className="hidden md:flex items-center flex-1 max-w-md mx-6">
-        <div className="relative w-full">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-on-surface-variant" />
+      {/* Center: Global Search Bar */}
+      <div className="flex-1 max-w-xs md:max-w-sm mx-3 hidden sm:block">
+        <div className="relative flex items-center">
+          <Search className="absolute left-2.5 h-3.5 w-3.5 text-on-surface-variant pointer-events-none" />
           <input
             type="text"
-            placeholder="Search tickers, vault assets, SPVs, transactions... (⌘K)"
-            aria-label="Global terminal search"
+            placeholder="Search assets, vaults, or contracts... (⌘K)"
+            aria-label="Global Search"
             data-testid="global-search-input"
-            className="w-full h-8 pl-8 pr-12 text-xs bg-surface-container-lowest border border-border-hairline rounded-sm text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:border-primary/80 focus:ring-1 focus:ring-primary/40 font-sans transition-all"
+            className="w-full h-8 pl-8 pr-3 text-xs rounded-sm border border-border-hairline bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:border-primary font-mono transition-colors"
           />
-          <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-on-surface-variant bg-surface-container px-1 py-0.5 rounded-xs border border-border-hairline">
-            ⌘K
-          </kbd>
         </div>
       </div>
 
-      {/* Right Controls: Tier Badge, Privacy Mask, Theme Toggle, Profile */}
+      {/* Right: Actions & Profile */}
       <div className="flex items-center space-x-2 sm:space-x-3">
-        {/* Tier Badge */}
+        {/* Client Access Tier Badge */}
         <div
           data-testid="client-tier-badge"
-          className="hidden sm:inline-flex items-center space-x-1 px-2 py-1 rounded-xs border border-primary/30 bg-primary/10 text-[10px] font-mono font-semibold text-primary uppercase tracking-wider"
+          className="hidden sm:inline-flex items-center space-x-1 px-2 py-1 rounded-xs border border-secondary/40 bg-secondary/10 text-[10px] font-mono font-semibold text-secondary uppercase tracking-wider"
         >
-          <Shield className="h-3 w-3" />
-          <span>{user?.tier ? user.tier.replace('_', ' ') : 'PRIVATE WEALTH'}</span>
+          <span>{user?.tier || 'PRIVATE WEALTH'}</span>
         </div>
 
         {/* Privacy Mask Toggle */}
         <button
           onClick={toggleMaskBalances}
-          data-testid="privacy-mask-toggle"
-          title={maskBalances ? "Show balances" : "Hide balances (Privacy Mode)"}
-          aria-label={maskBalances ? "Show balances" : "Hide balances"}
-          className={`h-8 w-8 rounded-sm flex items-center justify-center border transition-colors cursor-pointer ${
-            maskBalances
-              ? 'border-primary bg-primary/15 text-primary'
-              : 'border-border-hairline bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
-          }`}
+          data-testid="privacy-toggle-btn"
+          title={maskBalances ? 'Unhide Financial Values' : 'Hide Financial Values (Public Safe)'}
+          aria-label={maskBalances ? 'Unhide Financial Values' : 'Hide Financial Values (Public Safe)'}
+          className="h-8 w-8 rounded-sm flex items-center justify-center border border-border-hairline bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer"
         >
           {maskBalances ? (
-            <EyeOff className="h-4 w-4" />
+            <EyeOff className="h-4 w-4 text-primary" />
           ) : (
-            <Eye className="h-4 w-4" />
+            <Eye className="h-4 w-4 text-on-surface-variant" />
           )}
         </button>
 
-        {/* Theme Mode Switcher */}
+        {/* Theme Toggle (Dark / Light) */}
         <button
           onClick={toggleTheme}
           data-testid="theme-toggle-btn"
@@ -113,8 +119,11 @@ export const TopHeader: React.FC = () => {
 
         {/* Account Profile Summary */}
         <div className="flex items-center space-x-2 pl-1 border-l border-border-hairline">
-          <div className="h-8 w-8 rounded-xs border border-primary/40 bg-surface-container flex items-center justify-center text-xs font-mono font-bold text-primary">
-            GA
+          <div
+            data-testid="user-avatar-initials"
+            className="h-8 w-8 rounded-xs border border-primary/40 bg-surface-container flex items-center justify-center text-xs font-mono font-bold text-primary"
+          >
+            {userInitials}
           </div>
           <div className="hidden lg:flex flex-col text-left">
             <span className="text-xs font-medium text-on-surface leading-tight truncate max-w-[130px]">
@@ -122,7 +131,7 @@ export const TopHeader: React.FC = () => {
             </span>
             <span className="text-[10px] font-mono text-secondary flex items-center space-x-1">
               <UserCheck className="h-2.5 w-2.5" />
-              <span>KYC Tier 3</span>
+              <span>{kycLabel}</span>
             </span>
           </div>
         </div>

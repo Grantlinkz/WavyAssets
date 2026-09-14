@@ -21,7 +21,9 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
       const q = urlParams.get('ticket');
       if (q) return q;
       if (window.location.hash.includes('ticket=')) {
-        const hashParams = new URLSearchParams(window.location.hash.split('?')[1]);
+        const hash = window.location.hash;
+        const hashQuery = hash.includes('?') ? hash.split('?')[1] : hash.replace(/^#/, '');
+        const hashParams = new URLSearchParams(hashQuery);
         return hashParams.get('ticket') || undefined;
       }
     }
@@ -44,6 +46,8 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
     return null;
   });
 
+  const consumedTicketRef = React.useRef<string | null>(null);
+
   useEffect(() => {
     const ticket = initialTicket;
 
@@ -53,6 +57,11 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
       }
       return;
     }
+
+    if (consumedTicketRef.current === ticket) {
+      return;
+    }
+    consumedTicketRef.current = ticket;
 
     consumeTicket(ticket)
       .then(() => {
@@ -66,8 +75,10 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
         }
       })
       .catch((err) => {
-        setTicketStatus('error');
-        setErrorMessage(err instanceof Error ? err.message : 'Cryptographic handoff exchange failed.');
+        if (!useAuthStore.getState().isAuthenticated) {
+          setTicketStatus('error');
+          setErrorMessage(err instanceof Error ? err.message : 'Cryptographic handoff exchange failed.');
+        }
       });
   }, [consumeTicket, initialTicket, isAuthenticated, onComplete]);
 
