@@ -2,7 +2,7 @@
 
 ## Project Status
 
-- **Current Phase**: Sprint 0 Completed (Architecture, Design Token Synthesis, `.ai/` Suite & `GEMINI.md` Synchronization) / Preparing Sprint 1 (Foundation, Shell & Auth Handoff)
+- **Current Phase**: Sprint 1 Completed (Foundation, Shell & Auth Handoff) / Preparing Sprint 2 (Global Command Bar & 3D Allocation Engine)
 - **Overall Roadmap**: 6-Sprint Architecture Roadmap defined in `tools/IMPLEMENTATION_STRATEGY.md`
 
 ---
@@ -29,14 +29,14 @@
 
 ---
 
-### [ ] Sprint 1: Foundation, Shell & Auth Handoff
-- [ ] Initialize Vite 8 + React 19 + TypeScript strict project configuration.
-- [ ] Configure Tailwind CSS v4 (`@tailwindcss/postcss`) with design tokens from `tools/UI/# sovereign_asset_terminal/DESIGN.md` (`index.css`).
-- [ ] Install and configure shadcn/ui primitives (`Button`, `Dialog`, `Slider`, `DropdownMenu`, `Tabs`, `Input-OTP`, `Tooltip`).
-- [ ] Implement Session Lifecycle & Handoff Ticket exchange route (`/auth/callback?ticket=<handoffTicket>` -> `POST /api/v1/auth/exchange-ticket`).
-- [ ] Build initial Zustand stores: `useAuthStore` (session, user identity, KYC tier) and `useDashboardStore` (theme, active view).
-- [ ] Build responsive dashboard navigation shell: Sidebar Navigation Rail (expanded/collapsed states) and Top App Header.
-- [ ] Setup Vitest testing suite foundation in `Tests/UnitTest/` and `Tests/IntegrationTest/` (target: 15 passing tests).
+### [x] Sprint 1: Foundation, Shell & Auth Handoff
+- [x] Initialize Vite 8 + React 19 + TypeScript strict project configuration.
+- [x] Configure Tailwind CSS v4 (`@tailwindcss/postcss`) with design tokens from `tools/UI/# sovereign_asset_terminal/DESIGN.md` (`index.css`).
+- [x] Integrate official brand assets from `Frontend/landing-page` (`favicon.svg` and `BrandLogo.tsx`).
+- [x] Implement Session Lifecycle & Handoff Ticket exchange route (`/auth/callback?ticket=<handoffTicket>` -> `POST /api/v1/auth/exchange-ticket`).
+- [x] Build initial Zustand stores: `useAuthStore` (session, user identity, KYC tier) and `useDashboardStore` (theme, active view, privacy toggle).
+- [x] Build responsive dashboard navigation shell: Sidebar Navigation Rail (64px collapsed / 220px expanded) and Top App Header.
+- [x] Setup Vitest testing suite foundation in `Tests/UnitTest/` and `Tests/IntegrationTest/` (29/29 tests passing across 5 suites).
 
 ---
 
