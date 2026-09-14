@@ -1,38 +1,51 @@
-# Security Context — WavyAssets Institutional Terminal
+# Security Context — WavyAssets Sovereign Institutional User Dashboard
 
 ## Threat Model & Trust Boundaries
 
-- **Client / Browser (Untrusted)**: The landing page runs entirely in the user's browser. It must never store backend credentials, admin secrets, private encryption keys, or institutional wallet seed phrases.
-- **Client Storage Boundary**: `localStorage` and `sessionStorage` are strictly restricted to non-sensitive presentation preferences (`wavy_theme`, `wavy_locale`). User credentials, KYC tier choices, and OTP codes must **never** be persisted to web storage.
-- **Input Boundaries**: Newsletter email inputs, registration forms, and 2FA OTP codes are untrusted user inputs that must be validated, length-capped, and sanitized before being processed or submitted.
+- **Client / Browser (Untrusted Boundary)**: The dashboard runs entirely in the user's browser. It must never store backend admin keys, private wallet seed phrases, or unredacted infrastructure credentials.
+- **Client Storage Invariant**: `localStorage` and `sessionStorage` are strictly restricted to non-sensitive presentation preferences (`wavy_theme`, `wavy_dashboard_sidebar_collapsed`, `wavy_locale`). Access tokens live exclusively in volatile memory (`useAuthStore`). Refresh tokens are secured in `HttpOnly; SameSite=Strict; Secure` cookies.
+- **Input Boundaries**: All form inputs (deposit amounts, withdrawal addresses, order limits, KYC uploads) are untrusted and must be rigorously validated and sanitized before dispatching to the API.
 
 ---
 
-## Authentication & Session Security (Landing Funnel)
+## Authentication & Session Lifecycle
 
-- **2-Step Verification Integrity**: The root-mounted `UnifiedAuthModal` separates credential intake (Step 1) from the 6-digit one-time passcode (Step 2).
-- **Auto-Clear on Dismiss**: When the modal is closed or canceled by the user, all entered credentials and OTP code state must be immediately wiped from the in-memory Zustand store.
-- **Brute-Force & Rate-Limit Mocking**: The simulated OTP flow must enforce cooldown timers (e.g., 60-second resend delay) and error states after 3 failed attempts to reflect institutional security protocols.
+1. **Handoff Ticket Protocol**:
+   - Single-use, deterministic HMAC-SHA256 ticket passed from `Frontend/landing-page` via `/auth/callback?ticket=<handoffTicket>`.
+   - The ticket is immediately consumed via `POST /api/v1/auth/exchange-ticket` and burned by the backend.
+   - The backend returns a short-lived access JWT (15-minute expiry) and sets an HttpOnly refresh cookie.
+2. **Auto-Purge on Inactivity / Logout**:
+   - Explicit logout or session expiration immediately clears all user entity data and access tokens from `useAuthStore` and redirects to the landing page.
+
+---
+
+## Zero-Trust Ergonomics & Privacy Controls
+
+1. **One-Click Privacy Eyeball (`maskBalances`)**:
+   - Accessible via the persistent Universal Command Bar.
+   - Instantly converts all monetary values, account balances, and asset holdings into masked bullets (`••••••••`) to protect client confidentiality in public or shared terminal environments.
+2. **Biometric & WebAuthn / FIDO2 Triggers**:
+   - Hardware keys (YubiKey) or biometric sensors (Touch ID / Face ID) are required via WebAuthn for high-risk actions:
+     - Revealing physical/virtual card CVV and PIN in the VIP Cards module.
+     - Submitting withdrawal requests exceeding standard session thresholds.
+     - Authorizing emergency circuit breaker freezes in AI Systematic Funds.
+3. **Inviolable 24-to-48 Hour Whitelist Address Lock**:
+   - Any newly registered external cryptocurrency withdrawal address is subjected to a mandatory 24–48 hour lock period.
+   - No capital transfers may be executed to that address until the lock period expires and multi-factor re-confirmation is completed.
+4. **Active Session Management**:
+   - Security Command Center displays all active browser sessions, IP origins, and device signatures, with 1-click instant remote revocation.
 
 ---
 
 ## Content Security & Environment Boundaries
 
 - **Environment Variables**:
-  - Only `VITE_` prefixed public variables are allowed in the frontend.
+  - Only `VITE_` prefixed public variables are accessible in the client bundle.
   - Never commit `.env` or `.env.local` files to source control.
 - **Content Security Policy (CSP)**:
-  - Allow script execution only from self.
-  - Allow WebGL context creation and inline shaders (`unsafe-eval` restricted strictly to WebGL shader compilation if required by Three.js).
-  - Restrict font connections strictly to Google Fonts (`fonts.googleapis.com`, `fonts.gstatic.com`).
-
----
-
-## Input Validation & Sanitization
-
-- **OTP Input**: Restrict the 6-digit OTP input strictly to numeric digits `[0-9]`, rejecting letters and special characters.
-- **Email Sanitization**: Validate email format with standard RFC 5322 regex and sanitize against HTML injection before transmitting.
-- **Slider Parameter Validation**: Bound the portfolio simulator slider values strictly between `$10,000` and `$10,000,000` to prevent buffer overflows or NaN calculation errors.
+  - Script execution restricted strictly to self.
+  - WebGL context creation and inline shader compilation permitted strictly for Three.js.
+  - Connect-src restricted to backend API and WebSocket endpoints (`localhost:4000`, production enclave origins).
 
 ---
 
@@ -49,9 +62,8 @@ Before committing, submitting changes, or pushing to remote:
 ## Non-Negotiable Security Invariants
 
 1. **Zero Secret Leaks**: No institutional private keys, API secrets, or backend tokens may exist in the codebase, client bundles, or repository commit history.
-2. **No Persistent Sensitive State**: Sensitive auth inputs (passwords, OTPs) must live exclusively in volatile component memory and be purged upon modal close.
-3. **PII Redaction**: All telemetry and console logging must redact email addresses, IP addresses, and OTP codes.
-4. **Secure Error Shielding**: Unhandled exceptions caught by Error Boundaries or math calculation catch blocks must display generic institutional failure messages without exposing stack traces or system paths.
-5. **Secure Error Handling**: Client responses must never leak stack traces, internal errors, or infrastructure details. Handle exceptions or route to global handlers securely.
+2. **No Persistent Sensitive State**: Sensitive auth tokens and credentials must never be written to `localStorage`.
+3. **PII Redaction**: All telemetry and console logging must redact email addresses, IP addresses, card PINs, and OTP codes.
+4. **Secure Error Shielding**: Unhandled exceptions caught by Error Boundaries or API catch blocks must display generic institutional failure messages without exposing stack traces or system paths.
+5. **Secure Error Handling**: Client responses must never leak stack traces, internal errors, or infrastructure details.
 6. **Secure Logging**: All emitted logs must redact PII, authorization tokens, secrets, and private credentials.
-

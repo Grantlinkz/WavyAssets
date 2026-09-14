@@ -1,72 +1,68 @@
-# Project Overview — WavyAssets (WavyAssets / Aura Institutional Terminal)
+# Project Overview — WavyAssets Sovereign Institutional User Dashboard
 
 ## Overview
 
-**WavyAssets** (branded as **WavyAssets** / **WavyAssetss Institutional Terminal**) is a high-discretion, sovereign digital wealth management and institutional custody platform. It provides sovereign individuals, family offices, and high-net-worth investors with an institutional-grade command terminal to monitor, allocate, and manage capital across 7 distinct asset classes: **Crypto & Staking Yield**, **Global Stocks & Pre-IPO**, **AI Systematic Funds**, **Real Estate**, **VIP Concierge Cards**, **Exotic Cars & Horology**, and **Digital Custody/Wallet**.
+The **WavyAssets User Dashboard** (`Frontend/user-dashboard`) is the authenticated sovereign financial command terminal of the WavyAssets wealth platform. While the public landing page (`Frontend/landing-page`) establishes brand authority and initiates client onboarding, the User Dashboard delivers low-latency portfolio orchestration, digital custody management, and trade execution across **all seven sovereign asset verticals**:
 
-The platform merges Swiss typographic rigor, physical vault aesthetics, and ultra-high-performance financial terminal ergonomics, featuring real-time WebGL/Three.js 3D visualizers, client-side sub-50ms hash routing, and an interactive portfolio returns simulator.
+1. **Crypto Investment & Yield Aggregation** (`crypto`): Spot holdings, sovereign MPC vs Web3 connected wallets, automated DCA scheduler, staking telemetry & tax-lot export.
+2. **Global Stocks & Pre-IPO Allocations** (`stocks`): Direct Market Access (DMA) Level-2 order book, position analytics (VWAP, Beta), active orders, pre/post-market pricing.
+3. **AI Systematic & Quantitative Funds** (`ai-funds`): Risk profile calibrator, algorithmic strategy performance (Sharpe, Sortino, max drawdown), audit-grade execution rationale log, emergency freeze circuit breaker.
+4. **Tokenized Prime Real Estate** (`real-estate`): SPV performance decks, fractional token counts, monthly rental distribution tracker, occupancy SLA, secondary P2P order book.
+5. **Exotic Vehicles & Horology Vault** (`cars`): Asset portfolio cards, Hagerty benchmark valuation index, bonded vault physical logistics (Geneva FreePort, Zurich, London), drive booking calendar, cryptographic provenance logs.
+6. **VIP Concierge & Collateral Metal Cards** (`vip-cards`): 3D Obsidian metal card visualizer, virtual/physical toggles, spend limits, biometric/WebAuthn reveal for CVV/PIN, concierge launcher.
+7. **Digital Custody & Multi-Sig MPC Wallet** (`wallet`): Unified ledger with Available vs Invested capital split, fiat on/off-ramp stepper, auto-sweep idle cash into 5.2% institutional money market funds, cross-currency FX converter, automated tax statements.
 
----
-
-## Goals
-
-1. **Sub-50ms Dynamic Asset Swapping**: Deliver seamless client-side switching between all 7 asset classes via bookmarkable URLs (`#/services/:assetId`) with zero Cumulative Layout Shift (CLS) using skeleton screens.
-2. **Interactive Capital Allocation Simulator**: Engage users with real-time portfolio modeling using dual-slider inputs (Capital: $10k–$10M, Aggressiveness: 1–5) synced to an interactive 3D radial allocation donut visualizer.
-3. **High-Conversion Institutional Onboarding**: Guide prospective clients through a low-friction 2-step registration funnel featuring segmented 6-digit OTP two-factor verification powered by shadcn/ui Dialog and Input-OTP.
-4. **Sovereign Trust & Institutional Verification**: Establish credibility via audited metrics (SOC2 Type II, Merkle-tree MPC Proof of Reserves), segmented Retail/Private Wealth vs. Institutional filter switches, and regulatory disclosures.
-5. **Zero Sensory Fatigue & Uncompromised Performance**: Maintain 60 FPS across Obsidian Dark and Luxury Light modes, with automatic WebGL loop throttling, low-power GPU fallbacks, and WCAG accessibility compliance.
+The interface merges Swiss typographic rigor (`Noto Serif`), high-contrast financial data tables (`Inter` with tabular figures), precision 2px–4px micro-chamfers, and Obsidian Dark / Luxury Light parity.
 
 ---
 
-## Core User Flow
+## Goals & Primary Invariants
 
-1. **Terminal Discovery & Brand Impression**: The user lands on the terminal, experiencing the ambient 3D cursor-reactive WebGL mesh, real-time monitored AUM ticker ($4.82B+), and key value propositions.
-2. **Services Exploration via Mega-Menu**: The user accesses the fixed header navigation, hovering over "Services" to trigger the 7-vertical mega-menu with 3D perspective hover tilts and instant prefetch.
-3. **Deep-Dive Sub-View Analysis**: Selecting an asset vertical (e.g., Crypto, AI Systematic, Real Estate) routes to `#/services/:id` in under 50ms without a page reload, displaying real-time metrics, risk models, and asset inventories.
-4. **Interactive Returns Simulation**: The user interacts with the Discovery Hub, tuning capital allocation and risk profile sliders to compute real-time compound returns and inspect dynamic asset distributions on the 3D radial donut.
-5. **Trust Verification**: The user reviews audited institutional track records, toggles between Private Wealth and Institutional verification tiers, and inspects regulatory credentials.
-6. **Institutional Registration (Auth Modal)**: Triggered from any primary CTA, the root-mounted auth modal opens (<200ms), guides the client through Step 1 (credentials/KYC tier) and Step 2 (6-digit 2FA OTP), completing the initial conversion funnel.
-
----
-
-## 7 Core Asset Verticals
-
-1. **Institutional Crypto & Yield Aggregation** (`crypto`): Sovereign custody staking, multi-chain settlement arbitrage, execution mesh, and fiduciary risk matrix.
-2. **Global Stocks & Pre-IPO Allocations** (`stocks`): Direct Market Access (0.03ms DMA latency), order book depth, and pre-IPO liquidity pools across 42 global exchanges.
-3. **AI Systematic & Quantitative Funds** (`ai-funds`): Algorithmic multi-factor alpha models, automated delta rebalancing, and live Sharpe ratio tracking.
-4. **Tokenized Real Estate & Infrastructure** (`real-estate`): Fractional prime commercial & luxury residential properties, deed registries, and net rental yields.
-5. **VIP Concierge & Collateral Metal Cards** (`vip-cards`): Obsidian metal debit/charge cards backed by multi-currency crypto treasury balances with 0% FX spread.
-6. **Exotic Vehicles & Horology Vault** (`cars`): Physical vehicle inventory, museum-grade timepieces, provenance certification, and reserve bid mechanics.
-7. **Digital Custody, Wallet & Multi-Sig Vault** (`wallet`): Institutional multi-party computation (MPC) cold storage, zero-gas internal routing, and cryptographic proof of reserves.
+1. **Sub-50ms View Swapping**: Instant, seamless transitions across all asset verticals and command views without full page reloads.
+2. **Zero Cumulative Layout Shift (CLS)**: Pre-dimensioned skeleton loaders (`min-height: 540px`) and tabular lining figures across all real-time feeds to prevent layout jitter.
+3. **Obsidian Dark & Luxury Light Parity**: Instrument-grade financial terminal aesthetics abiding strictly by the 4px micro-chamfer token system (zero generic consumer pill buttons > 8px).
+4. **Zero-Trust Security Ergonomics**:
+   - One-click PII and balance masking (`maskBalances` privacy toggle) rendering values as `••••••••` for public display.
+   - Biometric and hardware WebAuthn (FIDO2 / YubiKey) triggers for high-risk operations (card PIN/CVV reveal, high-value transfers).
+   - Inviolable 24-to-48 hour security lock on newly registered withdrawal addresses.
+5. **Consolidated Portfolio Orchestration**: Universal Global Command Bar aggregating multi-asset net worth, dynamic 24h/all-time P&L deltas, interactive 3D radial allocation donut, and rapid execution action rails.
 
 ---
 
-## Scope
+## Session Lifecycle & Auth Handoff Architecture
 
-### In Scope
+The user dashboard operates in tight coordination with `Frontend/landing-page` (port `5173`) and the backend gateway (port `4000`):
 
-- Client-side routed Single Page Application (SPA) using React 19, TypeScript, and Vite 8.
-- Full responsive implementation of the 4 core phases:
-  - **Phase 1**: Global Header, 7-Vertical Mega-Menu, Ambient 3D Canvas, Hero Section, Live Metric Strips, and 2-Step Auth Modal (Radix Dialog + Input-OTP).
-  - **Phase 2**: Interactive Portfolio Returns Simulator (Dual Radix Sliders + real-time compounding logic) and 3D Radial Allocation Donut Chart.
-  - **Phase 3**: Standardized Asset Panel Container with hash-routing (`#/services/:assetId`), skeleton loaders, and 7 vertical sub-views.
-  - **Phase 4**: Trust Infrastructure (Private Wealth vs. Institutional mode toggle, specular audit cards, compliance-ready global footer with sitemap and newsletter capture).
-- Full Obsidian Dark and Luxury Light mode theme switching with system detection and persistence.
-- High-density financial typography using `Noto Serif` and `Inter`.
+1. **Authentication on Marketing Site**: User completes email / OTP verification on the landing page.
+2. **Handoff Ticket Generation**: Backend generates a single-use, deterministic HMAC-SHA256 hashed handoff ticket and redirects to:  
+   `http://localhost:5174/auth/callback?ticket=<handoffTicket>`
+3. **Ticket Exchange**: Dashboard client exchanges the ticket via `POST /api/v1/auth/exchange-ticket`.
+4. **Session Establishment**: Backend burns the ticket, issues a 15-minute access JWT, and sets an HttpOnly refresh cookie. The client initializes `useAuthStore` with user identity, tier (`RETAIL`, `PRIVATE_WEALTH`, `INSTITUTIONAL`), and permissions.
 
-### Out of Scope (Landing Page Phase)
+---
 
-- Live backend trade execution or settlement engine (simulated/mocked metrics and real-time feeds are used).
-- Actual bank wire / ACH fiat payment processing (onboarding captures intents and KYC tier).
-- Full user account management dashboard (handled in separate application portal).
+## Scope & Functional Areas
+
+### In Scope (6-Sprint Implementation Roadmap)
+
+- **Sprint 1: Foundation, Shell & Auth Handoff**: Vite 8 + React 19 setup, Tailwind v4 design tokens, `/auth/callback` ticket exchange, sidebar navigation, and Vitest suite.
+- **Sprint 2: Global Command Bar & 3D Allocation Engine**: Consolidated Net Worth, 24h / All-time P&L with timeframe selectors, 3D radial allocation donut visualizer (Three.js / Drei), privacy toggle (`maskBalances`), and action rail modal launchers.
+- **Sprint 3: Liquid Asset Modules**: Live Crypto module (holdings, custody separation, DCA, staking), Stocks module (DMA order book, positions, execution hub), Unified Wallet module (Available vs Invested ledger, fiat ramp, cash sweep).
+- **Sprint 4: Alternative Asset Modules**: AI Systematic Funds (Sharpe gauges, rationale feed, circuit breaker), Tokenized Real Estate (SPV decks, rental tracker, P2P secondary board), Exotic Cars & Horology (Hagerty valuation, drive booking, vault telemetry).
+- **Sprint 5: VIP Cards, Compliance & Security Command Center**: 3D Obsidian card visualizer with biometric gate, Tiered KYC/AML tracker, Unified Tax Pack generator (Form 8949 / Schedule D), Security Command Center (device sessions, 24-48h address whitelist lock).
+- **Sprint 6: Performance Optimization, Hardening & Enterprise Deployment**: Sub-50ms benchmark audit, WebGL frame throttling on blur, Docker multi-stage build + Nginx Alpine static server, full test suite verification.
+
+### Out of Scope (Client Frontend Boundary)
+
+- Backend core database operations or Prisma migrations (consumed via REST & WebSocket APIs).
+- Direct on-chain node validation or physical vault robotic management (simulated telemetry and audit feeds are provided via the API layer).
 
 ---
 
 ## Success Criteria & SLAs
 
-1. **Sub-50ms View Swaps**: Panel switches between asset verticals occur in under 50ms with zero page reload.
-2. **Sub-100ms Menu Response**: Services mega-menu opens and responds in under 100ms.
-3. **Sub-200ms Auth Modal Load**: Auth modal renders and traps focus within 200ms of trigger.
-4. **Zero Cumulative Layout Shift (CLS)**: Skeleton containers preserve exact viewport geometry during asset loads.
-5. **60 FPS Animation & GPU Lifecycle**: Three.js WebGL rendering throttles automatically when tab is blurred or scrolled out of view, with complete geometry/texture memory deallocation on unmount.
-6. **100% WCAG Accessibility**: Full keyboard navigability, focus trapping, and `prefers-reduced-motion` compliance across both light and dark themes.
+1. **Sub-50ms View Swaps**: Panel switches between asset verticals execute in under 50ms without page reloads.
+2. **CLS = 0**: Pre-dimensioned skeleton containers preserve exact geometry during asset data loading.
+3. **60 FPS Graphics with GPU Cleanup**: All Three.js canvases cleanly deallocate memory (`.dispose()`) on unmount and throttle down to 5–10 FPS when the browser tab is hidden.
+4. **Strict Security Compliance**: Zero plaintext secrets or sensitive tokens in client logs or local storage; mandatory biometric triggers for high-risk actions.
+5. **100% Passing Test Suites**: Comprehensive unit and integration test coverage across all calculations, stores, formatters, and module interactions in `Tests/UnitTest/` and `Tests/IntegrationTest/`.
