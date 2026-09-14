@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Obsidian Vault Squircle -->
+  <rect width="64" height="64" rx="14" fill="#08090B"/>
+  <rect x="1" y="1" width="62" height="62" rx="13" stroke="#D4AF37" stroke-width="1.6" stroke-opacity="0.6"/>
+
+  <!-- Subtle Radial Glow -->
+  <circle cx="32" cy="32" r="18" fill="#D4AF37" fill-opacity="0.12"/>
+
+  <!-- Primary Sinusoidal Wave in Sovereign Gold -->
+  <path
+    d="M 12 33 C 18 19, 26 19, 32 33 C 38 47, 46 47, 52 33"
+    stroke="#D4AF37"
+    stroke-width="4.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Secondary Wave in Emerald Accent -->
+  <path
+    d="M 12 42 C 18 28, 26 28, 32 42 C 38 56, 46 56, 52 42"
+    stroke="#00C288"
+    stroke-width="3.2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-opacity="0.9"
+  />
+
+  <!-- Apex Gold Spark -->
+  <circle cx="32" cy="17" r="3.2" fill="#D4AF37"/>
+</svg>
