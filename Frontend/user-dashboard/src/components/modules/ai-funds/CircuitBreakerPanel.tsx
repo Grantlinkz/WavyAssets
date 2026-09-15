@@ -44,8 +44,8 @@ export const CircuitBreakerPanel: React.FC<CircuitBreakerPanelProps> = ({
 
       <div className="my-2.5 space-y-1.5">
         <div className="flex items-center gap-2 text-xs font-mono text-on-surface">
-          <span className="text-rose-300 font-bold">&gt; FIX PROTOCOL ROUTE:</span>
-          <span>{isTriggered ? 'POSITIONS FLATTENED TO USDC' : 'HALT < 4ms LATENCY'}</span>
+          <span className="text-rose-300 font-bold">FIX PROTOCOL ROUTE:</span>
+          <span>{isTriggered ? 'POSITIONS FLATTENED TO USDC' : 'HALT LATENCY'}</span>
         </div>
         <p className="text-xs text-on-surface-variant leading-normal">
           {isTriggered
