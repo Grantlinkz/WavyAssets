@@ -2,7 +2,7 @@
 
 ## Project Status
 
-- **Current Phase**: Sprint 1 Completed (Foundation, Shell & Auth Handoff) / Preparing Sprint 2 (Global Command Bar & 3D Allocation Engine)
+- **Current Phase**: Sprint 2 Completed (Global Command Bar, 3D Allocation Engine & Action Rail Modals) / Preparing Sprint 3 (Liquid Asset Modules: Crypto, Stocks & Wallet)
 - **Overall Roadmap**: 6-Sprint Architecture Roadmap defined in `tools/IMPLEMENTATION_STRATEGY.md`
 
 ---
@@ -36,17 +36,17 @@
 - [x] Implement Session Lifecycle & Handoff Ticket exchange route (`/auth/callback?ticket=<handoffTicket>` -> `POST /api/v1/auth/exchange-ticket`).
 - [x] Build initial Zustand stores: `useAuthStore` (session, user identity, KYC tier) and `useDashboardStore` (theme, active view, privacy toggle).
 - [x] Build responsive dashboard navigation shell: Sidebar Navigation Rail (64px collapsed / 220px expanded) and Top App Header.
-- [x] Setup Vitest testing suite foundation in `Tests/UnitTest/` and `Tests/IntegrationTest/` (29/29 tests passing across 5 suites).
+- [x] Setup Vitest testing suite foundation in `Tests/UnitTest/` and `Tests/IntegrationTest/` (30/30 tests passing across 5 suites).
 
 ---
 
-### [ ] Sprint 2: Global Command Bar & 3D Allocation Engine
-- [ ] Implement Consolidated Net Worth widget ($14,820,450.00 default) aggregating all 7 asset classes.
-- [ ] Build 24h & All-Time P&L engine with dynamic timeframe selectors (`1D | 1W | 1M | 1Y | ALL`) and emerald/ruby delta indicators.
-- [ ] Implement 3D Radial Allocation Donut (Three.js / React Three Fiber / Drei) with segment tooltips and explicit `.dispose()` memory deallocation.
-- [ ] Implement One-Click Privacy Toggle (`maskBalances: boolean`) with global DOM figure masking (`••••••••`).
-- [ ] Deliver Global Action Rail triggers and modal skeletons (`DepositModal`, `WithdrawModal`, `TradeModal`, `KycDrawer`).
-- [ ] Automated tests for Command Bar, calculations, and modal triggers (target: 25 passing tests).
+### [x] Sprint 2: Global Command Bar & 3D Allocation Engine
+- [x] Implement Consolidated Net Worth widget ($14,820,450.00 default) aggregating all 7 asset classes (`NetWorthWidget.tsx`).
+- [x] Build 24h & All-Time P&L engine with dynamic timeframe selectors (`1D | 1W | 1M | 1Y | ALL`) and emerald/ruby delta indicators (`calculations.ts`).
+- [x] Implement 3D Radial Allocation Donut (Three.js WebGL) with segment tooltips, document visibility throttling, and deterministic `.dispose()` memory cleanup (`AllocationDonut3D.tsx`).
+- [x] Implement One-Click Privacy Toggle (`maskBalances: boolean`) with global DOM figure masking (`••••••••`) (`PrivacyToggle.tsx`).
+- [x] Deliver Global Action Rail triggers and institutional modal overlays (`DepositModal`, `WithdrawModal`, `TradeModal`, `KycDrawer`).
+- [x] Automated tests for Command Bar, calculations, and modal triggers (59/59 passing tests across 9 suites, +29 new tests).
 
 ---
 
