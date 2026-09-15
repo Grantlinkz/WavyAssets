@@ -7,38 +7,82 @@ import { useDashboardStore } from '../../../store/useDashboardStore';
 
 interface TaxPackAggregatorProps {
   maskBalances?: boolean;
+  selectedTaxYear?: '2024' | '2025';
 }
 
-export const TaxPackAggregator: React.FC<TaxPackAggregatorProps> = ({ maskBalances: propMask }) => {
+export const TaxPackAggregator: React.FC<TaxPackAggregatorProps> = ({
+  maskBalances: propMask,
+  selectedTaxYear: propTaxYear,
+}) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
 
-  const { selectedTaxYear, setTaxYear } = useGovernanceStore();
+  const storeTaxYear = useGovernanceStore((s) => s.selectedTaxYear);
+  const selectedTaxYear = propTaxYear ?? storeTaxYear;
+  const setTaxYear = useGovernanceStore((s) => s.setTaxYear);
   const [downloadMsg, setDownloadMsg] = useState<string | null>(null);
 
   const metrics = MULTI_ASSET_TAX_DOSSIER[selectedTaxYear];
 
   const handleDownloadPacket = (formatName: string) => {
-    // Generate simulated fiscal report CSV
-    const headers = ['Vertical', 'Amount_USD', 'Tax_Treatment', 'Audit_Reference'];
-    const rows = metrics.map((m) => [
-      `"${m.verticalTitle}"`,
-      m.amountUsd,
-      `"${m.treatment}"`,
-      `"${m.subMetricLabel}: ${m.subMetricValue}"`,
-    ]);
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-
     if (typeof window !== 'undefined' && window.document) {
-      const encodedUri = encodeURI(csvContent);
+      let content: string;
+      let mimeType: string;
+      let extension: string;
+
+      if (formatName.includes('Merkle')) {
+        mimeType = 'application/json';
+        extension = 'json';
+        content = JSON.stringify(
+          {
+            merkleRoot: '0x8f2a64c7e81b29a034d5812e964b0f241a87e315b9c0d12e84715a39df148e22',
+            taxYear: selectedTaxYear,
+            algorithm: 'SHA-256 Merkle Tree',
+            leaves: metrics.map((m) => ({
+              vertical: m.verticalTitle,
+              amountUsd: m.amountUsd,
+              treatment: m.treatment,
+              leafHash: `0x${Math.abs(m.amountUsd * 7391).toString(16).padStart(64, '0')}`,
+            })),
+            generatedAt: new Date().toISOString(),
+          },
+          null,
+          2
+        );
+      } else if (formatName.includes('Big 4') || formatName.includes('XML')) {
+        mimeType = 'application/xml';
+        extension = 'xml';
+        content =
+          `<?xml version="1.0" encoding="UTF-8"?>\n<TaxDossier taxYear="${selectedTaxYear}" generatedAt="${new Date().toISOString()}">\n` +
+          metrics
+            .map(
+              (m) =>
+                `  <Entry>\n    <Vertical>${m.verticalTitle}</Vertical>\n    <AmountUSD>${m.amountUsd}</AmountUSD>\n    <Treatment>${m.treatment}</Treatment>\n    <Reference>${m.subMetricLabel}: ${m.subMetricValue}</Reference>\n  </Entry>`
+            )
+            .join('\n') +
+          '\n</TaxDossier>';
+      } else {
+        mimeType = 'text/csv';
+        extension = 'csv';
+        const headers = ['Vertical', 'Amount_USD', 'Tax_Treatment', 'Audit_Reference'];
+        const rows = metrics.map((m) => [
+          `"${m.verticalTitle}"`,
+          m.amountUsd,
+          `"${m.treatment}"`,
+          `"${m.subMetricLabel}: ${m.subMetricValue}"`,
+        ]);
+        content = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+      }
+
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.setAttribute('href', encodedUri);
-      link.setAttribute('download', `WavyAssets_TaxPack_TY${selectedTaxYear}_${Date.now()}.csv`);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `WavyAssets_TaxPack_TY${selectedTaxYear}_${Date.now()}.${extension}`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     }
 
     setDownloadMsg(`${formatName} generated and downloaded.`);

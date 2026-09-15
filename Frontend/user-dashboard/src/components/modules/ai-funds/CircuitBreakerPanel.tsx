@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { ShieldAlert, AlertOctagon, RotateCcw, AlertTriangle } from 'lucide-react';
 import { useAlternativeStore } from '../../../store/useAlternativeStore';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '../../ui/dialog';
 
 interface CircuitBreakerPanelProps {
   isTriggered?: boolean;
@@ -23,11 +30,8 @@ export const CircuitBreakerPanel: React.FC<CircuitBreakerPanelProps> = ({
 
   return (
     <div
-      className={`p-3.5 rounded flex flex-col justify-between relative overflow-hidden transition-colors ${
-        isTriggered
-          ? 'bg-rose-950/40 border-2 border-rose-500'
-          : 'bg-surface-container border-2 border-rose-600/70'
-      }`}
+      data-testid="circuit-breaker-panel"
+      className="p-4 bg-surface-container border border-rose-600/40 rounded flex flex-col justify-between"
     >
       <div className="flex items-center justify-between pb-2 border-b border-rose-600/30">
         <div className="flex items-center gap-1.5">
@@ -59,10 +63,11 @@ export const CircuitBreakerPanel: React.FC<CircuitBreakerPanelProps> = ({
           <button
             type="button"
             onClick={() => setConfirmModalOpen(true)}
-            className="flex-1 py-1.5 px-3 bg-rose-600/20 hover:bg-rose-600/30 border border-rose-600 text-rose-300 font-mono text-xs rounded font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            data-testid="trigger-kill-switch-btn"
+            className="flex-1 py-1.5 px-3 bg-rose-600 hover:bg-rose-700 text-white font-mono text-xs rounded font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
             <AlertOctagon className="w-3.5 h-3.5 shrink-0" />
-            <span>Trigger Circuit Breaker</span>
+            <span>Trigger Emergency Circuit Breaker</span>
           </button>
         ) : (
           <button
@@ -76,38 +81,43 @@ export const CircuitBreakerPanel: React.FC<CircuitBreakerPanelProps> = ({
         )}
       </div>
 
-      {/* Confirmation Modal */}
-      {confirmModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-surface border border-rose-500 rounded p-5 max-w-md w-full space-y-4 shadow-2xl">
+      {/* Shared Accessible Dialog */}
+      <Dialog open={confirmModalOpen} onOpenChange={setConfirmModalOpen}>
+        <DialogContent
+          data-testid="circuit-breaker-confirm-dialog"
+          className="bg-surface border border-rose-500 rounded p-5 max-w-md w-full space-y-4 shadow-2xl"
+        >
+          <DialogHeader>
             <div className="flex items-center gap-2 text-rose-400">
               <AlertTriangle className="w-5 h-5 shrink-0" />
-              <h3 className="font-serif text-lg font-bold">Emergency Circuit Breaker Trigger</h3>
+              <DialogTitle className="font-serif text-lg font-bold">
+                Emergency Circuit Breaker Trigger
+              </DialogTitle>
             </div>
-            <p className="text-sm text-on-surface-variant leading-relaxed">
+            <DialogDescription className="text-sm text-on-surface-variant leading-relaxed text-left pt-2">
               Are you sure you want to trigger the Fiduciary Kill Switch? This will instantly execute
               emergency market orders to flatten all derivative positions to USDC and halt execution
               protocols.
-            </p>
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setConfirmModalOpen(false)}
-                className="px-3 py-1.5 bg-surface-container border border-border-hairline text-on-surface text-xs font-mono rounded hover:bg-surface-container-high transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleExecuteTrigger}
-                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-mono font-bold rounded uppercase tracking-wider transition-colors"
-              >
-                Confirm Halt
-              </button>
-            </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setConfirmModalOpen(false)}
+              className="px-3 py-1.5 bg-surface-container border border-border-hairline text-on-surface text-xs font-mono rounded hover:bg-surface-container-high transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleExecuteTrigger}
+              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-mono font-bold rounded uppercase tracking-wider transition-colors cursor-pointer"
+            >
+              Confirm Halt
+            </button>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

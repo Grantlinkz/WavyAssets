@@ -168,7 +168,7 @@ export const BeneficialOwnershipRegistry: React.FC = () => {
                 </span>
               </div>
               <h3 className="font-serif text-sm font-semibold text-on-surface">
-                Annual Source of Wealth Refresh due May 18, 2025
+                Annual Source of Wealth Refresh due September 29, 2025
               </h3>
               <p className="font-sans text-xs text-outline leading-relaxed">
                 Periodic Swiss private banking due diligence renewal for consolidated portfolio NAV ($14.82M across services). Pre-filled affidavit prepared by Treuhand Zurich.

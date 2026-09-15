@@ -8,26 +8,32 @@ import { useDashboardStore } from '../../../store/useDashboardStore';
 
 interface ComplianceModuleProps {
   maskBalances?: boolean;
+  selectedTaxYear?: '2024' | '2025';
 }
 
-export const ComplianceModule: React.FC<ComplianceModuleProps> = ({ maskBalances: propMask }) => {
+export const ComplianceModule: React.FC<ComplianceModuleProps> = ({
+  maskBalances: propMask,
+  selectedTaxYear,
+}) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
   const [downloadMsg, setDownloadMsg] = useState<string | null>(null);
 
   const handleDownloadAmlPack = () => {
     if (typeof window !== 'undefined' && window.document) {
-      const csvContent =
-        'data:text/csv;charset=utf-8,Document,Status,Jurisdiction,Notarization\nAMLA_Dossier_2025,Verified,Switzerland_FINMA,0x7c21...8b54\n';
-      const encodedUri = encodeURI(csvContent);
+      const pdfData =
+        '%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj 3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Resources<<>>>>endobj\nxref\n0 4\n0000000000 65535 f\n0000000010 00000 n\n0000000060 00000 n\n0000000117 00000 n\ntrailer<</Size 4/Root 1 0 R>>\nstartxref\n200\n%%EOF';
+      const blob = new Blob([pdfData], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.setAttribute('href', encodedUri);
-      link.setAttribute('download', `WavyAssets_AML_Compliance_Pack_${Date.now()}.csv`);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `WavyAssets_AML_Compliance_Pack_${Date.now()}.pdf`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     }
-    setDownloadMsg('AML Compliance Pack downloaded.');
+    setDownloadMsg('AML Compliance Pack (PDF) downloaded.');
     setTimeout(() => setDownloadMsg(null), 3000);
   };
 
@@ -53,7 +59,7 @@ export const ComplianceModule: React.FC<ComplianceModuleProps> = ({ maskBalances
             </h1>
             <span className="px-2 py-0.5 bg-surface-container text-tertiary rounded-DEFAULT font-mono text-[10px] uppercase font-semibold flex items-center gap-1.5 border border-tertiary/30">
               <span className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse" />
-              Swiss FINMA Regulated Enclave // AMLA Art. 9 Compliant
+              Swiss FINMA Regulated Enclave • AMLA Art. 9 Compliant
             </span>
             <span className="px-2 py-0.5 bg-surface-container text-outline rounded-DEFAULT font-mono text-[10px] tabular-nums border border-border-hairline">
               HSM ATTESTATION: <span className="text-on-surface font-mono">0x7c21...8b54</span>
@@ -89,7 +95,7 @@ export const ComplianceModule: React.FC<ComplianceModuleProps> = ({ maskBalances
       <BeneficialOwnershipRegistry />
 
       {/* 4. Unified Sovereign Tax Pack Downloader */}
-      <TaxPackAggregator maskBalances={maskBalances} />
+      <TaxPackAggregator maskBalances={maskBalances} selectedTaxYear={selectedTaxYear} />
 
       {/* 5. Global Regulatory Gateway Matrix */}
       <RegulatoryGatewayMatrix />
