@@ -1,4 +1,5 @@
 import React from 'react';
+import { Shield, Archive, FileText } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { REAL_ESTATE_SUMMARY_CARDS } from '../../../lib/alternativeAssetData';
 import { PropertyDeck } from './PropertyDeck';
@@ -33,7 +34,7 @@ export const RealEstateModule: React.FC<RealEstateModuleProps> = ({ maskBalances
               DLT CADASTRE: SWISS LAND REGISTRY VERIFIED
             </span>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-surface border border-border-hairline rounded text-on-surface-variant font-mono text-[11px]">
-              <span className="material-symbols-outlined text-[13px] text-primary">shield</span>
+              <Shield className="w-3 h-3 text-primary shrink-0" />
               ZURICH SPV ENCLAVE 04
             </span>
           </div>
@@ -45,14 +46,14 @@ export const RealEstateModule: React.FC<RealEstateModuleProps> = ({ maskBalances
             type="button"
             className="flex items-center gap-1 px-2.5 py-1 bg-surface border border-border-hairline hover:border-primary/50 text-on-surface-variant hover:text-on-surface font-mono text-xs rounded transition-colors"
           >
-            <span className="material-symbols-outlined text-[14px]">archive</span>
+            <Archive className="w-3.5 h-3.5 shrink-0" />
             <span>Consolidated Deeds</span>
           </button>
           <button
             type="button"
             className="flex items-center gap-1 px-2.5 py-1 bg-surface border border-border-hairline hover:border-primary/50 text-on-surface-variant hover:text-on-surface font-mono text-xs rounded transition-colors"
           >
-            <span className="material-symbols-outlined text-[14px]">description</span>
+            <FileText className="w-3.5 h-3.5 shrink-0" />
             <span>Q3 RICS Appraisal</span>
           </button>
         </div>

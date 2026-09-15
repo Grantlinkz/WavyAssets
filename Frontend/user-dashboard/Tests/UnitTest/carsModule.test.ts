@@ -10,7 +10,7 @@ describe('Exotic Vehicles & Horology Vault Module Unit Tests', () => {
   beforeEach(() => {
     useAlternativeStore.setState({
       driveSlots: [...INITIAL_DRIVE_SLOTS],
-      selectedLocation: 'Monaco GP Circuit // Private Club Session',
+      selectedLocation: 'Monaco GP Circuit',
       remainingDriveSessions: 2,
       lastReservedDay: null,
     });
@@ -83,9 +83,9 @@ describe('Exotic Vehicles & Horology Vault Module Unit Tests', () => {
     const store = useAlternativeStore.getState();
     expect(store.selectedLocation).toContain('Monaco');
 
-    store.setSelectedLocation('Zurich Alps // Gotthard Closed-Pass Tour');
+    store.setSelectedLocation('Zurich Alps Tour');
     expect(useAlternativeStore.getState().selectedLocation).toBe(
-      'Zurich Alps // Gotthard Closed-Pass Tour'
+      'Zurich Alps Tour'
     );
   });
 });

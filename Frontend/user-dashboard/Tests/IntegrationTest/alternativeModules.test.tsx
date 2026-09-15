@@ -30,7 +30,7 @@ describe('Alternative Asset Modules Integration Suite (Sprint 4)', () => {
       activeOtcTab: 'ALL',
       lastExecutedOrderId: null,
       driveSlots: [...INITIAL_DRIVE_SLOTS],
-      selectedLocation: 'Monaco GP Circuit // Private Club Session',
+      selectedLocation: 'Monaco GP Circuit',
       remainingDriveSessions: 2,
       lastReservedDay: null,
     });

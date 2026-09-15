@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
+import { Gauge, Info, CheckCircle2 } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useAlternativeStore } from '../../../store/useAlternativeStore';
 
 const LOCATIONS = [
-  'Monaco GP Circuit // Private Club Session',
-  'Zurich Alps // Gotthard Closed-Pass Tour',
-  'Circuit Paul Ricard // High Performance Test',
+  'Monaco GP Circuit',
+  'Zurich Alps Tour',
+  'Circuit Paul Ricard',
 ];
 
 interface DriveBookingEngineProps {
@@ -42,7 +43,7 @@ export const DriveBookingEngine: React.FC<DriveBookingEngineProps> = ({
       <div>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-border-hairline">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-[20px]">speed</span>
+            <Gauge className="w-5 h-5 text-primary shrink-0" />
             <h3 className="font-serif font-semibold text-on-surface text-base">
               Fleet Monetization Yield &amp; Member Drive-Day Engine
             </h3>
@@ -117,7 +118,7 @@ export const DriveBookingEngine: React.FC<DriveBookingEngineProps> = ({
 
           {bookingMessage && (
             <div className="p-2 mb-2 bg-primary/10 border border-primary/30 text-primary text-xs font-mono rounded flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm">info</span>
+              <Info className="w-3.5 h-3.5 shrink-0 text-primary" />
               <span>{bookingMessage}</span>
             </div>
           )}
@@ -203,15 +204,15 @@ export const DriveBookingEngine: React.FC<DriveBookingEngineProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border-hairline">
         <div className="flex items-center gap-3 text-[11px] text-outline font-mono flex-wrap">
           <span className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-[13px] text-tertiary">check_circle</span>
+            <CheckCircle2 className="w-3.5 h-3.5 text-tertiary shrink-0" />
             White-Glove Enclosed Hauler
           </span>
           <span className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-[13px] text-tertiary">check_circle</span>
+            <CheckCircle2 className="w-3.5 h-3.5 text-tertiary shrink-0" />
             Porsche Classic Pit Technician
           </span>
           <span className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-[13px] text-tertiary">check_circle</span>
+            <CheckCircle2 className="w-3.5 h-3.5 text-tertiary shrink-0" />
             $2M Track Umbrella Policy
           </span>
         </div>

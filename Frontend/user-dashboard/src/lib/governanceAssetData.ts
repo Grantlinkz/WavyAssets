@@ -150,7 +150,7 @@ export const KYC_TIERS: KycTierLevel[] = [
   {
     level: 1,
     name: 'Standard Individual',
-    tag: 'Tier 01 // Baseline',
+    tag: 'Tier 01 Baseline',
     dailyLiquidityCap: '$10,000 USD',
     status: 'COMPLETED',
     clearingProtocol: 'Automated Daily Batch',
@@ -160,7 +160,7 @@ export const KYC_TIERS: KycTierLevel[] = [
   {
     level: 2,
     name: 'Enhanced Private Wealth',
-    tag: 'Tier 02 // Qualified HNWI',
+    tag: 'Tier 02 Qualified',
     dailyLiquidityCap: '$250,000 USD',
     status: 'COMPLETED',
     clearingProtocol: 'Zurich Private Banking RTGS',
@@ -170,11 +170,11 @@ export const KYC_TIERS: KycTierLevel[] = [
   {
     level: 3,
     name: 'Accredited Institution & Sovereign SPV',
-    tag: 'Tier 03 // Active Enclave Standing',
+    tag: 'Tier 03 Active',
     dailyLiquidityCap: 'UNLIMITED / ATOMIC DvP',
     status: 'ACTIVE_TIER',
     clearingProtocol: 'Perpetual Multi-Asset Enclave',
-    auditStamp: 'Swiss FINMA Regulated Enclave // AMLA Art. 9',
+    auditStamp: 'Swiss FINMA Regulated Enclave',
     hash: '0x7c21...8b54',
   },
 ];
@@ -429,7 +429,7 @@ export const HARDWARE_SECURITY_KEYS: HardwareKeyToken[] = [
   {
     id: 'key-1',
     name: 'Primary YubiKey 5C NFC',
-    badge: 'ARMED // PRIMARY SIGNER',
+    badge: 'PRIMARY SIGNER',
     serial: 'YK-849204-CH',
     registeredDate: 'Oct 14, 2024',
     algorithm: 'ECDSA P-256 / SHA-256',
@@ -468,7 +468,7 @@ export const INITIAL_CLIENT_SESSIONS: ClientSession[] = [
     clientBadge: 'CURRENT SESSION',
     location: 'Zurich, Switzerland 🇨🇭',
     ipAddress: 'Segregated Fiber (185.192.68.14)',
-    cipherSuite: 'TLS 1.3 // AES-256-GCM',
+    cipherSuite: 'TLS 1.3 (AES-256-GCM)',
     latencyPing: 'Sub-12ms FIX Online',
     lastActive: 'First Seen: 4h ago',
     isCurrent: true,
@@ -543,7 +543,7 @@ export const INITIAL_WHITELIST_DESTINATIONS: WhitelistedDestination[] = [
     icon: 'payments',
     destinationLabel: 'JPMorgan Private Bank NY',
     beneficiaryOrg: 'Escrow Operating Account',
-    addressOrIban: 'ABA: 021000021 // ACCT: ••••8819',
+    addressOrIban: '021000021-••••8819',
     isTimeLocked: false,
     quarantineHoursTotal: 48,
     quarantineHoursRemaining: 0,

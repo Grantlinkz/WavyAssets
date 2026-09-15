@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ArrowLeftRight, CheckCircle2 } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useAlternativeStore, type OtcTabType } from '../../../store/useAlternativeStore';
 
@@ -40,9 +41,7 @@ export const SecondaryOtcBulletin: React.FC<SecondaryOtcBulletinProps> = ({
       <div className="flex items-start justify-between pb-2.5 border-b border-border-hairline">
         <div>
           <div className="flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-primary text-[18px]">
-              currency_exchange
-            </span>
+            <ArrowLeftRight className="w-4 h-4 text-primary shrink-0" />
             <h3 className="font-serif font-semibold text-on-surface text-base">
               Secondary OTC Bulletin
             </h3>
@@ -58,7 +57,7 @@ export const SecondaryOtcBulletin: React.FC<SecondaryOtcBulletinProps> = ({
 
       {notification && (
         <div className="p-2 bg-tertiary/10 border border-tertiary/30 text-tertiary text-xs font-mono rounded flex items-center gap-2">
-          <span className="material-symbols-outlined text-sm">check_circle</span>
+          <CheckCircle2 className="w-3.5 h-3.5 text-tertiary shrink-0" />
           <span>{notification}</span>
         </div>
       )}

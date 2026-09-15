@@ -63,15 +63,15 @@ describe('Governance & Sovereign Modules Integration Suite (Sprint 5)', () => {
       const html = renderToString(<ComplianceModule />);
 
       expect(html).toContain('data-testid="compliance-module"');
-      expect(html).toContain('Tier 01 // Baseline');
-      expect(html).toContain('Tier 02 // Qualified HNWI');
-      expect(html).toContain('Tier 03 // Active Enclave Standing');
+      expect(html).toContain('Tier 01 Baseline');
+      expect(html).toContain('Tier 02 Qualified');
+      expect(html).toContain('Tier 03 Active');
       expect(html).toContain('Grant Sovereign Holdings AG');
       expect(html).toContain('CHE-382.910.442');
       expect(html).toContain('Marcus Aurelius Grant');
       expect(html).toContain('100%');
       expect(html).toContain('2 of 3 Required Keys');
-      expect(html).toContain('Swiss FINMA Regulated Enclave // AMLA Art. 9');
+      expect(html).toContain('Swiss FINMA Regulated Enclave');
       expect(html).toContain('Download AML Pack (PDF)');
     });
 

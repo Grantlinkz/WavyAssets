@@ -1,4 +1,5 @@
 import React from 'react';
+import { FileText, ArrowLeftRight } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { EXOTIC_ASSETS } from '../../../lib/alternativeAssetData';
 
@@ -20,7 +21,7 @@ export const AssetInventoryDeck: React.FC<AssetInventoryDeckProps> = ({
           <h2 className="font-serif font-semibold text-on-surface text-base">
             Tier-1 Vaulted Tangible Assets
           </h2>
-          <span className="text-outline text-xs font-mono">// High-conviction physical holdings</span>
+          <span className="text-outline text-xs font-mono">• Physical Holdings</span>
         </div>
         <div className="flex items-center gap-2 text-xs font-mono text-outline">
           <span className="flex items-center gap-1">
@@ -183,16 +184,16 @@ export const AssetInventoryDeck: React.FC<AssetInventoryDeckProps> = ({
             <div className="p-3 pt-0 flex items-center gap-2">
               <button
                 type="button"
-                className="flex-1 py-1.5 px-3 bg-primary text-on-primary font-mono text-xs font-semibold uppercase tracking-wider rounded hover:bg-primary-container transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                className="flex-1 py-1.5 px-2.5 bg-primary text-on-primary font-mono text-xs font-semibold uppercase tracking-wider rounded hover:bg-primary-container transition-colors flex items-center justify-center gap-1.5 cursor-pointer truncate"
               >
-                <span className="material-symbols-outlined text-[15px]">history_edu</span>
-                <span>Archives Extract &amp; Title</span>
+                <FileText className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Archives &amp; Title</span>
               </button>
               <button
                 type="button"
-                className="py-1.5 px-3 bg-surface border border-border-hairline text-on-surface hover:bg-surface-container-high font-mono text-xs uppercase tracking-wider rounded transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="py-1.5 px-2.5 bg-surface border border-border-hairline text-on-surface hover:bg-surface-container-high font-mono text-xs uppercase tracking-wider rounded transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
               >
-                <span className="material-symbols-outlined text-[15px]">swap_horiz</span>
+                <ArrowLeftRight className="w-3.5 h-3.5 shrink-0" />
                 <span>Vault Transfer</span>
               </button>
             </div>

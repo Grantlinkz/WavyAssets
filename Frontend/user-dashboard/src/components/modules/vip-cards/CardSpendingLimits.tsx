@@ -47,40 +47,40 @@ export const CardSpendingLimits: React.FC<CardSpendingLimitsProps> = ({ maskBala
       </div>
 
       {/* 3 Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="bg-surface-container-low p-3.5 rounded-DEFAULT border border-border-hairline flex flex-col justify-between">
-          <span className="font-mono text-[10px] text-outline uppercase tracking-wider">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div className="bg-surface-container-low p-3 rounded-DEFAULT border border-border-hairline flex flex-col justify-between min-w-0 overflow-hidden">
+          <span className="font-mono text-[10px] text-outline uppercase tracking-wider truncate">
             Daily Single-Swipe Cap
           </span>
-          <div className="font-mono text-lg font-bold text-on-surface tabular-nums mt-1">
+          <div className="font-mono text-sm sm:text-base font-bold text-on-surface tabular-nums mt-1 truncate">
             {formatMaskedCurrency(dailyLimit, maskBalances)}
           </div>
-          <span className="font-mono text-[10px] text-tertiary mt-1 flex items-center gap-1">
-            <ShieldCheck className="w-3 h-3" />
-            2-of-3 HSM Guarded
+          <span className="font-mono text-[10px] text-tertiary mt-1 flex items-center gap-1 truncate">
+            <ShieldCheck className="w-3 h-3 shrink-0" />
+            <span>2-of-3 HSM Guarded</span>
           </span>
         </div>
 
-        <div className="bg-surface-container-low p-3.5 rounded-DEFAULT border border-border-hairline flex flex-col justify-between">
-          <span className="font-mono text-[10px] text-outline uppercase tracking-wider">
+        <div className="bg-surface-container-low p-3 rounded-DEFAULT border border-border-hairline flex flex-col justify-between min-w-0 overflow-hidden">
+          <span className="font-mono text-[10px] text-outline uppercase tracking-wider truncate">
             Available Today
           </span>
-          <div className="font-mono text-lg font-bold text-primary tabular-nums mt-1">
+          <div className="font-mono text-sm sm:text-base font-bold text-primary tabular-nums mt-1 truncate">
             {formatMaskedCurrency(428650.0, maskBalances)}
           </div>
-          <span className="font-mono text-[10px] text-outline mt-1">
+          <span className="font-mono text-[10px] text-outline mt-1 truncate">
             Settled Real-Time DvP
           </span>
         </div>
 
-        <div className="bg-surface-container-low p-3.5 rounded-DEFAULT border border-border-hairline flex flex-col justify-between">
-          <span className="font-mono text-[10px] text-outline uppercase tracking-wider">
+        <div className="bg-surface-container-low p-3 rounded-DEFAULT border border-border-hairline flex flex-col justify-between min-w-0 overflow-hidden">
+          <span className="font-mono text-[10px] text-outline uppercase tracking-wider truncate">
             30-Day Billing Total
           </span>
-          <div className="font-mono text-lg font-bold text-on-surface tabular-nums mt-1">
+          <div className="font-mono text-sm sm:text-base font-bold text-on-surface tabular-nums mt-1 truncate">
             {formatMaskedCurrency(142390.0, maskBalances)}
           </div>
-          <span className="font-mono text-[10px] text-tertiary mt-1">
+          <span className="font-mono text-[10px] text-tertiary mt-1 truncate">
             Geneva Vault: 0.00% Risk
           </span>
         </div>

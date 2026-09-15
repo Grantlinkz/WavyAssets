@@ -1,4 +1,5 @@
 import React from 'react';
+import { ShieldCheck, CheckCircle2 } from 'lucide-react';
 
 export const CustodyLedger: React.FC = () => {
   return (
@@ -6,7 +7,7 @@ export const CustodyLedger: React.FC = () => {
       <div>
         <div className="flex items-center justify-between pb-2 border-b border-border-hairline">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-[18px]">verified</span>
+            <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
             <h3 className="font-serif font-semibold text-on-surface text-base">
               Custody &amp; Underwriting
             </h3>
@@ -84,7 +85,7 @@ export const CustodyLedger: React.FC = () => {
         <div className="flex items-center justify-between text-[11px] font-mono text-outline">
           <span>Last Audit: 12 March 2025</span>
           <span className="text-tertiary font-semibold flex items-center gap-1">
-            <span className="material-symbols-outlined text-[13px]">verified</span> 0 Deficiencies
+            <CheckCircle2 className="w-3.5 h-3.5 text-tertiary shrink-0" /> 0 Deficiencies
           </span>
         </div>
       </div>

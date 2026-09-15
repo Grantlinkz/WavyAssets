@@ -1,4 +1,5 @@
 import React from 'react';
+import { Lock, ShieldCheck, FileText, Scale } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { CARS_SUMMARY_METRICS } from '../../../lib/alternativeAssetData';
 import { AssetInventoryDeck } from './AssetInventoryDeck';
@@ -28,14 +29,12 @@ export const CarsModule: React.FC<CarsModuleProps> = ({ maskBalances: propMask }
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-2 pt-0.5">
-            <div className="flex items-center gap-1 px-2 py-0.5 bg-surface border border-border-hairline text-[11px] font-mono text-on-surface-variant rounded">
-              <span className="material-symbols-outlined text-[13px] text-tertiary">lock</span>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-surface border border-border-hairline text-[11px] font-mono text-on-surface-variant rounded">
+              <Lock className="w-3 h-3 text-tertiary shrink-0" />
               <span>GENEVA FREEPORT &amp; ZURICH HOROLOGY VAULT</span>
             </div>
-            <div className="flex items-center gap-1 px-2 py-0.5 bg-surface border border-border-hairline text-[11px] font-mono text-on-surface-variant rounded">
-              <span className="material-symbols-outlined text-[13px] text-primary">
-                verified_user
-              </span>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-surface border border-border-hairline text-[11px] font-mono text-on-surface-variant rounded">
+              <ShieldCheck className="w-3 h-3 text-primary shrink-0" />
               <span>LLOYDS SPECIE SYNDICATE 2003</span>
             </div>
           </div>
@@ -47,11 +46,11 @@ export const CarsModule: React.FC<CarsModuleProps> = ({ maskBalances: propMask }
             type="button"
             className="flex items-center gap-1.5 px-2.5 py-1 bg-surface border border-border-hairline hover:bg-surface-container-high text-on-surface font-mono text-xs uppercase tracking-wider rounded transition-colors"
           >
-            <span className="material-symbols-outlined text-[14px] text-primary">description</span>
+            <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
             <span>Insurance Binder</span>
           </button>
-          <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary font-mono text-xs rounded border border-primary/20">
-            <span className="material-symbols-outlined text-[13px]">gavel</span>
+          <div className="flex items-center gap-1.5 px-2 py-1 bg-primary/10 text-primary font-mono text-xs rounded border border-primary/20">
+            <Scale className="w-3.5 h-3.5 text-primary shrink-0" />
             <span className="font-semibold uppercase tracking-wider">Bonded Freeport Status</span>
           </div>
         </div>

@@ -62,7 +62,7 @@ export const useAlternativeStore = create<AlternativeStoreState>((set, get) => (
 
   // Cars initial state
   driveSlots: INITIAL_DRIVE_SLOTS,
-  selectedLocation: 'Monaco GP Circuit // Private Club Session',
+  selectedLocation: 'Monaco GP Circuit',
   remainingDriveSessions: 2,
   lastReservedDay: null,
 
