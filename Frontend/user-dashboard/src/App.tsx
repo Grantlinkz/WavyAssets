@@ -5,6 +5,11 @@ import { SidebarRail } from './components/nav/SidebarRail';
 import { MobileHeader } from './components/nav/MobileHeader';
 import { AuthCallback } from './components/auth/AuthCallback';
 import { VerticalPlaceholder } from './components/modules/VerticalPlaceholder';
+import { GlobalCommandBar } from './components/command-bar/GlobalCommandBar';
+import { DepositModal } from './components/modals/DepositModal';
+import { WithdrawModal } from './components/modals/WithdrawModal';
+import { TradeModal } from './components/modals/TradeModal';
+import { KycDrawer } from './components/modals/KycDrawer';
 
 export const App: React.FC = () => {
   const { theme, activeVertical } = useDashboardStore();
@@ -36,6 +41,9 @@ export const App: React.FC = () => {
       {/* Persistent Master Header */}
       <TopHeader />
 
+      {/* Persistent Universal Command Bar */}
+      <GlobalCommandBar />
+
       {/* Mobile Slide-over Drawer */}
       <MobileHeader />
 
@@ -55,8 +63,15 @@ export const App: React.FC = () => {
           </div>
         </main>
       </div>
+
+      {/* Global Institutional Action Modals */}
+      <DepositModal />
+      <WithdrawModal />
+      <TradeModal />
+      <KycDrawer />
     </div>
   );
 };
 
 export default App;
+
