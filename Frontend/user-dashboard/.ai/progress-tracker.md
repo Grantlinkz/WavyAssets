@@ -2,7 +2,7 @@
 
 ## Project Status
 
-- **Current Phase**: Sprint 4 Completed (Alternative Asset Modules: AI Funds, Real Estate & Cars) / Preparing Sprint 5 (VIP Cards, Compliance & Security Command Center)
+- **Current Phase**: Sprint 5 Completed (VIP Cards, Compliance & Security Command Center) / Preparing Sprint 6 (Performance Optimization, Hardening & Enterprise Deployment)
 - **Overall Roadmap**: 6-Sprint Architecture Roadmap defined in `tools/IMPLEMENTATION_STRATEGY.md`
 
 ---
@@ -91,23 +91,29 @@
 
 ---
 
-### [ ] Sprint 5: VIP Cards, Compliance & Security Command Center
-- [ ] Implement VIP & Membership Cards Module (`/dashboard/vip-cards`):
-  - Interactive 3D Obsidian metal card visualizer with perspective tilt.
-  - Virtual and physical card toggle, instant freeze/unfreeze, spend limits.
-  - Biometric / WebAuthn reveal gate for card PIN and CVV.
-  - Sovereign concierge launcher (WhatsApp/Signal) and physical card dispatch tracker.
-- [ ] Implement Tiered KYC/AML Compliance Module (`/dashboard/compliance`):
-  - Verification checklist for Tier 1 ($10k/day), Tier 2 ($250k/day), and Tier 3 (Unlimited).
-  - Document upload status for passport notarization, source of wealth, and corporate bylaws.
-- [ ] Implement Unified Tax Dashboard:
-  - Multi-asset tax aggregation (capital gains, dividends, rental yields, vehicle fleet revenue).
-  - Automated annual tax packet export (Form 8949 / Schedule D compatible).
-- [ ] Implement Security Command Center (`/dashboard/security`):
-  - Active device sessions list with 1-click remote revocation.
-  - WebAuthn / FIDO2 YubiKey hardware key registration.
-  - Whitelist Address Management with mandatory **24-to-48 hour lock timer**.
-- [ ] Automated security and compliance verification tests (target: 25 passing tests).
+### [x] Sprint 5: VIP Cards, Compliance & Security Command Center
+- [x] Implement VIP & Membership Cards Module (`/dashboard/vip-cards`):
+  - Interactive 3D Obsidian metal card visualizer with 42g Solid Tungsten badge and perspective tilt (`ObsidianMetalCard.tsx`).
+  - Virtual and physical card toggle, instant freeze/unfreeze, daily spend limits slider ($50k-$2M) (`CardSpendingLimits.tsx`).
+  - Biometric / WebAuthn reveal gate for card PIN and CVV with 60s auto-expiry (`BiometricRevealModal.tsx`).
+  - Sovereign concierge launcher (Signal/WhatsApp/Phone hotline) (`SovereignConciergeModal.tsx`).
+  - 3-tier AUM progression bar (Silver Foundation $1M, Obsidian Elite $10M, Black Fiduciary $25M) (`VipCardsModule.tsx`).
+- [x] Implement Tiered KYC/AML Compliance Module (`/dashboard/compliance`):
+  - 3-tier sovereign architecture checklist (Tier 1 $10k/day, Tier 2 $250k/day, Tier 3 Unlimited) (`KycTierChecklist.tsx`).
+  - Corporate UBO Registry with 100% beneficiary details, 2-of-3 HSM signer structure, and verified credentials archive (`BeneficialOwnershipRegistry.tsx`).
+  - Global Regulatory Gateway Matrix covering Switzerland (FINMA), USA (Fedwire/144A), UK (FCA), and Singapore (MAS) (`RegulatoryGatewayMatrix.tsx`).
+  - Fiduciary audit dossier upload modal with encrypted Swiss FINMA notarization.
+- [x] Implement Unified Sovereign Tax Dashboard:
+  - Multi-asset fiscal gains dossier across Crypto & Equities ($384k), Dividends ($62k), Real Estate Rental ($205k), Staking & Quant ($266k), and Fleet ($34k) (`TaxPackAggregator.tsx`).
+  - Tax year toggle (`TY 2024 (Closed)` / `TY 2025 (Accruing)`).
+  - Merkle proof generation, Form 8949 CSV export, and Big 4 integration formatters.
+- [x] Implement Security Command Center & Time-Lock Enclaves (`/dashboard/security`):
+  - Security Posture Scorecard with 100/100 defense index, Argon2id + FIDO2, and Gemalto Luna SA FIPS 140-2 Level 4 HSM attestation (`SecurityScorecard.tsx`).
+  - 3-token physical hardware security key fleet (YubiKey 5C NFC, Ledger Nano X, Apple Secure Enclave) (`HardwareKeyManager.tsx`).
+  - Active authenticated client sessions blotter with 1-click remote termination and "Revoke All Other Sessions" (`ActiveSessionsBlotter.tsx`).
+  - **Inviolable Zero-Trust Whitelist Address Guard**: Mandatory 24-48 hour cold quarantine countdown on every newly registered withdrawal destination before transfers can be initiated (`WhitelistAddressManager.tsx`).
+  - One-click Emergency Lockdown broadcast with session freezing.
+- [x] Automated security, governance, and compliance test suites passing (131/131 passing tests across 21 test suites, +28 new tests).
 
 ---
 
