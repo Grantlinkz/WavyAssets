@@ -11,6 +11,9 @@ import { WalletModule } from './components/modules/wallet/WalletModule';
 import { AiFundsModule } from './components/modules/ai-funds/AiFundsModule';
 import { RealEstateModule } from './components/modules/real-estate/RealEstateModule';
 import { CarsModule } from './components/modules/cars/CarsModule';
+import { VipCardsModule } from './components/modules/vip-cards/VipCardsModule';
+import { ComplianceModule } from './components/modules/compliance/ComplianceModule';
+import { SecurityModule } from './components/modules/security/SecurityModule';
 import { GlobalCommandBar } from './components/command-bar/GlobalCommandBar';
 import { DepositModal } from './components/modals/DepositModal';
 import { WithdrawModal } from './components/modals/WithdrawModal';
@@ -78,12 +81,18 @@ export const App: React.FC<AppProps> = ({ activeVertical: propVertical }) => {
             {activeVertical === 'ai-funds' && <AiFundsModule />}
             {activeVertical === 'real-estate' && <RealEstateModule />}
             {activeVertical === 'cars' && <CarsModule />}
+            {activeVertical === 'vip-cards' && <VipCardsModule />}
+            {activeVertical === 'compliance' && <ComplianceModule />}
+            {activeVertical === 'security' && <SecurityModule />}
             {activeVertical !== 'crypto' &&
               activeVertical !== 'stocks' &&
               activeVertical !== 'wallet' &&
               activeVertical !== 'ai-funds' &&
               activeVertical !== 'real-estate' &&
-              activeVertical !== 'cars' && (
+              activeVertical !== 'cars' &&
+              activeVertical !== 'vip-cards' &&
+              activeVertical !== 'compliance' &&
+              activeVertical !== 'security' && (
                 <VerticalPlaceholder key={activeVertical} vertical={activeVertical} />
               )}
           </div>
