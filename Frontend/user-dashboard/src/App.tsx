@@ -8,6 +8,9 @@ import { VerticalPlaceholder } from './components/modules/VerticalPlaceholder';
 import { CryptoModule } from './components/modules/crypto/CryptoModule';
 import { StocksModule } from './components/modules/stocks/StocksModule';
 import { WalletModule } from './components/modules/wallet/WalletModule';
+import { AiFundsModule } from './components/modules/ai-funds/AiFundsModule';
+import { RealEstateModule } from './components/modules/real-estate/RealEstateModule';
+import { CarsModule } from './components/modules/cars/CarsModule';
 import { GlobalCommandBar } from './components/command-bar/GlobalCommandBar';
 import { DepositModal } from './components/modals/DepositModal';
 import { WithdrawModal } from './components/modals/WithdrawModal';
@@ -72,9 +75,15 @@ export const App: React.FC<AppProps> = ({ activeVertical: propVertical }) => {
             {activeVertical === 'crypto' && <CryptoModule />}
             {activeVertical === 'stocks' && <StocksModule />}
             {activeVertical === 'wallet' && <WalletModule />}
+            {activeVertical === 'ai-funds' && <AiFundsModule />}
+            {activeVertical === 'real-estate' && <RealEstateModule />}
+            {activeVertical === 'cars' && <CarsModule />}
             {activeVertical !== 'crypto' &&
               activeVertical !== 'stocks' &&
-              activeVertical !== 'wallet' && (
+              activeVertical !== 'wallet' &&
+              activeVertical !== 'ai-funds' &&
+              activeVertical !== 'real-estate' &&
+              activeVertical !== 'cars' && (
                 <VerticalPlaceholder key={activeVertical} />
               )}
           </div>
