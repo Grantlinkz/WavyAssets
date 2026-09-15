@@ -16,7 +16,7 @@ const VERTICAL_METADATA: Record<AssetVertical, VerticalInfo> = {
     title: 'Consolidated Executive Overview',
     category: 'Universal Terminal',
     tag: 'ACTIVE ALLOCATOR',
-    description: 'Multi-asset wealth orchestration across 7 sovereign verticals with real-time mark-to-market valuations and institutional risk telemetry.',
+    description: 'Multi-asset wealth orchestration across all services with real-time mark-to-market valuations and institutional risk telemetry.',
   },
   crypto: {
     title: 'Crypto Investment & Staking Yield',

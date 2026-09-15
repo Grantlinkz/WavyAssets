@@ -17,7 +17,7 @@ export const AllocationPreview: React.FC = () => {
       <div className="flex flex-col gap-1 flex-1">
         <div className="flex justify-between text-[10px] font-mono text-outline">
           <span className="tracking-wider">ALLOCATION</span>
-          <span className="text-on-surface font-medium">7 VERTICALS</span>
+          <span className="text-on-surface font-medium">services</span>
         </div>
         <div
           className="h-1.5 w-full bg-[#08090B] rounded-DEFAULT flex overflow-hidden gap-0.5"

@@ -29,7 +29,7 @@ describe('Shell Navigation Integration Suite (Node 24 / SSR Parity)', () => {
     expect(html).toContain('data-testid="client-tier-badge"');
   });
 
-  it('renders sidebar navigation rail with all 7 sovereign verticals and compliance', () => {
+  it('renders sidebar navigation rail with all all services and compliance', () => {
     const html = renderToString(<SidebarRail />);
 
     expect(html).toContain('data-testid="dashboard-sidebar"');

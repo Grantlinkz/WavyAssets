@@ -65,7 +65,7 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
             </span>
           </div>
           <div className="text-[11px] font-mono text-outline mt-2">
-            Realized MTD: {maskBalances ? '••••••••' : '+$48,150.00'} // Beta 0.94
+            Realized MTD: {maskBalances ? '••••••••' : '+$48,150.00'} 
           </div>
         </div>
 
@@ -91,7 +91,7 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
             </span>
           </div>
           <div className="text-[11px] font-mono text-outline mt-2">
-            NASDAQ Session Open: 09:30 EST // Spread 0.01%
+            NASDAQ Session Open: 09:30 EST
           </div>
         </div>
 
