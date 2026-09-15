@@ -21,7 +21,7 @@ describe('Institutional Modal Overlays Suite (Node 24 / SSR Parity)', () => {
       const html = renderToString(<DepositModal isOpen={true} activeTab="wire" />);
 
       expect(html).toContain('data-testid="deposit-modal"');
-      expect(html).toContain('DEPOSIT CAPITAL // TREASURY INBOUND');
+      expect(html).toContain('DEPOSIT');
       expect(html).toContain('TIER 3 PERPETUAL CLEARANCE');
       expect(html).toContain('data-testid="deposit-view-wire"');
       expect(html).toContain('Grant Sovereign Holdings AG / Escrow Treuhand Zurich');
@@ -65,7 +65,7 @@ describe('Institutional Modal Overlays Suite (Node 24 / SSR Parity)', () => {
       const html = renderToString(<WithdrawModal isOpen={true} />);
 
       expect(html).toContain('data-testid="withdraw-modal"');
-      expect(html).toContain('WITHDRAW CAPITAL // SOVEREIGN DISBURSEMENT');
+      expect(html).toContain('WITHDRAW');
       expect(html).toContain('24-48H WHITELIST ENFORCED');
       expect(html).toContain('Zero-Trust Whitelist Lock Active');
       expect(html).toContain('Cold Storage Vault #1');
@@ -83,8 +83,8 @@ describe('Institutional Modal Overlays Suite (Node 24 / SSR Parity)', () => {
       const html = renderToString(<TradeModal isOpen={true} />);
 
       expect(html).toContain('data-testid="trade-modal"');
-      expect(html).toContain('SOVEREIGN OTC SWAP // EXECUTION ENGINE');
-      expect(html).toContain('DIRECT FIX PROTOCOL // 0.03ms');
+      expect(html).toContain('TRADE');
+      expect(html).toContain('INSTANT');
       expect(html).toContain('YOU ALLOCATE / PAY');
       expect(html).toContain('YOU ACQUIRE / RECEIVE (ESTIMATED)');
       expect(html).toContain('Institutional OTC Dark Pool');
@@ -102,7 +102,7 @@ describe('Institutional Modal Overlays Suite (Node 24 / SSR Parity)', () => {
       const html = renderToString(<KycDrawer isOpen={true} />);
 
       expect(html).toContain('data-testid="kyc-modal"');
-      expect(html).toContain('COMPLIANCE PASSPORT // TIER 3 PERPETUAL');
+      expect(html).toContain('COMPLIANCE');
       expect(html).toContain('ACCREDITED INSTITUTIONAL');
       expect(html).toContain('FINMA &amp; VARA DUAL-CLEARED');
       expect(html).toContain('UNLIMITED');

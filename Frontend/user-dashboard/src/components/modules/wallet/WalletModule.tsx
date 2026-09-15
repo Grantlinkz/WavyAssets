@@ -37,7 +37,7 @@ export const WalletModule: React.FC<WalletModuleProps> = ({ maskBalances: propMa
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-surface-container text-tertiary rounded-DEFAULT text-[10px]">
               <span className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse" />
-              CLEARING: SWISS INTERBANK RTGS // SIC
+              CLEARING: SIC
             </span>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-surface-container text-on-surface-variant rounded-DEFAULT text-[10px]">
               <span className="w-1.5 h-1.5 rounded-full bg-primary" />

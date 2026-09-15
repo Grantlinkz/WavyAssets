@@ -48,7 +48,7 @@ export const AssetInventoryDeck: React.FC<AssetInventoryDeckProps> = ({
                 <div className="absolute inset-0 bg-gradient-to-t from-surface-container via-transparent to-black/60"></div>
                 <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
                   <span className="px-2 py-0.5 bg-surface/90 text-primary font-mono text-[10px] font-bold uppercase tracking-wider rounded border border-border-hairline">
-                    100% SOLE TITLE // CUSTODY BONDED
+                    BONDED
                   </span>
                 </div>
                 <div className="absolute top-2.5 right-2.5">

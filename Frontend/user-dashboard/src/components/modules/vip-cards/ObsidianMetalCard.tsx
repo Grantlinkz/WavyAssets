@@ -79,7 +79,7 @@ export const ObsidianMetalCard: React.FC<ObsidianMetalCardProps> = ({ maskBalanc
                 isCardFrozen ? 'bg-error' : 'bg-tertiary animate-pulse'
               }`}
             />
-            {isCardFrozen ? 'FROZEN // LOCKED' : 'ACTIVE // ARMED'}
+            {isCardFrozen ? 'FROZEN' : 'ACTIVE'}
           </span>
           <button
             type="button"
@@ -117,7 +117,7 @@ export const ObsidianMetalCard: React.FC<ObsidianMetalCardProps> = ({ maskBalanc
                   WavyAssets Sovereign
                 </span>
                 <span className="font-mono text-[8px] text-outline tracking-widest uppercase">
-                  ZURICH PRIVATE DESK // ENCLAVE CH
+                  ZURICH
                 </span>
               </div>
             </div>
@@ -166,7 +166,7 @@ export const ObsidianMetalCard: React.FC<ObsidianMetalCardProps> = ({ maskBalanc
                     CARDHOLDER
                   </span>
                   <span className="font-mono text-xs text-primary-fixed tracking-wider font-semibold uppercase">
-                    M. GRANT // SOVEREIGN
+                    M. GRANT
                   </span>
                 </div>
 
@@ -212,7 +212,7 @@ export const ObsidianMetalCard: React.FC<ObsidianMetalCardProps> = ({ maskBalanc
         <div className="flex items-center gap-2">
           <Lock className="w-4 h-4 text-tertiary shrink-0" />
           <span className="text-[11px]">
-            HSM Zero-Exposure Masking Armed // Gemalto Thales Luna Enclave
+            Gemalto Thales Luna Enclave
           </span>
         </div>
 

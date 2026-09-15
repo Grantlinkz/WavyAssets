@@ -52,7 +52,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
             </div>
             <div>
               <DialogTitle className="text-sm uppercase tracking-wide">
-                WITHDRAW CAPITAL // SOVEREIGN DISBURSEMENT
+                WITHDRAW
               </DialogTitle>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="px-1.5 py-0.2 bg-secondary/15 text-secondary text-[10px] font-mono font-semibold rounded-xs">
@@ -137,7 +137,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                 className="p-3 bg-tertiary/10 border border-tertiary/40 rounded-DEFAULT flex items-center justify-center gap-2 text-tertiary text-xs font-mono font-bold"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>MANDATE BROADCASTED TO MEMPOOL // DVP T+0</span>
+                <span>CONFIRMED</span>
               </div>
             ) : (
               <button

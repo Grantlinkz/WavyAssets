@@ -36,7 +36,7 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
             </div>
             <div>
               <DialogTitle className="text-sm uppercase tracking-wide">
-                COMPLIANCE PASSPORT // TIER 3 PERPETUAL
+                COMPLIANCE
               </DialogTitle>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="px-1.5 py-0.2 bg-tertiary/15 text-tertiary text-[10px] font-mono font-semibold rounded-xs">

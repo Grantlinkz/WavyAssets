@@ -72,11 +72,11 @@ export const TradeModal: React.FC<TradeModalProps> = ({
             </div>
             <div>
               <DialogTitle className="text-sm uppercase tracking-wide">
-                SOVEREIGN OTC SWAP // EXECUTION ENGINE
+                TRADE
               </DialogTitle>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="px-1.5 py-0.2 bg-primary/15 text-primary text-[10px] font-mono font-semibold rounded-xs">
-                  DIRECT FIX PROTOCOL // 0.03ms
+                  INSTANT
                 </span>
                 <span className="text-[10px] text-tertiary font-mono">Zero Slippage Routing</span>
               </div>
@@ -178,7 +178,7 @@ export const TradeModal: React.FC<TradeModalProps> = ({
                 className="p-3 bg-tertiary/10 border border-tertiary/40 rounded-DEFAULT flex items-center justify-center gap-2 text-tertiary text-xs font-mono font-bold"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>TRADE EXECUTED // ATOMIC SETTLEMENT T+0</span>
+                <span>EXECUTED</span>
               </div>
             ) : (
               <button

@@ -41,7 +41,7 @@ export const SovereignConciergeModal: React.FC = () => {
                 Sovereign Private Concierge Desk
               </DialogTitle>
               <span className="font-mono text-[10px] text-tertiary">
-                ZURICH PRIVATE DESK // 24/7 ENCLAVE
+                ZURICH
               </span>
             </div>
           </div>

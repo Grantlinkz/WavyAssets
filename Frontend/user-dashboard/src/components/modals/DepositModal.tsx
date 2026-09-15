@@ -49,7 +49,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
             </div>
             <div>
               <DialogTitle className="text-sm uppercase tracking-wide">
-                DEPOSIT CAPITAL // TREASURY INBOUND
+                DEPOSIT
               </DialogTitle>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="px-1.5 py-0.2 bg-primary/15 text-primary text-[10px] font-mono font-semibold rounded-xs">

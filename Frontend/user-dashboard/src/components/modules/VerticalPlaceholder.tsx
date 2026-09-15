@@ -135,7 +135,7 @@ export const VerticalPlaceholder: React.FC<VerticalPlaceholderProps> = ({ vertic
         <div className="rounded-sm border border-border-hairline bg-surface-container-low p-4 space-y-4 md:col-span-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-serif font-semibold text-on-surface">Order Execution & Position Depth</span>
-            <span className="text-[10px] font-mono text-secondary font-semibold">LIVE FIX // 0.03ms</span>
+            <span className="text-[10px] font-mono text-secondary font-semibold">LIVE</span>
           </div>
           <Skeleton className="h-28 w-full" />
           <div className="grid grid-cols-2 gap-2">

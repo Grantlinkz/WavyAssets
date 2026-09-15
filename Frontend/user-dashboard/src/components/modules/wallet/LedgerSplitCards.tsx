@@ -222,7 +222,7 @@ export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances
         <div className="pt-2 border-t border-border-hairline flex items-center justify-between text-[11px] font-mono text-outline">
           <span className="flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-tertiary" />
-            Swiss Fiduciary Custody // Bank Julius Bär Escrow
+            Bank Julius Bär Escrow
           </span>
           <span className="text-primary hover:underline uppercase tracking-wider font-semibold cursor-pointer">
             Inspect Vault Smart Contracts →
