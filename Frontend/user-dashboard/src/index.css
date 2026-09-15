@@ -1,0 +1,211 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark, .dark *));
+
+@theme {
+  --color-surface: var(--surface);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-bright: var(--surface-bright);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  
+  --color-primary: var(--primary);
+  --color-primary-container: var(--primary-container);
+  --color-primary-hover: var(--primary-hover);
+  --color-on-primary: var(--on-primary);
+  --color-on-primary-container: var(--on-primary-container);
+  
+  --color-secondary: var(--secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary: var(--on-secondary);
+  --color-on-secondary-container: var(--on-secondary-container);
+
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-container: var(--tertiary-container);
+  --color-on-tertiary: var(--on-tertiary);
+  
+  --color-error: var(--error);
+  --color-error-container: var(--error-container);
+  --color-on-error: var(--on-error);
+  
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  --color-border-hairline: var(--border-hairline);
+  --color-border-active: var(--border-active);
+
+  /* shadcn compat */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Precision Micro-Chamfer Geometry (Strictly 2px - 4px, zero generic pills > 8px) */
+  --radius-xs: 0.125rem;
+  --radius-sm: 0.125rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.5rem;
+  --radius: 0.25rem;
+
+  /* Fonts */
+  --font-serif: "Noto Serif", Georgia, serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Inter", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+:root {
+  /* Luxury Light Mode */
+  --surface: #F9F9FF;
+  --surface-dim: #D5DAE7;
+  --surface-bright: #FFFFFF;
+  --surface-container-lowest: #FFFFFF;
+  --surface-container-low: #F0F3FA;
+  --surface-container: #E8EDF5;
+  --surface-container-high: #DDE3EC;
+  --surface-container-highest: #D3DAE4;
+  
+  --on-surface: #101319;
+  --on-surface-variant: #4A5568;
+  
+  --primary: #926F13;
+  --primary-container: #D4AF37;
+  --primary-hover: #BFA044;
+  --on-primary: #FFFFFF;
+  --on-primary-container: #101319;
+  
+  --secondary: #ECC160;
+  --secondary-container: #826000;
+  --on-secondary: #3F2E00;
+  --on-secondary-container: #FFE1A4;
+  
+  --tertiary: #006D42;
+  --tertiary-container: #3DCA88;
+  --on-tertiary: #FFFFFF;
+  
+  --error: #BA1A1A;
+  --error-container: #FFDAD6;
+  --on-error: #FFFFFF;
+  --destructive: #BA1A1A;
+  --destructive-foreground: #FFFFFF;
+  
+  --outline: #99907C;
+  --outline-variant: #E2E8F0;
+  --border-hairline: #E2E8F0;
+  --border-active: #CBD5E1;
+  
+  --background: #F9F9FF;
+  --foreground: #101319;
+  --card: #FFFFFF;
+  --card-foreground: #101319;
+  --popover: #FFFFFF;
+  --popover-foreground: #101319;
+  --muted: #F0F3FA;
+  --muted-foreground: #64748B;
+  --accent: #E8EDF5;
+  --accent-foreground: #926F13;
+  --border: #E2E8F0;
+  --input: #E8EDF5;
+  --ring: #926F13;
+}
+
+.dark {
+  /* Sovereign Obsidian Dark (tools/UI/# sovereign_asset_terminal/DESIGN.md) */
+  --surface: #101319;
+  --surface-dim: #101319;
+  --surface-bright: #363940;
+  --surface-container-lowest: #0B0E14;
+  --surface-container-low: #191C22;
+  --surface-container: #1D2026;
+  --surface-container-high: #272A30;
+  --surface-container-highest: #32353B;
+  
+  --on-surface: #E1E2EB;
+  --on-surface-variant: #D0C5AF;
+  
+  --primary: #F2CA50;
+  --primary-container: #D4AF37;
+  --primary-hover: #E5C158;
+  --on-primary: #3C2F00;
+  --on-primary-container: #554300;
+  
+  --secondary: #ECC160;
+  --secondary-container: #826000;
+  --on-secondary: #3F2E00;
+  --on-secondary-container: #FFE1A4;
+  
+  --tertiary: #5FE7A2;
+  --tertiary-container: #3DCA88;
+  --on-tertiary: #003921;
+  
+  --error: #FFB4AB;
+  --error-container: #93000A;
+  --on-error: #690005;
+  --destructive: #FFB4AB;
+  --destructive-foreground: #690005;
+  
+  --outline: #99907C;
+  --outline-variant: #4D4635;
+  --border-hairline: #232A38;
+  --border-active: #4D4635;
+  
+  --background: #101319;
+  --foreground: #E1E2EB;
+  --card: #191C22;
+  --card-foreground: #E1E2EB;
+  --popover: #1D2026;
+  --popover-foreground: #E1E2EB;
+  --muted: #191C22;
+  --muted-foreground: #9CA3AF;
+  --accent: #1D2026;
+  --accent-foreground: #F2CA50;
+  --border: #232A38;
+  --input: #1D2026;
+  --ring: #F2CA50;
+}
+
+/* Base Body Styles */
+body {
+  background-color: var(--surface);
+  color: var(--on-surface);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* Tabular lining figures for all financial data */
+.font-tabular,
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Custom discreet scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--outline-variant);
+  border-radius: 2px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}

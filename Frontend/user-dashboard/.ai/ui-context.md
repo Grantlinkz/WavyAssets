@@ -1,95 +1,76 @@
-# UI Context — WavyAssets Institutional Terminal
+# UI Context — WavyAssets Sovereign Institutional User Dashboard
 
-## Visual Theme & Philosophy
+## Visual Theme & Design Philosophy
 
-The design system establishes a **Sovereign Institutional Terminal** for elite multi-asset wealth management and digital custody. Drawing from Swiss typographic rigor, physical vault architecture, and ultra-high-performance financial command terminals, this system prioritizes extreme information density without sensory fatigue.
+The design system establishes a **Sovereign Institutional Terminal** for ultra-high-net-worth allocators, family offices, and institutional fund managers. In harmony with Swiss private bank rigor and physical vault aesthetics, this interface prioritizes extreme data density, spatial calm, and high contrast without sensory fatigue.
 
-- **Obsidian Foundation**: Deep near-black background engineered to eliminate eye strain across marathon monitoring sessions.
-- **Architectural Depth**: Structural depth is achieved purely through **tonal stratification** and **subtle 1px hairline boundaries** (`#222632`) rather than heavy elevation dropshadows.
-- **Scarcity of Accent**: Bullion Gold (`#D4AF37`) is deployed with strict restraint—reserved exclusively for sovereign execution triggers, active states, and high-tier portfolio indicators.
-- **Dual Typographic Pairing**: Sovereign Swiss serif typography (`Noto Serif`) for structural navigation and headers combined with relentless tabular monospaced figures (`Inter`) for all financial data.
+- **Obsidian Dark (Default)**: Deep obsidian canvas (`#101319` / `#08090B`) engineered to eliminate eye fatigue during extended portfolio management sessions.
+- **Luxury Light (Theme Mode)**: Crisp, high-trust private wealth daylight aesthetic (`#F9F9FF`, `#D5DAE7`) with refined hairline borders.
+- **Tonal Stratification**: Structural depth is achieved purely through layered surface containers (`#0B0E14` -> `#191C22` -> `#1D2026` -> `#272A30`) and hairline 1px borders (`#232A38` / `#4D4635`) rather than blurred drop shadows.
+- **Scarcity of Accent**: Bullion Gold (`#D4AF37` / `#F2CA50`) is reserved exclusively for sovereign actions, active tab indicators, and primary execution triggers.
+- **Anti-SaaS-Slop Principle**: Strictly zero purple neon glows, zero floating orbs, zero cartoon gamification, and zero empty hero bloat.
 
 ---
 
-## Color Tokens (Obsidian Dark Mode — Default)
+## Color Tokens & Palette (`tools/UI/# sovereign_asset_terminal/DESIGN.md`)
 
-| Token Role              | CSS Variable           | Value                      | Description                                  |
-| :---------------------- | :--------------------- | :------------------------- | :------------------------------------------- |
-| **Canvas Base**         | `--bg-base`            | `#08090B`                  | Primary zero-elevation background canvas     |
-| **Panel Surface**       | `--bg-surface-1`       | `#0F1115`                  | Secondary layer for data modules & grids     |
-| **Elevated Surface**    | `--bg-surface-2`       | `#161920`                  | Hover states, active tabs, nested cells      |
-| **Subtle Border**       | `--border-default`     | `#222632`                  | Crisp 1px structural dividing lines          |
-| **Active/Focus Border** | `--border-focus`       | `#3A4050`                  | Selected panes and focused input boundaries  |
-| **Sovereign Gold**      | `--accent-gold`        | `#D4AF37`                  | Primary brand accent & execution triggers    |
-| **Gold Hover**          | `--accent-gold-bright` | `#E5C158`                  | Hover state for gold triggers                |
-| **Gold Muted Wash**     | `--accent-gold-wash`   | `rgba(212, 175, 55, 0.08)` | Active matrix selection & tab highlight      |
-| **Emerald Yield**       | `--state-yield`        | `#00C288`                  | Positive delta, capital inflow, APY gains    |
-| **Emerald Wash**        | `--state-yield-wash`   | `rgba(0, 194, 136, 0.10)`  | Positive spread badge backgrounds            |
-| **Crimson Risk**        | `--state-risk`         | `#FF4D4D`                  | Negative delta, drawdown risk, margin alerts |
-| **Crimson Wash**        | `--state-risk-wash`    | `rgba(255, 77, 77, 0.10)`  | Risk indicator badge backgrounds             |
-| **Text Primary**        | `--text-primary`       | `#F3F4F6`                  | High-contrast headers, critical figures      |
-| **Text Secondary**      | `--text-secondary`     | `#9CA3AF`                  | Column headers, descriptions, metadata       |
-| **Text Tertiary**       | `--text-muted`         | `#4B5563`                  | Inactive timestamps, grid axes, units        |
-
-_(Luxury Light Mode shifts canvas to `#F8F9FA`, surfaces to `#FFFFFF`, borders to `#E5E7EB`, and text to `#111827`, with Gold shifting to `#B89324`.)_
+| Token Role | Obsidian Dark Value | Luxury Light Value | Description |
+| :--- | :--- | :--- | :--- |
+| **`surface`** | `#101319` / `#08090B` | `#F9F9FF` | Primary background canvas |
+| **`surface-container-lowest`** | `#0B0E14` | `#FFFFFF` | Deepest inset well / background grid |
+| **`surface-container-low`** | `#191C22` | `#F0F3FA` | Primary data module container |
+| **`surface-container`** | `#1D2026` | `#E8EDF5` | Standard card surface |
+| **`surface-container-high`** | `#272A30` | `#DDE3EC` | Hovered rows, elevated modules |
+| **`surface-container-highest`**| `#32353B` | `#D3DAE4` | Active tabs, popover flyouts |
+| **`on-surface`** | `#E1E2EB` | `#101319` | High-contrast primary text and values |
+| **`on-surface-variant`** | `#D0C5AF` / `#9CA3AF`| `#4A5568` | Column headers, descriptions, timestamps |
+| **`outline` / `border-hairline`**| `#232A38` / `#4D4635`| `#E2E8F0` | Razor-sharp 1px structural dividing lines |
+| **`primary` (Sovereign Gold)** | `#F2CA50` / `#D4AF37` | `#926F13` | Primary brand accent & execution triggers |
+| **`tertiary` (Emerald Gain)** | `#53DC98` / `#5FE7A2` | `#006D42` | Positive delta, APY gains, capital inflows |
+| **`error` (Ruby Drawdown)** | `#FFB4AB` | `#BA1A1A` | Negative delta, drawdown alerts, circuit breaker |
 
 ---
 
 ## Typography
 
-| Context                 | Font Family  | Size / Leading | Weight         | Letter Spacing        |
-| :---------------------- | :----------- | :------------- | :------------- | :-------------------- |
-| **Headline XL**         | `Noto Serif` | 32px / 38px    | 600 (Semibold) | `-0.02em`             |
-| **Headline LG**         | `Noto Serif` | 24px / 30px    | 600 (Semibold) | `-0.015em`            |
-| **Headline SM**         | `Noto Serif` | 18px / 24px    | 500 (Medium)   | `-0.01em`             |
-| **Label Caps (Badges)** | `Noto Serif` | 11px / 14px    | 600 (Semibold) | `+0.08em` (Uppercase) |
-| **Data Metric LG**      | `Inter`      | 28px / 32px    | 600 (Semibold) | `-0.02em` (Tabular)   |
-| **Data Metric MD**      | `Inter`      | 18px / 24px    | 500 (Medium)   | `-0.01em` (Tabular)   |
-| **Body MD (Data)**      | `Inter`      | 13px / 18px    | 400 (Regular)  | `0em`                 |
-| **Body SM (Data)**      | `Inter`      | 12px / 16px    | 400 (Regular)  | `0em`                 |
-| **Data Micro**          | `Inter`      | 10px / 12px    | 500 (Medium)   | `+0.02em`             |
+| Style Hierarchy | Font Family | Weight | Size / Line-Height | Tracking & Alignment |
+| :--- | :--- | :--- | :--- | :--- |
+| **Headline XL** | `Noto Serif` | Medium (500) | `2.25rem` / `2.75rem` | `-0.02em` |
+| **Headline LG** | `Noto Serif` | Medium (500) | `1.75rem` / `2.25rem` | `-0.015em` |
+| **Headline MD** | `Noto Serif` | Medium (500) | `1.25rem` / `1.75rem` | `-0.01em` |
+| **Headline SM** | `Noto Serif` | Medium (500) | `1.05rem` / `1.5rem` | `0em` |
+| **Data Metric LG** | `Inter` | Semibold (600) | `1.5rem` / `1.75rem` | `-0.02em`, `tabular-nums` |
+| **Data Metric MD** | `Inter` | Semibold (600) | `1.125rem` / `1.375rem`| `-0.01em`, `tabular-nums` |
+| **Body LG / MD** | `Inter` | Regular (400) | `1.0rem` / `0.875rem` | `-0.005em` |
+| **Label Caps / Badges**| `Inter` | Semibold (600) | `0.6875rem` / `0.875rem`| `+0.06em`, Uppercase |
 
 ---
 
-## Border Radius & Shapes
+## Geometry & Corner Radii
 
-- **Precision Micro-Chamfer (`0.25rem` / `4px`)**: Mandatory for base surfaces, tabular rows, cards, inputs, and buttons. Maintains an instrument-grade, sharp terminal silhouette.
-- **Elevated Modals (`0.5rem` / `8px`)**: Reserved exclusively for modal dialogs (`UnifiedAuthModal`), floating context tooltips, and deep flyouts.
-- **Prohibition**: True pill shapes and heavy rounding (>8px) are **strictly forbidden** to prevent consumerization of the institutional aesthetic.
+- **Precision Micro-Chamfer (`0.25rem` / `4px`)**: Mandatory default for all panels, cards, data rows, action buttons, and inputs.
+- **Subtle Chamfer (`0.125rem` / `2px`)**: Applied to badges, table cell tags, and status chips.
+- **Elevated Modals (`0.5rem` / `8px`)**: Reserved exclusively for modal dialogs (`DepositModal`, `WithdrawModal`, `TradeModal`, `KycDrawer`).
+- **Prohibition**: Generic consumer pill shapes (>8px) are **strictly forbidden**.
 
 ---
 
-## Component Specifications
+## Key Screen Component Specifications
 
-### 1. Primary Sovereign CTA
+### 1. Universal Global Command Bar
+- Mounted persistently directly below header navigation across all views.
+- **Cell 1: Consolidated Net Worth**: Primary balance display ($14,820,450.00) with dynamic 24h P&L chip (+$184,210.40 / +1.26% emerald) and timeframe selector (`1D | 1W | 1M | 1Y | ALL`).
+- **Cell 2: Interactive Allocation Preview**: Mini 3D radial donut visualizer displaying weights across the 7 verticals.
+- **Cell 3: Privacy Eyeball Toggle**: Clicking toggles `maskBalances`, instantly masking numbers into `••••••••`.
+- **Cell 4: Global Action Rail**: High-contrast micro-chamfered action buttons: `[Deposit]`, `[Withdraw]`, `[Trade / Swap]`, `[Tier 3 Verified]`.
 
-- Background: `#D4AF37` (Gold), Text: `#08090B` (`Noto Serif` 12px semibold, uppercase).
-- Hover: `#E5C158`, Active: `#B89324`. Radius: `4px`.
+### 2. Left-Hand Vertical Navigation Rail
+- Docked left rail (64px collapsed icon rail / 220px expanded).
+- Direct access to: Overview, Crypto, Global Stocks, AI Funds, Real Estate, Exotic Cars, VIP Cards, Wallet, Compliance & Tax, Security.
+- Active item indicated by a left 2px Sovereign Gold accent and elevated surface tint (`#1D2026`).
 
-### 2. Secondary Terminal Button
-
-- Background: `#0F1115`, Border: `1px solid #222632`, Text: `#F3F4F6`.
-- Hover: Background `#161920`, Border `#3A4050`. Radius: `4px`.
-
-### 3. Financial Data Tables & Matrices
-
-- Header: `11px` uppercase label-caps in `#9CA3AF`, flush left for names, right-aligned for numbers.
-- Row height: Fixed `1.75rem` (`28px`), bottom hairline border `1px solid rgba(34, 38, 50, 0.5)`.
-- Hover row: Background `#161920`. Selected row: Left border `2px solid #D4AF37`.
-
-### 4. Chips & Delta Badges
-
-- Positive: Background `rgba(0, 194, 136, 0.10)`, Text `#00C288`, `Inter` 11px.
-- Negative: Background `rgba(255, 77, 77, 0.10)`, Text `#FF4D4D`, `Inter` 11px.
-
-### 5. Unified Auth Modal (2-Step)
-
-- Root-mounted with Radix Dialog. Backdrop: `rgba(8, 9, 11, 0.85)` with `backdrop-filter: blur(12px)`.
-- Border: `1px solid #3A4050` with subtle inner gold hairline highlight.
-- Step 1: Institutional email & password / KYC tier selector.
-- Step 2: 6-digit segmented `Input-OTP` auto-focused with resend countdown.
-
-### 6. Portfolio Simulator
-
-- Dual Radix Sliders with linear track `#161920`, filled track `#D4AF37`, and micro-rounded square thumb in `#F3F4F6`.
-- Synchronized SVG / WebGL 3D radial donut visualizer with reactive stroke animations.
+### 3. Rapid Execution Modal Suite (`tools/UI/#11 wavyassets_sovereign_modal_overlays_rapid_execution_suite`)
+- **Deposit Modal**: Multi-currency rails (Fedwire/SWIFT, SEPA, USDC/USDT on-chain deposit address with QR code).
+- **Withdraw Modal**: Whitelist address selector, dynamic gas/wire fee calculator, mandatory 2FA / WebAuthn confirmation.
+- **Trade / Swap Modal**: Asset pair selector, real-time FX/AMM rate quote, slippage tolerance settings.
+- **Whitelist Lock Modal**: Address submission requiring WebAuthn verification and enforcing the **24-to-48 hour lock timer**.
