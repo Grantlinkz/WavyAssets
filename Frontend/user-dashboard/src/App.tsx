@@ -74,7 +74,7 @@ export const App: React.FC<AppProps> = ({ activeVertical: propVertical }) => {
           tabIndex={-1}
           className="flex-1 flex flex-col min-w-0 bg-surface focus:outline-none"
         >
-          <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+          <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 min-h-[540px]">
             {activeVertical === 'crypto' && <CryptoModule />}
             {activeVertical === 'stocks' && <StocksModule />}
             {activeVertical === 'wallet' && <WalletModule />}

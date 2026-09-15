@@ -141,17 +141,31 @@ export const AllocationDonut3D: React.FC<AllocationDonut3DProps> = ({
     canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('mouseleave', handleMouseLeave);
 
-    // Animation Loop with visibility throttling (Performance Invariant)
+    // Animation Loop with visibility throttling & IntersectionObserver off-screen culling (Performance Invariant)
     let animationFrameId: number;
     let isHidden = document.hidden;
+    let isIntersecting = true;
 
     const handleVisibilityChange = () => {
       isHidden = document.hidden;
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
+    let observer: IntersectionObserver | null = null;
+    if (typeof IntersectionObserver !== 'undefined') {
+      observer = new IntersectionObserver(
+        (entries) => {
+          if (entries[0]) {
+            isIntersecting = entries[0].isIntersecting;
+          }
+        },
+        { threshold: 0.05 }
+      );
+      observer.observe(canvas);
+    }
+
     const animate = () => {
-      if (!isHidden) {
+      if (!isHidden && isIntersecting) {
         group.rotation.z += 0.006;
         renderer?.render(scene, camera);
       }
@@ -164,6 +178,9 @@ export const AllocationDonut3D: React.FC<AllocationDonut3DProps> = ({
     return () => {
       cancelAnimationFrame(animationFrameId);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (observer) {
+        observer.disconnect();
+      }
       canvas.removeEventListener('mousemove', handleMouseMove);
       canvas.removeEventListener('mouseleave', handleMouseLeave);
 
