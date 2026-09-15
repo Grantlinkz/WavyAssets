@@ -7,13 +7,36 @@ export const BiometricRevealModal: React.FC = () => {
   const { isBiometricModalOpen, closeBiometricModal, revealCvv } = useGovernanceStore();
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [verificationSuccess, setVerificationSuccess] = useState<boolean>(false);
+  const verifyTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const successTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearAllTimers = () => {
+    if (verifyTimerRef.current) clearTimeout(verifyTimerRef.current);
+    if (successTimerRef.current) clearTimeout(successTimerRef.current);
+  };
+
+  React.useEffect(() => {
+    return () => {
+      clearAllTimers();
+    };
+  }, []);
+
+  const handleClose = () => {
+    clearAllTimers();
+    setIsVerifying(false);
+    setVerificationSuccess(false);
+    closeBiometricModal();
+  };
 
   const handleSimulateTouch = () => {
+    if (isVerifying || verificationSuccess) return;
     setIsVerifying(true);
-    setTimeout(() => {
+    clearAllTimers();
+
+    verifyTimerRef.current = setTimeout(() => {
       setIsVerifying(false);
       setVerificationSuccess(true);
-      setTimeout(() => {
+      successTimerRef.current = setTimeout(() => {
         setVerificationSuccess(false);
         revealCvv();
       }, 700);
@@ -23,7 +46,7 @@ export const BiometricRevealModal: React.FC = () => {
   if (!isBiometricModalOpen) return null;
 
   return (
-    <Dialog open={isBiometricModalOpen} onOpenChange={(open) => !open && closeBiometricModal()}>
+    <Dialog open={isBiometricModalOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent data-testid="biometric-reveal-modal" className="max-w-[460px]">
         <DialogHeader className="flex flex-row items-center justify-between pb-3 border-b border-border-hairline">
           <div className="flex items-center gap-2">
@@ -44,7 +67,7 @@ export const BiometricRevealModal: React.FC = () => {
             type="button"
             data-testid="close-biometric-modal-btn"
             aria-label="Close biometric challenge"
-            onClick={closeBiometricModal}
+            onClick={handleClose}
             className="text-outline hover:text-on-surface p-1 rounded-DEFAULT transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />

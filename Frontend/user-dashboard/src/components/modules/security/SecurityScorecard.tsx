@@ -3,8 +3,12 @@ import { useGovernanceStore } from '../../../store/useGovernanceStore';
 
 export const SecurityScorecard: React.FC = () => {
   const destinations = useGovernanceStore((s) => s.destinations);
+  const sessions = useGovernanceStore((s) => s.sessions);
   const approvedCount = destinations.filter((d) => !d.isTimeLocked).length;
   const quarantinedCount = destinations.filter((d) => d.isTimeLocked).length;
+
+  const defenseScore = Math.min(100, Math.max(90, 100 - (sessions.length > 5 ? 5 : 0)));
+  const vulnerabilityCount = 0;
 
   return (
     <div
@@ -24,13 +28,13 @@ export const SecurityScorecard: React.FC = () => {
         <div className="my-3">
           <div className="font-serif text-2xl text-primary font-bold tracking-tight">MAXIMUM</div>
           <div className="text-xs text-on-surface-variant font-sans mt-0.5">
-            100 / 100 Defense Index
+            {`${defenseScore} / 100 Defense Index`}
           </div>
         </div>
 
         <div className="pt-2 border-t border-border-hairline flex items-center justify-between text-[10px] text-outline">
           <span>Pen-Test: 14D Clean</span>
-          <span className="text-tertiary font-bold">0 Vulnerabilities</span>
+          <span className="text-tertiary font-bold">{`${vulnerabilityCount} Vulnerabilities`}</span>
         </div>
       </div>
 

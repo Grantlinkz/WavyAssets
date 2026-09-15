@@ -80,7 +80,10 @@ export const RentalDistributionBlotter: React.FC<RentalDistributionBlotterProps>
                 <td className="py-2.5 px-3 text-right text-tertiary">
                   {maskBalances
                     ? '••••••••'
-                    : `+$${item.varianceDelta.toFixed(2)} (+0.88%)`}
+                    : `+${item.varianceDelta >= 0 ? '$' : '-$'}${Math.abs(item.varianceDelta).toFixed(2)} (+${(
+                        (item.varianceDelta / (item.projected || 1)) *
+                        100
+                      ).toFixed(2)}%)`}
                 </td>
                 <td className="py-2.5 px-3 text-[11px] text-outline">
                   {item.settlementHash} <span className="text-primary">(EVM/CH)</span>

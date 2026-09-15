@@ -93,7 +93,9 @@ export const RealEstateModule: React.FC<RealEstateModuleProps> = ({ maskBalances
                   )}
                 </div>
                 <div className="flex items-center gap-1.5 mt-0.5 font-mono text-xs">
-                  <span className="text-tertiary tabular-nums font-semibold">{card.delta}</span>
+                  <span className="text-tertiary tabular-nums font-semibold">
+                    {card.delta.includes('$') && maskBalances ? '••••••••' : card.delta}
+                  </span>
                   {card.deltaSub && (
                     <span className="text-[10px] text-outline uppercase">{card.deltaSub}</span>
                   )}
@@ -114,7 +116,9 @@ export const RealEstateModule: React.FC<RealEstateModuleProps> = ({ maskBalances
 
             <div className="pt-2 border-t border-border-hairline flex items-center justify-between text-[11px] font-mono text-outline tabular-nums">
               <span>{card.footerKey}</span>
-              <span className="text-on-surface-variant font-medium">{card.footerVal}</span>
+              <span className="text-on-surface-variant font-medium">
+                {card.footerVal.includes('$') && maskBalances ? '••••••••' : card.footerVal}
+              </span>
             </div>
           </div>
         ))}

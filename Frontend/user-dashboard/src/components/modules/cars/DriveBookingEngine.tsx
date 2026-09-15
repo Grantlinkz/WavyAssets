@@ -150,6 +150,11 @@ export const DriveBookingEngine: React.FC<DriveBookingEngineProps> = ({
               <span className="text-outline py-1">SAT</span>
               <span className="text-outline py-1">SUN</span>
 
+              {/* August 2025 starts on Friday (Mon=0, Tue=1, Wed=2, Thu=3 -> 4 leading empty cells) */}
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={`empty-day-${i}`} className="p-1.5" />
+              ))}
+
               {driveSlots.map((slot) => {
                 if (slot.status === 'available') {
                   return (

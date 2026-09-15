@@ -73,17 +73,19 @@ export const CarsModule: React.FC<CarsModuleProps> = ({ maskBalances: propMask }
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="font-mono text-xl text-on-surface tabular-nums font-bold">
-                {metric.label.includes('VALUATION') && maskBalances
+                {(metric.value.includes('$') || metric.label.includes('VALUATION')) && maskBalances
                   ? '••••••••'
                   : metric.value}
               </span>
               <span className="font-mono text-xs text-tertiary tabular-nums font-medium">
-                {metric.delta}
+                {metric.delta.includes('$') && maskBalances ? '••••' : metric.delta}
               </span>
             </div>
             <div className="mt-2 pt-2 border-t border-border-hairline text-[11px] font-mono text-outline flex items-center justify-between">
               <span>{metric.footerKey}</span>
-              <span className="text-tertiary">{metric.footerVal}</span>
+              <span className="text-tertiary">
+                {metric.footerVal.includes('$') && maskBalances ? '••••••••' : metric.footerVal}
+              </span>
             </div>
           </div>
         ))}

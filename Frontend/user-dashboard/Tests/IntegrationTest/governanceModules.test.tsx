@@ -76,10 +76,15 @@ describe('Governance & Sovereign Modules Integration Suite (Sprint 5)', () => {
     });
 
     it('renders multi-asset tax dossier and verifies tax year selector', () => {
-      const html2024 = renderToString(<ComplianceModule maskBalances={false} />);
+      useGovernanceStore.getState().setTaxYear('2024');
+      const html2024 = renderToString(<ComplianceModule maskBalances={false} selectedTaxYear="2024" />);
       expect(html2024).toContain('Crypto &amp; Equities Gains');
       expect(html2024).toContain('$384,120.00');
       expect(html2024).toContain('Form 8949 CSV');
+
+      const html2025 = renderToString(<ComplianceModule maskBalances={false} selectedTaxYear="2025" />);
+      expect(html2025).toContain('$142,850.00');
+      expect(html2025).toContain('Accruing MTD');
     });
 
     it('masks financial figures in tax pack when maskBalances is active', () => {

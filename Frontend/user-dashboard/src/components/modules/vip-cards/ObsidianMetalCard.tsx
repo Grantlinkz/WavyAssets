@@ -185,9 +185,10 @@ export const ObsidianMetalCard: React.FC<ObsidianMetalCardProps> = ({ maskBalanc
                   </span>
                   <span
                     data-testid="card-cvv-display"
+                    title="Simulated Non-Sensitive Demo Code"
                     className="font-mono text-xs text-secondary font-bold tabular-nums"
                   >
-                    {isCvvRevealed && !maskBalances ? '842' : '•••'}
+                    {isCvvRevealed && !maskBalances ? '999' : '•••'}
                   </span>
                 </div>
               </div>

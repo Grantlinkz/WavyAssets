@@ -48,6 +48,7 @@ interface GovernanceState {
   revokeAllOtherSessions: () => void;
 
   destinations: WhitelistedDestination[];
+  blacklistedAddresses: string[];
   isAddDestinationModalOpen: boolean;
   openAddDestinationModal: () => void;
   closeAddDestinationModal: () => void;
@@ -125,11 +126,17 @@ export const useGovernanceStore = create<GovernanceState>((set, get) => ({
     })),
 
   destinations: INITIAL_WHITELIST_DESTINATIONS,
+  blacklistedAddresses: [],
   isAddDestinationModalOpen: false,
   openAddDestinationModal: () => set({ isAddDestinationModalOpen: true }),
   closeAddDestinationModal: () => set({ isAddDestinationModalOpen: false }),
 
   addWhitelistedDestination: (payload) => {
+    if (get().blacklistedAddresses.includes(payload.addressOrIban)) {
+      // Cannot add an address that is currently blacklisted
+      return;
+    }
+
     // Inviolable Security Invariant: Every newly registered destination is quarantined with a 48H Time-Lock
     const newDest: WhitelistedDestination = {
       id: `wl-${Date.now()}`,
@@ -155,8 +162,13 @@ export const useGovernanceStore = create<GovernanceState>((set, get) => ({
     }));
   },
 
-  cancelDestination: (destinationId) =>
+  cancelDestination: (destinationId) => {
+    const target = get().destinations.find((d) => d.id === destinationId);
     set((state) => ({
       destinations: state.destinations.filter((d) => d.id !== destinationId),
-    })),
+      blacklistedAddresses: target
+        ? [...state.blacklistedAddresses, target.addressOrIban]
+        : state.blacklistedAddresses,
+    }));
+  },
 }));

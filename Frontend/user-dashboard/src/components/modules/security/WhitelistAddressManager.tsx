@@ -65,7 +65,17 @@ export const WhitelistAddressManager: React.FC = () => {
   const handleRailChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
     setAssetRail(val);
-    setRailBadge(val === 'Bitcoin' ? 'BTC' : val === 'Ethereum' ? 'ETH' : val === 'Solana' ? 'SOL' : 'USD');
+    setRailBadge(
+      val === 'Bitcoin'
+        ? 'BTC'
+        : val === 'Ethereum'
+        ? 'ETH'
+        : val === 'Solana'
+        ? 'SOL'
+        : val.includes('CHF')
+        ? 'CHF'
+        : 'USD'
+    );
   };
 
   return (

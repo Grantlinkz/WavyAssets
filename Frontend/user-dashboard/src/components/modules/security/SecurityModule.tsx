@@ -5,6 +5,7 @@ import { HardwareKeyManager } from './HardwareKeyManager';
 import { ActiveSessionsBlotter } from './ActiveSessionsBlotter';
 import { WhitelistAddressManager } from './WhitelistAddressManager';
 import { useDashboardStore } from '../../../store/useDashboardStore';
+import { useGovernanceStore } from '../../../store/useGovernanceStore';
 
 interface SecurityModuleProps {
   maskBalances?: boolean;
@@ -13,6 +14,10 @@ interface SecurityModuleProps {
 export const SecurityModule: React.FC<SecurityModuleProps> = ({ maskBalances: propMask }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
+
+  const revokeAllOtherSessions = useGovernanceStore((s) => s.revokeAllOtherSessions);
+  const isCardFrozen = useGovernanceStore((s) => s.isCardFrozen);
+  const toggleFreezeCard = useGovernanceStore((s) => s.toggleFreezeCard);
 
   const [lockdownActive, setLockdownActive] = useState<boolean>(false);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
@@ -34,6 +39,10 @@ export const SecurityModule: React.FC<SecurityModuleProps> = ({ maskBalances: pr
   };
 
   const handleEmergencyLockdown = () => {
+    revokeAllOtherSessions();
+    if (!isCardFrozen) {
+      toggleFreezeCard();
+    }
     setLockdownActive(true);
     setTimeout(() => setLockdownActive(false), 4000);
   };

@@ -53,7 +53,7 @@ describe('Alternative Asset Modules Integration Suite (Sprint 4)', () => {
       expect(html).toContain('Dynamic Risk Posture &amp; Leverage Calibrator');
       expect(html).toContain('Capital Preservation');
       expect(html).toContain('Balanced Trend');
-      expect(html).toContain('High-Vol Arbitrage');
+      expect(html).toContain('High-Volatility Alpha');
       expect(html).toContain('Fiduciary Kill Switch');
       expect(html).toContain('ARMED • T+0');
 

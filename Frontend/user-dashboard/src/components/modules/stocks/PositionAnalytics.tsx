@@ -49,7 +49,7 @@ export const PositionAnalytics: React.FC<{ maskBalances?: boolean }> = ({ maskBa
         </div>
 
         <div className="p-2.5 bg-surface-container-lowest rounded-DEFAULT border border-border-hairline">
-          <span className="text-[10px] text-outline uppercase block">VWAP (30D)</span>
+          <span className="text-[10px] text-outline uppercase block">Entry Mark</span>
           <span className="text-base font-bold text-on-surface tabular-nums mt-0.5 block">
             {maskBalances ? '••••' : `$${vwap}`}
           </span>

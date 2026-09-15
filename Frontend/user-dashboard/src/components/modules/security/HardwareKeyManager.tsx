@@ -5,15 +5,31 @@ import { HARDWARE_SECURITY_KEYS } from '../../../lib/governanceAssetData';
 export const HardwareKeyManager: React.FC = () => {
   const [challengeKeyId, setChallengeKeyId] = useState<string | null>(null);
   const [registerNotice, setRegisterNotice] = useState<string | null>(null);
+  const challengeTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const registerTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (challengeTimerRef.current) clearTimeout(challengeTimerRef.current);
+      if (registerTimerRef.current) clearTimeout(registerTimerRef.current);
+    };
+  }, []);
 
   const handleTestChallenge = (id: string) => {
+    if (challengeKeyId) return;
     setChallengeKeyId(id);
-    setTimeout(() => setChallengeKeyId(null), 2500);
+    if (challengeTimerRef.current) clearTimeout(challengeTimerRef.current);
+    challengeTimerRef.current = setTimeout(() => {
+      setChallengeKeyId(null);
+    }, 2500);
   };
 
   const handleRegisterKey = () => {
     setRegisterNotice('Insert hardware security key into USB-C or tap via NFC to register.');
-    setTimeout(() => setRegisterNotice(null), 3500);
+    if (registerTimerRef.current) clearTimeout(registerTimerRef.current);
+    registerTimerRef.current = setTimeout(() => {
+      setRegisterNotice(null);
+    }, 3500);
   };
 
   return (
@@ -96,7 +112,7 @@ export const HardwareKeyManager: React.FC = () => {
             {challengeKeyId === key.id && (
               <div className="p-1.5 bg-tertiary/10 border border-tertiary/30 text-tertiary text-[10px] rounded-DEFAULT flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Enclave Challenge Verified: Signature 0x48...e9 OK (12ms)</span>
+                <span>Enclave Challenge Verified (WebAuthn Attestation): Signature 0x48...e9 OK (12ms)</span>
               </div>
             )}
 

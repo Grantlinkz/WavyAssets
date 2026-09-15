@@ -109,7 +109,7 @@ export const ActiveSessionsBlotter: React.FC = () => {
       <div className="p-3 bg-surface-container-highest/60 rounded-DEFAULT border border-border-hairline flex items-center gap-2.5 text-on-surface-variant font-sans text-xs">
         <Shield className="w-4 h-4 text-primary shrink-0" />
         <p className="leading-relaxed">
-          <strong className="text-on-surface font-semibold">Zero-Trust Geo-Fencing Active:</strong> Connection requests outside Switzerland, Germany, Singapore, and UK trigger an instantaneous security quarantine and dual-signatory bypass.
+          <strong className="text-on-surface font-semibold">Zero-Trust Geo-Fencing Active:</strong> Connection requests outside Switzerland, Germany, Singapore, and UK trigger an instantaneous security quarantine and dual-signatory approval requirement.
         </p>
       </div>
     </div>

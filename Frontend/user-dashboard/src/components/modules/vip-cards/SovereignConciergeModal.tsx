@@ -11,14 +11,37 @@ export const SovereignConciergeModal: React.FC = () => {
   const [channel, setChannel] = useState<'SIGNAL' | 'WHATSAPP' | 'HOTLINE'>('SIGNAL');
   const [isSending, setIsSending] = useState(false);
   const [isSent, setIsSent] = useState(false);
+  const sendTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resetTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearAllTimers = () => {
+    if (sendTimerRef.current) clearTimeout(sendTimerRef.current);
+    if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+  };
+
+  React.useEffect(() => {
+    return () => {
+      clearAllTimers();
+    };
+  }, []);
+
+  const handleClose = () => {
+    clearAllTimers();
+    setIsSending(false);
+    setIsSent(false);
+    closeConciergeModal();
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSending || isSent) return;
     setIsSending(true);
-    setTimeout(() => {
+    clearAllTimers();
+
+    sendTimerRef.current = setTimeout(() => {
       setIsSending(false);
       setIsSent(true);
-      setTimeout(() => {
+      resetTimerRef.current = setTimeout(() => {
         setIsSent(false);
         setRequestText('');
         closeConciergeModal();
@@ -29,7 +52,7 @@ export const SovereignConciergeModal: React.FC = () => {
   if (!isConciergeModalOpen) return null;
 
   return (
-    <Dialog open={isConciergeModalOpen} onOpenChange={(open) => !open && closeConciergeModal()}>
+    <Dialog open={isConciergeModalOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent data-testid="sovereign-concierge-modal" className="max-w-[500px]">
         <DialogHeader className="flex flex-row items-center justify-between pb-3 border-b border-border-hairline">
           <div className="flex items-center gap-2">
@@ -50,7 +73,7 @@ export const SovereignConciergeModal: React.FC = () => {
             type="button"
             data-testid="close-concierge-modal-btn"
             aria-label="Close concierge launcher"
-            onClick={closeConciergeModal}
+            onClick={handleClose}
             className="text-outline hover:text-on-surface p-1 rounded-DEFAULT transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
@@ -63,7 +86,7 @@ export const SovereignConciergeModal: React.FC = () => {
               <CheckCircle2 className="w-6 h-6" />
             </div>
             <span className="font-serif text-sm font-bold text-on-surface">
-              Dispatch Transmitted to Private Banker
+              Dispatch Transmitted to Private Banker (Simulated Dispatch)
             </span>
             <p className="text-xs font-sans text-outline max-w-xs">
               Your senior Zurich fiduciary partner has received your request via PGP-encrypted {channel}. Expected response: &lt; 8 minutes.
