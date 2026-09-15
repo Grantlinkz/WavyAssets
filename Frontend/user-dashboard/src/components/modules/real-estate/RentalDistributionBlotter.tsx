@@ -77,13 +77,14 @@ export const RentalDistributionBlotter: React.FC<RentalDistributionBlotterProps>
                         minimumFractionDigits: 2,
                       })}`}
                 </td>
-                <td className="py-2.5 px-3 text-right text-tertiary">
-                  {maskBalances
-                    ? '••••••••'
-                    : `+${item.varianceDelta >= 0 ? '$' : '-$'}${Math.abs(item.varianceDelta).toFixed(2)} (+${(
-                        (item.varianceDelta / (item.projected || 1)) *
-                        100
-                      ).toFixed(2)}%)`}
+                <td className={`py-2.5 px-3 text-right ${item.varianceDelta < 0 ? 'text-error' : 'text-tertiary'}`}>
+                  {(() => {
+                    if (maskBalances) return '••••••••';
+                    const sign = item.varianceDelta > 0 ? '+' : item.varianceDelta < 0 ? '-' : '';
+                    const absDollar = Math.abs(item.varianceDelta).toFixed(2);
+                    const absPct = Math.abs((item.varianceDelta / (item.projected || 1)) * 100).toFixed(2);
+                    return `${sign}$${absDollar} (${sign}${absPct}%)`;
+                  })()}
                 </td>
                 <td className="py-2.5 px-3 text-[11px] text-outline">
                   {item.settlementHash} <span className="text-primary">(EVM/CH)</span>

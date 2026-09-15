@@ -252,9 +252,15 @@ export const WhitelistAddressManager: React.FC = () => {
                           type="button"
                           data-testid={`initiate-transfer-btn-${dest.id}`}
                           onClick={() => handleInitiateTransfer(dest.id)}
-                          className="px-2.5 py-1 bg-primary text-surface hover:bg-primary-hover text-[10px] font-bold uppercase rounded-DEFAULT transition-colors cursor-pointer shadow-sm"
+                          className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-DEFAULT transition-colors cursor-pointer shadow-sm ${
+                            transferTriggeredId === dest.id
+                              ? 'bg-secondary text-surface'
+                              : 'bg-primary text-surface hover:bg-primary-hover'
+                          }`}
                         >
-                          Initiate Transfer
+                          {transferTriggeredId === dest.id
+                            ? 'Dispatched (Simulated)'
+                            : 'Initiate Transfer (Simulated)'}
                         </button>
                         <button
                           type="button"

@@ -26,11 +26,29 @@ export const DriveBookingEngine: React.FC<DriveBookingEngineProps> = ({
 
   const [bookingMessage, setBookingMessage] = useState<string | null>(null);
 
+  // Derive month and Monday-first leading cell count dynamically from driveSlots dateStr
+  const firstDateParts = (driveSlots.length > 0 && driveSlots[0]?.dateStr
+    ? driveSlots[0].dateStr
+    : '2025-04-01'
+  ).split('-');
+  const slotYear = parseInt(firstDateParts[0], 10) || 2025;
+  const slotMonthIndex = (parseInt(firstDateParts[1], 10) || 4) - 1;
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+  const monthName = monthNames[slotMonthIndex] || 'April';
+  const monthTitle = `${monthName} ${slotYear}`;
+
+  const firstSlotDate = new Date(Date.UTC(slotYear, slotMonthIndex, 1));
+  const dayOfWeek = firstSlotDate.getUTCDay();
+  const leadingEmptyCells = (dayOfWeek + 6) % 7;
+
   const handleDayClick = (day: number) => {
     const success = reserveSlot(day);
     if (success) {
       setBookingMessage(
-        `Reserved member track drive session for April ${day}, 2025 at ${selectedLocation}.`
+        `Reserved member track drive session for ${monthTitle.split(' ')[0]} ${day}, ${firstSlotDate.getUTCFullYear()} at ${selectedLocation}.`
       );
     } else {
       setBookingMessage('Slot unavailable or no remaining complimentary drive sessions.');
@@ -126,7 +144,7 @@ export const DriveBookingEngine: React.FC<DriveBookingEngineProps> = ({
           {/* Interactive April 2025 Calendar Grid */}
           <div className="bg-surface p-3 rounded border border-border-hairline">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 mb-2 text-on-surface text-xs border-b border-border-hairline gap-2">
-              <span className="font-semibold font-serif">April 2025 Driving Calendar</span>
+              <span className="font-semibold font-serif">{`${monthTitle} Driving Calendar`}</span>
               <div className="flex items-center gap-3 text-[10px] font-mono flex-wrap">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 bg-primary rounded"></span> Available Member Slot
@@ -150,8 +168,8 @@ export const DriveBookingEngine: React.FC<DriveBookingEngineProps> = ({
               <span className="text-outline py-1">SAT</span>
               <span className="text-outline py-1">SUN</span>
 
-              {/* August 2025 starts on Friday (Mon=0, Tue=1, Wed=2, Thu=3 -> 4 leading empty cells) */}
-              {Array.from({ length: 4 }).map((_, i) => (
+              {/* Dynamic Monday-first leading empty cells */}
+              {Array.from({ length: leadingEmptyCells }).map((_, i) => (
                 <div key={`empty-day-${i}`} className="p-1.5" />
               ))}
 

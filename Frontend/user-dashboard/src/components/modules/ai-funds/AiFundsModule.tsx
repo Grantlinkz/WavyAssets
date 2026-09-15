@@ -2,7 +2,7 @@ import React from 'react';
 import { ShieldCheck, Download, Cpu } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useAlternativeStore } from '../../../store/useAlternativeStore';
-import { AI_FUNDS_METRICS } from '../../../lib/alternativeAssetData';
+import { AI_FUNDS_METRICS, AI_RATIONALE_EVENTS } from '../../../lib/alternativeAssetData';
 import { RiskCalibrator } from './RiskCalibrator';
 import { CircuitBreakerPanel } from './CircuitBreakerPanel';
 import { RationaleLedger } from './RationaleLedger';
@@ -25,8 +25,18 @@ export const AiFundsModule: React.FC<AiFundsModuleProps> = ({
 
   const handleDownloadAuditLog = () => {
     if (typeof window !== 'undefined' && window.document) {
-      const csvContent =
-        'data:text/csv;charset=utf-8,Timestamp,Strategy,Action,Instrument,Execution_Venue,Latency_ms,Status\n2025-08-15T08:30:00Z,Nexus-Quant_v6.42,REBALANCE,ETH-PERP,Deribit,12,EXECUTED\n2025-08-15T09:15:00Z,Nexus-Quant_v6.42,BASIS_ARB,SOL-SPOT,Binance,9,FILLED\n';
+      const headers = ['Event_ID', 'Timestamp_UTC', 'Category', 'Execution_Venue', 'Summary', 'Rationale', 'PnL_Yield', 'Tx_Hash'];
+      const rows = AI_RATIONALE_EVENTS.map((evt) => [
+        evt.id,
+        evt.timeUtc,
+        `"${evt.category.replace(/"/g, '""')}"`,
+        `"${evt.venue.replace(/"/g, '""')}"`,
+        `"${evt.summary.replace(/"/g, '""')}"`,
+        `"${evt.rationale.replace(/"/g, '""')}"`,
+        `"${evt.pnlYield.replace(/"/g, '""')}"`,
+        evt.txHash,
+      ].join(','));
+      const csvContent = `data:text/csv;charset=utf-8,${headers.join(',')}\n${rows.join('\n')}\n`;
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement('a');
       link.setAttribute('href', encodedUri);

@@ -13,11 +13,12 @@ interface ComplianceModuleProps {
 
 export const ComplianceModule: React.FC<ComplianceModuleProps> = ({
   maskBalances: propMask,
-  selectedTaxYear,
+  selectedTaxYear: propTaxYear,
 }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
   const [downloadMsg, setDownloadMsg] = useState<string | null>(null);
+  const [currentTaxYear, setCurrentTaxYear] = useState<'2024' | '2025'>(propTaxYear ?? '2024');
 
   const handleDownloadAmlPack = () => {
     if (typeof window !== 'undefined' && window.document) {
@@ -95,7 +96,11 @@ export const ComplianceModule: React.FC<ComplianceModuleProps> = ({
       <BeneficialOwnershipRegistry />
 
       {/* 4. Unified Sovereign Tax Pack Downloader */}
-      <TaxPackAggregator maskBalances={maskBalances} selectedTaxYear={selectedTaxYear} />
+      <TaxPackAggregator
+        maskBalances={maskBalances}
+        selectedTaxYear={propTaxYear ?? currentTaxYear}
+        onSelectedTaxYearChange={(yr) => setCurrentTaxYear(yr)}
+      />
 
       {/* 5. Global Regulatory Gateway Matrix */}
       <RegulatoryGatewayMatrix />

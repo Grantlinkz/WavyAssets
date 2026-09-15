@@ -230,16 +230,16 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         {/* Tab 2: Crypto / Web3 View */}
         {activeDepositTab === 'crypto' && (
           <div className="p-4 pt-2 flex flex-col gap-3" data-testid="deposit-view-crypto">
-            {/* Direct Web3 Wallet Rail */}
+            {/* Direct Web3 Wallet Rail (Simulation Sandbox) */}
             <div className="bg-surface-container-low p-3 rounded-DEFAULT border border-primary/30 flex flex-col gap-2.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <Wallet className="w-3.5 h-3.5 text-primary" />
                   <span className="text-[10px] font-mono text-on-surface font-semibold uppercase tracking-wider">
-                    Direct Web3 Wallet Deposit
+                    Direct Web3 Wallet Deposit (Demo Sandbox)
                   </span>
                 </div>
-                <span className="text-[10px] font-mono text-tertiary">Direct to Vault</span>
+                <span className="text-[10px] font-mono text-tertiary">Simulated Sandbox</span>
               </div>
 
               {connectedWallet ? (
@@ -249,6 +249,9 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                       <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse" />
                       <span className="text-xs font-mono text-on-surface font-bold">
                         {walletName}: {connectedWallet.slice(0, 6)}...{connectedWallet.slice(-4)}
+                      </span>
+                      <span className="text-[9px] font-mono px-1.5 py-0.2 bg-primary/10 text-primary border border-primary/20 rounded-xs font-semibold">
+                        DEMO
                       </span>
                     </div>
                     <button
@@ -261,7 +264,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   </div>
 
                   <div className="flex items-center justify-between text-[11px] font-mono text-outline">
-                    <span>Detected Wallet Balance:</span>
+                    <span>Simulated Wallet Balance:</span>
                     <span className="text-primary font-bold">124,500.00 USDC</span>
                   </div>
 
@@ -286,7 +289,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                     {depositSuccess ? (
                       <div className="py-2 bg-tertiary/10 border border-tertiary/40 rounded-DEFAULT text-center text-xs font-mono text-tertiary font-bold flex items-center justify-center gap-1.5">
                         <Check className="w-3.5 h-3.5" />
-                        <span>DEPOSIT INITIATED // T+0 CONFIRMATION</span>
+                        <span>SIMULATED TRANSFER DISPATCHED (DEMO SANDBOX)</span>
                       </div>
                     ) : (
                       <button
@@ -296,7 +299,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                         className="w-full py-2 bg-primary text-on-primary hover:bg-primary-container font-mono text-xs font-bold uppercase tracking-wider rounded-DEFAULT transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-sm"
                       >
                         <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>{isDepositing ? 'Signing in Wallet...' : `Transfer ${depositAmount} USDC to Vault`}</span>
+                        <span>{isDepositing ? 'Simulating Wallet Signature...' : `Simulate Deposit of ${depositAmount} USDC to Vault`}</span>
                       </button>
                     )}
                   </div>
@@ -304,7 +307,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
               ) : (
                 <div className="space-y-2">
                   <p className="text-[11px] text-outline font-sans">
-                    Connect your non-custodial Web3 wallet to transfer assets directly into your sovereign MPC vault:
+                    Simulate connecting a non-custodial Web3 wallet provider to test sovereign MPC vault deposit flows:
                   </p>
                   <div className="grid grid-cols-3 gap-2">
                     <button
