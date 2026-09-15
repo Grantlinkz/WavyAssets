@@ -114,6 +114,12 @@
   - **Inviolable Zero-Trust Whitelist Address Guard**: Mandatory 24-48 hour cold quarantine countdown on every newly registered withdrawal destination before transfers can be initiated (`WhitelistAddressManager.tsx`).
   - One-click Emergency Lockdown broadcast with session freezing.
 - [x] Automated security, governance, and compliance test suites passing (131/131 passing tests across 21 test suites, +28 new tests).
+- [x] Institutional UX/UI Refinements & User Experience Polish:
+  - Deposit Modal: Integrated Web3 wallet direct connections (MetaMask, Trust Wallet, WalletConnect) alongside MPC address & QR.
+  - AI Systematic Funds: De-noised telemetry, replaced unstyled material ligatures with Lucide icons, streamlined layout.
+  - Exotic Vehicles & Horology: Fixed broken icon ligatures, clean action buttons (`Archives & Title`, `Vault Transfer`).
+  - VIP Cards: Fixed spending limits metric container overflow with responsive layout.
+  - Typography & Nomenclature: Removed all double-slash (`//`) delimiters across code, data, and tests.
 
 ---
 
