@@ -1,4 +1,5 @@
 import React from 'react';
+import { Activity } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 
 interface CointegrationSpreadProps {
@@ -15,7 +16,7 @@ export const CointegrationSpread: React.FC<CointegrationSpreadProps> = ({
     <div className="bg-surface-container border border-border-hairline rounded p-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border-hairline">
         <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-[18px]">query_stats</span>
+          <Activity className="w-4 h-4 text-primary shrink-0" />
           <span className="font-serif font-semibold text-on-surface text-base">
             Statistical Arbitrage Cointegration Spread
           </span>

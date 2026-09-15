@@ -1,4 +1,5 @@
 import React from 'react';
+import { Lock } from 'lucide-react';
 import { useAlternativeStore } from '../../../store/useAlternativeStore';
 import { AI_RATIONALE_EVENTS } from '../../../lib/alternativeAssetData';
 
@@ -109,7 +110,7 @@ export const RationaleLedger: React.FC = () => {
       {/* Hash Verification Footer */}
       <div className="mt-3 pt-3 border-t border-border-hairline flex flex-col sm:flex-row sm:items-center justify-between text-[11px] font-mono text-outline gap-2">
         <div className="flex items-center gap-2 truncate">
-          <span className="material-symbols-outlined text-[14px] text-tertiary">lock</span>
+          <Lock className="w-3.5 h-3.5 text-tertiary shrink-0" />
           <span>
             Cryptographic Root:{' '}
             <strong className="text-on-surface font-semibold">0x9b4fa7c822e11d09e3e21ba99</strong>

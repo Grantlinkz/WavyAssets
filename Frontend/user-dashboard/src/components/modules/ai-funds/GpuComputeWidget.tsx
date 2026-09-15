@@ -1,4 +1,5 @@
 import React from 'react';
+import { Coins, CheckCircle2 } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useAlternativeStore } from '../../../store/useAlternativeStore';
 import { GPU_CLUSTER_TELEMETRY } from '../../../lib/alternativeAssetData';
@@ -130,7 +131,7 @@ export const GpuComputeWidget: React.FC<GpuComputeWidgetProps> = ({
               : 'bg-surface-container-high text-outline cursor-not-allowed'
           }`}
         >
-          <span className="material-symbols-outlined text-[15px]">savings</span>
+          <Coins className="w-3.5 h-3.5 shrink-0" />
           <span>{pendingYield > 0 ? 'Claim to Vault' : 'Claimed'}</span>
         </button>
       </div>
@@ -140,7 +141,7 @@ export const GpuComputeWidget: React.FC<GpuComputeWidgetProps> = ({
         <div className="flex items-center justify-between text-xs font-mono">
           <span className="text-outline uppercase">Counterparty Distribution</span>
           <span className="text-tertiary font-semibold flex items-center gap-1">
-            <span className="material-symbols-outlined text-[12px]">verified</span> 100% Solvency
+            <CheckCircle2 className="w-3 h-3 shrink-0" /> 100% Solvency
           </span>
         </div>
         <div className="space-y-1.5 font-mono text-[11px]">

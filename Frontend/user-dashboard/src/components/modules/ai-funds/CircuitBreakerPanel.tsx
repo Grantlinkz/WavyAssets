@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ShieldAlert, AlertOctagon, RotateCcw, AlertTriangle } from 'lucide-react';
 import { useAlternativeStore } from '../../../store/useAlternativeStore';
 
 interface CircuitBreakerPanelProps {
@@ -30,7 +31,7 @@ export const CircuitBreakerPanel: React.FC<CircuitBreakerPanelProps> = ({
     >
       <div className="flex items-center justify-between pb-2 border-b border-rose-600/30">
         <div className="flex items-center gap-1.5">
-          <span className="material-symbols-outlined text-rose-300 text-[18px]">lock_clock</span>
+          <ShieldAlert className="w-4 h-4 text-rose-300 shrink-0" />
           <span className="font-serif text-sm text-rose-300 uppercase tracking-wider font-semibold">
             Fiduciary Kill Switch
           </span>
@@ -60,7 +61,7 @@ export const CircuitBreakerPanel: React.FC<CircuitBreakerPanelProps> = ({
             onClick={() => setConfirmModalOpen(true)}
             className="flex-1 py-1.5 px-3 bg-rose-600/20 hover:bg-rose-600/30 border border-rose-600 text-rose-300 font-mono text-xs rounded font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[15px]">dangerous</span>
+            <AlertOctagon className="w-3.5 h-3.5 shrink-0" />
             <span>Trigger Circuit Breaker</span>
           </button>
         ) : (
@@ -69,7 +70,7 @@ export const CircuitBreakerPanel: React.FC<CircuitBreakerPanelProps> = ({
             onClick={resetCircuitBreaker}
             className="flex-1 py-1.5 px-3 bg-tertiary/20 hover:bg-tertiary/30 border border-tertiary text-tertiary font-mono text-xs rounded font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[15px]">restart_alt</span>
+            <RotateCcw className="w-3.5 h-3.5 shrink-0" />
             <span>Re-Arm Algorithmic Engine</span>
           </button>
         )}
@@ -80,7 +81,7 @@ export const CircuitBreakerPanel: React.FC<CircuitBreakerPanelProps> = ({
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
           <div className="bg-surface border border-rose-500 rounded p-5 max-w-md w-full space-y-4 shadow-2xl">
             <div className="flex items-center gap-2 text-rose-400">
-              <span className="material-symbols-outlined text-2xl">warning</span>
+              <AlertTriangle className="w-5 h-5 shrink-0" />
               <h3 className="font-serif text-lg font-bold">Emergency Circuit Breaker Trigger</h3>
             </div>
             <p className="text-sm text-on-surface-variant leading-relaxed">

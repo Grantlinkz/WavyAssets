@@ -1,4 +1,5 @@
 import React from 'react';
+import { Sliders } from 'lucide-react';
 import { useAlternativeStore } from '../../../store/useAlternativeStore';
 import { AI_RISK_TIERS } from '../../../lib/alternativeAssetData';
 
@@ -10,7 +11,7 @@ export const RiskCalibrator: React.FC = () => {
     <div className="p-3.5 bg-surface-container border border-border-hairline rounded flex flex-col justify-between">
       <div className="flex items-center justify-between pb-2 mb-2 border-b border-border-hairline">
         <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-[18px]">tune</span>
+          <Sliders className="w-4 h-4 text-primary shrink-0" />
           <span className="font-serif font-semibold text-on-surface text-base">
             Dynamic Risk Posture &amp; Leverage Calibrator
           </span>

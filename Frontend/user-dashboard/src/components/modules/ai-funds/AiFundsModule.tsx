@@ -1,4 +1,5 @@
 import React from 'react';
+import { ShieldCheck, Download, Cpu } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useAlternativeStore } from '../../../store/useAlternativeStore';
 import { AI_FUNDS_METRICS } from '../../../lib/alternativeAssetData';
@@ -25,27 +26,23 @@ export const AiFundsModule: React.FC<AiFundsModuleProps> = ({
   return (
     <div data-testid="ai-funds-module" className="space-y-4 min-h-[540px] animate-fade-in">
       {/* Sub-Header Breadcrumb & System Telemetry */}
-      <section className="w-full bg-surface-container border border-border-hairline px-4 py-2.5 rounded flex flex-col xl:flex-row xl:items-center justify-between gap-3">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
+      <section className="w-full bg-surface-container border border-border-hairline px-4 py-2.5 rounded flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-col gap-1 min-w-0">
           <div className="flex items-center gap-1.5 font-mono text-xs text-outline uppercase tracking-wider truncate">
             <span>Portfolio</span>
-            <span className="text-border-hairline">/</span>
-            <span>Quantitative Infrastructure</span>
             <span className="text-border-hairline">/</span>
             <span className="text-primary font-semibold truncate">
               AI Systematic &amp; Quantitative Strategies
             </span>
           </div>
-          <div className="hidden lg:flex items-center gap-2">
-            <span className="px-2 py-0.5 bg-surface border border-border-hairline rounded text-[11px] font-mono text-on-surface-variant uppercase tabular-nums">
-              Engine: <strong className="text-on-surface font-semibold">Nexus-Quant v6.42</strong>
-            </span>
-            <span className="px-2 py-0.5 bg-surface border border-border-hairline rounded text-[11px] font-mono text-on-surface-variant uppercase">
-              Co-Located: <strong className="text-tertiary font-semibold">NY4 &amp; TY3 X-Connect</strong>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="px-2 py-0.5 bg-surface border border-border-hairline rounded text-[11px] font-mono text-on-surface-variant flex items-center gap-1">
+              <Cpu className="w-3 h-3 text-primary" />
+              <span>Nexus-Quant v6.42</span>
             </span>
             <span className="px-2 py-0.5 bg-tertiary/10 border border-tertiary/20 rounded text-[11px] font-mono text-tertiary font-semibold flex items-center gap-1">
-              <span className="material-symbols-outlined text-[13px]">verified_user</span>
-              ZK-Proof Verified
+              <ShieldCheck className="w-3 h-3 text-tertiary" />
+              <span>ZK-Proof Verified</span>
             </span>
           </div>
         </div>
@@ -53,14 +50,14 @@ export const AiFundsModule: React.FC<AiFundsModuleProps> = ({
         <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
-            className="flex items-center gap-1.5 px-2.5 py-1 bg-surface hover:bg-surface-container-high border border-border-hairline text-on-surface font-mono text-xs rounded transition-colors uppercase tracking-wider"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-surface hover:bg-surface-container-high border border-border-hairline text-on-surface font-mono text-xs rounded transition-colors uppercase tracking-wider cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[14px]">download</span>
-            <span>Algo Audit Log</span>
+            <Download className="w-3.5 h-3.5 text-primary" />
+            <span>Audit Log</span>
           </button>
-          <div className="flex items-center gap-1 px-2 py-1 bg-surface-container-lowest border border-border-hairline rounded text-tertiary font-mono text-xs tabular-nums">
+          <div className="flex items-center gap-1.5 px-2 py-1 bg-surface-container-lowest border border-border-hairline rounded text-tertiary font-mono text-xs tabular-nums">
             <span className="h-1.5 w-1.5 rounded-full bg-tertiary animate-pulse"></span>
-            <span className="text-[10px]">WS FIX 12ms</span>
+            <span className="text-[10px]">12ms FIX</span>
           </div>
         </div>
       </section>

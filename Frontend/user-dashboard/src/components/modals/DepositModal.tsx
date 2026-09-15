@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Landmark, Copy, Check, QrCode, CreditCard, X } from 'lucide-react';
+import { Landmark, Copy, Check, QrCode, CreditCard, X, Wallet, ShieldCheck } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -29,6 +29,33 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   const closeModal = propClose !== undefined ? propClose : storeClose;
 
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
+  const [walletName, setWalletName] = useState<string>('MetaMask');
+  const [isConnecting, setIsConnecting] = useState<boolean>(false);
+  const [depositAmount, setDepositAmount] = useState<string>('25000');
+  const [isDepositing, setIsDepositing] = useState<boolean>(false);
+  const [depositSuccess, setDepositSuccess] = useState<boolean>(false);
+
+  const handleConnectWallet = (name: string) => {
+    setIsConnecting(true);
+    setWalletName(name);
+    setTimeout(() => {
+      setIsConnecting(false);
+      setConnectedWallet('0x71C839F0d8B024A229dEc06D29fD9F6b840138A9');
+    }, 600);
+  };
+
+  const handleWalletDeposit = () => {
+    setIsDepositing(true);
+    setTimeout(() => {
+      setIsDepositing(false);
+      setDepositSuccess(true);
+      setTimeout(() => {
+        setDepositSuccess(false);
+        closeModal();
+      }, 1500);
+    }, 1000);
+  };
 
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -203,6 +230,121 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         {/* Tab 2: Crypto / Web3 View */}
         {activeDepositTab === 'crypto' && (
           <div className="p-4 pt-2 flex flex-col gap-3" data-testid="deposit-view-crypto">
+            {/* Direct Web3 Wallet Rail */}
+            <div className="bg-surface-container-low p-3 rounded-DEFAULT border border-primary/30 flex flex-col gap-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Wallet className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-[10px] font-mono text-on-surface font-semibold uppercase tracking-wider">
+                    Direct Web3 Wallet Deposit
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono text-tertiary">Direct to Vault</span>
+              </div>
+
+              {connectedWallet ? (
+                <div className="bg-surface-container-lowest p-2.5 rounded-DEFAULT border border-border-hairline space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse" />
+                      <span className="text-xs font-mono text-on-surface font-bold">
+                        {walletName}: {connectedWallet.slice(0, 6)}...{connectedWallet.slice(-4)}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setConnectedWallet(null)}
+                      className="text-[10px] font-mono text-outline hover:text-error transition-colors cursor-pointer"
+                    >
+                      Disconnect
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] font-mono text-outline">
+                    <span>Detected Wallet Balance:</span>
+                    <span className="text-primary font-bold">124,500.00 USDC</span>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={depositAmount}
+                        onChange={(e) => setDepositAmount(e.target.value)}
+                        placeholder="Amount to Deposit"
+                        className="w-full bg-surface-container border border-border-hairline rounded-DEFAULT px-2.5 py-1.5 text-xs font-mono text-on-surface focus:outline-none focus:border-primary"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setDepositAmount('124500')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-primary font-bold hover:underline cursor-pointer"
+                      >
+                        MAX
+                      </button>
+                    </div>
+
+                    {depositSuccess ? (
+                      <div className="py-2 bg-tertiary/10 border border-tertiary/40 rounded-DEFAULT text-center text-xs font-mono text-tertiary font-bold flex items-center justify-center gap-1.5">
+                        <Check className="w-3.5 h-3.5" />
+                        <span>DEPOSIT INITIATED // T+0 CONFIRMATION</span>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleWalletDeposit}
+                        disabled={isDepositing}
+                        className="w-full py-2 bg-primary text-on-primary hover:bg-primary-container font-mono text-xs font-bold uppercase tracking-wider rounded-DEFAULT transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-sm"
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        <span>{isDepositing ? 'Signing in Wallet...' : `Transfer ${depositAmount} USDC to Vault`}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-[11px] text-outline font-sans">
+                    Connect your non-custodial Web3 wallet to transfer assets directly into your sovereign MPC vault:
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      disabled={isConnecting}
+                      onClick={() => handleConnectWallet('MetaMask')}
+                      className="py-2 px-2 bg-surface-container hover:bg-surface-container-high border border-border-hairline hover:border-primary/50 rounded-DEFAULT text-center font-mono text-xs font-semibold text-on-surface flex flex-col items-center gap-1 transition-all cursor-pointer"
+                    >
+                      <span className="text-sm">🦊</span>
+                      <span>MetaMask</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isConnecting}
+                      onClick={() => handleConnectWallet('Trust Wallet')}
+                      className="py-2 px-2 bg-surface-container hover:bg-surface-container-high border border-border-hairline hover:border-primary/50 rounded-DEFAULT text-center font-mono text-xs font-semibold text-on-surface flex flex-col items-center gap-1 transition-all cursor-pointer"
+                    >
+                      <span className="text-sm">🛡️</span>
+                      <span>Trust Wallet</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isConnecting}
+                      onClick={() => handleConnectWallet('WalletConnect')}
+                      className="py-2 px-2 bg-surface-container hover:bg-surface-container-high border border-border-hairline hover:border-primary/50 rounded-DEFAULT text-center font-mono text-xs font-semibold text-on-surface flex flex-col items-center gap-1 transition-all cursor-pointer"
+                    >
+                      <span className="text-sm">⚡</span>
+                      <span>WalletConnect</span>
+                    </button>
+                  </div>
+                  {isConnecting && (
+                    <div className="text-center text-[10px] font-mono text-primary animate-pulse">
+                      Awaiting approval in {walletName}...
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Manual MPC Cold Deposit Address */}
             <div className="bg-surface-container-low p-3 rounded-DEFAULT border border-border-hairline flex flex-col gap-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono text-outline uppercase tracking-wider">
