@@ -2,7 +2,7 @@
 
 ## Project Status
 
-- **Current Phase**: Sprint 2 Completed (Global Command Bar, 3D Allocation Engine & Action Rail Modals) / Preparing Sprint 3 (Liquid Asset Modules: Crypto, Stocks & Wallet)
+- **Current Phase**: Sprint 3 Completed (Liquid Asset Modules: Crypto, Stocks & Wallet) / Preparing Sprint 4 (Alternative Asset Modules: AI Funds, Real Estate & Cars)
 - **Overall Roadmap**: 6-Sprint Architecture Roadmap defined in `tools/IMPLEMENTATION_STRATEGY.md`
 
 ---
@@ -50,23 +50,23 @@
 
 ---
 
-### [ ] Sprint 3: Liquid Asset Modules (Crypto, Stocks & Wallet)
-- [ ] Implement Crypto Investment Module (`/dashboard/crypto`):
+### [x] Sprint 3: Liquid Asset Modules (Crypto, Stocks & Wallet)
+- [x] Implement Crypto Investment Module (`/dashboard/crypto`):
   - Live token holdings table with spot pricing, average acquisition price, and P&L.
   - Custody badge separation (`Sovereign Custody` vs `External Web3` vs `Staking Lockups`).
   - Automated DCA scheduler with recurring frequency selectors.
   - Staking telemetry, pending rewards countdown, and tax-lot CSV export.
-- [ ] Implement Global Stocks & Pre-IPO Module (`/dashboard/stocks`):
+- [x] Implement Global Stocks & Pre-IPO Module (`/dashboard/stocks`):
   - Direct Market Access (DMA) Level-2 order book depth with live quote stream.
   - Position analytics (Beta, 52-week range, VWAP, dividend yield).
   - Active limit orders hub, stop-loss triggers, and DRIP manager.
   - Pre-market / after-hours pricing toggle.
-- [ ] Implement Sovereign Wallet Module (`/dashboard/wallet`):
+- [x] Implement Sovereign Wallet Module (`/dashboard/wallet`):
   - Unified multi-currency ledger with Available Balance vs Invested Capital split.
   - Fiat on/off-ramp stepper (Bank Wire SEPA/Fedwire/SWIFT, on-chain crypto deposit).
   - Idle cash auto-sweep pot into 5.2% institutional money market funds.
   - Unified filterable transaction history table with statement download (PDF/CSV).
-- [ ] Automated tests for liquid asset calculations, order submission, and balance sweeping (target: 35 passing tests).
+- [x] Automated tests for liquid asset calculations, order submission, and balance sweeping (81/81 passing tests across 13 suites, +22 new tests).
 
 ---
 

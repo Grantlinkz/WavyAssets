@@ -5,14 +5,24 @@ import { SidebarRail } from './components/nav/SidebarRail';
 import { MobileHeader } from './components/nav/MobileHeader';
 import { AuthCallback } from './components/auth/AuthCallback';
 import { VerticalPlaceholder } from './components/modules/VerticalPlaceholder';
+import { CryptoModule } from './components/modules/crypto/CryptoModule';
+import { StocksModule } from './components/modules/stocks/StocksModule';
+import { WalletModule } from './components/modules/wallet/WalletModule';
 import { GlobalCommandBar } from './components/command-bar/GlobalCommandBar';
 import { DepositModal } from './components/modals/DepositModal';
 import { WithdrawModal } from './components/modals/WithdrawModal';
 import { TradeModal } from './components/modals/TradeModal';
 import { KycDrawer } from './components/modals/KycDrawer';
+import type { AssetVertical } from './store/useDashboardStore';
 
-export const App: React.FC = () => {
-  const { theme, activeVertical } = useDashboardStore();
+interface AppProps {
+  activeVertical?: AssetVertical;
+}
+
+export const App: React.FC<AppProps> = ({ activeVertical: propVertical }) => {
+  const storeVertical = useDashboardStore((s) => s.activeVertical);
+  const theme = useDashboardStore((s) => s.theme);
+  const activeVertical = propVertical ?? storeVertical;
 
   // Synchronize theme class with document element
   useEffect(() => {
@@ -59,7 +69,14 @@ export const App: React.FC = () => {
           className="flex-1 flex flex-col min-w-0 bg-surface focus:outline-none"
         >
           <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
-            <VerticalPlaceholder key={activeVertical} />
+            {activeVertical === 'crypto' && <CryptoModule />}
+            {activeVertical === 'stocks' && <StocksModule />}
+            {activeVertical === 'wallet' && <WalletModule />}
+            {activeVertical !== 'crypto' &&
+              activeVertical !== 'stocks' &&
+              activeVertical !== 'wallet' && (
+                <VerticalPlaceholder key={activeVertical} />
+              )}
           </div>
         </main>
       </div>

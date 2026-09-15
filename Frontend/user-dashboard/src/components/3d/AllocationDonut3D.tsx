@@ -27,17 +27,19 @@ export const AllocationDonut3D: React.FC<AllocationDonut3DProps> = ({
     if (!canvas) return;
 
     // Check WebGL availability
-    let glContext: WebGLRenderingContext | null = null;
-    try {
-      glContext =
-        canvas.getContext('webgl') ||
-        (canvas.getContext('experimental-webgl') as WebGLRenderingContext);
-    } catch {
-      glContext = null;
-    }
+    const isSupported = (() => {
+      try {
+        return Boolean(
+          canvas.getContext('webgl') ||
+          canvas.getContext('experimental-webgl')
+        );
+      } catch {
+        return false;
+      }
+    })();
 
-    if (!glContext) {
-      setHasWebGL(false);
+    if (!isSupported) {
+      queueMicrotask(() => setHasWebGL(false));
       return;
     }
 
@@ -57,7 +59,7 @@ export const AllocationDonut3D: React.FC<AllocationDonut3DProps> = ({
       renderer.setSize(size, size);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     } catch {
-      setHasWebGL(false);
+      queueMicrotask(() => setHasWebGL(false));
       return;
     }
 
