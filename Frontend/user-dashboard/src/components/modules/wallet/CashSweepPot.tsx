@@ -23,9 +23,11 @@ export const CashSweepPot: React.FC<CashSweepPotProps> = ({ maskBalances: propMa
   const [fxAmountUsd, setFxAmountUsd] = useState('100,000.00');
   const [isConverting, setIsConverting] = useState(false);
   const [fxSuccess, setFxSuccess] = useState(false);
+  const [fxError, setFxError] = useState<string | null>(null);
   const [showConfig, setShowConfig] = useState(false);
 
   const fxRate = 0.8872;
+  const availableUsd = 276400.0;
   const numUsd = parseFloat(fxAmountUsd.replace(/,/g, '')) || 0;
   const calculatedChf = (numUsd * fxRate).toLocaleString('en-US', {
     minimumFractionDigits: 2,
@@ -33,6 +35,17 @@ export const CashSweepPot: React.FC<CashSweepPotProps> = ({ maskBalances: propMa
   });
 
   const handleConvert = () => {
+    if (!Number.isFinite(numUsd) || numUsd <= 0) {
+      setFxError('Please enter a valid positive conversion amount.');
+      setTimeout(() => setFxError(null), 3500);
+      return;
+    }
+    if (numUsd > availableUsd) {
+      setFxError('Conversion amount exceeds available USD cash balance ($276,400.00).');
+      setTimeout(() => setFxError(null), 3500);
+      return;
+    }
+    setFxError(null);
     setIsConverting(true);
     setTimeout(() => {
       setIsConverting(false);
@@ -183,8 +196,9 @@ export const CashSweepPot: React.FC<CashSweepPotProps> = ({ maskBalances: propMa
             <div className="flex items-center justify-between">
               <input
                 type="text"
-                value={fxAmountUsd}
+                value={maskBalances ? '••••••••' : fxAmountUsd}
                 onChange={(e) => setFxAmountUsd(e.target.value)}
+                readOnly={maskBalances}
                 className="w-2/3 bg-transparent text-sm font-mono text-on-surface font-bold tabular-nums focus:outline-none"
               />
               <span className="text-sm font-mono text-primary font-bold">USD</span>
@@ -210,6 +224,12 @@ export const CashSweepPot: React.FC<CashSweepPotProps> = ({ maskBalances: propMa
             </div>
           </div>
         </div>
+
+        {fxError && (
+          <div className="p-2 bg-error/10 border border-error/30 text-error font-mono text-[11px] rounded-DEFAULT">
+            {fxError}
+          </div>
+        )}
 
         {/* Converter Footer */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-border-hairline">

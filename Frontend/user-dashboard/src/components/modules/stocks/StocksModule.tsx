@@ -13,7 +13,7 @@ interface StocksModuleProps {
 }
 
 export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMask }) => {
-  const { selectedStock, setSelectedStock, isPreMarket } = useLiquidStore();
+  const { selectedStock, setSelectedStock, isPreMarket, dripSettings } = useLiquidStore();
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
 
@@ -65,7 +65,7 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
             </span>
           </div>
           <div className="text-[11px] font-mono text-outline mt-2">
-            Realized MTD: +$48,150.00 // Beta 0.94
+            Realized MTD: {maskBalances ? '••••••••' : '+$48,150.00'} // Beta 0.94
           </div>
         </div>
 
@@ -80,7 +80,9 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
                 <span className="text-xl font-mono font-bold text-on-surface tabular-nums">
                   +0.18%
                 </span>
-                <span className="text-xs font-mono text-tertiary">+$5,335.20</span>
+                <span className="text-xs font-mono text-tertiary">
+                  {maskBalances ? '••••••' : '+$5,335.20'}
+                </span>
               </div>
             </div>
             <span className="flex items-center gap-1 text-[10px] font-mono text-tertiary">
@@ -187,11 +189,11 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
                     </td>
 
                     <td className="py-3 px-3 text-right font-mono tabular-nums text-on-surface whitespace-nowrap">
-                      {stock.shares.toLocaleString()} SHRS
+                      {maskBalances ? '•••• SHRS' : `${stock.shares.toLocaleString()} SHRS`}
                     </td>
 
                     <td className="py-3 px-3 text-right font-mono tabular-nums text-outline whitespace-nowrap">
-                      ${stock.entryMark.toFixed(2)}
+                      {maskBalances ? '••••' : `$${stock.entryMark.toFixed(2)}`}
                     </td>
 
                     <td className="py-3 px-3 text-right font-mono tabular-nums text-on-surface font-semibold whitespace-nowrap">
@@ -209,15 +211,20 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
                     </td>
 
                     <td className="py-3 px-3 text-center whitespace-nowrap">
-                      <span
-                        className={`px-1.5 py-0.2 rounded-xs text-[10px] font-mono font-bold ${
-                          stock.dripEnabled
-                            ? 'bg-tertiary/10 text-tertiary border border-tertiary/30'
-                            : 'bg-surface-container text-outline'
-                        }`}
-                      >
-                        {stock.dripEnabled ? 'AUTO' : 'OFF'}
-                      </span>
+                      {(() => {
+                        const isDripOn = dripSettings[stock.symbol] ?? stock.dripEnabled;
+                        return (
+                          <span
+                            className={`px-1.5 py-0.2 rounded-xs text-[10px] font-mono font-bold ${
+                              isDripOn
+                                ? 'bg-tertiary/10 text-tertiary border border-tertiary/30'
+                                : 'bg-surface-container text-outline'
+                            }`}
+                          >
+                            {isDripOn ? 'AUTO' : 'OFF'}
+                          </span>
+                        );
+                      })()}
                     </td>
                   </tr>
                 );
@@ -230,11 +237,11 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
       {/* Lower 2-Column Split: DMA Level-2 Order Book & Position Analytics */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <OrderBookTable />
-        <PositionAnalytics />
+        <PositionAnalytics maskBalances={maskBalances} />
       </section>
 
       {/* Active Orders Desk */}
-      <ActiveOrdersHub />
+      <ActiveOrdersHub maskBalances={maskBalances} />
     </div>
   );
 };

@@ -49,6 +49,7 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
           <button
             type="button"
             data-testid="close-kyc-modal"
+            aria-label="Close KYC passport"
             onClick={closeModal}
             className="text-outline hover:text-on-surface p-1 rounded-DEFAULT transition-colors cursor-pointer"
           >

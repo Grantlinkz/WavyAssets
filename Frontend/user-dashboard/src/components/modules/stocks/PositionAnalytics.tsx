@@ -2,9 +2,19 @@ import React from 'react';
 import { Activity, RefreshCw } from 'lucide-react';
 import { useLiquidStore } from '../../../store/useLiquidStore';
 
-export const PositionAnalytics: React.FC = () => {
+import { STOCKS_HOLDINGS_DATA } from '../../../lib/liquidAssetData';
+import { useDashboardStore } from '../../../store/useDashboardStore';
+
+export const PositionAnalytics: React.FC<{ maskBalances?: boolean }> = ({ maskBalances: propMask }) => {
   const { selectedStock, dripSettings, toggleDrip, isPreMarket, togglePreMarket } = useLiquidStore();
+  const storeMask = useDashboardStore((s) => s.maskBalances);
+  const maskBalances = propMask ?? storeMask;
+
   const dripActive = dripSettings[selectedStock] ?? false;
+  const holding = STOCKS_HOLDINGS_DATA.find((s) => s.symbol === selectedStock) || STOCKS_HOLDINGS_DATA[0];
+  const beta = holding.beta.toFixed(2);
+  const vwap = holding.entryMark.toFixed(2);
+  const pnlPct = holding.pnlPct.toFixed(1);
 
   return (
     <div className="bg-surface-container-low rounded-DEFAULT border border-border-hairline p-4 space-y-4" data-testid="position-analytics">
@@ -34,26 +44,34 @@ export const PositionAnalytics: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 font-mono">
         <div className="p-2.5 bg-surface-container-lowest rounded-DEFAULT border border-border-hairline">
           <span className="text-[10px] text-outline uppercase block">Beta (vs S&P 500)</span>
-          <span className="text-base font-bold text-on-surface tabular-nums mt-0.5 block">0.94</span>
-          <span className="text-[10px] text-tertiary">Defensive Tech</span>
+          <span className="text-base font-bold text-on-surface tabular-nums mt-0.5 block">{beta}</span>
+          <span className="text-[10px] text-tertiary">{holding.isPreIpo ? 'Pre-IPO Allocation' : 'Defensive Tech'}</span>
         </div>
 
         <div className="p-2.5 bg-surface-container-lowest rounded-DEFAULT border border-border-hairline">
           <span className="text-[10px] text-outline uppercase block">VWAP (30D)</span>
-          <span className="text-base font-bold text-on-surface tabular-nums mt-0.5 block">$112.40</span>
-          <span className="text-[10px] text-tertiary">+23.5% vs Entry</span>
+          <span className="text-base font-bold text-on-surface tabular-nums mt-0.5 block">
+            {maskBalances ? '••••' : `$${vwap}`}
+          </span>
+          <span className="text-[10px] text-tertiary">
+            {maskBalances ? '•••• vs Entry' : `+${pnlPct}% vs Entry`}
+          </span>
         </div>
 
         <div className="p-2.5 bg-surface-container-lowest rounded-DEFAULT border border-border-hairline">
           <span className="text-[10px] text-outline uppercase block">52-Week Range</span>
-          <span className="text-base font-bold text-on-surface tabular-nums mt-0.5 block">$45 - $140</span>
+          <span className="text-base font-bold text-on-surface tabular-nums mt-0.5 block">
+            {holding.symbol === 'NVDA' ? '$45 - $140' : holding.symbol === 'MSFT' ? '$310 - $468' : holding.symbol === 'SPACEX' ? '$520 - $850' : '$900 - $1,550'}
+          </span>
           <span className="text-[10px] text-outline">98.2% of Peak</span>
         </div>
 
         <div className="p-2.5 bg-surface-container-lowest rounded-DEFAULT border border-border-hairline">
           <span className="text-[10px] text-outline uppercase block">Dividend Yield</span>
-          <span className="text-base font-bold text-tertiary tabular-nums mt-0.5 block">0.85%</span>
-          <span className="text-[10px] text-outline">Next: 15 Oct</span>
+          <span className="text-base font-bold text-tertiary tabular-nums mt-0.5 block">
+            {holding.isPreIpo ? '0.00%' : '0.85%'}
+          </span>
+          <span className="text-[10px] text-outline">{holding.isPreIpo ? 'Capital Appreciation' : 'Next: 15 Oct'}</span>
         </div>
       </div>
 

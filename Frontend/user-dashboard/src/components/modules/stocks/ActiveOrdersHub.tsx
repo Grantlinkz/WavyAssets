@@ -41,7 +41,12 @@ const INITIAL_ORDERS: ActiveOrder[] = [
   },
 ];
 
-export const ActiveOrdersHub: React.FC = () => {
+import { useDashboardStore } from '../../../store/useDashboardStore';
+
+export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBalances: propMask }) => {
+  const storeMask = useDashboardStore((s) => s.maskBalances);
+  const maskBalances = propMask ?? storeMask;
+
   const [orders, setOrders] = useState<ActiveOrder[]>(INITIAL_ORDERS);
   const [cancelledId, setCancelledId] = useState<string | null>(null);
 
@@ -105,10 +110,10 @@ export const ActiveOrdersHub: React.FC = () => {
                   </span>
                 </td>
                 <td className="py-2 px-3 text-right font-mono tabular-nums text-on-surface">
-                  {order.shares.toLocaleString()}
+                  {maskBalances ? '••••' : order.shares.toLocaleString()}
                 </td>
                 <td className="py-2 px-3 text-right font-mono tabular-nums text-on-surface font-semibold">
-                  ${order.limitPrice.toFixed(2)}
+                  {maskBalances ? '••••' : `$${order.limitPrice.toFixed(2)}`}
                 </td>
                 <td className="py-2 px-3 text-outline text-[11px] font-mono">{order.expires}</td>
                 <td className="py-2 px-3 text-center">

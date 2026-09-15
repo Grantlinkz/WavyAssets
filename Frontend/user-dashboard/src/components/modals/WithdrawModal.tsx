@@ -65,6 +65,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
           <button
             type="button"
             data-testid="close-withdraw-modal"
+            aria-label="Close withdrawal modal"
             onClick={closeModal}
             className="text-outline hover:text-on-surface p-1 rounded-DEFAULT transition-colors cursor-pointer"
           >

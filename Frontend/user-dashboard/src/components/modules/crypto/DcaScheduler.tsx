@@ -4,9 +4,14 @@ import { useLiquidStore } from '../../../store/useLiquidStore';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { formatMaskedCurrency } from '../../../lib/calculations';
 
-export const DcaScheduler: React.FC = () => {
+export interface DcaSchedulerProps {
+  maskBalances?: boolean;
+}
+
+export const DcaScheduler: React.FC<DcaSchedulerProps> = ({ maskBalances: propMask }) => {
   const { dcaSchedules, toggleDcaSchedule, addDcaSchedule } = useLiquidStore();
-  const maskBalances = useDashboardStore((s) => s.maskBalances);
+  const storeMask = useDashboardStore((s) => s.maskBalances);
+  const maskBalances = propMask ?? storeMask;
 
   const [asset, setAsset] = useState<string>('BTC');
   const [frequency, setFrequency] = useState<'DAILY' | 'WEEKLY' | 'BI_WEEKLY' | 'MONTHLY'>('WEEKLY');
@@ -16,6 +21,9 @@ export const DcaScheduler: React.FC = () => {
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!Number.isFinite(amountUsd) || amountUsd <= 0) {
+      return;
+    }
     addDcaSchedule({
       asset,
       frequency,
@@ -79,6 +87,8 @@ export const DcaScheduler: React.FC = () => {
           <label className="text-[10px] font-mono text-outline uppercase block mb-1">Debit Amount (USD)</label>
           <input
             type="number"
+            min="1"
+            step="any"
             data-testid="dca-amount-input"
             value={amountUsd}
             onChange={(e) => setAmountUsd(Number(e.target.value))}

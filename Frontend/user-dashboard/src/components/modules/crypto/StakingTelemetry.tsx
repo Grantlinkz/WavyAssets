@@ -11,6 +11,22 @@ export const StakingTelemetry: React.FC<{ maskBalances?: boolean }> = ({ maskBal
   const [exportedFormat, setExportedFormat] = useState<string | null>(null);
 
   const handleExport = (format: string) => {
+    const headers = ['Lot_ID', 'Timestamp', 'Asset', 'Accounting_Method', 'Bonded_Qty', 'Cost_Basis_USD', 'Accrued_Yield_USD', 'Validator_Node'];
+    const rows = [
+      ['LOT-ETH-01', '2024-01-15T08:30:00Z', 'ETH', format, '380.0', '1079200.00', '14210.40', 'ETH VALIDATOR NODE 04'],
+      ['LOT-SOL-01', '2024-02-01T12:00:00Z', 'SOL', format, '2400.0', '324000.00', '3120.90', 'SOL MARINADE SOVEREIGN'],
+      ['LOT-AVAX-01', '2024-02-18T16:45:00Z', 'AVAX', format, '8500.0', '208250.00', '1161.00', 'AVALANCHE SUBNET CORE'],
+    ];
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    if (typeof window !== 'undefined' && window.document) {
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `WavyAssets_TaxLot_${format}_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
     setExportedFormat(format);
     setTimeout(() => setExportedFormat(null), 2500);
   };
@@ -39,7 +55,9 @@ export const StakingTelemetry: React.FC<{ maskBalances?: boolean }> = ({ maskBal
           </div>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="text-lg font-mono font-bold text-on-surface">3.82% APY</span>
-            <span className="text-[10px] font-mono text-outline">380 ETH Bonded</span>
+            <span className="text-[10px] font-mono text-outline">
+              {maskBalances ? '•••• ETH Bonded' : '380 ETH Bonded'}
+            </span>
           </div>
           <div className="w-full bg-surface-container h-1 rounded-DEFAULT mt-2 overflow-hidden">
             <div className="bg-primary h-full" style={{ width: '65%' }} />
@@ -54,7 +72,9 @@ export const StakingTelemetry: React.FC<{ maskBalances?: boolean }> = ({ maskBal
           </div>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="text-lg font-mono font-bold text-tertiary">7.42% APY</span>
-            <span className="text-[10px] font-mono text-outline">2,400 SOL Bonded</span>
+            <span className="text-[10px] font-mono text-outline">
+              {maskBalances ? '•••• SOL Bonded' : '2,400 SOL Bonded'}
+            </span>
           </div>
           <div className="w-full bg-surface-container h-1 rounded-DEFAULT mt-2 overflow-hidden">
             <div className="bg-tertiary h-full" style={{ width: '85%' }} />
@@ -69,7 +89,9 @@ export const StakingTelemetry: React.FC<{ maskBalances?: boolean }> = ({ maskBal
           </div>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="text-lg font-mono font-bold text-secondary">5.90% APY</span>
-            <span className="text-[10px] font-mono text-outline">8,500 AVAX Bonded</span>
+            <span className="text-[10px] font-mono text-outline">
+              {maskBalances ? '•••• AVAX Bonded' : '8,500 AVAX Bonded'}
+            </span>
           </div>
           <div className="w-full bg-surface-container h-1 rounded-DEFAULT mt-2 overflow-hidden">
             <div className="bg-secondary h-full" style={{ width: '50%' }} />

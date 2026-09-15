@@ -40,7 +40,7 @@ export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMa
           </div>
           <div className="flex items-center gap-1.5 text-tertiary font-mono text-xs tabular-nums font-semibold mt-2">
             <TrendingUp className="w-3.5 h-3.5" />
-            <span>+$94,240.10 (+1.85%) 24H</span>
+            <span>{maskBalances ? '•••••• (+1.85%) 24H' : '+$94,240.10 (+1.85%) 24H'}</span>
           </div>
         </div>
 
@@ -84,7 +84,7 @@ export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMa
             </span>
           </div>
           <div className="text-[11px] font-mono text-tertiary font-medium mt-2">
-            Daily run-rate: +$650.52 / day
+            Daily run-rate: {maskBalances ? '••••••' : '+$650.52'} / day
           </div>
         </div>
 
@@ -117,7 +117,7 @@ export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMa
 
       {/* Lower Split: DCA Automation & Staking Telemetry */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <DcaScheduler />
+        <DcaScheduler maskBalances={maskBalances} />
         <StakingTelemetry maskBalances={maskBalances} />
       </section>
     </div>

@@ -50,7 +50,7 @@ describe('Real Estate Module Telemetry & Store Unit Tests', () => {
 
     const zurichSpv = REAL_ESTATE_ASSETS.find((p) => p.id === 're-1');
     expect(zurichSpv?.name).toBe('One Zurich Financial Center');
-    expect(zurichSpv?.tokenCount * zurichSpv?.tokenPrice).toBe(zurichSpv?.valuation);
+    expect(zurichSpv!.tokenCount * zurichSpv!.tokenPrice).toBe(zurichSpv?.valuation);
     expect(zurichSpv?.occupancyPct).toBe(100.0);
   });
 

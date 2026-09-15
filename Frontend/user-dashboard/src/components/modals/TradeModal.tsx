@@ -29,8 +29,23 @@ export const TradeModal: React.FC<TradeModalProps> = ({
   const [isExecuting, setIsExecuting] = useState<boolean>(false);
   const [isDone, setIsDone] = useState<boolean>(false);
 
-  // Approximate BTC price = $89,420
-  const receiveAmount = (parseFloat(payAmount || '0') / 89420).toFixed(4);
+  const PAY_ASSET_RATES: Record<string, number> = {
+    USDC: 1.0,
+    USD: 1.0,
+    EUR: 1.08,
+  };
+
+  const RECEIVE_ASSET_PRICES: Record<string, number> = {
+    BTC: 89420.0,
+    ETH: 3410.5,
+    NVDA: 138.85,
+    GOLD: 2680.0,
+  };
+
+  const payMultiplier = PAY_ASSET_RATES[payAsset] ?? 1.0;
+  const receivePrice = RECEIVE_ASSET_PRICES[receiveAsset] ?? 89420.0;
+  const usdAllocated = (parseFloat(payAmount || '0') || 0) * payMultiplier;
+  const receiveAmount = (usdAllocated / receivePrice).toFixed(4);
 
   const handleExecute = () => {
     setIsExecuting(true);
@@ -118,7 +133,9 @@ export const TradeModal: React.FC<TradeModalProps> = ({
           <div className="p-3 bg-surface-container-low rounded-DEFAULT border border-border-hairline flex flex-col gap-2">
             <div className="flex items-center justify-between text-[10px] font-mono text-outline">
               <span>YOU ACQUIRE / RECEIVE (ESTIMATED)</span>
-              <span>RATE: 1 BTC = $89,420.00</span>
+              <span>
+                RATE: 1 {receiveAsset} = ${receivePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <span

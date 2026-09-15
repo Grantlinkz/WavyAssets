@@ -120,7 +120,9 @@ export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances
               <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
                 {formatMaskedCurrency(248712.5, maskBalances)}
               </div>
-              <span className="text-[10px] font-sans text-outline">220,650.00 CHF</span>
+              <span className="text-[10px] font-sans text-outline">
+                {maskBalances ? '•••••• CHF' : '220,650.00 CHF'}
+              </span>
             </div>
 
             <div className="bg-surface-container p-2.5 rounded-DEFAULT border border-border-hairline">
@@ -131,7 +133,9 @@ export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances
               <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
                 {maskBalances ? '••••••••' : '≈ $180,000.00'}
               </div>
-              <span className="text-[10px] font-sans text-outline">€166,200.00 EUR</span>
+              <span className="text-[10px] font-sans text-outline">
+                {maskBalances ? '•••••• EUR' : '€166,200.00 EUR'}
+              </span>
             </div>
           </div>
         </div>

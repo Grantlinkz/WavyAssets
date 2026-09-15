@@ -84,7 +84,7 @@ export const App: React.FC<AppProps> = ({ activeVertical: propVertical }) => {
               activeVertical !== 'ai-funds' &&
               activeVertical !== 'real-estate' &&
               activeVertical !== 'cars' && (
-                <VerticalPlaceholder key={activeVertical} />
+                <VerticalPlaceholder key={activeVertical} vertical={activeVertical} />
               )}
           </div>
         </main>
