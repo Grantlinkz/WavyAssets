@@ -3,6 +3,8 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { WebsocketModule } from './modules/websocket/websocket.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { RedactedLoggingInterceptor } from './common/interceptors/redacted-logging.interceptor';
 import { TransformResponseInterceptor } from './common/interceptors/transform-response.interceptor';
@@ -16,6 +18,8 @@ import { CorrelationMiddleware } from './common/middleware/correlation.middlewar
     }),
     PrismaModule,
     AuthModule,
+    DashboardModule,
+    WebsocketModule,
   ],
   providers: [
     {
