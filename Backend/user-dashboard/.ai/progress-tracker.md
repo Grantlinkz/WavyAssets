@@ -122,7 +122,37 @@
   - Verified 0.00% error rate (1,000/1,000 successes) and sub-30ms aggregation SLA (p50: 0.01ms, p95: 0.02ms).
   - Added `npm run test:load` script to `package.json`.
 - [x] Perform static security analysis (npm audit, OWASP top 10 compliance, input sanitization).
-- [x] Full regression test suite execution: 32 test files, 220 automated tests passing (100% success rate).
+- [x] Full regression test suite execution: 32 test files, 224 automated tests passing (100% success rate).
+
+### [x] Sprint Hardening: Code Review Remediation & Multi-Module Security Invariants
+- [x] **Prisma Seed**: Fatal restriction failure handling around credential file permissions (`unlinkSync` on `chmodSync` failure before propagating fatal error).
+- [x] **AI Systematic Funds**: Atomic yield claim with conditional positive check within single Prisma transaction, read-only rationale feed, moving seed data to `seed.ts`.
+- [x] **Exotic Cars**: Enforced DB-level unique constraint `@@unique([carId, bookingDate])` on `DriveBooking`, caught ORM `P2002` translating to `ConflictException`, corrected zero-dividend branch when equity is zero.
+- [x] **Compliance Dossier**:
+  - Removed auto-verification of KYC uploads; enforced strict `isVerified: true` document requirement for tier upgrades and status derivation.
+  - Dynamically hashed actual client IP (`req.ip` / forwarded header) using HMAC secret from configuration.
+  - Dynamically calculated Form 8949 / Schedule D tax pack transactions from real user holdings and positions.
+  - Wrapped document upload and tier upgrades with their corresponding audit logs in atomic `$transaction`.
+  - Restricted `targetTier` DTO validation strictly to `TIER_2` and `TIER_3`.
+- [x] **Tokenized Real Estate**:
+  - Required dedicated `DOCUMENT_HMAC_SECRET` from environment at startup.
+  - Atomic OTC order claiming (`updateMany` with `status: 'OPEN'`), ledger settlement, and share transfer in single `$transaction`.
+  - Direct calendar math avoiding month-end overflow on payout schedules and weekend avoidance.
+  - Pre-signed document URL generation rejection for non-existent documents or unauthorized users.
+- [x] **Security Engine**:
+  - Required non-empty `JWT_SECRET` at startup.
+  - Multi-sig signer identity recording rejecting duplicate signers and preventing initiator from satisfying two-signer threshold alone.
+  - WebAuthn cryptographic verification using `@simplewebauthn/server` and strict replay counter validation.
+- [x] **VIP Cards**:
+  - Required non-empty `CIPHER_KEY_HEX` at startup.
+  - Hardware WebAuthn authentication verification before sensitive reveal.
+  - Eliminated plaintext fallback PINs ('0000', '4821') and propagated decryption errors strictly.
+- [x] **Stock DMA**:
+  - Validated `limitPrice` as positive number whenever present on orders.
+  - Symmetrical BUY and SELL cancellation reversals restoring cash and prior cost basis.
+- [x] **Auth Token Lifecycle**:
+  - Enforced `expiresAt > now` in refresh token atomic rotation predicate.
+- [x] **Quality Assurance**: 32 test files, 224/224 automated tests passing, 0 TypeScript errors, 0 ESLint warnings.
 
 
 ---

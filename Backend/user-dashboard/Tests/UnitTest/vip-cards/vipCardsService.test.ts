@@ -36,6 +36,7 @@ describe('VipCardsService — Card Status, Tier Progression, Ephemeral CVV & Con
       },
       webAuthnCredential: {
         count: vi.fn(),
+        findFirst: vi.fn(),
       },
       auditLog: {
         create: vi.fn().mockResolvedValue({ id: 'audit-001' }),
@@ -210,6 +211,20 @@ describe('VipCardsService — Card Status, Tier Progression, Ephemeral CVV & Con
           passphrase: 'WrongPassphrase',
         }),
       ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('rejects reveal attempt if stored encrypted PIN has invalid format without fallback suppression', async () => {
+      const passphraseHash = await argon2.hash('SecretPassphrase2026!');
+      mockPrisma.user.findUnique.mockResolvedValue({ id: testUserId, passphraseHash });
+      mockPrisma.vipCard.findUnique.mockResolvedValue({
+        id: 'card-obsidian-001',
+        userId: testUserId,
+        pinEncrypted: 'corrupted_pin_no_colon',
+      });
+
+      await expect(
+        vipCardsService.revealSensitive(testUserId, { passphrase: 'SecretPassphrase2026!' }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 

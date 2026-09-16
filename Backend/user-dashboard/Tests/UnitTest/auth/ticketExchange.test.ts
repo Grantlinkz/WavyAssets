@@ -178,7 +178,11 @@ describe('AuthService — Ticket Exchange & Session Lifecycle', () => {
       expect(result.refreshToken).not.toBe(rawRefreshToken); // Rotated
       expect(mockPrisma.session.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { id: 'sess-003', refreshTokenHash: computedHash },
+          where: expect.objectContaining({
+            id: 'sess-003',
+            refreshTokenHash: computedHash,
+            expiresAt: expect.objectContaining({ gt: expect.any(Date) }),
+          }),
           data: expect.objectContaining({
             refreshTokenHash: expect.any(String),
           }),

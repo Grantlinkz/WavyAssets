@@ -12,11 +12,13 @@ describe('AiFundsService — Quantitative Telemetry, Yield Claiming & Circuit Br
       findFirst: ReturnType<typeof vi.fn>;
       create: ReturnType<typeof vi.fn>;
       update: ReturnType<typeof vi.fn>;
+      updateMany: ReturnType<typeof vi.fn>;
     };
     aiRationaleLog: {
       findMany: ReturnType<typeof vi.fn>;
       create: ReturnType<typeof vi.fn>;
     };
+    $transaction: ReturnType<typeof vi.fn>;
   };
   let mockWalletService: {
     getOrCreateAccount: ReturnType<typeof vi.fn>;
@@ -37,11 +39,13 @@ describe('AiFundsService — Quantitative Telemetry, Yield Claiming & Circuit Br
         findFirst: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       aiRationaleLog: {
         findMany: vi.fn(),
         create: vi.fn(),
       },
+      $transaction: vi.fn(async (cb) => (typeof cb === 'function' ? cb(mockPrisma) : Promise.all(cb))),
     };
 
     mockWalletService = {

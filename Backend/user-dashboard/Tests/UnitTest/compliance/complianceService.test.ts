@@ -43,6 +43,7 @@ describe('ComplianceService — Tiered KYC, Dossier Uploads, Tier Promotion & Ta
           },
         ]),
       },
+      $transaction: vi.fn(async (cb) => (typeof cb === 'function' ? cb(mockPrisma) : Promise.all(cb))),
     };
 
     complianceService = new ComplianceService(mockPrisma as unknown as PrismaService);
@@ -79,14 +80,14 @@ describe('ComplianceService — Tiered KYC, Dossier Uploads, Tier Promotion & Ta
   });
 
   describe('uploadDossierDocument', () => {
-    it('successfully uploads and marks verified for clean documents', async () => {
+    it('successfully uploads and leaves unverified pending review for clean documents', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({ id: testUserId });
       mockPrisma.kycDocument.create.mockResolvedValue({
         id: 'doc-new-001',
         userId: testUserId,
         docType: 'ARTICLES_OF_INC',
         fileUrl: 'https://vault.wavyassets.com/corporate_charter.pdf',
-        isVerified: true,
+        isVerified: false,
         uploadedAt: new Date(),
       });
 
@@ -97,6 +98,7 @@ describe('ComplianceService — Tiered KYC, Dossier Uploads, Tier Promotion & Ta
 
       expect(result.success).toBe(true);
       expect(result.docType).toBe('ARTICLES_OF_INC');
+      expect(result.isVerified).toBe(false);
       expect(mockPrisma.auditLog.create).toHaveBeenCalled();
     });
 
@@ -113,14 +115,14 @@ describe('ComplianceService — Tiered KYC, Dossier Uploads, Tier Promotion & Ta
   });
 
   describe('requestTierUpgrade', () => {
-    it('promotes user to Tier 3 when corporate or wealth documents exist', async () => {
+    it('promotes user to Tier 3 when corporate or wealth documents exist and are verified', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: testUserId,
         kycTier: 'TIER_2',
         kycDocuments: [
-          { docType: 'PASSPORT' },
-          { docType: 'UTILITY_BILL' },
-          { docType: 'ARTICLES_OF_INC' },
+          { docType: 'PASSPORT', isVerified: true },
+          { docType: 'UTILITY_BILL', isVerified: true },
+          { docType: 'ARTICLES_OF_INC', isVerified: true },
         ],
       });
 
@@ -139,11 +141,11 @@ describe('ComplianceService — Tiered KYC, Dossier Uploads, Tier Promotion & Ta
       expect(mockPrisma.auditLog.create).toHaveBeenCalled();
     });
 
-    it('rejects promotion if required prerequisite documents are missing', async () => {
+    it('rejects promotion if required prerequisite documents are missing or unverified', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: testUserId,
         kycTier: 'TIER_1',
-        kycDocuments: [{ docType: 'PASSPORT' }], // Missing UTILITY_BILL
+        kycDocuments: [{ docType: 'PASSPORT', isVerified: true }, { docType: 'UTILITY_BILL', isVerified: false }],
       });
 
       await expect(
@@ -156,7 +158,14 @@ describe('ComplianceService — Tiered KYC, Dossier Uploads, Tier Promotion & Ta
   });
 
   describe('generateTaxPack', () => {
-    it('generates Form 8949 and Schedule D summary with capital gains and yields', async () => {
+    it('generates Form 8949 and Schedule D summary with capital gains and yields from user holdings', async () => {
+      mockPrisma.cryptoHolding.findMany.mockResolvedValue([
+        { symbol: 'BTC', amount: 1.25, avgCostBasisUsd: 54500.0 },
+        { symbol: 'ETH', amount: 10.0, avgCostBasisUsd: 1980.0 },
+      ]);
+      mockPrisma.stockPosition.findMany.mockResolvedValue([
+        { symbol: 'NVDA', shares: 45.0, avgCostBasis: 930.0 },
+      ]);
       mockPrisma.realEstateShare.findMany.mockResolvedValue([
         {
           tokenCount: 100,
@@ -180,7 +189,37 @@ describe('ComplianceService — Tiered KYC, Dossier Uploads, Tier Promotion & Ta
       expect(pack.transactions.longTerm.length).toBe(1);
     });
 
+    it('returns empty sales for users with no matching activity', async () => {
+      mockPrisma.cryptoHolding.findMany.mockResolvedValue([]);
+      mockPrisma.stockPosition.findMany.mockResolvedValue([]);
+      mockPrisma.realEstateShare.findMany.mockResolvedValue([]);
+      mockPrisma.carShare.findMany.mockResolvedValue([]);
+
+      const pack = (await complianceService.generateTaxPack(testUserId, {
+        year: 2024,
+        format: TaxPackFormat.JSON,
+      })) as any;
+
+      expect(pack.transactions.shortTerm.length).toBe(0);
+      expect(pack.transactions.longTerm.length).toBe(0);
+      expect(pack.form8949Summary.totalNetCapitalGains).toBe(0);
+    });
+
     it('generates downloadable CSV export format', async () => {
+      mockPrisma.cryptoHolding.findMany.mockResolvedValue([
+        { symbol: 'BTC', amount: 1.25, avgCostBasisUsd: 54500.0 },
+        { symbol: 'ETH', amount: 10.0, avgCostBasisUsd: 1980.0 },
+      ]);
+      mockPrisma.stockPosition.findMany.mockResolvedValue([
+        { symbol: 'NVDA', shares: 45.0, avgCostBasis: 930.0 },
+      ]);
+      mockPrisma.realEstateShare.findMany.mockResolvedValue([
+        { tokenCount: 50, property: { annualizedYield: 0.05, tokenPriceUsd: 500 } },
+      ]);
+      mockPrisma.carShare.findMany.mockResolvedValue([
+        { sharePct: 0.05, car: { model: 'Ferrari' } },
+      ]);
+
       const csvResult = (await complianceService.generateTaxPack(testUserId, {
         year: 2024,
         format: TaxPackFormat.CSV,

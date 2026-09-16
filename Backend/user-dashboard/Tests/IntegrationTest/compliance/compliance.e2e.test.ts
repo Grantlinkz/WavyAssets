@@ -170,9 +170,9 @@ describe('E2E Integration — Tiered KYC & Compliance Dossier API (/api/v1/compl
         id: testUser.id,
         kycTier: 'TIER_2',
         kycDocuments: [
-          { docType: 'PASSPORT' },
-          { docType: 'UTILITY_BILL' },
-          { docType: 'ARTICLES_OF_INC' },
+          { docType: 'PASSPORT', isVerified: true },
+          { docType: 'UTILITY_BILL', isVerified: true },
+          { docType: 'ARTICLES_OF_INC', isVerified: true },
         ],
       });
 
@@ -197,6 +197,16 @@ describe('E2E Integration — Tiered KYC & Compliance Dossier API (/api/v1/compl
 
   describe('GET /api/v1/compliance/tax/pack', () => {
     it('generates Form 8949 / Schedule D summary bundle', async () => {
+      mockPrisma.cryptoHolding.findMany.mockResolvedValueOnce([
+        { symbol: 'BTC', amount: 1.5, avgCostBasisUsd: 45000.0 },
+      ]);
+      mockPrisma.stockPosition.findMany.mockResolvedValueOnce([
+        { symbol: 'NVDA', shares: 50.0, avgCostBasis: 400.0 },
+      ]);
+      mockPrisma.realEstateShare.findMany.mockResolvedValueOnce([
+        { tokenCount: 50, property: { annualizedYield: 0.08, tokenPriceUsd: 500 } },
+      ]);
+
       const response = await request(app.getHttpServer())
         .get('/api/v1/compliance/tax/pack?year=2024&format=JSON')
         .set('Authorization', `Bearer ${authToken}`)
@@ -208,6 +218,10 @@ describe('E2E Integration — Tiered KYC & Compliance Dossier API (/api/v1/compl
     });
 
     it('generates CSV formatted tax export', async () => {
+      mockPrisma.cryptoHolding.findMany.mockResolvedValueOnce([
+        { symbol: 'BTC', amount: 1.5, avgCostBasisUsd: 45000.0 },
+      ]);
+
       const response = await request(app.getHttpServer())
         .get('/api/v1/compliance/tax/pack?year=2024&format=CSV')
         .set('Authorization', `Bearer ${authToken}`)

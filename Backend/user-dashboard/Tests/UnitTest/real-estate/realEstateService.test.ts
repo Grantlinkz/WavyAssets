@@ -22,7 +22,12 @@ describe('RealEstateService — Fractional Properties, Rental Distributions, OTC
       findUnique: ReturnType<typeof vi.fn>;
       createMany: ReturnType<typeof vi.fn>;
       update: ReturnType<typeof vi.fn>;
+      updateMany: ReturnType<typeof vi.fn>;
     };
+    user: {
+      findUnique: ReturnType<typeof vi.fn>;
+    };
+    $transaction: ReturnType<typeof vi.fn>;
   };
   let mockWalletService: {
     getOrCreateAccount: ReturnType<typeof vi.fn>;
@@ -54,7 +59,12 @@ describe('RealEstateService — Fractional Properties, Rental Distributions, OTC
         findUnique: vi.fn(),
         createMany: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
+      user: {
+        findUnique: vi.fn().mockResolvedValue({ id: testUserId }),
+      },
+      $transaction: vi.fn(async (cb) => (typeof cb === 'function' ? cb(mockPrisma) : Promise.all(cb))),
     };
 
     mockWalletService = {
@@ -78,9 +88,14 @@ describe('RealEstateService — Fractional Properties, Rental Distributions, OTC
       invalidateCache: vi.fn(),
     };
 
+    const mockConfigService = {
+      get: vi.fn().mockReturnValue('wavy_sovereign_document_vault_hmac_secret_2026'),
+    };
+
     realEstateService = new RealEstateService(
       mockPrisma as unknown as PrismaService,
       mockWalletService as unknown as WalletService,
+      mockConfigService as any,
       mockGateway as any,
       mockDashboardService as any,
     );

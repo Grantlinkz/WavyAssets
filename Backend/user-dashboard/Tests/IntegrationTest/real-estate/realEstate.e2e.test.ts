@@ -45,6 +45,7 @@ describe('E2E Integration — Tokenized Real Estate API (/api/v1/real-estate)', 
       findUnique: vi.fn(),
       createMany: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     carShare: { findMany: vi.fn().mockResolvedValue([]) },
     ledgerAccount: {

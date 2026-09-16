@@ -108,6 +108,12 @@ describe('CarsService — Vehicle Inventory, Hagerty Valuations, Vault Logistics
       expect(monetization.totalCharterDays).toBe(28);
       expect(monetization.userDividendUsd).toBeGreaterThan(0);
     });
+
+    it('returns zero dividend when user has no car equity', async () => {
+      mockPrisma.exoticCar.findMany.mockResolvedValue([]);
+      const monetization = await carsService.getFleetMonetization(testUserId);
+      expect(monetization.userDividendUsd).toBe(0.0);
+    });
   });
 
   describe('Drive Booking Engine & Concurrency Locking Invariant', () => {
@@ -191,6 +197,26 @@ describe('CarsService — Vehicle Inventory, Hagerty Valuations, Vault Logistics
       expect(booking.status).toBe('CONFIRMED');
       expect(booking.trackLocation).toBe('Silverstone Grand Prix Circuit');
       expect(booking.vehicle).toBe('Ferrari 250 GT (1961)');
+    });
+
+    it('catches unique constraint collision and throws ConflictException', async () => {
+      mockPrisma.exoticCar.findUnique.mockResolvedValue({
+        id: 'car-001',
+        make: 'Ferrari',
+        model: '250 GT',
+        year: 1961,
+        vin: 'VIN123',
+      });
+      mockPrisma.driveBooking.findFirst.mockResolvedValue(null);
+      mockPrisma.driveBooking.create.mockRejectedValue({ code: 'P2002', message: 'Unique constraint failed' });
+
+      await expect(
+        carsService.bookDriveSlot(testUserId, {
+          carId: 'car-001',
+          trackLocation: 'Monaco GP Circuit',
+          bookingDate: '2026-10-15T00:00:00.000Z',
+        }),
+      ).rejects.toThrow(ConflictException);
     });
   });
 

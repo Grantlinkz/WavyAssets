@@ -33,6 +33,7 @@ describe('E2E Integration — AI Systematic Funds API (/api/v1/ai-funds)', () =>
       findMany: vi.fn().mockResolvedValue([]),
       create: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     aiRationaleLog: {
       findMany: vi.fn(),
