@@ -8,6 +8,7 @@ import {
   Inject,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ConfigService } from '@nestjs/config';
 import { WalletService } from '../wallet/wallet.service';
 import { PortfolioGateway } from '../websocket/portfolio.gateway';
 import { DashboardService } from '../dashboard/dashboard.service';
@@ -24,15 +25,23 @@ import { createHmac, randomUUID } from 'crypto';
 @Injectable()
 export class RealEstateService {
   private readonly logger = new Logger(RealEstateService.name);
-  private readonly HMAC_SECRET =
-    process.env.JWT_SECRET || 'wavy-sovereign-dev-secret-key-institutional-grade';
+  private readonly HMAC_SECRET: string;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly walletService: WalletService,
+    @Optional() private readonly configService?: ConfigService,
     @Optional() @Inject(PortfolioGateway) private readonly portfolioGateway?: PortfolioGateway,
     @Optional() @Inject(DashboardService) private readonly dashboardService?: DashboardService,
-  ) {}
+  ) {
+    const secret =
+      this.configService?.get<string>('DOCUMENT_HMAC_SECRET') ||
+      process.env.DOCUMENT_HMAC_SECRET;
+    if (!secret || secret.trim() === '') {
+      throw new Error('DOCUMENT_HMAC_SECRET is mandatory and must not be empty');
+    }
+    this.HMAC_SECRET = secret;
+  }
 
   /**
    * Fractional prime real estate property catalog with user equity positions
@@ -146,9 +155,13 @@ export class RealEstateService {
     const monthlyPayoutUsd = Number((projectedAnnualYieldUsd / 12).toFixed(2));
     const accruedUnpaidDividendsUsd = Number((monthlyPayoutUsd * 0.82).toFixed(2));
 
-    const nextPayout = new Date();
-    nextPayout.setMonth(nextPayout.getMonth() + 1);
-    nextPayout.setDate(1);
+    const now = new Date();
+    const nextPayout = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+    if (nextPayout.getUTCDay() === 6) {
+      nextPayout.setUTCDate(nextPayout.getUTCDate() + 2);
+    } else if (nextPayout.getUTCDay() === 0) {
+      nextPayout.setUTCDate(nextPayout.getUTCDate() + 1);
+    }
 
     return {
       projectedAnnualYieldUsd,
@@ -292,75 +305,87 @@ export class RealEstateService {
     }
 
     const totalCost = Number((order.tokenAmount * order.pricePerToken).toFixed(2));
-    const txRefId = `otc-re-${randomUUID()}`;
+    const txRefId = `otc-re-${orderId}`;
 
-    // Ledger settlement: buyer pays, seller/escrow receives
-    const userAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');
-    const clearingAccount = await this.walletService.getOrCreateAccount('ESCROW_VAULT', 'INVESTED_CAPITAL', 'USD');
-
-    if (order.orderType === 'OFFER') {
-      // User is BUYING tokens
-      await this.walletService.recordLedgerTransaction({
-        referenceId: txRefId,
-        type: 'TRADE',
-        description: `OTC Real Estate Share Purchase: ${order.tokenAmount} tokens of ${order.property?.title}`,
-        entries: [
-          { accountId: userAccount.id, amount: -totalCost },
-          { accountId: clearingAccount.id, amount: totalCost },
-        ],
+    await this.prisma.$transaction(async (tx) => {
+      // Atomically claim OPEN order to prevent concurrent duplicate settlement
+      const claimResult = await tx.realEstateOtcOrder.updateMany({
+        where: { id: orderId, status: 'OPEN' },
+        data: { status: 'FILLED' },
       });
 
-      // Transfer / Upsert RealEstateShare
-      const existingShare = await this.prisma.realEstateShare.findFirst({
-        where: { userId, propertyId: order.propertyId },
-      });
+      if (claimResult.count === 0) {
+        throw new ConflictException(`OTC Order ${orderId} is no longer active (status: ${order.status})`);
+      }
 
-      if (existingShare) {
-        await this.prisma.realEstateShare.update({
-          where: { id: existingShare.id },
-          data: { tokenCount: { increment: order.tokenAmount } },
-        });
-      } else {
-        await this.prisma.realEstateShare.create({
-          data: {
-            userId,
-            propertyId: order.propertyId,
-            tokenCount: order.tokenAmount,
+      // Ledger settlement: buyer pays, seller/escrow receives
+      const userAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD', tx);
+      const clearingAccount = await this.walletService.getOrCreateAccount('ESCROW_VAULT', 'INVESTED_CAPITAL', 'USD', tx);
+
+      if (order.orderType === 'OFFER') {
+        // User is BUYING tokens
+        await this.walletService.recordLedgerTransaction(
+          {
+            referenceId: txRefId,
+            type: 'TRADE',
+            description: `OTC Real Estate Share Purchase: ${order.tokenAmount} tokens of ${order.property?.title}`,
+            entries: [
+              { accountId: userAccount.id, amount: -totalCost },
+              { accountId: clearingAccount.id, amount: totalCost },
+            ],
           },
+          tx,
+        );
+
+        // Transfer / Upsert RealEstateShare
+        const existingShare = await tx.realEstateShare.findFirst({
+          where: { userId, propertyId: order.propertyId },
+        });
+
+        if (existingShare) {
+          await tx.realEstateShare.update({
+            where: { id: existingShare.id },
+            data: { tokenCount: { increment: order.tokenAmount } },
+          });
+        } else {
+          await tx.realEstateShare.create({
+            data: {
+              userId,
+              propertyId: order.propertyId,
+              tokenCount: order.tokenAmount,
+            },
+          });
+        }
+      } else {
+        // User is SELLING tokens (order is BID)
+        const userShare = await tx.realEstateShare.findFirst({
+          where: { userId, propertyId: order.propertyId },
+        });
+
+        if (!userShare || userShare.tokenCount < order.tokenAmount) {
+          throw new BadRequestException(
+            `Insufficient shares owned. Required: ${order.tokenAmount}, Available: ${userShare?.tokenCount || 0}`,
+          );
+        }
+
+        await this.walletService.recordLedgerTransaction(
+          {
+            referenceId: txRefId,
+            type: 'TRADE',
+            description: `OTC Real Estate Share Liquidation: ${order.tokenAmount} tokens of ${order.property?.title}`,
+            entries: [
+              { accountId: userAccount.id, amount: totalCost },
+              { accountId: clearingAccount.id, amount: -totalCost },
+            ],
+          },
+          tx,
+        );
+
+        await tx.realEstateShare.update({
+          where: { id: userShare.id },
+          data: { tokenCount: { decrement: order.tokenAmount } },
         });
       }
-    } else {
-      // User is SELLING tokens (order is BID)
-      const userShare = await this.prisma.realEstateShare.findFirst({
-        where: { userId, propertyId: order.propertyId },
-      });
-
-      if (!userShare || userShare.tokenCount < order.tokenAmount) {
-        throw new BadRequestException(
-          `Insufficient shares owned. Required: ${order.tokenAmount}, Available: ${userShare?.tokenCount || 0}`,
-        );
-      }
-
-      await this.walletService.recordLedgerTransaction({
-        referenceId: txRefId,
-        type: 'TRADE',
-        description: `OTC Real Estate Share Liquidation: ${order.tokenAmount} tokens of ${order.property?.title}`,
-        entries: [
-          { accountId: userAccount.id, amount: totalCost },
-          { accountId: clearingAccount.id, amount: -totalCost },
-        ],
-      });
-
-      await this.prisma.realEstateShare.update({
-        where: { id: userShare.id },
-        data: { tokenCount: { decrement: order.tokenAmount } },
-      });
-    }
-
-    // Mark order FILLED
-    const filledOrder = await this.prisma.realEstateOtcOrder.update({
-      where: { id: orderId },
-      data: { status: 'FILLED' },
     });
 
     this.logger.log(
@@ -379,13 +404,14 @@ export class RealEstateService {
 
     return {
       success: true,
-      orderId: filledOrder.id,
+      orderId: order.id,
       propertyTitle: order.property?.title,
       orderType: order.orderType,
       tokensTransferred: order.tokenAmount,
+      pricePerTokenUsd: order.pricePerToken,
       totalSettlementUsd: totalCost,
       status: 'FILLED',
-      transactionReferenceId: txRefId,
+      txReferenceId: txRefId,
       timestamp: new Date().toISOString(),
     };
   }
@@ -413,11 +439,18 @@ export class RealEstateService {
       },
     };
 
-    const doc = validDocs[docId] || {
-      title: `Secured Document ${docId}`,
-      docType: 'LEGAL_FILING',
-      mimeType: 'application/pdf',
-    };
+    const doc = validDocs[docId];
+    if (!doc) {
+      throw new NotFoundException(`Document with ID ${docId} not found`);
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found or unauthorized`);
+    }
 
     const expiresAt = Math.floor(Date.now() / 1000) + 900; // 15 minutes
     const payload = `${docId}:${userId}:${expiresAt}`;

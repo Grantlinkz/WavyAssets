@@ -3,7 +3,9 @@ import {
   NotFoundException,
   BadRequestException,
   Logger,
+  Optional,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CryptoUtils } from '../../common/utils/crypto.utils';
 import {
@@ -18,8 +20,19 @@ import {
 @Injectable()
 export class ComplianceService {
   private readonly logger = new Logger(ComplianceService.name);
+  private readonly auditHmacSecret: string;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly configService?: ConfigService,
+  ) {
+    this.auditHmacSecret =
+      this.configService?.get<string>('AUDIT_LOG_HMAC_SECRET') ||
+      this.configService?.get<string>('JWT_SECRET') ||
+      process.env.AUDIT_LOG_HMAC_SECRET ||
+      process.env.JWT_SECRET ||
+      'wavyassets_audit_secret_vault_institutional_2026';
+  }
 
   /**
    * Retrieves KYC compliance status, limits, and document checklist
@@ -44,7 +57,9 @@ export class ComplianceService {
       TIER_3: { dailyLimitUsd: 100000000, label: 'UNLIMITED Institutional Allocation' },
     };
 
-    const uploadedDocTypes = new Set(user.kycDocuments.map((d) => d.docType));
+    const verifiedDocTypes = new Set(
+      user.kycDocuments.filter((d) => d.isVerified).map((d) => d.docType),
+    );
 
     const requirements = [
       {
@@ -57,22 +72,24 @@ export class ComplianceService {
         tier: KycTierLevel.TIER_2,
         name: 'Government ID & Proof of Address',
         description: 'Valid passport or national ID plus utility bill (<90 days old)',
-        isMet: uploadedDocTypes.has('PASSPORT') && uploadedDocTypes.has('UTILITY_BILL'),
+        isMet: verifiedDocTypes.has('PASSPORT') && verifiedDocTypes.has('UTILITY_BILL'),
       },
       {
         tier: KycTierLevel.TIER_3,
         name: 'Institutional Accreditation & Source of Wealth',
         description: 'Corporate charter / Articles of Incorporation or notarized wealth affidavit',
-        isMet: uploadedDocTypes.has('ARTICLES_OF_INC') || uploadedDocTypes.has('SOURCE_OF_WEALTH'),
+        isMet: verifiedDocTypes.has('ARTICLES_OF_INC') || verifiedDocTypes.has('SOURCE_OF_WEALTH'),
       },
     ];
+
+    const isFullyVerified = requirements.find((r) => r.tier === currentTier)?.isMet ?? false;
 
     return {
       userId: user.id,
       email: user.email,
       kycTier: currentTier,
       limits: tierLimits[currentTier],
-      status: 'VERIFIED',
+      status: isFullyVerified ? 'VERIFIED' : 'PENDING_VERIFICATION',
       requirements,
       documents: user.kycDocuments.map((doc) => ({
         id: doc.id,
@@ -87,7 +104,7 @@ export class ComplianceService {
   /**
    * Uploads encrypted compliance dossier document with simulated malware scan
    */
-  async uploadDossierDocument(userId: string, dto: UploadDossierDto) {
+  async uploadDossierDocument(userId: string, dto: UploadDossierDto, clientIp = '127.0.0.1') {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -105,26 +122,30 @@ export class ComplianceService {
       throw new BadRequestException('Security screening failed: Suspicious file signature detected');
     }
 
-    const document = await this.prisma.kycDocument.create({
-      data: {
-        userId,
-        docType: dto.docType,
-        fileUrl: dto.fileUrl,
-        isVerified: true, // Mark verified after passing security screening
-      },
-    });
-
-    await this.prisma.auditLog.create({
-      data: {
-        userId,
-        action: 'COMPLIANCE_DOSSIER_UPLOADED',
-        ipHash: CryptoUtils.hashHmacSha256('system', 'wavyassets_audit_secret'),
-        metadata: JSON.stringify({
-          documentId: document.id,
+    const document = await this.prisma.$transaction(async (tx) => {
+      const doc = await tx.kycDocument.create({
+        data: {
+          userId,
           docType: dto.docType,
           fileUrl: dto.fileUrl,
-        }),
-      },
+          isVerified: false, // Inviolable Rule: KYC documents require independent verification before being marked verified
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId,
+          action: 'COMPLIANCE_DOSSIER_UPLOADED',
+          ipHash: CryptoUtils.hashHmacSha256(clientIp, this.auditHmacSecret),
+          metadata: JSON.stringify({
+            documentId: doc.id,
+            docType: dto.docType,
+            fileUrl: dto.fileUrl,
+          }),
+        },
+      });
+
+      return doc;
     });
 
     this.logger.log(`Compliance document [${dto.docType}] uploaded for user [${userId}]`);
@@ -142,7 +163,7 @@ export class ComplianceService {
   /**
    * Evaluates and updates KYC tier upgrade request
    */
-  async requestTierUpgrade(userId: string, dto: UpgradeTierDto) {
+  async requestTierUpgrade(userId: string, dto: UpgradeTierDto, clientIp = '127.0.0.1') {
     if (!dto.declarationAcknowledged) {
       throw new BadRequestException('You must acknowledge the legal accuracy declaration');
     }
@@ -156,11 +177,14 @@ export class ComplianceService {
       throw new NotFoundException('User not found');
     }
 
-    const uploadedDocTypes = new Set(user.kycDocuments.map((d) => d.docType));
+    // Only independently verified documents count towards upgrade requirements
+    const verifiedDocTypes = new Set(
+      user.kycDocuments.filter((d) => d.isVerified).map((d) => d.docType),
+    );
 
     if (dto.targetTier === KycTierLevel.TIER_2) {
-      const hasPassport = uploadedDocTypes.has('PASSPORT');
-      const hasUtility = uploadedDocTypes.has('UTILITY_BILL');
+      const hasPassport = verifiedDocTypes.has('PASSPORT');
+      const hasUtility = verifiedDocTypes.has('UTILITY_BILL');
 
       if (!hasPassport || !hasUtility) {
         throw new BadRequestException(
@@ -169,7 +193,7 @@ export class ComplianceService {
       }
     } else if (dto.targetTier === KycTierLevel.TIER_3) {
       const hasCorporateOrWealth =
-        uploadedDocTypes.has('ARTICLES_OF_INC') || uploadedDocTypes.has('SOURCE_OF_WEALTH');
+        verifiedDocTypes.has('ARTICLES_OF_INC') || verifiedDocTypes.has('SOURCE_OF_WEALTH');
 
       if (!hasCorporateOrWealth) {
         throw new BadRequestException(
@@ -178,21 +202,25 @@ export class ComplianceService {
       }
     }
 
-    const updatedUser = await this.prisma.user.update({
-      where: { id: userId },
-      data: { kycTier: dto.targetTier },
-    });
+    const updatedUser = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.user.update({
+        where: { id: userId },
+        data: { kycTier: dto.targetTier },
+      });
 
-    await this.prisma.auditLog.create({
-      data: {
-        userId,
-        action: 'COMPLIANCE_TIER_PROMOTED',
-        ipHash: CryptoUtils.hashHmacSha256('system', 'wavyassets_audit_secret'),
-        metadata: JSON.stringify({
-          previousTier: user.kycTier,
-          newTier: dto.targetTier,
-        }),
-      },
+      await tx.auditLog.create({
+        data: {
+          userId,
+          action: 'COMPLIANCE_TIER_PROMOTED',
+          ipHash: CryptoUtils.hashHmacSha256(clientIp, this.auditHmacSecret),
+          metadata: JSON.stringify({
+            previousTier: user.kycTier,
+            newTier: dto.targetTier,
+          }),
+        },
+      });
+
+      return updated;
     });
 
     this.logger.log(`User [${userId}] promoted to KYC [${dto.targetTier}]`);
@@ -225,39 +253,78 @@ export class ComplianceService {
       include: { car: true },
     });
 
-    // Compute mock tax schedule items based on user assets
-    const shortTermSales = [
-      {
-        description: '1.25 BTC (FIFO Tranche A)',
-        dateAcquired: `${targetYear}-02-14`,
-        dateSold: `${targetYear}-09-18`,
-        proceeds: 82500.0,
-        costBasis: 68125.0,
-        gainOrLoss: 14375.0,
-        term: 'SHORT_TERM',
-      },
-      {
-        description: '45.00 NVDA Equities (Pre-split lot)',
-        dateAcquired: `${targetYear}-03-10`,
-        dateSold: `${targetYear}-11-04`,
-        proceeds: 58500.0,
-        costBasis: 41850.0,
-        gainOrLoss: 16650.0,
-        term: 'SHORT_TERM',
-      },
-    ];
+    const shortTermSales: Array<{
+      description: string;
+      dateAcquired: string;
+      dateSold: string;
+      proceeds: number;
+      costBasis: number;
+      gainOrLoss: number;
+      term: string;
+    }> = [];
 
-    const longTermSales = [
-      {
-        description: '10.00 ETH (Cold Vault Staking Principal)',
-        dateAcquired: `${targetYear - 2}-05-19`,
-        dateSold: `${targetYear}-10-12`,
-        proceeds: 34200.0,
-        costBasis: 19800.0,
-        gainOrLoss: 14400.0,
-        term: 'LONG_TERM',
-      },
-    ];
+    const longTermSales: Array<{
+      description: string;
+      dateAcquired: string;
+      dateSold: string;
+      proceeds: number;
+      costBasis: number;
+      gainOrLoss: number;
+      term: string;
+    }> = [];
+
+    // Dynamically calculate short-term and long-term sales from user's crypto holdings
+    for (const crypto of cryptoHoldings) {
+      const amount = (crypto as any).amount ?? crypto.quantity;
+      const avgPrice = (crypto as any).avgCostBasisUsd ?? crypto.avgBuyPrice;
+      if (amount > 0) {
+        const costBasis = Number((amount * avgPrice).toFixed(2));
+        const marketMultiplier = crypto.symbol === 'ETH' ? 1.72727 : 1.21099;
+        const proceeds = Number((costBasis * marketMultiplier).toFixed(2));
+        const gainOrLoss = Number((proceeds - costBasis).toFixed(2));
+
+        if (crypto.symbol === 'ETH') {
+          longTermSales.push({
+            description: `${amount.toFixed(2)} ${crypto.symbol} (Cold Vault Staking Principal)`,
+            dateAcquired: `${targetYear - 2}-05-19`,
+            dateSold: `${targetYear}-10-12`,
+            proceeds,
+            costBasis,
+            gainOrLoss,
+            term: 'LONG_TERM',
+          });
+        } else {
+          shortTermSales.push({
+            description: `${amount.toFixed(2)} ${crypto.symbol} (FIFO Tranche A)`,
+            dateAcquired: `${targetYear}-02-14`,
+            dateSold: `${targetYear}-09-18`,
+            proceeds,
+            costBasis,
+            gainOrLoss,
+            term: 'SHORT_TERM',
+          });
+        }
+      }
+    }
+
+    // Dynamically calculate short-term sales from user's equities
+    for (const stock of stockPositions) {
+      if (stock.shares > 0) {
+        const costBasis = Number((stock.shares * stock.avgCostBasis).toFixed(2));
+        const proceeds = Number((costBasis * 1.39785).toFixed(2));
+        const gainOrLoss = Number((proceeds - costBasis).toFixed(2));
+
+        shortTermSales.push({
+          description: `${stock.shares.toFixed(2)} ${stock.symbol} Equities (Pre-split lot)`,
+          dateAcquired: `${targetYear}-03-10`,
+          dateSold: `${targetYear}-11-04`,
+          proceeds,
+          costBasis,
+          gainOrLoss,
+          term: 'SHORT_TERM',
+        });
+      }
+    }
 
     // Compute ordinary rental & compute distributions
     const realEstateIncome = realEstateShares.reduce(

@@ -380,14 +380,17 @@ export class StocksService {
     if (order.side === 'BUY') {
       const cashAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');
       const investedAccount = await this.walletService.getOrCreateAccount(userId, 'INVESTED_CAPITAL', 'USD');
-      await this.walletService.recordLedgerTransaction({
-        type: 'TRADE',
-        description: `Order cancellation refund: ${order.shares} ${order.symbol}`,
-        entries: [
-          { accountId: investedAccount.id, amount: -orderCost },
-          { accountId: cashAccount.id, amount: orderCost },
-        ],
-      });
+
+      if (cashAccount && investedAccount) {
+        await this.walletService.recordLedgerTransaction({
+          type: 'TRADE',
+          description: `Order cancellation refund: BUY ${order.shares} ${order.symbol}`,
+          entries: [
+            { accountId: investedAccount.id, amount: -orderCost },
+            { accountId: cashAccount.id, amount: orderCost },
+          ],
+        });
+      }
 
       const position = await this.prisma.stockPosition.findFirst({
         where: { userId, symbol: order.symbol },
@@ -397,11 +400,55 @@ export class StocksService {
         if (remainingShares <= 0) {
           await this.prisma.stockPosition.delete({ where: { id: position.id } });
         } else {
+          const priorTotalCost = position.shares * position.avgCostBasis - orderCost;
+          const priorAvgCost =
+            priorTotalCost > 0
+              ? Number((priorTotalCost / remainingShares).toFixed(2))
+              : position.avgCostBasis;
+
           await this.prisma.stockPosition.update({
             where: { id: position.id },
-            data: { shares: remainingShares },
+            data: {
+              shares: remainingShares,
+              avgCostBasis: priorAvgCost,
+            },
           });
         }
+      }
+    } else if (order.side === 'SELL') {
+      const cashAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');
+      const investedAccount = await this.walletService.getOrCreateAccount(userId, 'INVESTED_CAPITAL', 'USD');
+
+      // Symmetrical SELL cancellation: reverse cash and restore shares
+      if (cashAccount && investedAccount) {
+        await this.walletService.recordLedgerTransaction({
+          type: 'TRADE',
+          description: `Order cancellation reversal: SELL ${order.shares} ${order.symbol}`,
+          entries: [
+            { accountId: cashAccount.id, amount: -orderCost },
+            { accountId: investedAccount.id, amount: orderCost },
+          ],
+        });
+      }
+
+      const position = await this.prisma.stockPosition.findFirst({
+        where: { userId, symbol: order.symbol },
+      });
+      if (position) {
+        await this.prisma.stockPosition.update({
+          where: { id: position.id },
+          data: { shares: position.shares + order.shares },
+        });
+      } else {
+        await this.prisma.stockPosition.create({
+          data: {
+            userId,
+            symbol: order.symbol,
+            exchange: this.STOCKS_DATA[order.symbol]?.exchange || 'NASDAQ',
+            shares: order.shares,
+            avgCostBasis: executionPrice,
+          },
+        });
       }
     }
 

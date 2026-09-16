@@ -1,6 +1,7 @@
 import {
   IsBoolean,
   IsEnum,
+  IsIn,
   IsNumber,
   IsOptional,
   IsString,
@@ -43,7 +44,9 @@ export class UploadDossierDto {
 }
 
 export class UpgradeTierDto {
-  @IsEnum(KycTierLevel, { message: 'targetTier must be TIER_2 or TIER_3' })
+  @IsIn([KycTierLevel.TIER_2, KycTierLevel.TIER_3], {
+    message: 'targetTier must be TIER_2 or TIER_3',
+  })
   targetTier!: KycTierLevel;
 
   @IsBoolean()

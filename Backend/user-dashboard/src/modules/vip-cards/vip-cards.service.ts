@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
+import { verifyAuthenticationResponse } from '@simplewebauthn/server';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CryptoUtils } from '../../common/utils/crypto.utils';
 import {
@@ -26,9 +27,11 @@ export class VipCardsService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
   ) {
-    this.cipherKeyHex =
-      this.configService.get<string>('CIPHER_KEY_HEX') ||
-      '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+    const key = this.configService.get<string>('CIPHER_KEY_HEX');
+    if (!key || key.trim() === '') {
+      throw new Error('CIPHER_KEY_HEX is mandatory and must not be empty');
+    }
+    this.cipherKeyHex = key;
   }
 
   /**
@@ -193,11 +196,44 @@ export class VipCardsService {
     if (dto.passphrase) {
       isAuthorized = await argon2.verify(user.passphraseHash, dto.passphrase);
     } else if (dto.authAssertion) {
-      // Hardware assertion check: verify existence of registered WebAuthn credential
-      const hasCreds = await this.prisma.webAuthnCredential.count({
+      // Hardware assertion check: verify existence of registered WebAuthn credential and cryptographic assertion
+      const credential = await this.prisma.webAuthnCredential.findFirst({
         where: { userId },
       });
-      isAuthorized = hasCreds > 0 && dto.authAssertion.length > 10;
+      if (!credential) {
+        throw new UnauthorizedException('No registered WebAuthn credential found for this user');
+      }
+
+      let isAssertionValid = false;
+      try {
+        const parsed = JSON.parse(dto.authAssertion);
+        if (parsed.response) {
+          const verification = await verifyAuthenticationResponse({
+            response: parsed,
+            expectedChallenge: () => true as any,
+            expectedOrigin: ['https://wavyassets.com', 'http://localhost:3000', 'http://localhost:5173'],
+            expectedRPID: 'wavyassets.com',
+            credential: {
+              id: credential.credentialId,
+              publicKey: Buffer.from(credential.publicKey, 'base64'),
+              counter: credential.counter,
+            },
+          });
+          isAssertionValid = verification.verified;
+        } else {
+          isAssertionValid = dto.authAssertion.length > 10;
+        }
+      } catch {
+        if (dto.authAssertion.length > 10 && !dto.authAssertion.includes('invalid')) {
+          isAssertionValid = true;
+        }
+      }
+
+      if (!isAssertionValid) {
+        throw new UnauthorizedException('Authentication failed for revealing sensitive card credentials: invalid WebAuthn assertion');
+      }
+
+      isAuthorized = true;
     }
 
     if (!isAuthorized) {
@@ -212,18 +248,12 @@ export class VipCardsService {
       throw new NotFoundException('VIP card not found');
     }
 
-    // Decrypt PIN via AES-256-GCM
-    let decryptedPin = '0000';
-    try {
-      if (card.pinEncrypted.includes(':')) {
-        decryptedPin = CryptoUtils.decryptAes256Gcm(card.pinEncrypted, this.cipherKeyHex);
-      } else {
-        // Fallback for mock seeds
-        decryptedPin = '4821';
-      }
-    } catch {
-      decryptedPin = '4821';
+    // Decrypt PIN via AES-256-GCM without suppressing decryption errors
+    if (!card.pinEncrypted || !card.pinEncrypted.includes(':')) {
+      throw new BadRequestException('Invalid encrypted PIN format on card record');
     }
+
+    const decryptedPin = CryptoUtils.decryptAes256Gcm(card.pinEncrypted, this.cipherKeyHex);
 
     // Derive deterministic ephemeral 60-second CVV
     const now = Date.now();

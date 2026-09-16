@@ -101,8 +101,15 @@ async function main() {
   );
   try {
     fs.chmodSync(localCredsPath, 0o600);
-  } catch {
-    // Graceful fallback if filesystem/OS does not support chmod
+  } catch (err) {
+    try {
+      if (fs.existsSync(localCredsPath)) {
+        fs.unlinkSync(localCredsPath);
+      }
+    } catch {
+      // Ignore cleanup error
+    }
+    throw err;
   }
 
   // 3. Create Double-Entry Ledger Accounts
@@ -329,6 +336,44 @@ async function main() {
       shippingStatus: 'DELIVERED',
     } as any,
   });
+
+  // 10. Seed Default AI Rationale Logs
+  const existingRationaleCount = await prisma.aiRationaleLog.count();
+  if (existingRationaleCount === 0) {
+    const defaultLogs = [
+      {
+        strategy: 'Cross-Venue Statistical Arbitrage',
+        actionType: 'ARBITRAGE',
+        asset: 'BTC/USD',
+        rationale:
+          'Identified 18bps spread dislocation between Coinbase and Kraken order books with >$2M top-of-book depth.',
+        slippageBps: 1.2,
+        confidence: 0.96,
+      },
+      {
+        strategy: 'Volatility Regime Switcher',
+        actionType: 'HEDGE',
+        asset: 'NVDA',
+        rationale:
+          'Implied volatility skew breached 95th percentile prior to earnings; established delta-neutral options collar.',
+        slippageBps: 2.8,
+        confidence: 0.91,
+      },
+      {
+        strategy: 'Liquidity Rebalancing Engine',
+        actionType: 'REBALANCE',
+        asset: 'ETH/USDC',
+        rationale:
+          'Gas base fee dipped below 12 Gwei; executed institutional Uniswap v3 fee compounding harvest.',
+        slippageBps: 0.8,
+        confidence: 0.98,
+      },
+    ];
+
+    for (const item of defaultLogs) {
+      await prisma.aiRationaleLog.create({ data: item });
+    }
+  }
 
   console.log('Deterministic seeding successfully completed.');
 }

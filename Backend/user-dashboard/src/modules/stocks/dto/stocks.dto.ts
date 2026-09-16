@@ -37,8 +37,9 @@ export class CreateStockOrderDto {
 
   @ValidateIf((o: CreateStockOrderDto) => o.orderType === 'LIMIT')
   @IsNotEmpty({ message: 'limitPrice is required for LIMIT orders' })
-  @IsNumber()
-  @IsPositive()
+  @ValidateIf((o: CreateStockOrderDto) => o.orderType === 'LIMIT' || o.limitPrice !== undefined)
+  @IsNumber({}, { message: 'limitPrice must be a number' })
+  @IsPositive({ message: 'limitPrice must be a positive number' })
   limitPrice?: number;
 }
 

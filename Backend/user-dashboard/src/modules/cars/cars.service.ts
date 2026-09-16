@@ -197,7 +197,7 @@ export class CarsService {
     const userDividendUsd =
       totalEquity > 0
         ? Number(((totalEquity / 12980000) * grossYieldUsd).toFixed(2))
-        : 14850.0;
+        : 0.0;
 
     return {
       totalCharterDays,
@@ -272,29 +272,41 @@ export class CarsService {
     }
 
     // Create booking record
-    const booking = await this.prisma.driveBooking.create({
-      data: {
-        userId,
-        carId: dto.carId,
-        trackLocation: dto.trackLocation,
-        bookingDate: startOfDay,
-        status: 'CONFIRMED',
-      },
-    });
+    try {
+      const booking = await this.prisma.driveBooking.create({
+        data: {
+          userId,
+          carId: dto.carId,
+          trackLocation: dto.trackLocation,
+          bookingDate: startOfDay,
+          status: 'CONFIRMED',
+        },
+      });
 
-    this.logger.log(
-      `Drive session booked: User [${userId}], Vehicle [${car.make} ${car.model}], Track [${dto.trackLocation}], Date [${dto.bookingDate}]`,
-    );
+      this.logger.log(
+        `Drive session booked: User [${userId}], Vehicle [${car.make} ${car.model}], Track [${dto.trackLocation}], Date [${dto.bookingDate}]`,
+      );
 
-    return {
-      id: booking.id,
-      carId: booking.carId,
-      vehicle: `${car.make} ${car.model} (${car.year})`,
-      trackLocation: booking.trackLocation,
-      bookingDate: booking.bookingDate.toISOString().split('T')[0],
-      status: booking.status,
-      createdAt: booking.createdAt.toISOString(),
-    };
+      return {
+        id: booking.id,
+        carId: booking.carId,
+        vehicle: `${car.make} ${car.model} (${car.year})`,
+        trackLocation: booking.trackLocation,
+        bookingDate: booking.bookingDate.toISOString().split('T')[0],
+        status: booking.status,
+        createdAt: booking.createdAt.toISOString(),
+      };
+    } catch (err: any) {
+      if (err.code === 'P2002' || err.message?.includes('Unique constraint')) {
+        this.logger.warn(
+          `Drive booking rejected due to unique constraint collision: Car [${car.vin}] on date [${dto.bookingDate}]`,
+        );
+        throw new ConflictException(
+          `Drive session unavailable: ${car.make} ${car.model} is already booked for ${dto.bookingDate.split('T')[0]}. Please select an alternative date or track location.`,
+        );
+      }
+      throw err;
+    }
   }
 
   /**

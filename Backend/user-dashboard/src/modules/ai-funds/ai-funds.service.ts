@@ -166,49 +166,10 @@ export class AiFundsService {
   async getRationaleFeed(limit = 20): Promise<RationaleLogItem[]> {
     const take = Math.min(Math.max(limit, 1), 100);
 
-    let logs = await this.prisma.aiRationaleLog.findMany({
+    const logs = await this.prisma.aiRationaleLog.findMany({
       take,
       orderBy: { createdAt: 'desc' },
     });
-
-    // Seed default rationale logs if empty
-    if (logs.length === 0) {
-      const defaultLogs = [
-        {
-          strategy: 'Cross-Venue Statistical Arbitrage',
-          actionType: 'ARBITRAGE',
-          asset: 'BTC/USD',
-          rationale: 'Identified 18bps spread dislocation between Coinbase and Kraken order books with >$2M top-of-book depth.',
-          slippageBps: 1.2,
-          confidence: 0.96,
-        },
-        {
-          strategy: 'Volatility Regime Switcher',
-          actionType: 'HEDGE',
-          asset: 'NVDA',
-          rationale: 'Implied volatility skew breached 95th percentile prior to earnings; established delta-neutral options collar.',
-          slippageBps: 2.8,
-          confidence: 0.91,
-        },
-        {
-          strategy: 'Liquidity Rebalancing Engine',
-          actionType: 'REBALANCE',
-          asset: 'ETH/USDC',
-          rationale: 'Gas base fee dipped below 12 Gwei; executed institutional Uniswap v3 fee compounding harvest.',
-          slippageBps: 0.8,
-          confidence: 0.98,
-        },
-      ];
-
-      for (const item of defaultLogs) {
-        await this.prisma.aiRationaleLog.create({ data: item });
-      }
-
-      logs = await this.prisma.aiRationaleLog.findMany({
-        take,
-        orderBy: { createdAt: 'desc' },
-      });
-    }
 
     return logs.map((log) => ({
       id: log.id,
@@ -251,42 +212,72 @@ export class AiFundsService {
    * Claims accrued GPU compute revenue into platform wallet Available Cash via double-entry transaction
    */
   async claimComputeYield(userId: string): Promise<ClaimYieldResponse> {
-    const position = await this.getOrCreatePosition(userId);
-
-    const pending = Number(position.pendingYield);
-    if (pending <= 0) {
-      throw new BadRequestException('No pending GPU compute yield available to claim.');
-    }
-
     const txRefId = `yield-claim-${randomUUID()}`;
 
-    // Double-entry ledger integration: credit user's AVAILABLE_CASH, debit FEE_RECEIVABLE / clearing account
-    const userAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');
-    const systemAccount = await this.walletService.getOrCreateAccount('SYSTEM_TREASURY', 'FEE_RECEIVABLE', 'USD');
+    const { pending } = await this.prisma.$transaction(async (tx) => {
+      let position = await tx.aiFundPosition.findFirst({
+        where: { userId },
+      });
 
-    await this.walletService.recordLedgerTransaction({
-      referenceId: txRefId,
-      type: 'REWARD',
-      description: `GPU Compute Cluster Yield Harvest: $${pending.toFixed(2)} USD`,
-      entries: [
-        {
-          accountId: userAccount.id,
-          amount: pending, // Credit user cash
-        },
-        {
-          accountId: systemAccount.id,
-          amount: -pending, // Debit treasury / pool
-        },
-      ],
-    });
+      if (!position) {
+        position = await tx.aiFundPosition.create({
+          data: {
+            userId,
+            strategyTier: 'balanced',
+            allocatedUsd: 2500000.0,
+            unrealizedAlpha: 142850.0,
+            circuitBreaker: false,
+            claimedYield: 34200.0,
+            pendingYield: 1845.5,
+          },
+        });
+      }
 
-    // Update AI fund position record
-    await this.prisma.aiFundPosition.update({
-      where: { id: position.id },
-      data: {
-        claimedYield: { increment: pending },
-        pendingYield: 0.0,
-      },
+      const pendingAmount = Number(position.pendingYield);
+      if (pendingAmount <= 0) {
+        throw new BadRequestException('No pending GPU compute yield available to claim.');
+      }
+
+      // Atomically update the position only when pendingYield is positive
+      const updateResult = await tx.aiFundPosition.updateMany({
+        where: {
+          id: position.id,
+          pendingYield: { gt: 0 },
+        },
+        data: {
+          claimedYield: { increment: pendingAmount },
+          pendingYield: 0.0,
+        },
+      });
+
+      if (updateResult.count === 0) {
+        throw new BadRequestException('No pending GPU compute yield available to claim.');
+      }
+
+      // Double-entry ledger integration: credit user's AVAILABLE_CASH, debit FEE_RECEIVABLE / clearing account
+      const userAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD', tx);
+      const systemAccount = await this.walletService.getOrCreateAccount('SYSTEM_TREASURY', 'FEE_RECEIVABLE', 'USD', tx);
+
+      await this.walletService.recordLedgerTransaction(
+        {
+          referenceId: txRefId,
+          type: 'REWARD',
+          description: `GPU Compute Cluster Yield Harvest: $${pendingAmount.toFixed(2)} USD`,
+          entries: [
+            {
+              accountId: userAccount.id,
+              amount: pendingAmount, // Credit user cash
+            },
+            {
+              accountId: systemAccount.id,
+              amount: -pendingAmount, // Debit treasury / pool
+            },
+          ],
+        },
+        tx,
+      );
+
+      return { pending: pendingAmount };
     });
 
     this.logger.log(

@@ -4,8 +4,10 @@ import {
   Post,
   Body,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { ComplianceService } from './compliance.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
@@ -36,8 +38,13 @@ export class ComplianceController {
   async uploadDossierDocument(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UploadDossierDto,
+    @Req() req: Request,
   ) {
-    return this.complianceService.uploadDossierDocument(user.id, dto);
+    const clientIp =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
+      req.ip ||
+      '127.0.0.1';
+    return this.complianceService.uploadDossierDocument(user.id, dto, clientIp);
   }
 
   /**
@@ -47,8 +54,13 @@ export class ComplianceController {
   async requestTierUpgrade(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UpgradeTierDto,
+    @Req() req: Request,
   ) {
-    return this.complianceService.requestTierUpgrade(user.id, dto);
+    const clientIp =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
+      req.ip ||
+      '127.0.0.1';
+    return this.complianceService.requestTierUpgrade(user.id, dto, clientIp);
   }
 
   /**

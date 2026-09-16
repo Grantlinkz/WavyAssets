@@ -177,11 +177,12 @@ export class AuthService {
     );
     const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    // Atomically rotate conditioned on session ID and matching refreshTokenHash
+    // Atomically rotate conditioned on session ID, matching refreshTokenHash, and unexpired session
     const updateResult = await this.prisma.session.updateMany({
       where: {
         id: session.id,
         refreshTokenHash,
+        expiresAt: { gt: new Date() },
       },
       data: {
         refreshTokenHash: newRefreshTokenHash,
@@ -190,7 +191,7 @@ export class AuthService {
     });
 
     if (updateResult.count === 0) {
-      throw new UnauthorizedException('Session token was already rotated or invalidated');
+      throw new UnauthorizedException('Session token was already rotated, invalidated, or has expired');
     }
 
     const payload = {

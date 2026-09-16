@@ -81,6 +81,7 @@ model WhitelistDestination {
   quarantineUntil  DateTime // Deterministic 48h Time-Lock
   signersRequired  Int      @default(2)
   signersCompleted Int      @default(1)
+  approvedSigners  String   @default("[]") // JSON string array of user IDs who approved
   createdAt        DateTime @default(now())
 }
 
@@ -291,6 +292,8 @@ model DriveBooking {
   bookingDate   DateTime
   status        String    // CONFIRMED | COMPLETED | CANCELLED
   createdAt     DateTime  @default(now())
+
+  @@unique([carId, bookingDate])
 }
 
 // ------------------------------------------------------------------------------
