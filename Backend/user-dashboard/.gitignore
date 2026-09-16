@@ -35,4 +35,4 @@ dist-ssr
 *.sqlite
 
 # Mine
-tools/
+tools*
