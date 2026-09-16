@@ -5,7 +5,7 @@ import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-
 import { CommandBarResponse } from './dto/command-bar.dto';
 import { ActionRailResponse } from './dto/action-rail.dto';
 
-@Controller('dashboard')
+@Controller('api/v1/dashboard')
 @UseGuards(JwtAuthGuard)
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
