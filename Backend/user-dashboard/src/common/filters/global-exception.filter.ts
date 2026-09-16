@@ -9,6 +9,7 @@ import {
 import { Request, Response } from 'express';
 import { randomUUID } from 'crypto';
 import { ERROR_CODES } from '../constants/system.constants';
+import { RedactedLoggingInterceptor } from '../interceptors/redacted-logging.interceptor';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -19,11 +20,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    // Extract or generate correlation ID
-    const correlationId =
-      (request?.headers?.['x-correlation-id'] as string) ||
-      (request?.headers?.['x-request-id'] as string) ||
-      `req-${randomUUID()}`;
+    // Use request-owned property from correlation middleware, with fallback if not initialized
+    const correlationId = request?.correlationId || `req-${randomUUID()}`;
 
     let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
     let errorCode: string = ERROR_CODES.ERR_INTERNAL_SERVER;
@@ -37,6 +35,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
+        errorCode = this.mapStatusToErrorCode(statusCode);
       } else if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
         const respObj = exceptionResponse as Record<string, unknown>;
         message = (respObj['message'] as string) || exception.message;
@@ -80,7 +79,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     };
 
     if (statusCode >= 500) {
-      this.logger.error(`[${correlationId}] Server Error: ${logDetails.exception}`, logDetails.stack);
+      const redactedException = RedactedLoggingInterceptor.redactString(logDetails.exception);
+      const redactedStack = RedactedLoggingInterceptor.redactString(logDetails.stack);
+      this.logger.error(`[${correlationId}] Server Error: ${redactedException}`, redactedStack);
     } else {
       this.logger.warn(`[${correlationId}] Client Warning (${statusCode}): ${message}`);
     }

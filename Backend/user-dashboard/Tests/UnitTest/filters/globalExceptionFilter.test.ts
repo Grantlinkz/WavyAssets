@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ArgumentsHost, HttpStatus } from '@nestjs/common';
+import { ArgumentsHost, HttpStatus, HttpException } from '@nestjs/common';
 import { GlobalExceptionFilter } from '../../../src/common/filters/global-exception.filter';
 import { InvalidHandoffTicketException } from '../../../src/common/exceptions';
 import { ERROR_CODES } from '../../../src/common/constants/system.constants';
@@ -14,6 +14,7 @@ describe('GlobalExceptionFilter', () => {
   let mockRequest: {
     url: string;
     method: string;
+    correlationId?: string;
     headers: Record<string, string>;
   };
   let mockHost: ArgumentsHost;
@@ -30,7 +31,8 @@ describe('GlobalExceptionFilter', () => {
     mockRequest = {
       url: '/api/v1/wallet/withdraw',
       method: 'POST',
-      headers: { 'x-correlation-id': 'test-corr-id-12345' },
+      correlationId: 'test-corr-id-12345',
+      headers: {},
     };
 
     mockHost = {
@@ -41,7 +43,7 @@ describe('GlobalExceptionFilter', () => {
     } as unknown as ArgumentsHost;
   });
 
-  it('formats HttpException into standard RFC 7807 envelope with correlationId', () => {
+  it('formats HttpException into custom standardized envelope with correlationId', () => {
     const exception = new InvalidHandoffTicketException('Ticket has expired');
 
     filter.catch(exception, mockHost);
@@ -59,6 +61,22 @@ describe('GlobalExceptionFilter', () => {
         message: 'Ticket has expired',
         path: '/api/v1/wallet/withdraw',
         correlationId: 'test-corr-id-12345',
+      }),
+    );
+  });
+
+  it('maps string HttpException responses to mapped errorCode rather than ERR_INTERNAL_SERVER', () => {
+    const exception = new HttpException('Validation query failed', HttpStatus.BAD_REQUEST);
+
+    filter.catch(exception, mockHost);
+
+    expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
+    expect(mockResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        statusCode: 400,
+        errorCode: ERROR_CODES.ERR_BAD_REQUEST,
+        message: 'Validation query failed',
       }),
     );
   });

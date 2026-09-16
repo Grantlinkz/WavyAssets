@@ -2,6 +2,7 @@ import {
   Injectable,
   Logger,
   UnauthorizedException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -35,12 +36,17 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {
-    this.handoffSecret =
-      this.configService.get<string>('HANDOFF_TICKET_SECRET') ||
-      'wavy_sovereign_cross_domain_handoff_ticket_secret_key_2026';
-    this.refreshSecret =
-      this.configService.get<string>('JWT_REFRESH_SECRET') ||
-      'wavy_dashboard_jwt_refresh_super_secret_institutional_key_2026';
+    const handoff = this.configService.get<string>('HANDOFF_TICKET_SECRET');
+    const refresh = this.configService.get<string>('JWT_REFRESH_SECRET');
+
+    if (!handoff || !refresh) {
+      throw new Error(
+        'HANDOFF_TICKET_SECRET and JWT_REFRESH_SECRET must be defined in configuration.',
+      );
+    }
+
+    this.handoffSecret = handoff;
+    this.refreshSecret = refresh;
   }
 
   /**
@@ -83,9 +89,12 @@ export class AuthService {
     );
     const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-    // 4. Atomically burn handoff ticket and rotate refresh token
-    await this.prisma.session.update({
-      where: { id: session.id },
+    // 4. Atomically burn handoff ticket conditioned on session ID and matching ticketHash
+    const updateResult = await this.prisma.session.updateMany({
+      where: {
+        id: session.id,
+        handoffTicketHash: ticketHash,
+      },
       data: {
         handoffTicketHash: null, // BURN SINGLE-USE TICKET
         refreshTokenHash: newRefreshTokenHash,
@@ -94,6 +103,12 @@ export class AuthService {
         userAgent: userAgent || session.userAgent,
       },
     });
+
+    if (updateResult.count === 0) {
+      throw new InvalidHandoffTicketException(
+        'Handoff ticket has already been consumed or invalidated.',
+      );
+    }
 
     // 5. Generate short-lived Access JWT (15 minutes)
     const payload = {
@@ -108,6 +123,8 @@ export class AuthService {
 
     const accessToken = await this.jwtService.signAsync(payload, {
       expiresIn: '15m',
+      issuer: 'wavyassets.com',
+      audience: 'wavyassets-client',
     });
 
     this.logger.log(`Session ticket successfully exchanged for user [${user.id}]`);
@@ -158,13 +175,21 @@ export class AuthService {
     );
     const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    await this.prisma.session.update({
-      where: { id: session.id },
+    // Atomically rotate conditioned on session ID and matching refreshTokenHash
+    const updateResult = await this.prisma.session.updateMany({
+      where: {
+        id: session.id,
+        refreshTokenHash,
+      },
       data: {
         refreshTokenHash: newRefreshTokenHash,
         expiresAt: newExpiresAt,
       },
     });
+
+    if (updateResult.count === 0) {
+      throw new UnauthorizedException('Session token was already rotated or invalidated');
+    }
 
     const payload = {
       sub: user.id,
@@ -178,6 +203,8 @@ export class AuthService {
 
     const accessToken = await this.jwtService.signAsync(payload, {
       expiresIn: '15m',
+      issuer: 'wavyassets.com',
+      audience: 'wavyassets-client',
     });
 
     return {
@@ -211,8 +238,11 @@ export class AuthService {
       await this.prisma.session.deleteMany({
         where: { refreshTokenHash },
       });
-    } catch {
-      // Ignore errors on logout
+    } catch (error) {
+      this.logger.error(
+        `Failed to revoke session on logout: ${error instanceof Error ? error.message : error}`,
+      );
+      throw new InternalServerErrorException('Failed to revoke session during logout');
     }
 
     return { success: true };

@@ -27,14 +27,40 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync<AuthenticatedUser>(token);
+      const payload = await this.jwtService.verifyAsync<Record<string, unknown>>(token, {
+        algorithms: ['HS256'],
+        issuer: 'wavyassets.com',
+        audience: 'wavyassets-client',
+      });
+
+      const id =
+        typeof payload.id === 'string' && payload.id.trim()
+          ? payload.id
+          : typeof payload.sub === 'string' && payload.sub.trim()
+            ? payload.sub
+            : null;
+      const email =
+        typeof payload.email === 'string' && payload.email.trim() ? payload.email : null;
+      const tier =
+        typeof payload.tier === 'string' && payload.tier.trim() ? payload.tier : null;
+      const kycTier =
+        typeof payload.kycTier === 'string' && payload.kycTier.trim() ? payload.kycTier : null;
+      const isCorporate =
+        typeof payload.isCorporate === 'boolean' ? payload.isCorporate : null;
+
+      if (!id || !email || !tier || !kycTier || isCorporate === null) {
+        throw new UnauthorizedException(
+          'Access token is missing required claims or contains invalid types',
+        );
+      }
+
       (request as Request & { user?: AuthenticatedUser }).user = {
-        id: payload.id || (payload as unknown as Record<string, string>)['sub'],
-        email: payload.email,
-        fullName: payload.fullName,
-        tier: payload.tier,
-        kycTier: payload.kycTier,
-        isCorporate: payload.isCorporate,
+        id,
+        email,
+        fullName: typeof payload.fullName === 'string' ? payload.fullName : null,
+        tier,
+        kycTier,
+        isCorporate,
       };
       return true;
     } catch {

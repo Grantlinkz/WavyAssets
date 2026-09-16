@@ -94,7 +94,7 @@ The backend is engineered for **10,000 active institutional and retail accounts*
 
 1. **Sub-30ms Aggregation Latency**: `GET /api/v1/dashboard/command-bar` responds in under 30ms under typical loads.
 2. **Sub-50ms View Hydration**: All vertical detail endpoints respond in under 50ms.
-3. **Sub-Second WebSocket Telemetry**: Ticker updates and net worth ticks pushed within 1 second of market change (throttled to max 1 update / 2000ms per client).
+3. **Sub-Second WebSocket Telemetry**: Ticker updates and net worth ticks pushed within 1 second of market change (throttled to max 1 update / 1000ms per client).
 4. **100% Ledger Balance Integrity**: Zero tolerance for unbalanced ledger entries ($\sum \text{Debits} + \sum \text{Credits} = 0$).
 5. **Zero Stack Trace Leaks**: Zero unhandled 500 error responses leaking stack traces, database schema, or internal file paths to clients.
 6. **100% Test Passing Rate**: All unit and integration test suites passing in CI/CD before any deployment.

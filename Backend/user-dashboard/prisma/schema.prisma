@@ -94,7 +94,7 @@ model LedgerAccount {
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   accountType String        // AVAILABLE_CASH | INVESTED_CAPITAL | STAKING_ESCROW | FEE_RECEIVABLE
   currency    String        @default("USD") // USD | EUR | CHF | USDC | BTC | ETH
-  balance     Float         @default(0.0)
+  balance     Decimal       @default(0.0)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
@@ -120,8 +120,11 @@ model LedgerEntry {
   transaction   LedgerTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
   accountId     String
   account       LedgerAccount     @relation(fields: [accountId], references: [id])
-  amount        Float             // Positive for Credit, Negative for Debit
+  amount        Decimal           // Positive for Credit, Negative for Debit
   createdAt     DateTime          @default(now())
+
+  @@index([accountId])
+  @@index([transactionId])
 }
 
 // ------------------------------------------------------------------------------
@@ -303,7 +306,6 @@ model VipCard {
   tier            String   @default("OBSIDIAN") // SILVER | OBSIDIAN | BLACK
   isFrozen        Boolean  @default(false)
   dailySpendLimit Float    @default(50000.0)
-  cvvEncrypted    String   // AES-256-GCM encrypted
   pinEncrypted    String   // AES-256-GCM encrypted
   shippingStatus  String?  // DELIVERED | IN_TRANSIT
   updatedAt       DateTime @updatedAt

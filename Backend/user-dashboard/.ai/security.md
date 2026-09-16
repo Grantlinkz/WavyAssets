@@ -57,7 +57,7 @@ To protect institutional capital against session hijacking, insider threats, and
 - **CORS Lockdown**:
   - Restrict CORS origins strictly to authorized frontend origins (e.g. `http://localhost:5173`, `http://localhost:5174`, and production domain).
   - Restrict allowed methods to `GET, POST, PUT, PATCH, DELETE`.
-  - Restrict allowed headers to `Authorization, Content-Type, X-Requested-With, X-Correlation-ID`.
+  - Restrict allowed headers to `Authorization, Content-Type, X-Correlation-ID, X-Request-ID`.
 - **Rate Limiting (`@nestjs/throttler`)**:
   - Public endpoints (`/api/v1/auth/*`): 10 requests per minute per IP.
   - Authenticated endpoints: 50 requests per second per user.

@@ -48,7 +48,7 @@ Code-based error handling ensures that errors are detected, validated, and throw
 4. **Third-Party Service & Market Feed Resilience**:
    - External APIs (CoinGecko, Pyth, Hagerty index, Web3 RPCs, DHL courier API) must be wrapped in `try/catch` blocks with:
      - Configurable timeouts (max 3000ms).
-     - Automatic fallback to cached prices or mock feeds if the external service fails or rate-limits.
+     - Environment-aware fallback: Mock feeds are strictly permitted only in development and test environments (`NODE_ENV !== 'production'`). In production, services must use freshness-bounded cached prices or fail closed with a semantic exception (`ServiceUnavailableException` or domain exception).
      - Circuit breaker pattern to prevent cascading timeouts.
 5. **Validation & Invariant Assertions**:
    - Enforce preconditions at the beginning of service methods. If a precondition fails, immediately throw the corresponding domain exception before mutating any state.
@@ -70,8 +70,9 @@ Global error handling guarantees that no matter what runtime failure occurs, the
      - Internal server file paths (`c:\...` or `/usr/src/...`).
      - Encryption keys, hashes, or bearer tokens.
    - For all uncaught 500 errors, the client receives a generic, professional message: `"An unexpected error occurred while processing your request. Please quote the reference ID to support."`
-3. **Unified Standardized Response Envelope (RFC 7807 Compliant)**:
-   - All error responses must adhere strictly to the following JSON schema:
+3. **Unified Standardized Response Envelope (Custom Error Contract)**:
+   - Content-Type: `application/json`
+   - All error responses adhere strictly to the following custom JSON schema:
    ```json
    {
      "success": false,

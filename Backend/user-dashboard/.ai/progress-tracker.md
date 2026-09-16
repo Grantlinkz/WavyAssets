@@ -12,19 +12,20 @@
 
 ### [x] Sprint 1: Core Foundation, Prisma Schema & Auth Handoff Engine
 - [x] Initialize NestJS 11 project scaffold, `tsconfig.json`, `tsconfig.build.json`, and `nest-cli.json`.
-- [x] Configure `Dockerfile` (multi-stage Alpine runner) and `docker-compose.yml` (Port 4001:4000).
-- [x] Configure Vitest 3.0 test runner (`vitest.config.ts`) and Supertest integration setup.
+- [x] Configure `Dockerfile` (multi-stage Alpine runner, non-root `node` user) and `docker-compose.yml` (dynamic env variables, zero committed secrets).
+- [x] Configure Vitest 3.0 test runner (`vitest.config.ts`) and ESLint 9 (`eslint.config.mjs`).
 - [x] Implement complete Prisma Schema in `prisma/schema.prisma` covering:
   - Identity & Security (`User`, `Session`, `WebAuthnCredential`, `WhitelistDestination`).
-  - Double-Entry Ledger (`LedgerAccount`, `LedgerTransaction`, `LedgerEntry`).
-  - 7 Asset Verticals (`CryptoHolding`, `DcaSchedule`, `StockPosition`, `StockOrder`, `AiFundPosition`, `AiRationaleLog`, `RealEstateProperty`, `RealEstateShare`, `RealEstateOtcOrder`, `ExoticCar`, `CarShare`, `DriveBooking`, `VipCard`).
+  - Double-Entry Ledger (`LedgerAccount`, `LedgerTransaction`, `LedgerEntry` with `Decimal` balances and composite indices).
+  - 7 Asset Verticals (`CryptoHolding`, `DcaSchedule`, `StockPosition`, `StockOrder`, `AiFundPosition`, `AiRationaleLog`, `RealEstateProperty`, `RealEstateShare`, `RealEstateOtcOrder`, `ExoticCar`, `CarShare`, `DriveBooking`, `VipCard` without stored CVVs).
   - Compliance (`KycDocument`, `AuditLog`).
-- [x] Generate initial database migrations and seed script (`prisma/seed.ts`).
-- [x] Implement `src/common/filters/global-exception.filter.ts` (sanitized RFC 7807 envelope, zero stack traces, correlation IDs).
-- [x] Implement `src/common/interceptors/redacted-logging.interceptor.ts` (PII and credentials redaction).
-- [x] Implement `src/modules/auth/` with `AuthService` and `AuthController` for single-use handoff ticket exchange (`POST /api/v1/auth/exchange-ticket`), HMAC-SHA256 verification, and JWT issuance.
-- [x] Implement `JwtAuthGuard` and `@CurrentUser()` decorator.
-- [x] Establish automated unit test suite in `Tests/UnitTest/` (24/24 passing tests: ticket cryptography, session revocation, auth guard, custom exceptions, global exception filter).
+- [x] Generate initial database migrations and seed script (`prisma/seed.ts`) with production execution guard and non-static credentials.
+- [x] Implement `src/common/filters/global-exception.filter.ts` (custom standardized envelope, string error code mapping, 5xx exception and stack trace redaction, request-owned correlation ID).
+- [x] Implement `src/common/middleware/correlation.middleware.ts` generating UUID v4 on `req.correlationId`.
+- [x] Implement `src/common/interceptors/redacted-logging.interceptor.ts` (PII and credentials redaction with lowercase key normalization).
+- [x] Implement `src/modules/auth/` with `AuthService` and `AuthController` for single-use handoff ticket exchange (`POST /api/v1/auth/exchange-ticket`), HMAC-SHA256 verification, atomic `updateMany` token consumption, and JWT issuance with issuer/audience.
+- [x] Implement `JwtAuthGuard` with HS256 algorithm whitelisting, issuer/audience checks, and strict claim presence/type validation.
+- [x] Establish automated unit test suite in `Tests/UnitTest/` (30/30 passing tests: ticket cryptography, atomic session revocation, auth guard claims, custom exceptions, global exception filter, AES envelope validation).
 
 ### [ ] Sprint 2: Universal Command Bar Aggregator & Real-Time WebSocket Gateway
 - [ ] Implement `DashboardModule` with `DashboardService` and `DashboardController` (`GET /api/v1/dashboard/command-bar`).

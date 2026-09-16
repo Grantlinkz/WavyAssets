@@ -1,4 +1,5 @@
 import * as crypto from 'crypto';
+import { BadRequestException } from '@nestjs/common';
 
 export class CryptoUtils {
   /**
@@ -51,7 +52,7 @@ export class CryptoUtils {
   public static decryptAes256Gcm(payload: string, keyHex: string): string {
     const parts = payload.split(':');
     if (parts.length !== 3) {
-      throw new Error('Malformed AES-256-GCM ciphertext envelope');
+      throw new BadRequestException('Malformed AES-256-GCM ciphertext envelope');
     }
 
     const [ivHex, authTagHex, encryptedHex] = parts;

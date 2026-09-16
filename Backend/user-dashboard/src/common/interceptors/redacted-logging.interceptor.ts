@@ -19,10 +19,7 @@ export class RedactedLoggingInterceptor implements NestInterceptor {
     const req = http.getRequest<Request>();
     const res = http.getResponse<Response>();
 
-    const correlationId =
-      (req?.headers?.['x-correlation-id'] as string) ||
-      (req?.headers?.['x-request-id'] as string) ||
-      `req-${randomUUID()}`;
+    const correlationId = req?.correlationId || `req-${randomUUID()}`;
 
     if (res?.setHeader) {
       res.setHeader('X-Correlation-ID', correlationId);
@@ -50,6 +47,18 @@ export class RedactedLoggingInterceptor implements NestInterceptor {
     );
   }
 
+  public static redactString(str: string | undefined): string {
+    if (!str) return '';
+    return str
+      // Bearer tokens and JWTs
+      .replace(/Bearer\s+[A-Za-z0-9-_=.]+/gi, 'Bearer [REDACTED]')
+      .replace(/eyJ[A-Za-z0-9-_]+\.eyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_.]+/g, '[REDACTED_JWT]')
+      // Password / secret / token query params or json fields
+      .replace(/("(?:password|passphrase|token|secret|refreshToken|accessToken|cvv|pin)":\s*)"[^"]+"/gi, '$1"[REDACTED]"')
+      // Email addresses
+      .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[REDACTED_EMAIL]');
+  }
+
   public static redactObject(obj: unknown): unknown {
     if (!obj || typeof obj !== 'object') return obj;
 
@@ -60,12 +69,15 @@ export class RedactedLoggingInterceptor implements NestInterceptor {
       'password',
       'passphrase',
       'ticket',
-      'refreshToken',
-      'accessToken',
+      'refreshtoken',
+      'accesstoken',
       'cvv',
       'pin',
-      'cvvEncrypted',
-      'pinEncrypted',
+      'cvvencrypted',
+      'pinencrypted',
+      'secret',
+      'token',
+      'bearer',
     ];
 
     if (Array.isArray(obj)) {
@@ -78,6 +90,8 @@ export class RedactedLoggingInterceptor implements NestInterceptor {
         result[key] = '[REDACTED]';
       } else if (typeof value === 'object' && value !== null) {
         result[key] = this.redactObject(value);
+      } else if (typeof value === 'string') {
+        result[key] = this.redactString(value);
       } else {
         result[key] = value;
       }

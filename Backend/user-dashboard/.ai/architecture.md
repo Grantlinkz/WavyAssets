@@ -80,7 +80,7 @@ Users authenticate on the marketing landing page (`Frontend/landing-page` -> `Ba
 ```
 [Landing Page Auth Flow]
        │ (Generates handoffTicket: cryptographically random 32-byte hex)
-       ├──► Stores SHA-256 hash in Session.handoffTicketHash (expires in 120s)
+       ├──► Stores HMAC-SHA256 hash (UTF-8 raw ticket string input, lowercase hex output) in Session.handoffTicketHash (expires in 120s) using shared HANDOFF_TICKET_SECRET
        ▼
 [Redirect: http://localhost:5174/auth/callback?ticket=<rawTicket>]
        │
@@ -89,10 +89,9 @@ Users authenticate on the marketing landing page (`Frontend/landing-page` -> `Ba
        │ Body: { ticket: "<rawTicket>" }
        ▼
 [Backend user-dashboard AuthService.exchangeTicket()]
-       ├── 1. Compute ticketHash = HMAC-SHA256(rawTicket, SECRET)
-       ├── 2. Query Session where handoffTicketHash = ticketHash AND expiresAt > NOW()
-       ├── 3. Transactionally burn ticket: SET handoffTicketHash = NULL
-       ├── 4. Generate Dashboard Access Token (JWT, 15-minute expiry)
+       ├── 1. Compute ticketHash = HMAC-SHA256(rawTicket, HANDOFF_TICKET_SECRET) in lowercase hex
+       ├── 2. Atomically query and burn Session where id = sessionId AND handoffTicketHash = ticketHash
+       ├── 3. Generate Dashboard Access Token (JWT, 15-minute expiry)
        ├── 5. Generate Refresh Token, persist hash in Session.refreshTokenHash
        └── 6. Return AuthExchangeResponse { success: true, accessToken, user: { id, email, fullName, tier, kycTier } }
 ```
@@ -132,7 +131,7 @@ The WebSocket gateway enables real-time synchronization between the backend and 
 - **Broadcast Events**:
   - `portfolio:tick`: Pushes updated consolidated net worth and 24h P&L whenever spot prices update. Throttled to max 1 update / 2000ms per client.
   - `allocation:rebalanced`: Dispatched immediately when an order, trade, deposit, or dividend execution alters asset weights.
-  - `telemetry:orderBook`: Pushes Level-2 order book depth for subscribed stock/crypto symbols.
+  - `orderbook:depth`: Pushes Level-2 order book depth for subscribed stock/crypto symbols.
   - `security:alert`: High-priority alert dispatched on session termination or quarantine state changes.
 
 ---
@@ -144,5 +143,5 @@ The WebSocket gateway enables real-time synchronization between the backend and 
 3. **Double-Spend & Overdraw Prevention**: Any trade, order, or withdrawal must atomically reserve funds from `AVAILABLE_CASH` to `ESCROW` or `INVESTED_CAPITAL` within a serializable database transaction.
 4. **Two-Tier Error Handling**:
    - **Code-Based**: Every service and controller must throw semantic, strongly-typed NestJS exceptions (`BadRequestException`, `NotFoundException`, `ForbiddenException`, etc.) or custom domain exceptions.
-   - **Global Filter**: `GlobalExceptionFilter` must intercept all uncaught exceptions, log the full internal diagnostic with a unique `correlationId`, and return a sanitized, consistent RFC 7807 response to the client with zero stack trace or internal database leakage.
+   - **Global Filter**: `GlobalExceptionFilter` must intercept all uncaught exceptions, log the full internal diagnostic with a unique `correlationId`, and return a sanitized, consistent custom unified JSON response envelope to the client with zero stack trace or internal database leakage.
 5. **Redacted Logging**: Sensitive values (passwords, tokens, tickets, CVVs, PINs, full IBANs, email addresses) must never appear in application logs or WebSocket payloads.

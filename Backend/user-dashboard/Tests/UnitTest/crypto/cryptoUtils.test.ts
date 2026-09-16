@@ -60,4 +60,13 @@ describe('CryptoUtils', () => {
 
     expect(() => CryptoUtils.decryptAes256Gcm(tamperedCiphertext, testKeyHex)).toThrow();
   });
+
+  it('throws BadRequestException if ciphertext envelope is malformed (not 3 colon-separated parts)', () => {
+    expect(() => CryptoUtils.decryptAes256Gcm('not-a-valid-envelope', testKeyHex)).toThrow(
+      'Malformed AES-256-GCM ciphertext envelope',
+    );
+    expect(() => CryptoUtils.decryptAes256Gcm('only:twoparts', testKeyHex)).toThrow(
+      'Malformed AES-256-GCM ciphertext envelope',
+    );
+  });
 });

@@ -14,6 +14,7 @@ describe('AuthService — Ticket Exchange & Session Lifecycle', () => {
       findFirst: ReturnType<typeof vi.fn>;
       findUnique: ReturnType<typeof vi.fn>;
       update: ReturnType<typeof vi.fn>;
+      updateMany: ReturnType<typeof vi.fn>;
       deleteMany: ReturnType<typeof vi.fn>;
     };
   };
@@ -33,6 +34,7 @@ describe('AuthService — Ticket Exchange & Session Lifecycle', () => {
         findFirst: vi.fn(),
         findUnique: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         deleteMany: vi.fn(),
       },
     };
@@ -60,7 +62,7 @@ describe('AuthService — Ticket Exchange & Session Lifecycle', () => {
     const rawTicket = 'sovereign-handoff-ticket-xyz789';
     const computedHash = CryptoUtils.hashHmacSha256(rawTicket, handoffSecret);
 
-    it('successfully exchanges a valid single-use ticket and burns it', async () => {
+    it('successfully exchanges a valid single-use ticket and burns it atomically', async () => {
       const mockUser = {
         id: 'usr-999',
         email: 'founder@wavyassets.com',
@@ -80,7 +82,7 @@ describe('AuthService — Ticket Exchange & Session Lifecycle', () => {
       };
 
       mockPrisma.session.findFirst.mockResolvedValue(mockSession);
-      mockPrisma.session.update.mockResolvedValue({ id: 'sess-001' });
+      mockPrisma.session.updateMany.mockResolvedValue({ count: 1 });
 
       const result = await authService.exchangeTicket(rawTicket, '127.0.0.1', 'Mozilla/5.0');
 
@@ -95,10 +97,10 @@ describe('AuthService — Ticket Exchange & Session Lifecycle', () => {
         isCorporate: true,
       });
 
-      // Verify single-use ticket burning (handoffTicketHash set to null)
-      expect(mockPrisma.session.update).toHaveBeenCalledWith(
+      // Verify atomic single-use ticket burning conditioned on session id and ticketHash
+      expect(mockPrisma.session.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { id: 'sess-001' },
+          where: { id: 'sess-001', handoffTicketHash: computedHash },
           data: expect.objectContaining({
             handoffTicketHash: null,
             refreshTokenHash: expect.any(String),
@@ -111,6 +113,21 @@ describe('AuthService — Ticket Exchange & Session Lifecycle', () => {
       mockPrisma.session.findFirst.mockResolvedValue(null);
 
       await expect(authService.exchangeTicket('invalid-or-expired-ticket')).rejects.toThrow(
+        InvalidHandoffTicketException,
+      );
+    });
+
+    it('throws InvalidHandoffTicketException when ticket was consumed concurrently (count === 0)', async () => {
+      const mockSession = {
+        id: 'sess-001',
+        handoffTicketHash: computedHash,
+        expiresAt: new Date(Date.now() + 60000),
+        user: { id: 'usr-999', isActive: true },
+      };
+      mockPrisma.session.findFirst.mockResolvedValue(mockSession);
+      mockPrisma.session.updateMany.mockResolvedValue({ count: 0 }); // Concurrent consumer won
+
+      await expect(authService.exchangeTicket(rawTicket)).rejects.toThrow(
         InvalidHandoffTicketException,
       );
     });
@@ -132,7 +149,7 @@ describe('AuthService — Ticket Exchange & Session Lifecycle', () => {
     const rawRefreshToken = 'existing-refresh-token-hex';
     const computedHash = CryptoUtils.hashHmacSha256(rawRefreshToken, refreshSecret);
 
-    it('successfully rotates refresh token and returns fresh access token', async () => {
+    it('successfully rotates refresh token atomically and returns fresh access token', async () => {
       const mockUser = {
         id: 'usr-777',
         email: 'investor@wavyassets.com',
@@ -152,14 +169,37 @@ describe('AuthService — Ticket Exchange & Session Lifecycle', () => {
       };
 
       mockPrisma.session.findUnique.mockResolvedValue(mockSession);
-      mockPrisma.session.update.mockResolvedValue({ id: 'sess-003' });
+      mockPrisma.session.updateMany.mockResolvedValue({ count: 1 });
 
       const result = await authService.refreshTokens(rawRefreshToken);
 
       expect(result.accessToken).toBe('mock-jwt-access-token-15m');
       expect(result.refreshToken).toBeDefined();
       expect(result.refreshToken).not.toBe(rawRefreshToken); // Rotated
-      expect(mockPrisma.session.update).toHaveBeenCalled();
+      expect(mockPrisma.session.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'sess-003', refreshTokenHash: computedHash },
+          data: expect.objectContaining({
+            refreshTokenHash: expect.any(String),
+          }),
+        }),
+      );
+    });
+
+    it('throws UnauthorizedException when token was rotated concurrently (count === 0)', async () => {
+      const mockSession = {
+        id: 'sess-003',
+        refreshTokenHash: computedHash,
+        expiresAt: new Date(Date.now() + 100000),
+        user: { id: 'usr-777', isActive: true },
+      };
+
+      mockPrisma.session.findUnique.mockResolvedValue(mockSession);
+      mockPrisma.session.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(authService.refreshTokens(rawRefreshToken)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('throws UnauthorizedException when refresh token is missing or session expired', async () => {
@@ -179,6 +219,12 @@ describe('AuthService — Ticket Exchange & Session Lifecycle', () => {
       const result = await authService.logout('sample-token');
       expect(result).toEqual({ success: true });
       expect(mockPrisma.session.deleteMany).toHaveBeenCalled();
+    });
+
+    it('propagates error when deleteMany fails during logout', async () => {
+      mockPrisma.session.deleteMany.mockRejectedValue(new Error('DB failure'));
+
+      await expect(authService.logout('sample-token')).rejects.toThrow();
     });
   });
 });

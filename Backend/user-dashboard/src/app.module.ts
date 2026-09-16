@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
@@ -6,6 +6,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { RedactedLoggingInterceptor } from './common/interceptors/redacted-logging.interceptor';
 import { TransformResponseInterceptor } from './common/interceptors/transform-response.interceptor';
+import { CorrelationMiddleware } from './common/middleware/correlation.middleware';
 
 @Module({
   imports: [
@@ -31,4 +32,8 @@ import { TransformResponseInterceptor } from './common/interceptors/transform-re
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(CorrelationMiddleware).forRoutes('*');
+  }
+}

@@ -60,6 +60,11 @@ describe('JwtAuthGuard', () => {
     const result = await guard.canActivate(context);
 
     expect(result).toBe(true);
+    expect(mockJwtService.verifyAsync).toHaveBeenCalledWith('valid-jwt-token', {
+      algorithms: ['HS256'],
+      issuer: 'wavyassets.com',
+      audience: 'wavyassets-client',
+    });
     expect(reqObj['user']).toEqual({
       id: 'usr-12345',
       email: 'investor@wavyassets.com',
@@ -68,5 +73,19 @@ describe('JwtAuthGuard', () => {
       kycTier: 'TIER_2',
       isCorporate: false,
     });
+  });
+
+  it('throws UnauthorizedException when required claim is missing or wrong type', async () => {
+    // Missing kycTier and isCorporate
+    const invalidPayload = {
+      id: 'usr-12345',
+      email: 'investor@wavyassets.com',
+      tier: 'PRIVATE_WEALTH',
+    };
+
+    mockJwtService.verifyAsync.mockResolvedValue(invalidPayload);
+    const context = createMockContext({ authorization: 'Bearer bad-claims-jwt' });
+
+    await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
   });
 });

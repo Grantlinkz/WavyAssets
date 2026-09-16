@@ -9,12 +9,20 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
   imports: [
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        secret:
-          configService.get<string>('JWT_ACCESS_SECRET') ||
-          'wavy_dashboard_jwt_access_super_secret_institutional_key_2026',
-        signOptions: { expiresIn: '15m' },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_ACCESS_SECRET');
+        if (!secret) {
+          throw new Error('JWT_ACCESS_SECRET environment variable is missing or empty');
+        }
+        return {
+          secret,
+          signOptions: {
+            expiresIn: '15m',
+            issuer: 'wavyassets.com',
+            audience: 'wavyassets-client',
+          },
+        };
+      },
       inject: [ConfigService],
     }),
   ],

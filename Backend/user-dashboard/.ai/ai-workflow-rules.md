@@ -74,7 +74,7 @@ All implementation work follows the structured 6-sprint roadmap defined in `tool
 3. **48-Hour Quarantine Enforcement**: No withdrawal to an address with `status === 'QUARANTINE'` or `NOW() < quarantineUntil` shall ever be permitted by the query engine.
 4. **Comprehensive Error Handling**:
    - Every service and controller must throw semantic NestJS HTTP exceptions (`BadRequestException`, `NotFoundException`, `ForbiddenException`, etc.) or custom domain exceptions.
-   - `GlobalExceptionFilter` must intercept all uncaught exceptions, sanitize payloads, and return a standardized RFC 7807 response envelope without leaking stack traces or database schema details.
+   - `GlobalExceptionFilter` must intercept all uncaught exceptions, sanitize payloads, and return a standardized custom unified JSON response envelope without leaking stack traces or database schema details.
 5. **Redacted Logging**: All emitted logs must redact PII, authorization tokens, secrets, passphrases, and private credentials.
 6. **Continuous Testing**: Unit and Integration tests must be created and updated in `Tests/UnitTest/<test-name>` and `Tests/IntegrationTest/<test-name>`.
 7. **Zero Plaintext Sensitive Storage**: Passphrases (Argon2id), session tokens (HMAC-SHA256), PII/Card Data (AES-256-GCM).

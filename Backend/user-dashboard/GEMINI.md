@@ -10,17 +10,17 @@ All AI agents and engineers operating within this repository must strictly adher
 
 Before writing any code, modifying schemas, or making architectural decisions, read the following system context files in order:
 
-1. [`.ai/agents.md`](file:///c:/Users/ANIK/Desktop/WavyAssets/Backend/user-dashboard/.ai/agents.md) — AI agent persona (Principal Backend Systems & Quantitative Financial Engineer), approved tools, prompt-planning protocol, and execution guardrails.
-2. [`.ai/project-overview.md`](file:///c:/Users/ANIK/Desktop/WavyAssets/Backend/user-dashboard/.ai/project-overview.md) — Product mission, target capacity (10,000 active institutional accounts), 7 sovereign asset verticals, cross-domain handoff, and scope.
-3. [`.ai/architecture.md`](file:///c:/Users/ANIK/Desktop/WavyAssets/Backend/user-dashboard/.ai/architecture.md) — Modular NestJS 11 architecture, directory boundaries, Prisma relational schema, and Socket.IO real-time gateway (`/ws/portfolio`).
-4. [`.ai/code-standards.md`](file:///c:/Users/ANIK/Desktop/WavyAssets/Backend/user-dashboard/.ai/code-standards.md) — TypeScript strict standards, class-validator DTOs, Prisma `$transaction` guidelines, and testing requirements.
-5. [`.ai/security.md`](file:///c:/Users/ANIK/Desktop/WavyAssets/Backend/user-dashboard/.ai/security.md) — Threat model, zero-trust cryptographic hygiene (Argon2id, HMAC-SHA256, AES-256-GCM), 48-hour time-lock, and rate limiting.
-6. [`.ai/ai-workflow-rules.md`](file:///c:/Users/ANIK/Desktop/WavyAssets/Backend/user-dashboard/.ai/ai-workflow-rules.md) — 6-Sprint implementation roadmap, human-in-the-loop approval protocol, and conventional commit governance.
-7. [`.ai/ui-context.md`](file:///c:/Users/ANIK/Desktop/WavyAssets/Backend/user-dashboard/.ai/ui-context.md) — API data contracts, command bar aggregate response, color tokens, and RFC 7807 error envelopes.
-8. [`.ai/progress-tracker.md`](file:///c:/Users/ANIK/Desktop/WavyAssets/Backend/user-dashboard/.ai/progress-tracker.md) — Current sprint status, task checklists, and historical execution records.
+1. [`.ai/agents.md`](.ai/agents.md) — AI agent persona (Principal Backend Systems & Quantitative Financial Engineer), approved tools, prompt-planning protocol, and execution guardrails.
+2. [`.ai/project-overview.md`](.ai/project-overview.md) — Product mission, target capacity (10,000 active institutional accounts), 7 sovereign asset verticals, cross-domain handoff, and scope.
+3. [`.ai/architecture.md`](.ai/architecture.md) — Modular NestJS 11 architecture, directory boundaries, Prisma relational schema, and Socket.IO real-time gateway (`/ws/portfolio`).
+4. [`.ai/code-standards.md`](.ai/code-standards.md) — TypeScript strict standards, class-validator DTOs, Prisma `$transaction` guidelines, and testing requirements.
+5. [`.ai/security.md`](.ai/security.md) — Threat model, zero-trust cryptographic hygiene (Argon2id, HMAC-SHA256, AES-256-GCM), 48-hour time-lock, and rate limiting.
+6. [`.ai/ai-workflow-rules.md`](.ai/ai-workflow-rules.md) — 6-Sprint implementation roadmap, human-in-the-loop approval protocol, and conventional commit governance.
+7. [`.ai/ui-context.md`](.ai/ui-context.md) — API data contracts, command bar aggregate response, color tokens, and custom error envelopes.
+8. [`.ai/progress-tracker.md`](.ai/progress-tracker.md) — Current sprint status, task checklists, and historical execution records.
 
 Additionally, consult the foundational architectural blueprint:
-- [`tools/IMPLEMENTATION_STRATEGY.md`](file:///c:/Users/ANIK/Desktop/WavyAssets/Backend/user-dashboard/tools/IMPLEMENTATION_STRATEGY.md) — Comprehensive technical implementation blueprint and database specifications.
+- [`tools/IMPLEMENTATION_STRATEGY.md`](tools/IMPLEMENTATION_STRATEGY.md) — Comprehensive technical implementation blueprint and database specifications.
 
 ---
 

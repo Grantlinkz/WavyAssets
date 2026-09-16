@@ -8,6 +8,24 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
+  // Production Environment Secrets Validation
+  if (process.env.NODE_ENV === 'production') {
+    const requiredKeys = [
+      'JWT_ACCESS_SECRET',
+      'JWT_REFRESH_SECRET',
+      'HANDOFF_TICKET_SECRET',
+      'ENCRYPTION_KEY_HEX',
+    ];
+    for (const key of requiredKeys) {
+      const val = process.env[key];
+      if (!val || val.trim() === '' || val.startsWith('CHANGE_ME_') || val.includes('insecure')) {
+        throw new Error(
+          `FATAL: Production environment variable ${key} is missing, empty, or contains an insecure placeholder.`,
+        );
+      }
+    }
+  }
+
   // Security Headers
   app.use(
     helmet({
@@ -32,7 +50,7 @@ async function bootstrap() {
       if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
         callback(null, true);
       } else {
-        callback(new Error(`Origin ${origin} not permitted by CORS policy.`));
+        callback(null, false);
       }
     },
     credentials: true,
