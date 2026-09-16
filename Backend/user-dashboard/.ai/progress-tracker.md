@@ -2,7 +2,7 @@
 
 ## Project Status
 
-- **Current Phase**: Sprint 4 Completed / Sprint 5 (VIP Cards, Compliance Dossiers & 48-Hour Security Time-Lock) Ready for Execution
+- **Current Phase**: Sprint 5 Completed / Sprint 6 (End-to-End Monorepo Integration, Hardening & Enterprise Deployment) Ready for Execution
 - **Overall Roadmap**: 6 Sprints defined in `tools/IMPLEMENTATION_STRATEGY.md`
 - **Target Platform**: NestJS 11 + TypeScript 5.7+ (Strict Mode) + Prisma ORM 6.4+ (SQLite Dev / PostgreSQL Prod)
 
@@ -78,21 +78,25 @@
   - Strict concurrency locking on drive slots preventing double-booking (`ConflictException` HTTP 409).
 - [x] Establish automated tests (48 tests passing across Sprint 4; 153/153 total passing tests across 23 test suites).
 
-### [ ] Sprint 5: VIP Cards, Compliance Dossiers & 48-Hour Security Time-Lock
-- [ ] Build `VipCardsModule` (`/api/v1/vip-cards`):
-  - Tier progression metrics (`Silver`, `Obsidian`, `Black Fiduciary`).
-  - Card controls (instant freeze/unfreeze, spending limits).
-  - WebAuthn/2FA-guarded ephemeral 60-second CVV/PIN reveal (AES-256-GCM decrypted on-demand).
-  - Courier dispatch tracking (FedEx/DHL API integration/mock).
-- [ ] Build `ComplianceModule` (`/api/v1/compliance`):
-  - Tiered KYC verification engine (`TIER_1`, `TIER_2`, `TIER_3`).
-  - Encrypted dossier document upload with virus scanning mock and audit logging.
-  - Form 8949 / Schedule D annual tax bundle generator (PDF/CSV export).
-- [ ] Build `SecurityModule` (`/api/v1/security`):
-  - Remote session management and instant revocation of all other sessions.
-  - WebAuthn FIDO2 ceremony (registration challenge, assertion verification).
+### [x] Sprint 5: VIP Cards, Compliance Dossiers & 48-Hour Security Time-Lock
+- [x] Build `VipCardsModule` (`/api/v1/vip-cards`):
+  - Tier progression metrics (`Silver`, `Obsidian`, `Black Fiduciary`) computed against portfolio AUM.
+  - Card controls (instant freeze/unfreeze, card type, spending limits with tier boundaries).
+  - WebAuthn/2FA-guarded ephemeral 60-second dynamic CVV & PIN reveal (AES-256-GCM decrypted on-demand).
+  - Bespoke fee schedules, privileges, and dedicated concierge dispatch ticketing.
+  - Courier dispatch tracking with FedEx/DHL transit milestones.
+- [x] Build `ComplianceModule` (`/api/v1/compliance`):
+  - Tiered KYC verification engine (`TIER_1`, `TIER_2`, `TIER_3`) with daily volume caps ($10k / $250k / Unlimited).
+  - Encrypted dossier document upload with simulated malware screening and audit logging.
+  - KYC tier upgrade evaluation engine verifying prerequisite document presence.
+  - Form 8949 / Schedule D annual tax bundle generator (CSV and structured JSON export).
+  - Paginated compliance audit log retrieval.
+- [x] Build `SecurityModule` (`/api/v1/security`):
+  - Remote session management and instant atomic revocation of all other concurrent sessions.
+  - WebAuthn FIDO2 ceremony (registration challenge/verification, assertion verification, key management).
   - Inviolable 48-Hour Withdrawal Whitelist Time-Lock state machine with hardware signature counting.
-- [ ] Establish automated tests (25 tests passing: time-lock rejection, WebAuthn attestation, CVV encryption).
+  - Multi-sig co-signing workflow enforcing that destinations cannot be unlocked early even with complete signatures.
+- [x] Establish automated tests (52 new tests added across Sprint 5; 205/205 total passing tests across 29 test suites).
 
 ### [ ] Sprint 6: End-to-End Monorepo Integration, Hardening & Enterprise Deployment
 - [ ] Wire `Frontend/user-dashboard` API clients directly to `Backend/user-dashboard` endpoints.
