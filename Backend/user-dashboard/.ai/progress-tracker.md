@@ -2,7 +2,7 @@
 
 ## Project Status
 
-- **Current Phase**: Sprint 1 Completed / Sprint 2 (Universal Command Bar Aggregator & Real-Time WebSocket Gateway) Ready for Execution
+- **Current Phase**: Sprint 2 Completed / Sprint 3 (Liquid Asset Engines: Crypto, Stocks & Double-Entry Wallet) Ready for Execution
 - **Overall Roadmap**: 6 Sprints defined in `tools/IMPLEMENTATION_STRATEGY.md`
 - **Target Platform**: NestJS 11 + TypeScript 5.7+ (Strict Mode) + Prisma ORM 6.4+ (SQLite Dev / PostgreSQL Prod)
 
@@ -27,14 +27,14 @@
 - [x] Implement `JwtAuthGuard` with HS256 algorithm whitelisting, issuer/audience checks, and strict claim presence/type validation.
 - [x] Establish automated unit test suite in `Tests/UnitTest/` (30/30 passing tests: ticket cryptography, atomic session revocation, auth guard claims, custom exceptions, global exception filter, AES envelope validation).
 
-### [ ] Sprint 2: Universal Command Bar Aggregator & Real-Time WebSocket Gateway
-- [ ] Implement `DashboardModule` with `DashboardService` and `DashboardController` (`GET /api/v1/dashboard/command-bar`).
-- [ ] Build multi-asset aggregation pipeline computing consolidated net worth and allocation weights across all 7 asset classes in <30ms.
-- [ ] Implement dynamic returns calculation engine for 1D, 1W, 1M, 1Y, and ALL timeframes.
-- [ ] Implement Socket.IO Gateway (`/ws/portfolio`) in `src/modules/websocket/` with authenticated user room joining (`user:<userId>`).
-- [ ] Implement broadcast mechanisms for `portfolio:tick` (throttled to 2000ms max frequency) and `allocation:rebalanced`.
-- [ ] Implement Global Action Rail check endpoints (KYC tier limits, deposit/withdraw eligibility).
-- [ ] Establish unit and integration tests (20 tests passing: aggregation math, returns calculations, WebSocket rooms).
+### [x] Sprint 2: Universal Command Bar Aggregator & Real-Time WebSocket Gateway
+- [x] Implement `DashboardModule` with `DashboardService` and `DashboardController` (`GET /api/v1/dashboard/command-bar`).
+- [x] Build multi-asset aggregation pipeline computing consolidated net worth and allocation weights across all 7 asset classes in <30ms.
+- [x] Implement dynamic returns calculation engine for 1D, 1W, 1M, 1Y, and ALL timeframes.
+- [x] Implement Socket.IO Gateway (`/ws/portfolio`) in `src/modules/websocket/` with authenticated user room joining (`user:<userId>`).
+- [x] Implement broadcast mechanisms for `portfolio:tick` (throttled to 2000ms max frequency) and `allocation:rebalanced`.
+- [x] Implement Global Action Rail check endpoints (KYC tier limits, deposit/withdraw eligibility).
+- [x] Establish unit and integration tests (18 tests passing: aggregation math, returns calculations, latency SLAs, WebSocket rooms, throttling, 48/48 total passing tests).
 
 ### [ ] Sprint 3: Liquid Asset Engines (Crypto, Stocks & Double-Entry Wallet)
 - [ ] Build `CryptoModule` (`/api/v1/crypto`):
