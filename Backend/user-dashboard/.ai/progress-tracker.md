@@ -2,7 +2,7 @@
 
 ## Project Status
 
-- **Current Phase**: Sprint 3 Completed / Sprint 4 (Alternative Asset Engines: AI Funds, Real Estate & Exotic Cars) Ready for Execution
+- **Current Phase**: Sprint 4 Completed / Sprint 5 (VIP Cards, Compliance Dossiers & 48-Hour Security Time-Lock) Ready for Execution
 - **Overall Roadmap**: 6 Sprints defined in `tools/IMPLEMENTATION_STRATEGY.md`
 - **Target Platform**: NestJS 11 + TypeScript 5.7+ (Strict Mode) + Prisma ORM 6.4+ (SQLite Dev / PostgreSQL Prod)
 
@@ -58,24 +58,25 @@
   - Cross-currency instant spot FX conversion.
 - [x] Establish automated tests (57 tests passing across Sprint 3; 105/105 total passing tests across 17 test suites).
 
-### [ ] Sprint 4: Alternative Asset Engines (AI Funds, Real Estate & Exotic Cars)
-- [ ] Build `AiFundsModule` (`/api/v1/ai-funds`):
-  - Quantitative telemetry feeds (Sharpe 3.12, Sortino 4.05, max drawdown, 1Y alpha).
+### [x] Sprint 4: Alternative Asset Engines (AI Funds, Real Estate & Exotic Cars)
+- [x] Build `AiFundsModule` (`/api/v1/ai-funds`):
+  - Quantitative telemetry feeds (Sharpe 3.12, Sortino 4.05, max drawdown -4.2%, 1Y alpha).
   - Strategy risk calibrator (`preservation`, `balanced`, `high-vol`).
   - Immutable rationale execution log feed with slippage benchmarks.
-  - H100 GPU compute cluster yield tracker and claim engine.
-  - Emergency circuit breaker toggle with immediate execution freeze.
-- [ ] Build `RealEstateModule` (`/api/v1/real-estate`):
+  - H100 GPU compute cluster yield tracker and double-entry claim engine.
+  - Emergency circuit breaker toggle with immediate execution freeze (`CircuitBreakerTriggeredException`).
+- [x] Build `RealEstateModule` (`/api/v1/real-estate`):
   - Fractional property inventory decks (Zurich Commercial, Mayfair Luxury Residences).
   - Rental dividend distribution ledger with automated compounding.
   - Secondary P2P OTC order bulletin board with atomic ledger settlement.
-  - Pre-signed secure document vault for deeds, affidavits, and filings.
-- [ ] Build `CarsModule` (`/api/v1/cars`):
+  - Pre-signed secure document vault for deeds, affidavits, and filings (HMAC-SHA256 signed, 900s expiry).
+- [x] Build `CarsModule` (`/api/v1/cars`):
   - Vehicle and timepiece vault inventory (Ferrari 250 GT, Bugatti Chiron, Patek 5711).
   - Dynamic price tracking synced with Hagerty index and auction comps.
-  - Bonded vault climate and security telemetry (Geneva FreePort, Zurich Vault).
+  - Bonded vault climate and security telemetry (Geneva FreePort, Zurich Vault: 21.2°C, 45% humidity).
   - Fleet rental monetization ledger and track day drive booking engine.
-- [ ] Establish automated tests (30 tests passing: OTC share settlement, drive slot concurrency locking).
+  - Strict concurrency locking on drive slots preventing double-booking (`ConflictException` HTTP 409).
+- [x] Establish automated tests (48 tests passing across Sprint 4; 153/153 total passing tests across 23 test suites).
 
 ### [ ] Sprint 5: VIP Cards, Compliance Dossiers & 48-Hour Security Time-Lock
 - [ ] Build `VipCardsModule` (`/api/v1/vip-cards`):
