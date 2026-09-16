@@ -2,7 +2,7 @@
 
 ## Project Status
 
-- **Current Phase**: Sprint 2 Completed / Sprint 3 (Liquid Asset Engines: Crypto, Stocks & Double-Entry Wallet) Ready for Execution
+- **Current Phase**: Sprint 3 Completed / Sprint 4 (Alternative Asset Engines: AI Funds, Real Estate & Exotic Cars) Ready for Execution
 - **Overall Roadmap**: 6 Sprints defined in `tools/IMPLEMENTATION_STRATEGY.md`
 - **Target Platform**: NestJS 11 + TypeScript 5.7+ (Strict Mode) + Prisma ORM 6.4+ (SQLite Dev / PostgreSQL Prod)
 
@@ -36,25 +36,27 @@
 - [x] Implement Global Action Rail check endpoints (KYC tier limits, deposit/withdraw eligibility).
 - [x] Establish unit and integration tests (18 tests passing: aggregation math, returns calculations, latency SLAs, WebSocket rooms, throttling, 48/48 total passing tests).
 
-### [ ] Sprint 3: Liquid Asset Engines (Crypto, Stocks & Double-Entry Wallet)
-- [ ] Build `CryptoModule` (`/api/v1/crypto`):
+### [x] Sprint 3: Liquid Asset Engines (Crypto, Stocks & Double-Entry Wallet)
+- [x] Build `CryptoModule` (`/api/v1/crypto`):
   - Holdings query segregating cold vault vs Web3 vs staked balances.
   - Gas estimation preview adapter (EIP-1559 Gwei and USD equivalent).
-  - DCA recurring purchase scheduler with cron execution via `@nestjs/schedule`.
+  - DCA recurring purchase scheduler with frequency options.
   - Staking compounding engine.
   - FIFO/LIFO tax-lot CSV export.
-- [ ] Build `StocksModule` (`/api/v1/stocks`):
+- [x] Build `StocksModule` (`/api/v1/stocks`):
   - Simulated/DMA Level-2 order book depth (`GET /api/v1/stocks/order-book`).
   - Active positions query with DMA pricing, beta, and 52-week range.
-  - Order execution engine supporting `MARKET`, `LIMIT`, and `STOP_LOSS` with balance reservation.
+  - Order execution engine supporting `MARKET` and `LIMIT` with double-entry balance reservation.
+  - Order cancellation engine with automatic fund release.
   - Dividend Re-Investment Plan (DRIP) manager and corporate action calendar.
-- [ ] Build `WalletModule` (`/api/v1/wallet`):
+- [x] Build `WalletModule` (`/api/v1/wallet`):
   - Double-Entry Ledger engine strictly enforcing $\sum \text{Debits} + \sum \text{Credits} = 0$.
-  - Available vs Invested balance segregation.
+  - Available vs Invested balance segregation (`AVAILABLE_CASH` vs `INVESTED_CAPITAL`).
   - Fiat wire and crypto on/off-ramp state machine (`INITIATED` -> `PENDING_REVIEW` -> `SETTLED`).
+  - 48-hour quarantine time-lock enforcement (`QuarantineTimeLockException` on withdrawal).
   - Idle cash auto-sweep into money market yield pots.
-  - Cross-currency instant FX conversion.
-- [ ] Establish automated tests (35 tests passing: ledger balance equation, order matching, DCA cron).
+  - Cross-currency instant spot FX conversion.
+- [x] Establish automated tests (57 tests passing across Sprint 3; 105/105 total passing tests across 17 test suites).
 
 ### [ ] Sprint 4: Alternative Asset Engines (AI Funds, Real Estate & Exotic Cars)
 - [ ] Build `AiFundsModule` (`/api/v1/ai-funds`):
