@@ -1,0 +1,23 @@
+services:
+  backend-user-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wavyassets-backend-user-dashboard
+    restart: unless-stopped
+    ports:
+      - "4001:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - DATABASE_URL=file:./dev.db
+      - JWT_ACCESS_SECRET=wavy_dashboard_jwt_access_super_secret_institutional_key_2026
+      - JWT_REFRESH_SECRET=wavy_dashboard_jwt_refresh_super_secret_institutional_key_2026
+      - HANDOFF_TICKET_SECRET=wavy_sovereign_cross_domain_handoff_ticket_secret_key_2026
+      - ENCRYPTION_KEY_HEX=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      - FRONTEND_ORIGINS=http://localhost:5173,http://localhost:5174
+    volumes:
+      - dashboard_data:/app/prisma
+
+volumes:
+  dashboard_data:
