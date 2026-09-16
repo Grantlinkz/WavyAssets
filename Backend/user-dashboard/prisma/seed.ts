@@ -180,7 +180,51 @@ async function main() {
     ],
   });
 
-  // 6. Create Sample Real Estate Property & Shares
+  // 6. Create AI Fund Position & Rationale Logs
+  await prisma.aiFundPosition.deleteMany({ where: { userId: user.id } });
+  await prisma.aiFundPosition.create({
+    data: {
+      userId: user.id,
+      strategyTier: 'balanced',
+      allocatedUsd: 2500000.0,
+      unrealizedAlpha: 142850.0,
+      circuitBreaker: false,
+      claimedYield: 34200.0,
+      pendingYield: 1845.5,
+    },
+  });
+
+  await prisma.aiRationaleLog.deleteMany();
+  await prisma.aiRationaleLog.createMany({
+    data: [
+      {
+        strategy: 'Cross-Venue Statistical Arbitrage',
+        actionType: 'ARBITRAGE',
+        asset: 'BTC/USD',
+        rationale: 'Identified 18bps spread dislocation between Coinbase and Kraken order books with >$2M top-of-book depth.',
+        slippageBps: 1.2,
+        confidence: 0.96,
+      },
+      {
+        strategy: 'Volatility Regime Switcher',
+        actionType: 'HEDGE',
+        asset: 'NVDA',
+        rationale: 'Implied volatility skew breached 95th percentile prior to earnings; established delta-neutral options collar.',
+        slippageBps: 2.8,
+        confidence: 0.91,
+      },
+      {
+        strategy: 'Liquidity Rebalancing Engine',
+        actionType: 'REBALANCE',
+        asset: 'ETH/USDC',
+        rationale: 'Gas base fee dipped below 12 Gwei; executed institutional Uniswap v3 fee compounding harvest.',
+        slippageBps: 0.8,
+        confidence: 0.98,
+      },
+    ],
+  });
+
+  // 7. Create Sample Real Estate Property, Shares & OTC Orders
   const property = await prisma.realEstateProperty.upsert({
     where: { id: 'prop-zurich-prime-001' },
     update: {},
@@ -206,7 +250,29 @@ async function main() {
     },
   });
 
-  // 7. Create Sample Exotic Car & Share
+  await prisma.realEstateOtcOrder.deleteMany({ where: { propertyId: property.id } });
+  await prisma.realEstateOtcOrder.createMany({
+    data: [
+      {
+        id: 'otc-order-zurich-offer-001',
+        propertyId: property.id,
+        orderType: 'OFFER',
+        tokenAmount: 150,
+        pricePerToken: 445.0,
+        status: 'OPEN',
+      },
+      {
+        id: 'otc-order-zurich-bid-002',
+        propertyId: property.id,
+        orderType: 'BID',
+        tokenAmount: 200,
+        pricePerToken: 440.0,
+        status: 'OPEN',
+      },
+    ],
+  });
+
+  // 8. Create Sample Exotic Car, Share & Drive Booking
   const car = await prisma.exoticCar.upsert({
     where: { vin: '250GT-BERLINETTA-1961-0428' },
     update: {},
@@ -231,7 +297,18 @@ async function main() {
     },
   });
 
-  // 8. Create VIP Obsidian Card (without cvvEncrypted; CVVs are never persisted)
+  await prisma.driveBooking.deleteMany({ where: { userId: user.id } });
+  await prisma.driveBooking.create({
+    data: {
+      userId: user.id,
+      carId: car.id,
+      trackLocation: 'Monaco GP Circuit',
+      bookingDate: new Date('2026-10-15T00:00:00.000Z'),
+      status: 'CONFIRMED',
+    },
+  });
+
+  // 9. Create VIP Obsidian Card (without cvvEncrypted; CVVs are never persisted)
   await prisma.vipCard.upsert({
     where: { userId: user.id },
     update: {},

@@ -8,6 +8,9 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { CryptoModule } from './modules/crypto/crypto.module';
 import { StocksModule } from './modules/stocks/stocks.module';
+import { AiFundsModule } from './modules/ai-funds/ai-funds.module';
+import { RealEstateModule } from './modules/real-estate/real-estate.module';
+import { CarsModule } from './modules/cars/cars.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { RedactedLoggingInterceptor } from './common/interceptors/redacted-logging.interceptor';
 import { TransformResponseInterceptor } from './common/interceptors/transform-response.interceptor';
@@ -26,6 +29,9 @@ import { CorrelationMiddleware } from './common/middleware/correlation.middlewar
     WalletModule,
     CryptoModule,
     StocksModule,
+    AiFundsModule,
+    RealEstateModule,
+    CarsModule,
   ],
   providers: [
     {
