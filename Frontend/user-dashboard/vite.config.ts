@@ -14,14 +14,24 @@ export default defineConfig({
     port: 5174,
     proxy: {
       '/api': {
-        target: 'http://localhost:4000',
+        target: process.env.VITE_BACKEND_URL || 'http://localhost:4001',
         changeOrigin: true,
         secure: false,
       },
       '/health': {
-        target: 'http://localhost:4000',
+        target: process.env.VITE_BACKEND_URL || 'http://localhost:4001',
         changeOrigin: true,
         secure: false,
+      },
+      '/ws': {
+        target: process.env.VITE_BACKEND_URL || 'http://localhost:4001',
+        changeOrigin: true,
+        ws: true,
+      },
+      '/socket.io': {
+        target: process.env.VITE_BACKEND_URL || 'http://localhost:4001',
+        changeOrigin: true,
+        ws: true,
       },
     },
   },

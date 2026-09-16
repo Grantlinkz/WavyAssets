@@ -14,6 +14,7 @@ import { CarsModule } from './modules/cars/cars.module';
 import { VipCardsModule } from './modules/vip-cards/vip-cards.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
 import { SecurityModule } from './modules/security/security.module';
+import { HealthModule } from './modules/health/health.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { RedactedLoggingInterceptor } from './common/interceptors/redacted-logging.interceptor';
 import { TransformResponseInterceptor } from './common/interceptors/transform-response.interceptor';
@@ -26,6 +27,7 @@ import { CorrelationMiddleware } from './common/middleware/correlation.middlewar
       envFilePath: ['.env', '.env.local'],
     }),
     PrismaModule,
+    HealthModule,
     AuthModule,
     DashboardModule,
     WebsocketModule,
