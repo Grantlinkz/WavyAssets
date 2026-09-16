@@ -309,8 +309,14 @@ export class WalletService {
     const now = new Date();
     if (destination.status === 'QUARANTINE' || destination.quarantineUntil > now) {
       throw new QuarantineTimeLockException(
-        destination.addressOrIban,
+        'Target withdrawal address is currently quarantined under the 48-hour security time-lock.',
         destination.quarantineUntil,
+      );
+    }
+
+    if (destination.signersCompleted < destination.signersRequired) {
+      throw new BadRequestException(
+        `Target destination has not satisfied multi-sig hardware requirements (${destination.signersCompleted}/${destination.signersRequired} completed)`,
       );
     }
 

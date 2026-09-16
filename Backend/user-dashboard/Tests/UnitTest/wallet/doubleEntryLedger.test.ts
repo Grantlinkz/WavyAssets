@@ -6,7 +6,7 @@ import {
   QuarantineTimeLockException,
   InsufficientAvailableBalanceException,
 } from '../../../src/common/exceptions';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 describe('WalletService — Double-Entry Ledger & Financial Invariants', () => {
   let walletService: WalletService;
@@ -165,6 +165,29 @@ describe('WalletService — Double-Entry Ledger & Financial Invariants', () => {
           destinationId: 'dest-quarantined',
         }),
       ).rejects.toThrow(QuarantineTimeLockException);
+    });
+
+    it('rejects withdrawal if multi-sig hardware signatures are incomplete', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({ id: testUserId });
+      mockPrisma.whitelistDestination.findUnique.mockResolvedValue({
+        id: 'dest-sig-incomplete',
+        userId: testUserId,
+        status: 'ACTIVE',
+        quarantineUntil: new Date(Date.now() - 1000),
+        signersRequired: 2,
+        signersCompleted: 1,
+        addressOrIban: 'CH9300000000000000000',
+        destinationLabel: 'Swiss Private Bank',
+      });
+
+      await expect(
+        walletService.initiateFiatRamp(testUserId, {
+          amount: 10000,
+          currency: 'USD',
+          direction: 'WITHDRAWAL',
+          destinationId: 'dest-sig-incomplete',
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('rejects withdrawal if destination is not found', async () => {

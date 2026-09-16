@@ -1,4 +1,22 @@
-import { IsString, IsNumber, IsPositive, IsIn, IsOptional, IsBoolean } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsPositive,
+  IsIn,
+  IsOptional,
+  IsBoolean,
+  ValidateIf,
+  IsNotEmpty,
+} from 'class-validator';
+
+export class StockOrderBookQueryDto {
+  @IsOptional()
+  @IsString()
+  @IsIn(['NVDA', 'MSFT', 'AAPL', 'SPACEX', 'ANTHROPIC', 'TSLA'], {
+    message: 'symbol must be one of: NVDA, MSFT, AAPL, SPACEX, ANTHROPIC, TSLA',
+  })
+  symbol?: string;
+}
 
 export class CreateStockOrderDto {
   @IsString()
@@ -17,7 +35,8 @@ export class CreateStockOrderDto {
   @IsPositive()
   shares!: number;
 
-  @IsOptional()
+  @ValidateIf((o: CreateStockOrderDto) => o.orderType === 'LIMIT')
+  @IsNotEmpty({ message: 'limitPrice is required for LIMIT orders' })
   @IsNumber()
   @IsPositive()
   limitPrice?: number;

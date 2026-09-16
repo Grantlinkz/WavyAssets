@@ -100,7 +100,7 @@ describe('AuthService — Ticket Exchange & Session Lifecycle', () => {
       // Verify atomic single-use ticket burning conditioned on session id and ticketHash
       expect(mockPrisma.session.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { id: 'sess-001', handoffTicketHash: computedHash },
+          where: expect.objectContaining({ id: 'sess-001', handoffTicketHash: computedHash }),
           data: expect.objectContaining({
             handoffTicketHash: null,
             refreshTokenHash: expect.any(String),

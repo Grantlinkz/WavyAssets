@@ -1,9 +1,9 @@
 # Implementation Prompt — Sprint 3: Liquid Asset Engines (Crypto, Stocks & Double-Entry Wallet)
 
 **Target Sprint:** Sprint 3  
-**Architecture Reference:** [`tools/IMPLEMENTATION_STRATEGY.md`](tools/IMPLEMENTATION_STRATEGY.md) (Sections 5.1, 5.2, 5.7)  
-**System Governance:** [`GEMINI.md`](GEMINI.md)  
-**UI Contract Reference:** [`.ai/ui-context.md`](.ai/ui-context.md)  
+**Architecture Reference:** [`../tools/IMPLEMENTATION_STRATEGY.md`](../tools/IMPLEMENTATION_STRATEGY.md) (Sections 5.1, 5.2, 5.7)  
+**System Governance:** [`../GEMINI.md`](../GEMINI.md)  
+**UI Contract Reference:** [`../.ai/ui-context.md`](../.ai/ui-context.md)  
 
 ---
 
@@ -32,7 +32,7 @@
      - `GET /api/v1/wallet/balances`: Multi-currency balance breakdown strictly segregating `Available Balance` (`AVAILABLE_CASH`) from `Invested Capital` (`INVESTED_CAPITAL`).
      - **Double-Entry Ledger Core**: Executes all balance modifications within `prisma.$transaction(async (tx) => { ... })` strictly enforcing $\sum \text{Debits} + \sum \text{Credits} = 0$. Throws `LedgerImbalanceException` (HTTP 422) if unbalanced.
      - `POST /api/v1/wallet/fiat-ramp`: Multi-stage wire deposit/withdrawal state machine (`INITIATED` -> `PENDING_REVIEW` -> `SETTLED`).
-       - On withdrawal, strictly verifies the target destination: throws `QuarantineTimeLockException` (HTTP 403) if `status === 'QUARANTINE'` or `NOW() < quarantineUntil`.
+       - On withdrawal, strictly verifies the target destination: throws `QuarantineTimeLockException` (HTTP 403) if `status === 'QUARANTINE'` or `NOW() < quarantineUntil`, and requires `signersCompleted >= signersRequired` (2-of-2 hardware signatures) before executing the transaction.
        - Checks liquid balance: throws `InsufficientAvailableBalanceException` (HTTP 422) if funds are insufficient.
      - `GET /api/v1/wallet/transactions`: Filterable, paginated transaction ledger with statements.
      - `POST /api/v1/wallet/cash-sweep`: Sweeps idle cash into money market yield pots.

@@ -96,7 +96,15 @@
   - WebAuthn FIDO2 ceremony (registration challenge/verification, assertion verification, key management).
   - Inviolable 48-Hour Withdrawal Whitelist Time-Lock state machine with hardware signature counting.
   - Multi-sig co-signing workflow enforcing that destinations cannot be unlocked early even with complete signatures.
-- [x] Establish automated tests (52 new tests added across Sprint 5; 205/205 total passing tests across 29 test suites).
+- [x] Establish automated tests (52 new tests added across Sprint 5; 207/207 total passing tests across 29 test suites).
+- [x] Conduct comprehensive security & architecture review remediation:
+  - Validated & strictly enforced 2-of-2 hardware signatures before withdrawal ledger commitment.
+  - Hardened cryptographic secret validation at startup (rejecting blank secrets, requiring 64-hex key in prod).
+  - Sanitized log output across GlobalExceptionFilter, RedactedLoggingInterceptor (including query params), and AuthService.
+  - Enforced strict query validation (CSV accounting methods FIFO/LIFO, orderbook symbol DTO, network whitelist).
+  - Implemented calendar month advancement for recurring crypto DCA with month-end date clamping.
+  - Implemented bounded cache with FIFO eviction in DashboardService and active quarantine status calculation.
+  - Hardened stock limit orders requiring positive limitPrice and proper fund/position rollback on cancellation.
 
 ### [ ] Sprint 6: End-to-End Monorepo Integration, Hardening & Enterprise Deployment
 - [ ] Wire `Frontend/user-dashboard` API clients directly to `Backend/user-dashboard` endpoints.

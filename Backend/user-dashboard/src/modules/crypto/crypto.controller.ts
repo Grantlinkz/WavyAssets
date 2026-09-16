@@ -16,6 +16,7 @@ import {
   CreateDcaScheduleDto,
   CompoundStakingDto,
   GasPreviewQueryDto,
+  TaxLotExportQueryDto,
 } from './dto/crypto.dto';
 
 @Controller('api/v1/crypto')
@@ -80,8 +81,8 @@ export class CryptoController {
   @Header('Content-Disposition', 'attachment; filename="wavyassets-tax-lots.csv"')
   async exportTaxLots(
     @CurrentUser() user: AuthenticatedUser,
-    @Query('method') method?: 'FIFO' | 'LIFO',
+    @Query() query: TaxLotExportQueryDto,
   ) {
-    return this.cryptoService.exportTaxLots(user.id, method);
+    return this.cryptoService.exportTaxLots(user.id, query.method);
   }
 }

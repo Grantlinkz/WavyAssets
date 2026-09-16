@@ -150,7 +150,13 @@ export class CryptoService {
     } else if (dto.frequency === 'BIWEEKLY') {
       nextRunAt = new Date(now.getTime() + 14 * 24 * 3600 * 1000);
     } else if (dto.frequency === 'MONTHLY') {
-      nextRunAt = new Date(now.getTime() + 30 * 24 * 3600 * 1000);
+      const targetMonth = now.getMonth() + 1;
+      const targetYear = now.getFullYear() + Math.floor(targetMonth / 12);
+      const normalizedMonth = targetMonth % 12;
+      const originalDay = now.getDate();
+      const maxDaysInMonth = new Date(targetYear, normalizedMonth + 1, 0).getDate();
+      const adjustedDay = Math.min(originalDay, maxDaysInMonth);
+      nextRunAt = new Date(targetYear, normalizedMonth, adjustedDay, now.getHours(), now.getMinutes(), now.getSeconds());
     }
 
     const schedule = await this.prisma.dcaSchedule.create({
@@ -219,8 +225,16 @@ export class CryptoService {
     }
 
     const rewardsToCompound = holding.pendingReward;
-    const newStakedAmount = Number((holding.stakedAmount + rewardsToCompound).toFixed(6));
-    const newQuantity = Number((holding.quantity + rewardsToCompound).toFixed(6));
+    const precisionBySymbol: Record<string, number> = {
+      BTC: 8,
+      ETH: 8,
+      SOL: 9,
+      LINK: 8,
+      AVAX: 8,
+    };
+    const precision = precisionBySymbol[dto.symbol] || 8;
+    const newStakedAmount = Number((holding.stakedAmount + rewardsToCompound).toFixed(precision));
+    const newQuantity = Number((holding.quantity + rewardsToCompound).toFixed(precision));
 
     const updated = await this.prisma.cryptoHolding.update({
       where: { id: holding.id },
@@ -255,6 +269,7 @@ export class CryptoService {
   async exportTaxLots(userId: string, method: 'FIFO' | 'LIFO' = 'FIFO'): Promise<string> {
     const holdings = await this.prisma.cryptoHolding.findMany({
       where: { userId },
+      orderBy: { updatedAt: method === 'LIFO' ? 'desc' : 'asc' },
     });
 
     const headers = 'Timestamp,Asset,CustodyType,Quantity,CostBasisUSD,SpotPriceUSD,UnrealizedGainUSD,AccountingMethod\n';

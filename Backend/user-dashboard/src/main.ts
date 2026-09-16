@@ -8,19 +8,27 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
-  // Production Environment Secrets Validation
-  if (process.env.NODE_ENV === 'production') {
-    const requiredKeys = [
-      'JWT_ACCESS_SECRET',
-      'JWT_REFRESH_SECRET',
-      'HANDOFF_TICKET_SECRET',
-      'ENCRYPTION_KEY_HEX',
-    ];
-    for (const key of requiredKeys) {
-      const val = process.env[key];
-      if (!val || val.trim() === '' || val.startsWith('CHANGE_ME_') || val.includes('insecure')) {
+  // Environment Security Secrets Validation
+  const requiredKeys = [
+    'JWT_ACCESS_SECRET',
+    'JWT_REFRESH_SECRET',
+    'HANDOFF_TICKET_SECRET',
+    'ENCRYPTION_KEY_HEX',
+  ];
+  for (const key of requiredKeys) {
+    const val = process.env[key];
+    if (!val || val.trim() === '') {
+      throw new Error(`FATAL: Environment variable ${key} is missing or whitespace-only.`);
+    }
+    if (process.env.NODE_ENV === 'production') {
+      if (val.startsWith('CHANGE_ME_') || val.includes('insecure') || val.length < 32) {
         throw new Error(
-          `FATAL: Production environment variable ${key} is missing, empty, or contains an insecure placeholder.`,
+          `FATAL: Production environment variable ${key} does not meet minimum strength requirements.`,
+        );
+      }
+      if (key === 'ENCRYPTION_KEY_HEX' && !/^[0-9a-fA-F]{64}$/.test(val)) {
+        throw new Error(
+          `FATAL: Production environment variable ${key} must be exactly 64 hexadecimal characters.`,
         );
       }
     }

@@ -167,10 +167,10 @@ describe('ComplianceService — Tiered KYC, Dossier Uploads, Tier Promotion & Ta
         { sharePct: 0.10, car: { model: 'Bugatti Chiron' } },
       ]);
 
-      const pack = await complianceService.generateTaxPack(testUserId, {
+      const pack = (await complianceService.generateTaxPack(testUserId, {
         year: 2024,
         format: TaxPackFormat.JSON,
-      });
+      })) as any;
 
       expect(pack.taxYear).toBe(2024);
       expect(pack.reportingEntity).toContain('WavyAssets Sovereign Wealth');

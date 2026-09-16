@@ -12,7 +12,11 @@ import {
 import { StocksService } from './stocks.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
-import { CreateStockOrderDto, ToggleDripDto } from './dto/stocks.dto';
+import {
+  CreateStockOrderDto,
+  ToggleDripDto,
+  StockOrderBookQueryDto,
+} from './dto/stocks.dto';
 
 @Controller('api/v1/stocks')
 @UseGuards(JwtAuthGuard)
@@ -23,8 +27,8 @@ export class StocksController {
    * Level-2 simulated order book depth (Top 10 bids/asks, spread, VWAP)
    */
   @Get('order-book')
-  getOrderBook(@Query('symbol') symbol: string) {
-    return this.stocksService.getOrderBook(symbol || 'NVDA');
+  getOrderBook(@Query() query: StockOrderBookQueryDto) {
+    return this.stocksService.getOrderBook(query.symbol || 'NVDA');
   }
 
   /**

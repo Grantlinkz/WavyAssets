@@ -27,6 +27,7 @@ export class RedactedLoggingInterceptor implements NestInterceptor {
 
     const startTime = Date.now();
     const { method, originalUrl } = req;
+    const sanitizedUrl = RedactedLoggingInterceptor.redactString(originalUrl);
 
     return next.handle().pipe(
       tap({
@@ -34,13 +35,13 @@ export class RedactedLoggingInterceptor implements NestInterceptor {
           const duration = Date.now() - startTime;
           const statusCode = res.statusCode;
           this.logger.log(
-            `[${correlationId}] ${method} ${originalUrl} -> ${statusCode} (${duration}ms)`,
+            `[${correlationId}] ${method} ${sanitizedUrl} -> ${statusCode} (${duration}ms)`,
           );
         },
         error: () => {
           const duration = Date.now() - startTime;
           this.logger.warn(
-            `[${correlationId}] ${method} ${originalUrl} -> Execution failed after ${duration}ms`,
+            `[${correlationId}] ${method} ${sanitizedUrl} -> Execution failed after ${duration}ms`,
           );
         },
       }),
@@ -53,7 +54,9 @@ export class RedactedLoggingInterceptor implements NestInterceptor {
       // Bearer tokens and JWTs
       .replace(/Bearer\s+[A-Za-z0-9-_=.]+/gi, 'Bearer [REDACTED]')
       .replace(/eyJ[A-Za-z0-9-_]+\.eyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_.]+/g, '[REDACTED_JWT]')
-      // Password / secret / token query params or json fields
+      // Password / secret / token query params in URLs
+      .replace(/([?&](?:password|passphrase|token|secret|ticket|key|refreshToken|accessToken|cvv|pin)=)[^&]+/gi, '$1[REDACTED]')
+      // Password / secret / token in JSON fields
       .replace(/("(?:password|passphrase|token|secret|refreshToken|accessToken|cvv|pin)":\s*)"[^"]+"/gi, '$1"[REDACTED]"')
       // Email addresses
       .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[REDACTED_EMAIL]');

@@ -201,6 +201,27 @@ describe('E2E Integration — Stocks, Pre-IPO & Order Matching API', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data.status).toBe('CANCELLED');
     });
+
+    it('returns 404 and does not update when attempting to cancel another user order', async () => {
+      mockPrisma.stockOrder.findUnique.mockResolvedValue({
+        id: 'ord-other-user',
+        userId: 'different-user-id',
+        symbol: 'MSFT',
+        status: 'PENDING',
+        shares: 10,
+      });
+
+      const res = await request(app.getHttpServer())
+        .delete('/api/v1/stocks/orders/ord-other-user')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(404);
+
+      expect(res.body.success).toBe(false);
+      expect(res.body.errorCode).toBe('ERR_NOT_FOUND');
+      expect(mockPrisma.stockOrder.update).not.toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'ord-other-user' } }),
+      );
+    });
   });
 
   describe('PATCH /api/v1/stocks/positions/:id/drip', () => {

@@ -20,9 +20,22 @@ export class CompoundStakingDto {
   symbol!: string;
 }
 
+export enum TaxLotMethod {
+  FIFO = 'FIFO',
+  LIFO = 'LIFO',
+}
+
+export class TaxLotExportQueryDto {
+  @IsOptional()
+  @IsString()
+  @IsIn(['FIFO', 'LIFO'], { message: 'method must be either FIFO or LIFO' })
+  method?: 'FIFO' | 'LIFO';
+}
+
 export class GasPreviewQueryDto {
   @IsOptional()
   @IsString()
+  @IsIn(['ethereum', 'arbitrum'], { message: 'network must be either ethereum or arbitrum' })
   network?: string;
 
   @IsOptional()

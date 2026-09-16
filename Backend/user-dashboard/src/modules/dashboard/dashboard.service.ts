@@ -18,6 +18,7 @@ export class DashboardService {
   private readonly logger = new Logger(DashboardService.name);
   private readonly cache = new Map<string, CacheEntry>();
   private readonly CACHE_TTL_MS = 3000; // 3-second cache to ensure <30ms aggregate latency under heavy load
+  private readonly MAX_CACHE_ENTRIES = 1000;
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -28,8 +29,11 @@ export class DashboardService {
   async getCommandBarData(userId: string): Promise<CommandBarResponse> {
     const now = Date.now();
     const cached = this.cache.get(userId);
-    if (cached && cached.expiresAt > now) {
-      return cached.data;
+    if (cached) {
+      if (cached.expiresAt > now) {
+        return cached.data;
+      }
+      this.cache.delete(userId);
     }
 
     const user = await this.prisma.user.findUnique({
@@ -202,6 +206,12 @@ export class DashboardService {
       lastUpdated: new Date().toISOString(),
     };
 
+    // Enforce bounded cache size
+    if (this.cache.size >= this.MAX_CACHE_ENTRIES) {
+      const oldestKey = this.cache.keys().next().value;
+      if (oldestKey) this.cache.delete(oldestKey);
+    }
+
     // Cache computed response
     this.cache.set(userId, {
       data: response,
@@ -234,11 +244,11 @@ export class DashboardService {
 
     const currentTime = new Date();
     const quarantinedCount = user.whitelistAddresses.filter(
-      (w) => w.status === 'QUARANTINE' || w.quarantineUntil > currentTime,
+      (w) => w.quarantineUntil > currentTime && w.status !== 'REVOKED' && w.status !== 'REJECTED',
     ).length;
 
     const activeCount = user.whitelistAddresses.filter(
-      (w) => w.status === 'ACTIVE' && w.quarantineUntil <= currentTime,
+      (w) => w.quarantineUntil <= currentTime && w.status !== 'REVOKED' && w.status !== 'REJECTED',
     ).length;
 
     let dailyLimit: string | number = 10000;

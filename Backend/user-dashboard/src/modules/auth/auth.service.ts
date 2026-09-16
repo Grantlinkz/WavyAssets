@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CryptoUtils } from '../../common/utils/crypto.utils';
 import { InvalidHandoffTicketException } from '../../common/exceptions';
+import { RedactedLoggingInterceptor } from '../../common/interceptors/redacted-logging.interceptor';
 
 export interface AuthUserResponse {
   id: string;
@@ -94,6 +95,7 @@ export class AuthService {
       where: {
         id: session.id,
         handoffTicketHash: ticketHash,
+        expiresAt: { gt: new Date() },
       },
       data: {
         handoffTicketHash: null, // BURN SINGLE-USE TICKET
@@ -239,8 +241,9 @@ export class AuthService {
         where: { refreshTokenHash },
       });
     } catch (error) {
+      const errMessage = error instanceof Error ? error.message : String(error);
       this.logger.error(
-        `Failed to revoke session on logout: ${error instanceof Error ? error.message : error}`,
+        `Failed to revoke session on logout: ${RedactedLoggingInterceptor.redactString(errMessage)}`,
       );
       throw new InternalServerErrorException('Failed to revoke session during logout');
     }

@@ -1,9 +1,9 @@
 # Implementation Prompt — Sprint 2: Universal Command Bar Aggregator & Real-Time WebSocket Gateway
 
 **Target Sprint:** Sprint 2  
-**Architecture Reference:** [`tools/IMPLEMENTATION_STRATEGY.md`](tools/IMPLEMENTATION_STRATEGY.md) (Sections 4, 10)  
-**System Governance:** [`GEMINI.md`](GEMINI.md)  
-**UI Contract Reference:** [`.ai/ui-context.md`](.ai/ui-context.md)  
+**Architecture Reference:** [`../tools/IMPLEMENTATION_STRATEGY.md`](../tools/IMPLEMENTATION_STRATEGY.md) (Sections 4, 10)  
+**System Governance:** [`../GEMINI.md`](../GEMINI.md)  
+**UI Contract Reference:** [`../.ai/ui-context.md`](../.ai/ui-context.md)  
 
 ---
 
@@ -46,7 +46,7 @@
 
 ## 2. Invariants & Acceptance Criteria
 
-- All REST responses conform to RFC 7807 / standard envelopes (`{ success: true, statusCode: 200, data: ... }`).
+- Success REST responses conform to the standard envelope (`{ success: true, statusCode: 200, data: ... }`), while errors follow the RFC 7807-compliant global error envelope produced by `GlobalExceptionFilter`.
 - Color tokens strictly match frontend Obsidian design tokens (`#E5C158`, `#53DC98`, `#926F13`, `#D4AF37`, `#BA1A1A`, `#8B9BB4`).
 - All tests pass with zero failures.
 - TypeScript compiler passes with zero errors (`npx tsc --noEmit`).

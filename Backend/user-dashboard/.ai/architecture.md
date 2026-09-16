@@ -90,8 +90,9 @@ Users authenticate on the marketing landing page (`Frontend/landing-page` -> `Ba
        ▼
 [Backend user-dashboard AuthService.exchangeTicket()]
        ├── 1. Compute ticketHash = HMAC-SHA256(rawTicket, HANDOFF_TICKET_SECRET) in lowercase hex
-       ├── 2. Atomically query and burn Session where id = sessionId AND handoffTicketHash = ticketHash
-       ├── 3. Generate Dashboard Access Token (JWT, 15-minute expiry)
+       ├── 2. Derive session by looking up non-expired Session via unique handoffTicketHash (expiresAt > NOW())
+       ├── 3. Atomically burn Session record where id = session.id, handoffTicketHash = ticketHash, and expiresAt > NOW()
+       ├── 4. Generate Dashboard Access Token (JWT, 15-minute expiry)
        ├── 5. Generate Refresh Token, persist hash in Session.refreshTokenHash
        └── 6. Return AuthExchangeResponse { success: true, accessToken, user: { id, email, fullName, tier, kycTier } }
 ```
@@ -143,5 +144,17 @@ The WebSocket gateway enables real-time synchronization between the backend and 
 3. **Double-Spend & Overdraw Prevention**: Any trade, order, or withdrawal must atomically reserve funds from `AVAILABLE_CASH` to `ESCROW` or `INVESTED_CAPITAL` within a serializable database transaction.
 4. **Two-Tier Error Handling**:
    - **Code-Based**: Every service and controller must throw semantic, strongly-typed NestJS exceptions (`BadRequestException`, `NotFoundException`, `ForbiddenException`, etc.) or custom domain exceptions.
-   - **Global Filter**: `GlobalExceptionFilter` must intercept all uncaught exceptions, log the full internal diagnostic with a unique `correlationId`, and return a sanitized, consistent custom unified JSON response envelope to the client with zero stack trace or internal database leakage.
+   - **Global Filter**: `GlobalExceptionFilter` must intercept all uncaught exceptions, log the full internal diagnostic with a unique `correlationId`, and return a sanitized, RFC 7807-compliant global error envelope with zero stack trace or database leakage:
+     ```json
+     {
+       "success": false,
+       "statusCode": 403,
+       "errorCode": "ERR_DESTINATION_QUARANTINED",
+       "message": "Target withdrawal address is currently quarantined under the 48-hour security time-lock.",
+       "timestamp": "2026-09-16T01:30:00.000Z",
+       "path": "/api/v1/wallet/withdraw",
+       "correlationId": "req-9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+       "details": null
+     }
+     ```
 5. **Redacted Logging**: Sensitive values (passwords, tokens, tickets, CVVs, PINs, full IBANs, email addresses) must never appear in application logs or WebSocket payloads.

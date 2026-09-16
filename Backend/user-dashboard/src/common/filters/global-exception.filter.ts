@@ -83,7 +83,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       const redactedStack = RedactedLoggingInterceptor.redactString(logDetails.stack);
       this.logger.error(`[${correlationId}] Server Error: ${redactedException}`, redactedStack);
     } else {
-      this.logger.warn(`[${correlationId}] Client Warning (${statusCode}): ${message}`);
+      const redactedMessage = RedactedLoggingInterceptor.redactString(message);
+      this.logger.warn(`[${correlationId}] Client Warning (${statusCode}): ${redactedMessage}`);
     }
 
     // Set correlation ID header in response

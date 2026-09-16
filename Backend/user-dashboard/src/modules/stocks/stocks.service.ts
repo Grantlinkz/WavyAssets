@@ -209,6 +209,10 @@ export class StocksService {
       range52w: { low: 80.0, high: 120.0 },
     };
 
+    if (dto.orderType === 'LIMIT' && (!dto.limitPrice || dto.limitPrice <= 0)) {
+      throw new BadRequestException('Limit orders require a positive limitPrice');
+    }
+
     const executionPrice = dto.limitPrice || stock.price;
     const orderCost = Number((dto.shares * executionPrice).toFixed(2));
 
@@ -367,6 +371,38 @@ export class StocksService {
       throw new BadRequestException(
         `Cannot cancel order with status ${order.status}. Only PENDING orders can be cancelled.`,
       );
+    }
+
+    // Release reserved funds back to AVAILABLE_CASH
+    const executionPrice = order.limitPrice || this.STOCKS_DATA[order.symbol]?.price || 100.0;
+    const orderCost = Number((order.shares * executionPrice).toFixed(2));
+
+    if (order.side === 'BUY') {
+      const cashAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');
+      const investedAccount = await this.walletService.getOrCreateAccount(userId, 'INVESTED_CAPITAL', 'USD');
+      await this.walletService.recordLedgerTransaction({
+        type: 'TRADE',
+        description: `Order cancellation refund: ${order.shares} ${order.symbol}`,
+        entries: [
+          { accountId: investedAccount.id, amount: -orderCost },
+          { accountId: cashAccount.id, amount: orderCost },
+        ],
+      });
+
+      const position = await this.prisma.stockPosition.findFirst({
+        where: { userId, symbol: order.symbol },
+      });
+      if (position) {
+        const remainingShares = position.shares - order.shares;
+        if (remainingShares <= 0) {
+          await this.prisma.stockPosition.delete({ where: { id: position.id } });
+        } else {
+          await this.prisma.stockPosition.update({
+            where: { id: position.id },
+            data: { shares: remainingShares },
+          });
+        }
+      }
     }
 
     const updated = await this.prisma.stockOrder.update({

@@ -97,7 +97,13 @@ async function main() {
       null,
       2,
     ),
+    { mode: 0o600 },
   );
+  try {
+    fs.chmodSync(localCredsPath, 0o600);
+  } catch {
+    // Graceful fallback if filesystem/OS does not support chmod
+  }
 
   // 3. Create Double-Entry Ledger Accounts
   await prisma.ledgerAccount.upsert({
