@@ -15,6 +15,7 @@ export interface SecurityConfig {
   jwtExpiration: string;
   refreshTokenSecret: string;
   refreshTokenExpiration: string;
+  handoffTicketSecret: string;
   fieldEncryptionKey: string;
   throttleTtl: number;
   throttleLimit: number;
@@ -64,6 +65,8 @@ export default (): AppConfiguration => ({
     refreshTokenSecret:
       process.env.REFRESH_TOKEN_SECRET || 'wavy_sovereign_refresh_secret_dev_key_must_be_rotated',
     refreshTokenExpiration: process.env.REFRESH_TOKEN_EXPIRATION || '7d',
+    handoffTicketSecret:
+      process.env.HANDOFF_TICKET_SECRET || 'wavy_sovereign_cross_domain_handoff_ticket_secret_key_2026',
     fieldEncryptionKey:
       process.env.FIELD_ENCRYPTION_KEY || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
     throttleTtl: parseInt(process.env.THROTTLE_TTL || '60', 10),

@@ -106,6 +106,7 @@ export class AuthService {
           fullName: dto.fullName.trim(),
           passphraseHash,
           tier,
+          kycTier: 'TIER_1',
           isActive: false, // Activated upon OTP confirmation
         },
       });
@@ -283,7 +284,7 @@ export class AuthService {
     const refreshTokenHash = this.crypto.hashToken(rawRefreshToken);
 
     const rawHandoffTicket = this.crypto.generateHandoffTicket();
-    const handoffTicketHash = this.crypto.hashToken(rawHandoffTicket);
+    const handoffTicketHash = this.crypto.hashHandoffTicket(rawHandoffTicket);
 
     const sessionExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
@@ -323,7 +324,7 @@ export class AuthService {
       throw new UnauthorizedException('Missing exchange ticket credential');
     }
 
-    const ticketHash = this.crypto.hashToken(rawTicket);
+    const ticketHash = this.crypto.hashHandoffTicket(rawTicket);
 
     const session = await this.prisma.session.findUnique({
       where: { handoffTicketHash: ticketHash },

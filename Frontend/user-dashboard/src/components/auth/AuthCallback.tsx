@@ -148,18 +148,56 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
         </div>
 
         {ticketStatus === 'error' && (
-          <div className="flex justify-center pt-2">
-            <Button
-              variant="default"
-              size="default"
-              onClick={() => {
-                if (typeof window !== 'undefined') {
-                  window.location.href = '/';
-                }
-              }}
-            >
-              Return to Terminal
-            </Button>
+          <div className="flex flex-col gap-2 pt-2">
+            <div className="flex items-center justify-center gap-2">
+              <Button
+                variant="default"
+                size="default"
+                className="font-mono text-xs"
+                onClick={() => {
+                  const landingUrl = typeof window !== 'undefined'
+                    ? (import.meta.env.VITE_LANDING_URL || `${window.location.protocol}//${window.location.hostname}:5173`)
+                    : 'http://localhost:5173';
+                  if (typeof window !== 'undefined') {
+                    window.location.href = `${landingUrl}/?auth=signin`;
+                  }
+                }}
+              >
+                Sign In Again
+              </Button>
+              <Button
+                variant="goldOutline"
+                size="default"
+                className="font-mono text-xs"
+                onClick={() => {
+                  const landingUrl = typeof window !== 'undefined'
+                    ? (import.meta.env.VITE_LANDING_URL || `${window.location.protocol}//${window.location.hostname}:5173`)
+                    : 'http://localhost:5173';
+                  if (typeof window !== 'undefined') {
+                    window.location.href = `${landingUrl}/?auth=mandate`;
+                  }
+                }}
+              >
+                Request Mandate
+              </Button>
+            </div>
+            <div className="pt-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-on-surface-variant hover:text-on-surface text-[11px] font-mono"
+                onClick={() => {
+                  const landingUrl = typeof window !== 'undefined'
+                    ? (import.meta.env.VITE_LANDING_URL || `${window.location.protocol}//${window.location.hostname}:5173`)
+                    : 'http://localhost:5173';
+                  if (typeof window !== 'undefined') {
+                    window.location.href = landingUrl;
+                  }
+                }}
+              >
+                Return to Terminal Showcase
+              </Button>
+            </div>
           </div>
         )}
       </div>

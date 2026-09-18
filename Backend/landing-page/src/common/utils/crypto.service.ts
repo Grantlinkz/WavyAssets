@@ -8,11 +8,17 @@ export class CryptoService {
   private readonly logger = new Logger(CryptoService.name);
   private readonly hmacSecret: string;
   private readonly fieldEncryptionKey: Buffer;
+  private readonly handoffSecret: string;
 
   constructor(private readonly configService: ConfigService) {
     this.hmacSecret =
       this.configService.get<string>('security.jwtSecret') ||
       'wavy_default_sovereign_hmac_secret_key_minimum_64_characters_length_required!';
+
+    this.handoffSecret =
+      this.configService.get<string>('security.handoffTicketSecret') ||
+      process.env.HANDOFF_TICKET_SECRET ||
+      'wavy_sovereign_cross_domain_handoff_ticket_secret_key_2026';
 
     const keyHex =
       this.configService.get<string>('security.fieldEncryptionKey') ||
@@ -75,11 +81,19 @@ export class CryptoService {
   }
 
   /**
-   * Computes a deterministic HMAC-SHA256 hash for bearer tokens (refreshToken, handoffTicket).
+   * Computes a deterministic HMAC-SHA256 hash for bearer tokens (refreshToken).
    * Ensures bearer credentials are never stored in plaintext in the SQLite database.
    */
   hashToken(token: string): string {
     return crypto.createHmac('sha256', this.hmacSecret).update(token).digest('hex');
+  }
+
+  /**
+   * Computes a deterministic HMAC-SHA256 hash for single-use handoff tickets
+   * using the shared HANDOFF_TICKET_SECRET, matching Backend/user-dashboard.
+   */
+  hashHandoffTicket(ticket: string): string {
+    return crypto.createHmac('sha256', this.handoffSecret).update(ticket).digest('hex');
   }
 
   /**

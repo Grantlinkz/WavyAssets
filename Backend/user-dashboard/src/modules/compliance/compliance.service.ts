@@ -49,7 +49,7 @@ export class ComplianceService {
       throw new NotFoundException('User not found');
     }
 
-    const currentTier = (user.kycTier as KycTierLevel) || KycTierLevel.TIER_2;
+    const currentTier = (user.kycTier as KycTierLevel) || KycTierLevel.TIER_1;
 
     const tierLimits: Record<KycTierLevel, { dailyLimitUsd: number; label: string }> = {
       TIER_1: { dailyLimitUsd: 10000, label: '$10,000 USD / Day' },
@@ -70,15 +70,19 @@ export class ComplianceService {
       },
       {
         tier: KycTierLevel.TIER_2,
-        name: 'Government ID & Proof of Address',
-        description: 'Valid passport or national ID plus utility bill (<90 days old)',
-        isMet: verifiedDocTypes.has('PASSPORT') && verifiedDocTypes.has('UTILITY_BILL'),
+        name: 'Government ID Verification',
+        description: 'Valid passport, national ID, or driver license with clear Name, DOB, and ID number (Admin review)',
+        isMet: verifiedDocTypes.has('PASSPORT') || verifiedDocTypes.has('GOVERNMENT_ID'),
       },
       {
         tier: KycTierLevel.TIER_3,
-        name: 'Institutional Accreditation & Source of Wealth',
-        description: 'Corporate charter / Articles of Incorporation or notarized wealth affidavit',
-        isMet: verifiedDocTypes.has('ARTICLES_OF_INC') || verifiedDocTypes.has('SOURCE_OF_WEALTH'),
+        name: 'Proof of Address & Financial Standing',
+        description: 'Utility bill or bank statement (<3 months old) with clear provider/bank and billing address (Admin review)',
+        isMet:
+          verifiedDocTypes.has('UTILITY_BILL') ||
+          verifiedDocTypes.has('BANK_STATEMENT') ||
+          verifiedDocTypes.has('ARTICLES_OF_INC') ||
+          verifiedDocTypes.has('SOURCE_OF_WEALTH'),
       },
     ];
 
@@ -141,6 +145,13 @@ export class ComplianceService {
             documentId: doc.id,
             docType: dto.docType,
             fileUrl: dto.fileUrl,
+            notes: dto.notes,
+            fullName: dto.fullName,
+            dob: dto.dob,
+            idNumber: dto.idNumber,
+            providerOrBank: dto.providerOrBank,
+            billingAddress: dto.billingAddress,
+            billIssueDate: dto.billIssueDate,
           }),
         },
       });
@@ -183,21 +194,23 @@ export class ComplianceService {
     );
 
     if (dto.targetTier === KycTierLevel.TIER_2) {
-      const hasPassport = verifiedDocTypes.has('PASSPORT');
-      const hasUtility = verifiedDocTypes.has('UTILITY_BILL');
+      const hasGovId = verifiedDocTypes.has('PASSPORT') || verifiedDocTypes.has('GOVERNMENT_ID');
 
-      if (!hasPassport || !hasUtility) {
+      if (!hasGovId) {
         throw new BadRequestException(
-          'Tier 2 upgrade requires verified PASSPORT and UTILITY_BILL documents',
+          'Tier 2 upgrade requires verified Government ID (Passport or National ID) approved by Admin Panel',
         );
       }
     } else if (dto.targetTier === KycTierLevel.TIER_3) {
-      const hasCorporateOrWealth =
-        verifiedDocTypes.has('ARTICLES_OF_INC') || verifiedDocTypes.has('SOURCE_OF_WEALTH');
+      const hasAddressOrWealth =
+        verifiedDocTypes.has('UTILITY_BILL') ||
+        verifiedDocTypes.has('BANK_STATEMENT') ||
+        verifiedDocTypes.has('ARTICLES_OF_INC') ||
+        verifiedDocTypes.has('SOURCE_OF_WEALTH');
 
-      if (!hasCorporateOrWealth) {
+      if (!hasAddressOrWealth) {
         throw new BadRequestException(
-          'Tier 3 upgrade requires verified ARTICLES_OF_INC or SOURCE_OF_WEALTH documents',
+          'Tier 3 upgrade requires verified Utility Bill or Bank Statement (<3 months old) approved by Admin Panel',
         );
       }
     }
