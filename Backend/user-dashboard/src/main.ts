@@ -34,6 +34,9 @@ async function bootstrap() {
     }
   }
 
+  // Configure Express trust proxy for accurate client IP resolution behind reverse proxies
+  (app.getHttpAdapter().getInstance() as any).set('trust proxy', 1);
+
   // Security Headers
   app.use(
     helmet({

@@ -373,6 +373,20 @@ export class StocksService {
       );
     }
 
+    // Atomically claim the pending order by transitioning status to CANCELLED before executing reversal
+    if (typeof this.prisma.stockOrder.updateMany === 'function') {
+      const claimed = await this.prisma.stockOrder.updateMany({
+        where: { id: orderId, userId, status: 'PENDING' },
+        data: { status: 'CANCELLED' },
+      });
+
+      if (claimed.count === 0) {
+        throw new BadRequestException(
+          `Order ${orderId} has already been cancelled or processed concurrently.`,
+        );
+      }
+    }
+
     // Release reserved funds back to AVAILABLE_CASH
     const executionPrice = order.limitPrice || this.STOCKS_DATA[order.symbol]?.price || 100.0;
     const orderCost = Number((order.shares * executionPrice).toFixed(2));

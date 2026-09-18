@@ -206,14 +206,27 @@ describe('E2E Integration — Monorepo Cross-Domain Authentication & Multi-Asset
     expect(response.body.data.accessToken).toBeDefined();
     // Update active accessToken
     accessToken = response.body.data.accessToken;
+
+    // Capture rotated Set-Cookie value
+    const cookies = response.headers['set-cookie'];
+    if (cookies) {
+      refreshTokenCookie = Array.isArray(cookies) ? cookies : [cookies];
+    }
   });
 
   it('Step 6: Revoke session on user logout', async () => {
     const response = await request(app.getHttpServer())
       .post('/api/v1/auth/logout')
       .set('Authorization', `Bearer ${accessToken}`)
+      .set('Cookie', refreshTokenCookie)
       .expect(200);
 
     expect(response.body.success).toBe(true);
+
+    // Verify revoked refresh cookie returns 401 Unauthorized
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/refresh')
+      .set('Cookie', refreshTokenCookie)
+      .expect(401);
   });
 });

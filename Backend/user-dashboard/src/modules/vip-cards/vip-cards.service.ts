@@ -219,14 +219,10 @@ export class VipCardsService {
               counter: credential.counter,
             },
           });
-          isAssertionValid = verification.verified;
-        } else {
-          isAssertionValid = dto.authAssertion.length > 10;
+          isAssertionValid = !!verification.verified;
         }
       } catch {
-        if (dto.authAssertion.length > 10 && !dto.authAssertion.includes('invalid')) {
-          isAssertionValid = true;
-        }
+        isAssertionValid = false;
       }
 
       if (!isAssertionValid) {

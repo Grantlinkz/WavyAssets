@@ -37,6 +37,7 @@ describe('E2E Integration — Stocks, Pre-IPO & Order Matching API', () => {
       create: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     aiFundPosition: { findMany: vi.fn().mockResolvedValue([]) },
     realEstateShare: { findMany: vi.fn().mockResolvedValue([]) },

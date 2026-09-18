@@ -1,4 +1,4 @@
-import { Controller, Get, HttpStatus, ServiceUnavailableException } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
 export interface HealthResponse {
@@ -25,6 +25,8 @@ export interface HealthResponse {
 
 @Controller('health')
 export class HealthController {
+  private readonly logger = new Logger(HealthController.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   /**
@@ -63,11 +65,13 @@ export class HealthController {
     };
 
     if (!isDbHealthy) {
+      this.logger.error(
+        `Health verification failed: database disconnected (latency: ${latencyMs}ms, mem: ${memMb}MB)`,
+      );
       throw new ServiceUnavailableException({
-        ...response,
         statusCode: HttpStatus.SERVICE_UNAVAILABLE,
         errorCode: 'ERR_DATABASE_DISCONNECTED',
-        message: 'Database connection failed during health verification',
+        message: 'Service is currently unavailable',
       });
     }
 
@@ -94,7 +98,8 @@ export class HealthController {
   async getReadiness(): Promise<{ success: boolean; ready: boolean; timestamp: string }> {
     const isDbHealthy = await this.prisma.isHealthy();
     if (!isDbHealthy) {
-      throw new ServiceUnavailableException('Service is not ready: database ping failed');
+      this.logger.error('Readiness probe failed: database connection unavailable');
+      throw new ServiceUnavailableException('Service is currently unavailable');
     }
     return {
       success: true,

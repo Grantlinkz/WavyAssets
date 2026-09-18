@@ -182,15 +182,20 @@ describe('Performance & Load Benchmark — 1,000 Concurrent Institutional Sessio
     const totalRuns = 1000;
     const latencies: number[] = [];
 
-    for (let i = 0; i < totalRuns; i++) {
-      const user = mockUsers[i % mockUsers.length];
-      const start = performance.now();
-      const result = await dashboardService.getCommandBarData(user.id);
-      const duration = performance.now() - start;
-      latencies.push(duration);
+    const batchSize = 25;
+    for (let b = 0; b < totalRuns / batchSize; b++) {
+      const batchPromises = Array.from({ length: batchSize }, async (_, idx) => {
+        const user = mockUsers[(b * batchSize + idx) % mockUsers.length];
+        const start = performance.now();
+        const result = await dashboardService.getCommandBarData(user.id);
+        const duration = performance.now() - start;
+        latencies.push(duration);
 
-      expect(result.consolidatedNetWorth).toBeGreaterThan(0);
-      expect(result.allocationMatrix).toHaveLength(6);
+        expect(result.consolidatedNetWorth).toBeGreaterThan(0);
+        expect(result.allocationMatrix).toHaveLength(6);
+      });
+
+      await Promise.all(batchPromises);
     }
 
     latencies.sort((a: number, b: number) => a - b);

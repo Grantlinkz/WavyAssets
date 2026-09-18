@@ -28,27 +28,23 @@ export interface ApiErrorEnvelope {
   correlationId?: string;
 }
 
-// Token Storage
-const TOKEN_KEY = 'wavy_access_token';
+// Token Storage - strictly in-memory to prevent XSS exfiltration
+let inMemoryAccessToken: string | null = null;
 
 export function getStoredToken(): string | null {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem(TOKEN_KEY);
-  }
-  return null;
+  return inMemoryAccessToken;
 }
 
 export function setStoredToken(token: string): void {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(TOKEN_KEY, token);
-  }
+  inMemoryAccessToken = token;
 }
 
 export function clearStoredToken(): void {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem(TOKEN_KEY);
-  }
+  inMemoryAccessToken = null;
 }
+
+// In-flight refresh promise to deduplicate concurrent refresh attempts
+let inFlightRefreshPromise: Promise<boolean> | null = null;
 
 /**
  * Base HTTP Request Handler with RFC 7807 Error Envelope Parsing
@@ -68,46 +64,59 @@ async function requestApi<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  let res: Response;
   try {
-    const res = await fetch(endpoint, {
+    res = await fetch(endpoint, {
       ...options,
       headers,
       credentials: 'include', // Include HttpOnly refresh cookies
     });
+  } catch (networkError) {
+    if (fallbackData !== undefined) {
+      // Graceful offline fallback ONLY on transport-level fetch failures
+      return fallbackData;
+    }
+    throw networkError;
+  }
 
-    if (!res.ok) {
-      // If unauthorized and we have a token, attempt silent refresh
-      if (res.status === 401 && endpoint !== '/api/v1/auth/refresh' && endpoint !== '/api/v1/auth/exchange-ticket') {
-        const refreshed = await refreshSessionToken();
-        if (refreshed) {
-          headers['Authorization'] = `Bearer ${getStoredToken()}`;
+  if (!res.ok) {
+    // If unauthorized and we have a token, attempt silent refresh
+    if (res.status === 401 && endpoint !== '/api/v1/auth/refresh' && endpoint !== '/api/v1/auth/exchange-ticket') {
+      const refreshed = await refreshSessionToken();
+      if (refreshed) {
+        headers['Authorization'] = `Bearer ${getStoredToken()}`;
+        try {
           const retryRes = await fetch(endpoint, { ...options, headers, credentials: 'include' });
           if (retryRes.ok) {
             const body = await retryRes.json();
             return (body.data !== undefined ? body.data : body) as T;
           }
+          let retryErrMsg = `HTTP ${retryRes.status} Error on ${endpoint}`;
+          try {
+            const errData = (await retryRes.json()) as ApiErrorEnvelope;
+            if (errData?.message) retryErrMsg = errData.message;
+          } catch {
+            // use default retry error message
+          }
+          throw new Error(retryErrMsg);
+        } catch (retryErr) {
+          throw retryErr;
         }
       }
-
-      let errorMsg = `HTTP ${res.status} Error on ${endpoint}`;
-      try {
-        const errorData = (await res.json()) as ApiErrorEnvelope;
-        if (errorData?.message) errorMsg = errorData.message;
-      } catch {
-        // use fallback message
-      }
-      throw new Error(errorMsg);
     }
 
-    const body = await res.json();
-    return (body.data !== undefined ? body.data : body) as T;
-  } catch (error) {
-    if (fallbackData !== undefined) {
-      // Graceful offline fallback
-      return fallbackData;
+    let errorMsg = `HTTP ${res.status} Error on ${endpoint}`;
+    try {
+      const errorData = (await res.json()) as ApiErrorEnvelope;
+      if (errorData?.message) errorMsg = errorData.message;
+    } catch {
+      // use fallback message
     }
-    throw error;
+    throw new Error(errorMsg);
   }
+
+  const body = await res.json();
+  return (body.data !== undefined ? body.data : body) as T;
 }
 
 /**
@@ -156,28 +165,40 @@ export async function exchangeHandoffTicket(ticket: string): Promise<AuthExchang
  * Refresh access token via HttpOnly cookie
  */
 export async function refreshSessionToken(): Promise<boolean> {
-  try {
-    const res = await fetch('/api/v1/auth/refresh', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-    });
+  if (inFlightRefreshPromise) {
+    return inFlightRefreshPromise;
+  }
 
-    if (!res.ok) {
+  inFlightRefreshPromise = (async () => {
+    try {
+      const res = await fetch('/api/v1/auth/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+
+      if (!res.ok) {
+        clearStoredToken();
+        return false;
+      }
+
+      const data = await res.json();
+      const token = data.data?.accessToken || data.accessToken;
+      if (token) {
+        setStoredToken(token);
+        return true;
+      }
       clearStoredToken();
       return false;
+    } catch {
+      clearStoredToken();
+      return false;
+    } finally {
+      inFlightRefreshPromise = null;
     }
+  })();
 
-    const data = await res.json();
-    const token = data.data?.accessToken || data.accessToken;
-    if (token) {
-      setStoredToken(token);
-      return true;
-    }
-    return false;
-  } catch {
-    return false;
-  }
+  return inFlightRefreshPromise;
 }
 
 /**

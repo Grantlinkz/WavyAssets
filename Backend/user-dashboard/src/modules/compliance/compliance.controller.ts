@@ -40,10 +40,7 @@ export class ComplianceController {
     @Body() dto: UploadDossierDto,
     @Req() req: Request,
   ) {
-    const clientIp =
-      (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
-      req.ip ||
-      '127.0.0.1';
+    const clientIp = req.ip || req.socket?.remoteAddress || 'unknown';
     return this.complianceService.uploadDossierDocument(user.id, dto, clientIp);
   }
 
@@ -56,10 +53,7 @@ export class ComplianceController {
     @Body() dto: UpgradeTierDto,
     @Req() req: Request,
   ) {
-    const clientIp =
-      (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
-      req.ip ||
-      '127.0.0.1';
+    const clientIp = req.ip || req.socket?.remoteAddress || 'unknown';
     return this.complianceService.requestTierUpgrade(user.id, dto, clientIp);
   }
 

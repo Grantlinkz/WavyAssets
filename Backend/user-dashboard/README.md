@@ -243,11 +243,13 @@ The server will log:
 
 ### Running Backend in Standalone Container
 
-Build and launch the backend container on port `4001`:
+Build and launch the backend container on host port `4001` (mapped to container internal port `4000` where the healthcheck evaluates `/health`):
 
 ```powershell
 docker compose up --build -d
 ```
+
+> **Port Configuration**: In local non-containerized development, `src/main.ts` listens on `PORT=4001` from `.env`. In Docker Compose, the internal container port is set to `PORT: 4000` with host mapping `"4001:4000"`, matching the container's internal healthcheck `http://localhost:4000/health`.
 
 Verify container health status:
 ```powershell

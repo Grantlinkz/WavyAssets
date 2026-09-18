@@ -22,6 +22,7 @@ describe('StocksService — Order Book, DMA Execution & Balance Reservation', ()
       create: ReturnType<typeof vi.fn>;
       findUnique: ReturnType<typeof vi.fn>;
       update: ReturnType<typeof vi.fn>;
+      updateMany: ReturnType<typeof vi.fn>;
     };
   };
   let mockWalletService: {
@@ -45,6 +46,7 @@ describe('StocksService — Order Book, DMA Execution & Balance Reservation', ()
         create: vi.fn(),
         findUnique: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
     };
 
@@ -194,6 +196,19 @@ describe('StocksService — Order Book, DMA Execution & Balance Reservation', ()
       await expect(
         stocksService.cancelOrder(testUserId, 'ord-none'),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('rejects cancellation if order was claimed concurrently by another worker', async () => {
+      mockPrisma.stockOrder.findUnique.mockResolvedValue({
+        id: 'ord-concurrent',
+        userId: testUserId,
+        status: 'PENDING',
+      });
+      mockPrisma.stockOrder.updateMany.mockResolvedValueOnce({ count: 0 });
+
+      await expect(
+        stocksService.cancelOrder(testUserId, 'ord-concurrent'),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
