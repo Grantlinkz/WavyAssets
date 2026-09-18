@@ -25,7 +25,7 @@ export class AiFundsController {
   /**
    * Quantitative fund telemetry and risk metrics
    */
-  @Get('metrics')
+  @Get(['metrics', 'telemetry'])
   async getMetrics(@CurrentUser() user: AuthenticatedUser) {
     return this.aiFundsService.getMetrics(user.id);
   }

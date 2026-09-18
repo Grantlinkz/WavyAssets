@@ -41,6 +41,7 @@ export const App: React.FC<AppProps> = ({ activeVertical: propVertical }) => {
     if (typeof window !== 'undefined') {
       return (
         window.location.pathname.includes('/auth/callback') ||
+        window.location.pathname.includes('/auth/exchange') ||
         window.location.search.includes('ticket=') ||
         window.location.hash.includes('ticket=')
       );

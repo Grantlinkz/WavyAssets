@@ -29,7 +29,7 @@ export class WalletController {
   /**
    * Fiat Wire On/Off-Ramp (Deposit or Withdrawal with 48h Time-Lock Verification)
    */
-  @Post('fiat-ramp')
+  @Post(['fiat-ramp', 'withdraw'])
   async initiateFiatRamp(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: FiatRampDto,

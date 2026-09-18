@@ -19,7 +19,7 @@ export class CarsController {
   /**
    * Exotic vehicle & horology vault inventory with user holdings
    */
-  @Get('inventory')
+  @Get(['inventory', 'vault-inventory'])
   async getInventory(@CurrentUser() user: AuthenticatedUser) {
     return this.carsService.getInventory(user.id);
   }

@@ -136,8 +136,14 @@ export async function exchangeHandoffTicket(ticket: string): Promise<AuthExchang
     throw new Error(errorMessage);
   }
 
-  const data = await res.json();
+  const data = (await res.json()) as Record<string, unknown>;
+  if (data && data.success === false) {
+    throw new Error((data.message as string) || 'Authentication handoff exchange failed');
+  }
   const result = (data.data !== undefined ? data.data : data) as AuthExchangeResponse;
+  if (result && result.success === false) {
+    throw new Error('Authentication handoff exchange failed');
+  }
 
   if (result?.accessToken) {
     setStoredToken(result.accessToken);
@@ -189,28 +195,31 @@ export async function logoutUser(): Promise<void> {
 // Universal Command Bar & Action Rails
 // ----------------------------------------------------------------------
 
-export async function fetchCommandBarData(fallback?: any): Promise<any> {
-  return requestApi('/api/v1/dashboard/command-bar', { method: 'GET' }, fallback);
+export async function fetchCommandBarData<T = unknown>(fallback?: T): Promise<T> {
+  return requestApi<T>('/api/v1/dashboard/command-bar', { method: 'GET' }, fallback);
 }
 
-export async function fetchActionRails(fallback?: any): Promise<any> {
-  return requestApi('/api/v1/dashboard/action-rail', { method: 'GET' }, fallback);
+export async function fetchActionRails<T = unknown>(fallback?: T): Promise<T> {
+  return requestApi<T>('/api/v1/dashboard/action-rail', { method: 'GET' }, fallback);
 }
 
 // ----------------------------------------------------------------------
 // Liquid Asset Engines (Crypto, Stocks, Wallet)
 // ----------------------------------------------------------------------
 
-export async function fetchCryptoHoldings(fallback?: any): Promise<any> {
-  return requestApi('/api/v1/crypto/holdings', { method: 'GET' }, fallback);
+export async function fetchCryptoHoldings<T = unknown>(fallback?: T): Promise<T> {
+  return requestApi<T>('/api/v1/crypto/holdings', { method: 'GET' }, fallback);
 }
 
-export async function fetchStockPositions(fallback?: any): Promise<any> {
-  return requestApi('/api/v1/stocks/positions', { method: 'GET' }, fallback);
+export async function fetchStockPositions<T = unknown>(fallback?: T): Promise<T> {
+  return requestApi<T>('/api/v1/stocks/positions', { method: 'GET' }, fallback);
 }
 
-export async function fetchStockOrderBook(symbol: string = 'NVDA', fallback?: any): Promise<any> {
-  return requestApi(`/api/v1/stocks/order-book?symbol=${symbol}`, { method: 'GET' }, fallback);
+export async function fetchStockOrderBook<T = unknown>(
+  symbol: string = 'NVDA',
+  fallback?: T,
+): Promise<T> {
+  return requestApi<T>(`/api/v1/stocks/order-book?symbol=${symbol}`, { method: 'GET' }, fallback);
 }
 
 export async function submitStockOrder(payload: {
@@ -219,23 +228,23 @@ export async function submitStockOrder(payload: {
   side: 'BUY' | 'SELL';
   shares: number;
   limitPrice?: number;
-}): Promise<any> {
-  return requestApi('/api/v1/stocks/orders', {
+}): Promise<unknown> {
+  return requestApi<unknown>('/api/v1/stocks/orders', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
 }
 
-export async function fetchWalletBalances(fallback?: any): Promise<any> {
-  return requestApi('/api/v1/wallet/balances', { method: 'GET' }, fallback);
+export async function fetchWalletBalances<T = unknown>(fallback?: T): Promise<T> {
+  return requestApi<T>('/api/v1/wallet/balances', { method: 'GET' }, fallback);
 }
 
 export async function submitWithdrawal(payload: {
   amount: number;
   currency: string;
   destinationId: string;
-}): Promise<any> {
-  return requestApi('/api/v1/wallet/withdraw', {
+}): Promise<unknown> {
+  return requestApi<unknown>('/api/v1/wallet/fiat-ramp', {
     method: 'POST',
     body: JSON.stringify({
       amount: payload.amount,
@@ -250,56 +259,74 @@ export async function submitWithdrawal(payload: {
 // Alternative Asset Engines (AI Funds, Real Estate, Exotic Cars)
 // ----------------------------------------------------------------------
 
-export async function fetchAiFundsTelemetry(fallback?: any): Promise<any> {
-  return requestApi('/api/v1/ai-funds/telemetry', { method: 'GET' }, fallback);
+export async function fetchAiFundsTelemetry<T = unknown>(fallback?: T): Promise<T> {
+  return requestApi<T>('/api/v1/ai-funds/metrics', { method: 'GET' }, fallback);
 }
 
-export async function toggleAiCircuitBreaker(active: boolean, reason?: string): Promise<any> {
-  return requestApi('/api/v1/ai-funds/circuit-breaker', {
+export async function toggleAiCircuitBreaker(active: boolean, reason?: string): Promise<unknown> {
+  return requestApi<unknown>('/api/v1/ai-funds/circuit-breaker', {
     method: 'POST',
     body: JSON.stringify({ active, reason }),
   });
 }
 
-export async function fetchRealEstateProperties(fallback?: any): Promise<any> {
-  return requestApi('/api/v1/real-estate/properties', { method: 'GET' }, fallback);
+export async function fetchRealEstateProperties<T = unknown>(fallback?: T): Promise<T> {
+  return requestApi<T>('/api/v1/real-estate/properties', { method: 'GET' }, fallback);
 }
 
-export async function fetchCarsVaultInventory(fallback?: any): Promise<any> {
-  return requestApi('/api/v1/cars/vault-inventory', { method: 'GET' }, fallback);
+export async function fetchCarsVaultInventory<T = unknown>(fallback?: T): Promise<T> {
+  return requestApi<T>('/api/v1/cars/inventory', { method: 'GET' }, fallback);
 }
 
 // ----------------------------------------------------------------------
 // Governance & Security (VIP Cards, Compliance, 48h Time-Lock)
 // ----------------------------------------------------------------------
 
-export async function fetchVipCardStatus(fallback?: any): Promise<any> {
-  return requestApi('/api/v1/vip-cards/status', { method: 'GET' }, fallback);
+export async function fetchVipCardStatus<T = unknown>(fallback?: T): Promise<T> {
+  return requestApi<T>('/api/v1/vip-cards/status', { method: 'GET' }, fallback);
 }
 
-export async function revealCardSensitive(pin: string): Promise<any> {
-  return requestApi('/api/v1/vip-cards/reveal-sensitive', {
+export async function revealCardSensitive(pin: string): Promise<unknown> {
+  return requestApi<unknown>('/api/v1/vip-cards/reveal-sensitive', {
     method: 'POST',
     body: JSON.stringify({ pin }),
   });
 }
 
-export async function fetchComplianceStatus(fallback?: any): Promise<any> {
-  return requestApi('/api/v1/compliance/status', { method: 'GET' }, fallback);
+export async function fetchComplianceStatus<T = unknown>(fallback?: T): Promise<T> {
+  return requestApi<T>('/api/v1/compliance/status', { method: 'GET' }, fallback);
 }
 
-export async function fetchWhitelistDestinations(fallback?: any): Promise<any> {
-  return requestApi('/api/v1/security/whitelist-destinations', { method: 'GET' }, fallback);
+export async function fetchWhitelistDestinations<T = unknown>(fallback?: T): Promise<T> {
+  return requestApi<T>('/api/v1/security/whitelist-destinations', { method: 'GET' }, fallback);
 }
 
 export async function registerWhitelistDestination(payload: {
-  address: string;
-  label: string;
-  assetType: 'CRYPTO' | 'FIAT_IBAN';
+  assetRail?: string;
+  destinationLabel?: string;
+  beneficiaryOrg?: string;
+  addressOrIban?: string;
+  address?: string;
+  label?: string;
+  assetType?: 'CRYPTO' | 'FIAT_IBAN';
   network?: string;
-}): Promise<any> {
-  return requestApi('/api/v1/security/whitelist-destinations', {
+}): Promise<unknown> {
+  const body = {
+    assetRail:
+      payload.assetRail ||
+      (payload.network === 'BTC'
+        ? 'BTC'
+        : payload.network === 'ETH'
+          ? 'ETH'
+          : payload.assetType === 'FIAT_IBAN'
+            ? 'WIRE_IBAN'
+            : 'ERC20_USDC'),
+    destinationLabel: payload.destinationLabel || payload.label || 'Whitelisted Address',
+    beneficiaryOrg: payload.beneficiaryOrg || 'Sovereign Beneficiary',
+    addressOrIban: payload.addressOrIban || payload.address || '',
+  };
+  return requestApi<unknown>('/api/v1/security/whitelist-destinations', {
     method: 'POST',
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   });
 }
