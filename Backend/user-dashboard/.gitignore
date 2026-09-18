@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
+*.local.json
+.seed-credentials.*
 
 # Editor directories and files
 .vscode/
@@ -35,4 +37,4 @@ dist-ssr
 *.sqlite
 
 # Mine
-tools/
+tools*

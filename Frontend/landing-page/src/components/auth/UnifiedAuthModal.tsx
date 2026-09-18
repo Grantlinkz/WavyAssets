@@ -199,8 +199,13 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
     setIsLoading(true);
 
     try {
+      let handoffTicket: string | undefined;
+      let targetDashboardUrl: string | undefined;
+
       if (challengeId) {
-        await authApi.verifyOtp({ challengeId, otpCode });
+        const verifyRes = await authApi.verifyOtp({ challengeId, otpCode });
+        handoffTicket = verifyRes.data?.handoffTicket;
+        targetDashboardUrl = verifyRes.data?.dashboardUrl;
         console.info('[Auth] Identity verified successfully via API gateway.');
       } else {
         // Fallback for direct testing/offline simulation
@@ -210,10 +215,39 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
       setIsSuccess(true);
       setErrorMsg('');
 
-      // Auto close after verification display
+      // Auto close and seamlessly redirect to User Dashboard
       setTimeout(() => {
         closeAuthModal();
         setIsSuccess(false);
+
+        if (typeof window !== 'undefined') {
+          const configuredDashboardUrl = import.meta.env.VITE_DASHBOARD_URL;
+          let destinationBase = 'http://localhost:5174/auth/callback';
+
+          if (configuredDashboardUrl) {
+            destinationBase =
+              configuredDashboardUrl.endsWith('/auth/callback') ||
+              configuredDashboardUrl.endsWith('/auth/exchange')
+                ? configuredDashboardUrl
+                : `${configuredDashboardUrl.replace(/\/+$/, '')}/auth/callback`;
+          } else if (targetDashboardUrl) {
+            try {
+              const parsed = new URL(targetDashboardUrl);
+              destinationBase = `${parsed.origin}/auth/callback`;
+            } catch {
+              destinationBase = targetDashboardUrl;
+            }
+          } else if (window.location.port === '5173') {
+            destinationBase = `${window.location.protocol}//${window.location.hostname}:5174/auth/callback`;
+          }
+
+          if (handoffTicket) {
+            const separator = destinationBase.includes('?') ? '&' : '?';
+            window.location.href = `${destinationBase}${separator}ticket=${encodeURIComponent(handoffTicket)}`;
+          } else {
+            window.location.href = destinationBase;
+          }
+        }
       }, 1200);
     } catch (err: unknown) {
       const message =

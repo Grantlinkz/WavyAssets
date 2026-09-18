@@ -1,95 +1,203 @@
-# UI Context — WavyAssets Institutional Terminal
+# UI Context & API Data Contracts — WavyAssets Sovereign Backend User Dashboard
 
-## Visual Theme & Philosophy
+## Purpose & Scope
 
-The design system establishes a **Sovereign Institutional Terminal** for elite multi-asset wealth management and digital custody. Drawing from Swiss typographic rigor, physical vault architecture, and ultra-high-performance financial command terminals, this system prioritizes extreme information density without sensory fatigue.
-
-- **Obsidian Foundation**: Deep near-black background engineered to eliminate eye strain across marathon monitoring sessions.
-- **Architectural Depth**: Structural depth is achieved purely through **tonal stratification** and **subtle 1px hairline boundaries** (`#222632`) rather than heavy elevation dropshadows.
-- **Scarcity of Accent**: Bullion Gold (`#D4AF37`) is deployed with strict restraint—reserved exclusively for sovereign execution triggers, active states, and high-tier portfolio indicators.
-- **Dual Typographic Pairing**: Sovereign Swiss serif typography (`Noto Serif`) for structural navigation and headers combined with relentless tabular monospaced figures (`Inter`) for all financial data.
+This document defines the **API Data Contracts, UI State Alignment, and Presentation Serialization Standards** between the `Backend/user-dashboard` services and `Frontend/user-dashboard`. The backend must deliver precisely formatted JSON payloads that match the frontend Zustand stores, chart visualizers, and institutional design tokens.
 
 ---
 
-## Color Tokens (Obsidian Dark Mode — Default)
+## 1. Global Command Bar Aggregator Contract
 
-| Token Role              | CSS Variable           | Value                      | Description                                  |
-| :---------------------- | :--------------------- | :------------------------- | :------------------------------------------- |
-| **Canvas Base**         | `--bg-base`            | `#08090B`                  | Primary zero-elevation background canvas     |
-| **Panel Surface**       | `--bg-surface-1`       | `#0F1115`                  | Secondary layer for data modules & grids     |
-| **Elevated Surface**    | `--bg-surface-2`       | `#161920`                  | Hover states, active tabs, nested cells      |
-| **Subtle Border**       | `--border-default`     | `#222632`                  | Crisp 1px structural dividing lines          |
-| **Active/Focus Border** | `--border-focus`       | `#3A4050`                  | Selected panes and focused input boundaries  |
-| **Sovereign Gold**      | `--accent-gold`        | `#D4AF37`                  | Primary brand accent & execution triggers    |
-| **Gold Hover**          | `--accent-gold-bright` | `#E5C158`                  | Hover state for gold triggers                |
-| **Gold Muted Wash**     | `--accent-gold-wash`   | `rgba(212, 175, 55, 0.08)` | Active matrix selection & tab highlight      |
-| **Emerald Yield**       | `--state-yield`        | `#00C288`                  | Positive delta, capital inflow, APY gains    |
-| **Emerald Wash**        | `--state-yield-wash`   | `rgba(0, 194, 136, 0.10)`  | Positive spread badge backgrounds            |
-| **Crimson Risk**        | `--state-risk`         | `#FF4D4D`                  | Negative delta, drawdown risk, margin alerts |
-| **Crimson Wash**        | `--state-risk-wash`    | `rgba(255, 77, 77, 0.10)`  | Risk indicator badge backgrounds             |
-| **Text Primary**        | `--text-primary`       | `#F3F4F6`                  | High-contrast headers, critical figures      |
-| **Text Secondary**      | `--text-secondary`     | `#9CA3AF`                  | Column headers, descriptions, metadata       |
-| **Text Tertiary**       | `--text-muted`         | `#4B5563`                  | Inactive timestamps, grid axes, units        |
+Endpoint: `GET /api/v1/dashboard/command-bar`
 
-_(Luxury Light Mode shifts canvas to `#F8F9FA`, surfaces to `#FFFFFF`, borders to `#E5E7EB`, and text to `#111827`, with Gold shifting to `#B89324`.)_
+The backend provides a unified, cached (sub-30ms) financial aggregate consumable directly by the frontend command bar and 3D allocation visualizers:
+
+```json
+{
+  "consolidatedNetWorth": 14820450.00,
+  "currency": "USD",
+  "returns": {
+    "1D": { "dollarChange": 184210.40, "percentageChange": 1.26 },
+    "1W": { "dollarChange": 412500.00, "percentageChange": 2.86 },
+    "1M": { "dollarChange": 980200.00, "percentageChange": 7.08 },
+    "1Y": { "dollarChange": 2840000.00, "percentageChange": 23.71 },
+    "ALL": { "dollarChange": 5420000.00, "percentageChange": 57.65 }
+  },
+  "allocationMatrix": [
+    {
+      "id": "crypto",
+      "name": "Crypto & Yield",
+      "actualValue": 4500000.00,
+      "actualPct": 30.4,
+      "targetPct": 30.0,
+      "color": "#E5C158"
+    },
+    {
+      "id": "stocks",
+      "name": "Global Equities",
+      "actualValue": 3200000.00,
+      "actualPct": 21.6,
+      "targetPct": 20.0,
+      "color": "#53DC98"
+    },
+    {
+      "id": "ai-funds",
+      "name": "AI Quant Alpha",
+      "actualValue": 2500000.00,
+      "actualPct": 16.9,
+      "targetPct": 20.0,
+      "color": "#926F13"
+    },
+    {
+      "id": "real-estate",
+      "name": "Prime Real Estate",
+      "actualValue": 2100000.00,
+      "actualPct": 14.2,
+      "targetPct": 15.0,
+      "color": "#D4AF37"
+    },
+    {
+      "id": "cars",
+      "name": "Exotic Vehicles",
+      "actualValue": 1200000.00,
+      "actualPct": 8.1,
+      "targetPct": 5.0,
+      "color": "#BA1A1A"
+    },
+    {
+      "id": "wallet",
+      "name": "Cash & Custody",
+      "actualValue": 1320450.00,
+      "actualPct": 8.9,
+      "targetPct": 10.0,
+      "color": "#8B9BB4"
+    }
+  ],
+  "kycStatus": {
+    "tier": "TIER_3",
+    "dailyLimit": "UNLIMITED",
+    "status": "VERIFIED"
+  },
+  "privacyMaskActive": false,
+  "lastUpdated": "2026-09-16T01:15:00.000Z"
+}
+```
+
+### Color Token Mapping for UI Visualizers
+The backend supplies hex color values aligned with the frontend Obsidian design tokens:
+- **Crypto & Staking (`crypto`)**: `#E5C158` (Gold Bright)
+- **Global Stocks (`stocks`)**: `#53DC98` (Emerald Yield)
+- **AI Systematic (`ai-funds`)**: `#926F13` (Deep Sovereign Gold)
+- **Real Estate (`real-estate`)**: `#D4AF37` (Sovereign Gold)
+- **Exotic Cars (`cars`)**: `#BA1A1A` (Crimson Accent)
+- **Wallet & Cash (`wallet`)**: `#8B9BB4` (Muted Steel)
 
 ---
 
-## Typography
+## 2. Standardized API Response Envelopes
 
-| Context                 | Font Family  | Size / Leading | Weight         | Letter Spacing        |
-| :---------------------- | :----------- | :------------- | :------------- | :-------------------- |
-| **Headline XL**         | `Noto Serif` | 32px / 38px    | 600 (Semibold) | `-0.02em`             |
-| **Headline LG**         | `Noto Serif` | 24px / 30px    | 600 (Semibold) | `-0.015em`            |
-| **Headline SM**         | `Noto Serif` | 18px / 24px    | 500 (Medium)   | `-0.01em`             |
-| **Label Caps (Badges)** | `Noto Serif` | 11px / 14px    | 600 (Semibold) | `+0.08em` (Uppercase) |
-| **Data Metric LG**      | `Inter`      | 28px / 32px    | 600 (Semibold) | `-0.02em` (Tabular)   |
-| **Data Metric MD**      | `Inter`      | 18px / 24px    | 500 (Medium)   | `-0.01em` (Tabular)   |
-| **Body MD (Data)**      | `Inter`      | 13px / 18px    | 400 (Regular)  | `0em`                 |
-| **Body SM (Data)**      | `Inter`      | 12px / 16px    | 400 (Regular)  | `0em`                 |
-| **Data Micro**          | `Inter`      | 10px / 12px    | 500 (Medium)   | `+0.02em`             |
+### Success Response Envelope
+All successful REST API responses are transformed into a standard JSON envelope:
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "data": { ... },
+  "timestamp": "2026-09-16T01:30:00.000Z"
+}
+```
+
+### Paginated List Response Envelope
+For collections (transactions, order books, properties, audit logs):
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "data": [ ... ],
+  "pagination": {
+    "page": 1,
+    "limit": 25,
+    "totalCount": 142,
+    "totalPages": 6,
+    "hasNextPage": true,
+    "hasPreviousPage": false
+  },
+  "timestamp": "2026-09-16T01:30:00.000Z"
+}
+```
+
+### Standardized Error Envelope (Custom Error Contract)
+Content-Type: `application/json`
+All error responses generated by `GlobalExceptionFilter` follow this custom standardized structure:
+```json
+{
+  "success": false,
+  "statusCode": 403,
+  "errorCode": "ERR_DESTINATION_QUARANTINED",
+  "message": "Target withdrawal destination is quarantined under the 48-hour security time-lock.",
+  "timestamp": "2026-09-16T01:30:00.000Z",
+  "path": "/api/v1/wallet/withdraw",
+  "correlationId": "req-9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "details": null
+}
+```
 
 ---
 
-## Border Radius & Shapes
+## 3. UI Status Badges & Enums
 
-- **Precision Micro-Chamfer (`0.25rem` / `4px`)**: Mandatory for base surfaces, tabular rows, cards, inputs, and buttons. Maintains an instrument-grade, sharp terminal silhouette.
-- **Elevated Modals (`0.5rem` / `8px`)**: Reserved exclusively for modal dialogs (`UnifiedAuthModal`), floating context tooltips, and deep flyouts.
-- **Prohibition**: True pill shapes and heavy rounding (>8px) are **strictly forbidden** to prevent consumerization of the institutional aesthetic.
+The backend serializes enum states consistently to allow the frontend to map badges directly to visual styles:
+
+| Field | Enum Values | Frontend Visual Representation |
+| :--- | :--- | :--- |
+| **Whitelist Status** | `QUARANTINE` | Amber warning badge with live countdown timer to `quarantineUntil` |
+| | `ACTIVE` | Emerald checkmark badge, enabled withdrawal actions |
+| | `REJECTED` | Crimson badge, disabled actions |
+| | `REVOKED` | Muted badge, archived destination |
+| **Transaction Status** | `PENDING` | Pulsing blue/gold badge |
+| | `SETTLED` | Emerald badge |
+| | `FAILED` | Crimson badge with sanitized error message |
+| **Order Status** | `PENDING` | Yellow badge |
+| | `FILLED` | Emerald badge |
+| | `CANCELLED` | Muted gray badge |
+| **VIP Card State** | `ACTIVE` | Obsidian/Gold active indicator |
+| | `FROZEN` | Crimson frozen lock indicator |
+| **KYC Tier** | `TIER_1` | Basic badge ($10k/day limit) |
+| | `TIER_2` | Verified badge ($250k/day limit) |
+| | `TIER_3` | Institutional badge (Unlimited) |
 
 ---
 
-## Component Specifications
+## 4. WebSocket Telemetry Streaming Contracts (`/ws/portfolio`)
 
-### 1. Primary Sovereign CTA
+Clients connect with an authorization bearer token. Once authenticated, the socket is bound to room `user:<userId>`:
 
-- Background: `#D4AF37` (Gold), Text: `#08090B` (`Noto Serif` 12px semibold, uppercase).
-- Hover: `#E5C158`, Active: `#B89324`. Radius: `4px`.
-
-### 2. Secondary Terminal Button
-
-- Background: `#0F1115`, Border: `1px solid #222632`, Text: `#F3F4F6`.
-- Hover: Background `#161920`, Border `#3A4050`. Radius: `4px`.
-
-### 3. Financial Data Tables & Matrices
-
-- Header: `11px` uppercase label-caps in `#9CA3AF`, flush left for names, right-aligned for numbers.
-- Row height: Fixed `1.75rem` (`28px`), bottom hairline border `1px solid rgba(34, 38, 50, 0.5)`.
-- Hover row: Background `#161920`. Selected row: Left border `2px solid #D4AF37`.
-
-### 4. Chips & Delta Badges
-
-- Positive: Background `rgba(0, 194, 136, 0.10)`, Text `#00C288`, `Inter` 11px.
-- Negative: Background `rgba(255, 77, 77, 0.10)`, Text `#FF4D4D`, `Inter` 11px.
-
-### 5. Unified Auth Modal (2-Step)
-
-- Root-mounted with Radix Dialog. Backdrop: `rgba(8, 9, 11, 0.85)` with `backdrop-filter: blur(12px)`.
-- Border: `1px solid #3A4050` with subtle inner gold hairline highlight.
-- Step 1: Institutional email & password / KYC tier selector.
-- Step 2: 6-digit segmented `Input-OTP` auto-focused with resend countdown.
-
-### 6. Portfolio Simulator
-
-- Dual Radix Sliders with linear track `#161920`, filled track `#D4AF37`, and micro-rounded square thumb in `#F3F4F6`.
-- Synchronized SVG / WebGL 3D radial donut visualizer with reactive stroke animations.
+### Outgoing Events from Backend to Frontend:
+1. `portfolio:tick`:
+   ```json
+   {
+     "consolidatedNetWorth": 14820450.00,
+     "oneDayChange": 184210.40,
+     "oneDayPercentage": 1.26,
+     "timestamp": "2026-09-16T01:30:02.000Z"
+   }
+   ```
+2. `allocation:rebalanced`:
+   ```json
+   {
+     "trigger": "ORDER_FILLED",
+     "assetId": "stocks",
+     "symbol": "NVDA",
+     "newAllocationMatrix": [ ... ]
+   }
+   ```
+3. `orderbook:depth`:
+   ```json
+   {
+     "symbol": "NVDA",
+     "bids": [[128.40, 500], [128.35, 1200]],
+     "asks": [[128.45, 800], [128.50, 1500]],
+     "spread": 0.05,
+     "vwap": 128.42
+   }
+   ```
