@@ -1,42 +1,15 @@
-import React, { useState } from 'react';
-import { Shield, Lock, KeyRound, ArrowRight, ExternalLink, AlertCircle, Loader2 } from 'lucide-react';
+import React from 'react';
+import { Shield, KeyRound, ArrowRight, ExternalLink } from 'lucide-react';
 import { Button } from '../ui/button';
-import { useAuthStore } from '../../store/useAuthStore';
 
 interface InstitutionalGateProps {
   onTicketExchangeSuccess?: () => void;
 }
 
-export const InstitutionalGate: React.FC<InstitutionalGateProps> = ({ onTicketExchangeSuccess }) => {
-  const consumeTicket = useAuthStore((s) => s.consumeTicket);
-  const isExchangingTicket = useAuthStore((s) => s.isExchangingTicket);
-  const ticketExchangeError = useAuthStore((s) => s.ticketExchangeError);
-
-  const [ticketInput, setTicketInput] = useState('');
-  const [showManualTicket, setShowManualTicket] = useState(false);
-  const [localError, setLocalError] = useState<string | null>(null);
-
+export const InstitutionalGate: React.FC<InstitutionalGateProps> = () => {
   const landingUrl = typeof window !== 'undefined'
     ? (import.meta.env.VITE_LANDING_URL || `${window.location.protocol}//${window.location.hostname}:5173`)
     : 'http://localhost:5173';
-
-  const handleManualTicketSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!ticketInput.trim()) {
-      setLocalError('Please enter a valid handoff ticket token.');
-      return;
-    }
-
-    setLocalError(null);
-    try {
-      await consumeTicket(ticketInput.trim());
-      if (onTicketExchangeSuccess) {
-        onTicketExchangeSuccess();
-      }
-    } catch (err: unknown) {
-      setLocalError(err instanceof Error ? err.message : 'Ticket verification failed');
-    }
-  };
 
   const handleSignInRedirect = () => {
     if (typeof window !== 'undefined') {
@@ -61,8 +34,13 @@ export const InstitutionalGate: React.FC<InstitutionalGateProps> = ({ onTicketEx
       <div className="w-full max-w-lg p-8 rounded-sm border border-border-hairline bg-surface-container-low shadow-2xl space-y-8 relative z-10">
         {/* Header with Institutional Crest */}
         <div className="text-center space-y-3">
-          <div className="mx-auto w-14 h-14 rounded-sm border border-primary/40 bg-surface-container flex items-center justify-center shadow-inner">
-            <Lock className="h-7 w-7 text-primary" />
+          <div className="mx-auto w-14 h-14 rounded-sm border border-primary/40 bg-surface-container flex items-center justify-center shadow-inner p-2.5">
+            <img
+              src="/favicon.svg"
+              alt="WavyAssets Favicon"
+              data-testid="gate-favicon"
+              className="w-full h-full object-contain"
+            />
           </div>
 
           <div className="space-y-1">
@@ -71,7 +49,7 @@ export const InstitutionalGate: React.FC<InstitutionalGateProps> = ({ onTicketEx
               Sovereign Command Deck Restricted
             </div>
             <h1 className="text-xl sm:text-2xl font-serif font-bold text-on-surface tracking-tight">
-              WavyAssets Institutional Operating System
+              WavyAssets Institutional System
             </h1>
             <p className="text-xs sm:text-sm text-on-surface-variant max-w-md mx-auto leading-relaxed">
               Access to the double-entry transactional core and multi-asset execution environment is restricted to authenticated institutional allocators and family offices.
@@ -112,58 +90,6 @@ export const InstitutionalGate: React.FC<InstitutionalGateProps> = ({ onTicketEx
           </Button>
         </div>
 
-        {/* Manual Handoff Ticket Drawer (Optional for Enclave & Local Test Handoff) */}
-        <div className="pt-2 border-t border-border-hairline">
-          {!showManualTicket ? (
-            <button
-              type="button"
-              data-testid="toggle-manual-ticket"
-              onClick={() => setShowManualTicket(true)}
-              className="text-[11px] font-mono text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center gap-1.5 w-full py-1"
-            >
-              <span>Have an ephemeral handoff ticket?</span>
-              <span className="text-primary underline">Enter token directly</span>
-            </button>
-          ) : (
-            <form onSubmit={handleManualTicketSubmit} className="space-y-3 pt-2" data-testid="manual-ticket-form">
-              <label htmlFor="ticket-input" className="block text-[11px] font-mono text-on-surface-variant">
-                Enter Single-Use HMAC Handoff Ticket:
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="ticket-input"
-                  data-testid="manual-ticket-input"
-                  type="text"
-                  value={ticketInput}
-                  onChange={(e) => setTicketInput(e.target.value)}
-                  placeholder="wavy_ticket_... or seed hex"
-                  className="flex-1 bg-surface-container border border-border-hairline rounded-xs px-3 py-1.5 text-xs font-mono text-on-surface focus:outline-none focus:border-primary placeholder:text-on-surface-variant/40"
-                  disabled={isExchangingTicket}
-                />
-                <Button
-                  data-testid="manual-ticket-submit"
-                  type="submit"
-                  variant="secondary"
-                  size="default"
-                  disabled={isExchangingTicket || !ticketInput.trim()}
-                >
-                  {isExchangingTicket ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Redeem'}
-                </Button>
-              </div>
-
-              {(localError || ticketExchangeError) && (
-                <div
-                  data-testid="gate-error-message"
-                  className="p-2.5 rounded-xs bg-error/10 border border-error/30 text-error flex items-center gap-2 text-[11px] font-mono"
-                >
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  <span>{localError || ticketExchangeError}</span>
-                </div>
-              )}
-            </form>
-          )}
-        </div>
-
         {/* Footer Security Badges */}
         <div className="pt-4 border-t border-border-hairline/50 flex items-center justify-between text-[10px] font-mono text-on-surface-variant/70">
           <span>Double-Entry Conservation</span>
@@ -179,7 +105,7 @@ export const InstitutionalGate: React.FC<InstitutionalGateProps> = ({ onTicketEx
             href={landingUrl}
             className="text-[11px] font-mono text-on-surface-variant hover:text-on-surface transition-colors"
           >
-            ← Return to Public Terminal Showcase
+            ← Return to WavyAssets Home Page
           </a>
         </div>
       </div>

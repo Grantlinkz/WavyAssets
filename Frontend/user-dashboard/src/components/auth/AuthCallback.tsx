@@ -41,7 +41,7 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
 
   const [errorMessage, setErrorMessage] = useState<string | null>(() => {
     if (!initialTicket && !isAuth) {
-      return 'No authentication handoff ticket found.';
+      return 'No authentication found.';
     }
     return null;
   });
@@ -85,7 +85,7 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
   return (
     <div
       data-testid="auth-callback-container"
-      className="min-h-[540px] flex items-center justify-center p-6 bg-surface-container-lowest"
+      className="min-h-screen flex items-center justify-center p-6 bg-surface-container-lowest"
     >
       <div className="w-full max-w-md p-6 rounded-sm border border-border-hairline bg-surface-container-low shadow-xl text-center space-y-6">
         {/* Enclave Crest */}
@@ -98,7 +98,7 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
             Sovereign Enclave Authentication
           </h2>
           <p className="text-xs text-on-surface-variant mt-1">
-            Verifying single-use HMAC-SHA256 handoff ticket
+            Verifying 
           </p>
         </div>
 

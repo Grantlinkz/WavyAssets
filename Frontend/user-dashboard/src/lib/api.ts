@@ -318,6 +318,20 @@ export async function fetchComplianceStatus<T = unknown>(fallback?: T): Promise<
   return requestApi<T>('/api/v1/compliance/status', { method: 'GET' }, fallback);
 }
 
+export async function uploadDossierDocument<T = unknown>(
+  payload: { docType: string; fileUrl: string; notes?: string },
+  fallback?: T
+): Promise<T> {
+  return requestApi<T>(
+    '/api/v1/compliance/documents',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+    fallback || ({ success: true, fileUrl: payload.fileUrl } as unknown as T)
+  );
+}
+
 export async function fetchWhitelistDestinations<T = unknown>(fallback?: T): Promise<T> {
   return requestApi<T>('/api/v1/security/whitelist-destinations', { method: 'GET' }, fallback);
 }

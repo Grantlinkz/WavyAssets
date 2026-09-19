@@ -14,18 +14,17 @@ describe('Institutional Access Gate & Authentication Guard Suite', () => {
 
     expect(html).toContain('data-testid="institutional-gate-container"');
     expect(html).toContain('Sovereign Command Deck Restricted');
-    expect(html).toContain('WavyAssets Institutional Operating System');
+    expect(html).toContain('WavyAssets Institutional System');
     expect(html).toContain('data-testid="gate-signin-button"');
     expect(html).toContain('data-testid="gate-mandate-button"');
     expect(html).toContain('Sign In with Sovereign 2FA');
     expect(html).toContain('Request Institutional Mandate');
   });
 
-  it('renders gate with manual handoff ticket redemption option', () => {
+  it('renders gate with favicon crest and security badges', () => {
     const html = renderToString(<InstitutionalGate />);
 
-    expect(html).toContain('data-testid="toggle-manual-ticket"');
-    expect(html).toContain('Have an ephemeral handoff ticket?');
+    expect(html).toContain('data-testid="gate-favicon"');
     expect(html).toContain('Double-Entry Conservation');
     expect(html).toContain('48h Quarantine Time-Lock');
   });

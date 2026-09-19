@@ -89,15 +89,12 @@ export const App: React.FC<AppProps> = ({
             setIsCheckingSession(false);
           } else {
             setIsCheckingSession(false);
-            // Requirement 1: Redirect to landing signin if unauthenticated or user details missing
-            window.location.href = `${landingUrl}/?auth=signin`;
           }
         }
       })
       .catch(() => {
         if (isMounted) {
           setIsCheckingSession(false);
-          window.location.href = `${landingUrl}/?auth=signin`;
         }
       });
 
@@ -170,10 +167,6 @@ export const App: React.FC<AppProps> = ({
 
   // Institutional Gate: Block unauthenticated access in browser client
   if (shouldEnforceGate && (!isAuthenticated || !user)) {
-    if (typeof window !== 'undefined' && !isTest) {
-      window.location.href = `${landingUrl}/?auth=signin`;
-      return null;
-    }
     return <InstitutionalGate onTicketExchangeSuccess={() => setIsAuthCallbackRoute(false)} />;
   }
 
