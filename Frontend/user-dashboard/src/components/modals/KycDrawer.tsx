@@ -7,13 +7,8 @@ import {
   FileText,
   X,
   Lock,
-  Upload,
   AlertCircle,
   Clock,
-  Calendar,
-  User,
-  MapPin,
-  FileCheck,
 } from 'lucide-react';
 import {
   Dialog,
@@ -24,7 +19,7 @@ import {
 import { Button } from '../ui/button';
 import { usePortfolioStore } from '../../store/usePortfolioStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { uploadDossierDocument } from '../../lib/api';
+import { uploadDossierDocument, fetchComplianceStatus } from '../../lib/api';
 
 export interface KycDrawerProps {
   isOpen?: boolean;
@@ -34,18 +29,12 @@ export interface KycDrawerProps {
 
 interface KycSubmissions {
   level2?: {
-    fullName: string;
-    dob: string;
-    idNumber: string;
     fileName: string;
     submittedAt: string;
     status: 'PENDING_APPROVAL' | 'APPROVED';
   };
   level3?: {
     docCategory: 'UTILITY_BILL' | 'BANK_STATEMENT';
-    providerOrBank: string;
-    billingAddress: string;
-    billIssueDate: string;
     fileName: string;
     submittedAt: string;
     status: 'PENDING_APPROVAL' | 'APPROVED';
@@ -64,7 +53,6 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
   const isOpen = propIsOpen !== undefined ? propIsOpen : storeModal === 'kyc';
   const closeModal = propClose !== undefined ? propClose : storeClose;
 
-  const currentTier = user?.kycTier || 'TIER_1';
   const userId = user?.id || 'guest';
   const storageKey = `wavyassets_kyc_submissions_${userId}`;
 
@@ -87,7 +75,7 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
   );
 
   // Level 2 Form State
-  const [l2FullName, setL2FullName] = useState(user?.fullName || '');
+  const [l2FullName, setL2FullName] = useState('');
   const [l2Dob, setL2Dob] = useState('');
   const [l2IdNumber, setL2IdNumber] = useState('');
   const [l2File, setL2File] = useState<File | null>(null);
@@ -105,40 +93,111 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
   const [l3Error, setL3Error] = useState<string | null>(null);
   const [l3Submitting, setL3Submitting] = useState(false);
 
-  // Sync user name when user updates
-  useEffect(() => {
-    if (user?.fullName && !l2FullName) {
-      setL2FullName(user.fullName);
-    }
-  }, [user, l2FullName]);
+  // Server-fetched compliance status as source of truth
+  const [serverCompliance, setServerCompliance] = useState<{
+    currentTier: string;
+    requirements?: Array<{ tier: string; isMet: boolean }>;
+    documents?: Array<{ id: string; docType: string; isVerified: boolean }>;
+  } | null>(null);
 
-  // Save submissions to localStorage
+  useEffect(() => {
+    let isMounted = true;
+    fetchComplianceStatus()
+      .then((res: unknown) => {
+        if (!isMounted || !res) return;
+        const resObj = res as Record<string, unknown>;
+        const data = (resObj.data !== undefined ? resObj.data : resObj) as {
+          currentTier?: string;
+          kycTier?: string;
+          requirements?: Array<{ tier: string; isMet: boolean }>;
+          documents?: Array<{ id: string; docType: string; isVerified: boolean }>;
+        };
+        if (data && typeof data === 'object') {
+          const tier = data.kycTier || data.currentTier || 'TIER_1';
+          setServerCompliance({
+            currentTier: tier,
+            requirements: data.requirements,
+            documents: data.documents,
+          });
+          if (tier) {
+            useAuthStore.getState().updateUserKycTier(tier as 'TIER_1' | 'TIER_2' | 'TIER_3');
+          }
+        }
+      })
+      .catch(() => {
+        // Fallback
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Save non-sensitive submission status to localStorage
   const saveSubmissions = (updated: KycSubmissions) => {
     setSubmissions(updated);
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
-        window.localStorage.setItem(storageKey, JSON.stringify(updated));
+        const sanitized = {
+          level2: updated.level2
+            ? {
+                fileName: updated.level2.fileName,
+                submittedAt: updated.level2.submittedAt,
+                status: updated.level2.status,
+              }
+            : undefined,
+          level3: updated.level3
+            ? {
+                docCategory: updated.level3.docCategory,
+                fileName: updated.level3.fileName,
+                submittedAt: updated.level3.submittedAt,
+                status: updated.level3.status,
+              }
+            : undefined,
+        };
+        window.localStorage.setItem(storageKey, JSON.stringify(sanitized));
       } catch {
         // Ignore
       }
     }
   };
 
-  // Determine Level Statuses
-  const isLevel1Done = true; // Always cleared upon sign-in/registration
-  const isLevel2Approved = currentTier === 'TIER_2' || currentTier === 'TIER_3' || submissions.level2?.status === 'APPROVED';
-  const isLevel2Pending = Boolean(submissions.level2 && submissions.level2.status === 'PENDING_APPROVAL');
+  // Determine Level Statuses strictly from verified KYC documents:
+  // Level 1: Passed automatically upon OTP / email verification.
+  // Level 2: Gov ID MUST NOT pass without going through KYC upload & admin review.
+  const hasServerVerifiedL2Doc = Boolean(
+    serverCompliance?.documents?.some(
+      (d) => (d.docType === 'PASSPORT' || d.docType === 'GOVERNMENT_ID') && d.isVerified
+    ) || serverCompliance?.requirements?.find((r) => r.tier === 'TIER_2')?.isMet
+  );
+  const hasServerVerifiedL3Doc = Boolean(
+    serverCompliance?.documents?.some(
+      (d) =>
+        (d.docType === 'UTILITY_BILL' ||
+          d.docType === 'BANK_STATEMENT' ||
+          d.docType === 'ARTICLES_OF_INC' ||
+          d.docType === 'SOURCE_OF_WEALTH') &&
+        d.isVerified
+    ) || serverCompliance?.requirements?.find((r) => r.tier === 'TIER_3')?.isMet
+  );
 
-  const isLevel3Approved = currentTier === 'TIER_3' || submissions.level3?.status === 'APPROVED';
-  const isLevel3Pending = Boolean(submissions.level3 && submissions.level3.status === 'PENDING_APPROVAL');
-  const isLevel3Locked = !isLevel2Approved; // Level 3 is locked until Level 2 has been done
+  const isLevel2Approved = hasServerVerifiedL2Doc || submissions.level2?.status === 'APPROVED';
+  const isLevel2Pending = !isLevel2Approved && submissions.level2?.status === 'PENDING_APPROVAL';
+
+  const isLevel3Approved = isLevel2Approved && (hasServerVerifiedL3Doc || submissions.level3?.status === 'APPROVED');
+  const isLevel3Pending = !isLevel3Approved && submissions.level3?.status === 'PENDING_APPROVAL';
+  const isLevel3Locked = !isLevel2Approved; // Level 3 is strictly locked until Level 2 has been approved
+
+  const effectiveTier = isLevel3Approved ? 'TIER_3' : isLevel2Approved ? 'TIER_2' : 'TIER_1';
+
+  const effectiveFullName = (l2FullName || user?.fullName || '').trim();
 
   // Handle Level 2 Submission
   const handleLevel2Submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setL2Error(null);
 
-    if (!l2FullName.trim() || l2FullName.trim().length < 2) {
+    if (!effectiveFullName || effectiveFullName.length < 2) {
       setL2Error('Please enter your full legal name as it appears on your ID.');
       return;
     }
@@ -151,7 +210,7 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
       return;
     }
     if (!l2File) {
-      setL2Error('Please select a government ID document (Passport, Driver License, or National ID).');
+      setL2Error('Please select your Government ID document file (PDF or Image).');
       return;
     }
     if (!l2Attested) {
@@ -161,29 +220,30 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
 
     setL2Submitting(true);
     try {
-      // Dispatch to API if available
       await uploadDossierDocument({
         docType: 'PASSPORT',
-        fileUrl: `https://vault.wavyassets.com/dossier/govid_${Date.now()}_${l2File.name}`,
-        notes: `Government ID upload: ${l2FullName.trim()} | DOB: ${l2Dob} | ID Number: ${l2IdNumber.trim()}`,
-      });
-    } catch {
-      // Graceful offline fallback
-    }
-
-    const updatedSubmissions: KycSubmissions = {
-      ...submissions,
-      level2: {
-        fullName: l2FullName.trim(),
+        file: l2File,
+        fullName: effectiveFullName,
         dob: l2Dob.trim(),
         idNumber: l2IdNumber.trim(),
-        fileName: l2File.name,
-        submittedAt: new Date().toISOString(),
-        status: 'PENDING_APPROVAL',
-      },
-    };
-    saveSubmissions(updatedSubmissions);
-    setL2Submitting(false);
+        notes: `Government ID upload: ${effectiveFullName} | DOB: ${l2Dob} | ID Number: ${l2IdNumber.trim()}`,
+      });
+
+      const updatedSubmissions: KycSubmissions = {
+        ...submissions,
+        level2: {
+          fileName: l2File.name,
+          submittedAt: new Date().toISOString(),
+          status: 'PENDING_APPROVAL',
+        },
+      };
+      saveSubmissions(updatedSubmissions);
+      setL2Submitting(false);
+    } catch (err: unknown) {
+      setL2Submitting(false);
+      setL2Error(err instanceof Error ? err.message : 'Failed to upload Government ID document to server.');
+      return;
+    }
   };
 
   // Handle Level 3 Submission with <3 months verification
@@ -239,29 +299,32 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
 
     setL3Submitting(true);
     try {
+      const selectedDocType = l3Category === 'UTILITY_BILL' ? 'UTILITY_BILL' : 'BANK_STATEMENT';
       await uploadDossierDocument({
-        docType: l3Category === 'UTILITY_BILL' ? 'UTILITY_BILL' : 'PASSPORT',
-        fileUrl: `https://vault.wavyassets.com/dossier/address_${Date.now()}_${l3File.name}`,
-        notes: `${l3Category}: ${l3Provider.trim()} | Address: ${l3Address.trim()} | Issued: ${l3BillDate}`,
-      });
-    } catch {
-      // Graceful offline fallback
-    }
-
-    const updatedSubmissions: KycSubmissions = {
-      ...submissions,
-      level3: {
-        docCategory: l3Category,
+        docType: selectedDocType,
+        file: l3File,
         providerOrBank: l3Provider.trim(),
         billingAddress: l3Address.trim(),
         billIssueDate: l3BillDate,
-        fileName: l3File.name,
-        submittedAt: new Date().toISOString(),
-        status: 'PENDING_APPROVAL',
-      },
-    };
-    saveSubmissions(updatedSubmissions);
-    setL3Submitting(false);
+        notes: `${l3Category}: ${l3Provider.trim()} | Address: ${l3Address.trim()} | Issued: ${l3BillDate}`,
+      });
+
+      const updatedSubmissions: KycSubmissions = {
+        ...submissions,
+        level3: {
+          docCategory: l3Category,
+          fileName: l3File.name,
+          submittedAt: new Date().toISOString(),
+          status: 'PENDING_APPROVAL',
+        },
+      };
+      saveSubmissions(updatedSubmissions);
+      setL3Submitting(false);
+    } catch (err: unknown) {
+      setL3Submitting(false);
+      setL3Error(err instanceof Error ? err.message : 'Failed to upload address document to server.');
+      return;
+    }
   };
 
   if (!isOpen) return null;
@@ -303,13 +366,13 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
           <div className="p-2 bg-surface-container-low rounded-DEFAULT border border-border-hairline">
             <span className="block text-[10px] font-mono text-outline uppercase">Active Tier</span>
             <span className="text-xs font-mono font-bold text-primary mt-0.5 block">
-              {currentTier.replace('_', ' ')}
+              {effectiveTier.replace('_', ' ')}
             </span>
           </div>
           <div className="p-2 bg-surface-container-low rounded-DEFAULT border border-border-hairline">
             <span className="block text-[10px] font-mono text-outline uppercase">Daily Limit</span>
             <span className="text-xs font-mono font-bold text-tertiary mt-0.5 block">
-              {currentTier === 'TIER_3' ? 'UNLIMITED' : currentTier === 'TIER_2' ? '$250,000' : '$10,000'}
+              {effectiveTier === 'TIER_3' ? 'UNLIMITED' : effectiveTier === 'TIER_2' ? '$250,000' : '$10,000'}
             </span>
           </div>
           <div className="p-2 bg-surface-container-low rounded-DEFAULT border border-border-hairline">
@@ -497,7 +560,7 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
                       <input
                         id="kyc-fullname"
                         type="text"
-                        value={l2FullName}
+                        value={l2FullName !== '' ? l2FullName : (user?.fullName || '')}
                         onChange={(e) => setL2FullName(e.target.value)}
                         placeholder="e.g. Dr. Alexander Von Berg"
                         className="w-full h-8 px-2.5 text-xs bg-surface-container border border-border-hairline rounded-xs text-on-surface focus:outline-none focus:border-primary"

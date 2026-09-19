@@ -5,6 +5,7 @@ import { SidebarRail } from './components/nav/SidebarRail';
 import { MobileHeader } from './components/nav/MobileHeader';
 import { AuthCallback } from './components/auth/AuthCallback';
 import { VerticalPlaceholder } from './components/modules/VerticalPlaceholder';
+import { OverviewModule } from './components/modules/overview/OverviewModule';
 import { CryptoModule } from './components/modules/crypto/CryptoModule';
 import { StocksModule } from './components/modules/stocks/StocksModule';
 import { WalletModule } from './components/modules/wallet/WalletModule';
@@ -20,9 +21,9 @@ import { WithdrawModal } from './components/modals/WithdrawModal';
 import { TradeModal } from './components/modals/TradeModal';
 import { KycDrawer } from './components/modals/KycDrawer';
 import { InstitutionalGate } from './components/auth/InstitutionalGate';
-import { useAuthStore } from './store/useAuthStore';
+import { useAuthStore, type UserEntity } from './store/useAuthStore';
 import { usePortfolioStore } from './store/usePortfolioStore';
-import { refreshSessionToken, fetchCommandBarData } from './lib/api';
+import { refreshSessionToken, fetchCommandBarData, fetchUserProfile } from './lib/api';
 import { Loader2 } from 'lucide-react';
 import type { AssetVertical } from './store/useDashboardStore';
 
@@ -72,36 +73,82 @@ export const App: React.FC<AppProps> = ({
   const shouldEnforceGate = requireAuth || (!isTest && !bypassAuth);
 
   // Client-side session restoration attempt (only in real browser when unauthenticated)
-  const [isCheckingSession, setIsCheckingSession] = useState<boolean>(false);
+  const [sessionVerified, setSessionVerified] = useState<boolean>(() => {
+    return isTest || typeof window === 'undefined' || Boolean(bypassAuth) || isAuthCallbackRoute;
+  });
+  const [isCheckingSession, setIsCheckingSession] = useState<boolean>(() => {
+    return typeof window !== 'undefined' && !isTest && !isAuthCallbackRoute && !bypassAuth;
+  });
 
   useEffect(() => {
-    if (typeof window === 'undefined' || isTest || (isAuthenticated && user) || isAuthCallbackRoute || bypassAuth) {
+    if (typeof window === 'undefined' || isTest || isAuthCallbackRoute || bypassAuth) {
       return;
     }
 
     let isMounted = true;
-    setIsCheckingSession(true);
+
     refreshSessionToken()
-      .then((success) => {
-        if (isMounted) {
-          if (success && useAuthStore.getState().user) {
-            useAuthStore.setState({ isAuthenticated: true });
-            setIsCheckingSession(false);
-          } else {
-            setIsCheckingSession(false);
+      .then(async (success) => {
+        if (!isMounted) return;
+        if (success) {
+          try {
+            const userProfile = await fetchUserProfile();
+            if (isMounted && userProfile && typeof userProfile === 'object' && 'id' in userProfile) {
+              useAuthStore.setState({ user: userProfile as unknown as UserEntity, isAuthenticated: true });
+              setIsCheckingSession(false);
+              setSessionVerified(true);
+              return;
+            }
+          } catch {
+            // User profile retrieval failed
           }
+        }
+        if (isMounted) {
+          useAuthStore.setState({ isAuthenticated: false, user: null });
+          setIsCheckingSession(false);
+          setSessionVerified(true);
         }
       })
       .catch(() => {
         if (isMounted) {
+          useAuthStore.setState({ isAuthenticated: false, user: null });
           setIsCheckingSession(false);
+          setSessionVerified(true);
         }
       });
 
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated, user, isAuthCallbackRoute, bypassAuth, isTest, landingUrl]);
+  }, [isAuthCallbackRoute, bypassAuth, isTest]);
+
+  // Navigate to landing signin only after session verification completes and confirms unauthenticated
+  useEffect(() => {
+    if (
+      typeof window === 'undefined' ||
+      isTest ||
+      !sessionVerified ||
+      isCheckingSession ||
+      isAuthCallbackRoute ||
+      bypassAuth
+    ) {
+      return;
+    }
+
+    if (shouldEnforceGate && (!isAuthenticated || !user)) {
+      window.location.href = `${landingUrl}/?auth=signin`;
+    }
+  }, [
+    sessionVerified,
+    isCheckingSession,
+    shouldEnforceGate,
+    isAuthenticated,
+    user,
+    isAuthCallbackRoute,
+    bypassAuth,
+    isTest,
+    landingUrl,
+  ]);
 
   // Dynamically load user-specific command bar financial valuations
   useEffect(() => {
@@ -109,37 +156,35 @@ export const App: React.FC<AppProps> = ({
     let isMounted = true;
 
     fetchCommandBarData()
-      .then((res: any) => {
+      .then((res: unknown) => {
         if (!isMounted || !res) return;
-        const data = res.data !== undefined ? res.data : res;
+        const resObj = res as Record<string, unknown>;
+        const data = (resObj.data !== undefined ? resObj.data : resObj) as Record<string, unknown>;
         if (data && typeof data === 'object') {
           if (typeof data.consolidatedNetWorth === 'number') {
             usePortfolioStore.getState().setNetWorth(data.consolidatedNetWorth);
           }
-          if (data.returns) {
-            usePortfolioStore.getState().setReturns(data.returns);
+          if (data.returns && typeof data.returns === 'object') {
+            usePortfolioStore.getState().setReturns(data.returns as Record<string, { dollarChange: number; percentageChange: number }>);
           }
           if (Array.isArray(data.allocationMatrix) && data.allocationMatrix.length > 0) {
-            const mapped = data.allocationMatrix.map((item: any) => ({
-              id: item.id,
-              name: item.name,
-              shortName: item.name,
-              color: item.color || '#f2ca50',
-              actualValue: item.actualValue || 0,
-              actualPct: item.actualPct || 0,
-              targetPct: item.targetPct || 0,
+            const mapped = (data.allocationMatrix as Array<Record<string, unknown>>).map((item) => ({
+              id: String(item.id || ''),
+              name: String(item.name || ''),
+              shortName: String(item.name || ''),
+              color: String(item.color || '#f2ca50'),
+              actualValue: Number(item.actualValue) || 0,
+              actualPct: Number(item.actualPct) || 0,
+              targetPct: Number(item.targetPct) || 0,
               deltaLabel: 'ACTIVE',
               isGain: true,
             }));
             usePortfolioStore.getState().setAllocations(mapped);
           }
-          if (data.kycStatus?.tier) {
-            useAuthStore.getState().updateUserKycTier(data.kycStatus.tier);
-          }
         }
       })
       .catch(() => {
-        // Fallback to calculated values
+        // Fallback to static institutional calculations if command bar endpoint is offline
       });
 
     return () => {
@@ -193,6 +238,7 @@ export const App: React.FC<AppProps> = ({
           className="flex-1 flex flex-col min-w-0 bg-surface focus:outline-none"
         >
           <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 min-h-[540px]">
+            {activeVertical === 'overview' && <OverviewModule />}
             {activeVertical === 'crypto' && <CryptoModule />}
             {activeVertical === 'stocks' && <StocksModule />}
             {activeVertical === 'wallet' && <WalletModule />}
@@ -202,7 +248,8 @@ export const App: React.FC<AppProps> = ({
             {activeVertical === 'vip-cards' && <VipCardsModule />}
             {activeVertical === 'compliance' && <ComplianceModule />}
             {activeVertical === 'security' && <SecurityModule />}
-            {activeVertical !== 'crypto' &&
+            {activeVertical !== 'overview' &&
+              activeVertical !== 'crypto' &&
               activeVertical !== 'stocks' &&
               activeVertical !== 'wallet' &&
               activeVertical !== 'ai-funds' &&

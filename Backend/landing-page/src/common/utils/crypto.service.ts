@@ -15,10 +15,11 @@ export class CryptoService {
       this.configService.get<string>('security.jwtSecret') ||
       'wavy_default_sovereign_hmac_secret_key_minimum_64_characters_length_required!';
 
-    this.handoffSecret =
-      this.configService.get<string>('security.handoffTicketSecret') ||
-      process.env.HANDOFF_TICKET_SECRET ||
-      'wavy_sovereign_cross_domain_handoff_ticket_secret_key_2026';
+    const handoffConfig = this.configService.get<string>('security.handoffTicketSecret');
+    if (!handoffConfig) {
+      throw new Error('HANDOFF_TICKET_SECRET is missing from configuration');
+    }
+    this.handoffSecret = handoffConfig;
 
     const keyHex =
       this.configService.get<string>('security.fieldEncryptionKey') ||

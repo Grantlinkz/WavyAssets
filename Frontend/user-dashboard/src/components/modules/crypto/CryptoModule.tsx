@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { TrendingUp } from 'lucide-react';
 import { HoldingsTable } from './HoldingsTable';
 import { DcaScheduler } from './DcaScheduler';
 import { StakingTelemetry } from './StakingTelemetry';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { formatMaskedCurrency } from '../../../lib/calculations';
+import { CRYPTO_HOLDINGS_DATA } from '../../../lib/liquidAssetData';
 
 interface CryptoModuleProps {
   maskBalances?: boolean;
@@ -13,6 +14,43 @@ interface CryptoModuleProps {
 export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMask }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
+
+  // Dynamically compute accurate values directly from CRYPTO_HOLDINGS_DATA
+  const totalCryptoNav = useMemo(() => {
+    return CRYPTO_HOLDINGS_DATA.reduce((sum, h) => sum + h.balance * h.spotPrice, 0);
+  }, []);
+
+  const totalUnrealizedPnl = useMemo(() => {
+    return CRYPTO_HOLDINGS_DATA.reduce((sum, h) => sum + h.unrealizedPnl, 0);
+  }, []);
+
+  const totalCostBasis = useMemo(() => {
+    return CRYPTO_HOLDINGS_DATA.reduce((sum, h) => sum + h.balance * h.entryPrice, 0);
+  }, []);
+
+  const totalPnlPct = totalCostBasis > 0 ? (totalUnrealizedPnl / totalCostBasis) * 100 : 0;
+
+  const stakedHoldings = useMemo(() => {
+    return CRYPTO_HOLDINGS_DATA.filter((h) => h.custodyType === 'STAKING_LOCKUP');
+  }, []);
+
+  const totalStakedCapital = useMemo(() => {
+    return stakedHoldings.reduce((sum, h) => sum + h.balance * h.spotPrice, 0);
+  }, [stakedHoldings]);
+
+  const stakedPctOfCrypto = totalCryptoNav > 0 ? (totalStakedCapital / totalCryptoNav) * 100 : 0;
+
+  const blendedApy = useMemo(() => {
+    if (totalStakedCapital === 0) return 0;
+    const weightedSum = stakedHoldings.reduce(
+      (sum, h) => sum + h.balance * h.spotPrice * (h.stakingApy || 0),
+      0
+    );
+    return weightedSum / totalStakedCapital;
+  }, [stakedHoldings, totalStakedCapital]);
+
+  const dailyRunRate = (totalStakedCapital * (blendedApy / 100)) / 365;
+  const accruedYield = 18492.3;
 
   return (
     <div
@@ -30,17 +68,24 @@ export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMa
               </span>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-xl font-mono font-bold text-on-surface tabular-nums">
-                  {formatMaskedCurrency(5187157.5, maskBalances)}
+                  {formatMaskedCurrency(totalCryptoNav, maskBalances)}
                 </span>
               </div>
             </div>
             <span className="px-1.5 py-0.5 bg-tertiary/10 text-tertiary text-[10px] font-mono rounded-DEFAULT uppercase">
-              35.0% PORTFOLIO
+              37.1% PORTFOLIO
             </span>
           </div>
           <div className="flex items-center gap-1.5 text-tertiary font-mono text-xs tabular-nums font-semibold mt-2">
             <TrendingUp className="w-3.5 h-3.5" />
-            <span>{maskBalances ? '•••••• (+1.85%) 24H' : '+$94,240.10 (+1.85%) 24H'}</span>
+            <span>
+              {maskBalances
+                ? '•••••• (+29.11%)'
+                : `+$${totalUnrealizedPnl.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })} (+${totalPnlPct.toFixed(2)}%) 24H`}
+            </span>
           </div>
         </div>
 
@@ -53,7 +98,7 @@ export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMa
               </span>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-xl font-mono font-bold text-on-surface tabular-nums">
-                  {formatMaskedCurrency(3200000.0, maskBalances)}
+                  {formatMaskedCurrency(totalStakedCapital, maskBalances)}
                 </span>
               </div>
             </div>
@@ -62,7 +107,7 @@ export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMa
             </span>
           </div>
           <div className="text-[11px] font-mono text-outline mt-2">
-            61.7% of Crypto Assets Bonded across 3 Validators
+            {stakedPctOfCrypto.toFixed(1)}% of Crypto Assets Bonded across {stakedHoldings.length} Validators
           </div>
         </div>
 
@@ -75,7 +120,7 @@ export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMa
               </span>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-xl font-mono font-bold text-primary tabular-nums">
-                  7.42% NET
+                  {blendedApy.toFixed(2)}% NET
                 </span>
               </div>
             </div>
@@ -84,7 +129,7 @@ export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMa
             </span>
           </div>
           <div className="text-[11px] font-mono text-tertiary font-medium mt-2">
-            Daily run-rate: {maskBalances ? '••••••' : '+$650.52'} / day
+            Daily run-rate: {maskBalances ? '••••••' : `+$${dailyRunRate.toFixed(2)}`} / day
           </div>
         </div>
 
@@ -97,7 +142,7 @@ export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMa
               </span>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-xl font-mono font-bold text-tertiary tabular-nums">
-                  {formatMaskedCurrency(18492.3, maskBalances)}
+                  {formatMaskedCurrency(accruedYield, maskBalances)}
                 </span>
               </div>
             </div>

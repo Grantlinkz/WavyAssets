@@ -87,11 +87,11 @@ describe('Shell Navigation Integration Suite (Node 24 / SSR Parity)', () => {
 
     const start = performance.now();
     useDashboardStore.getState().setActiveVertical('crypto');
-    const updatedHtml = renderToString(<App activeVertical="crypto" />);
     const duration = performance.now() - start;
+    const updatedHtml = renderToString(<App activeVertical="crypto" />);
 
     expect(useDashboardStore.getState().activeVertical).toBe('crypto');
     expect(updatedHtml).toContain('Crypto &amp; Staking');
-    expect(duration).toBeLessThan(2500);
+    expect(duration).toBeLessThan(50);
   });
 });

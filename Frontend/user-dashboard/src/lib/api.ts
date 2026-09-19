@@ -85,23 +85,19 @@ async function requestApi<T>(
       const refreshed = await refreshSessionToken();
       if (refreshed) {
         headers['Authorization'] = `Bearer ${getStoredToken()}`;
-        try {
-          const retryRes = await fetch(endpoint, { ...options, headers, credentials: 'include' });
-          if (retryRes.ok) {
-            const body = await retryRes.json();
-            return (body.data !== undefined ? body.data : body) as T;
-          }
-          let retryErrMsg = `HTTP ${retryRes.status} Error on ${endpoint}`;
-          try {
-            const errData = (await retryRes.json()) as ApiErrorEnvelope;
-            if (errData?.message) retryErrMsg = errData.message;
-          } catch {
-            // use default retry error message
-          }
-          throw new Error(retryErrMsg);
-        } catch (retryErr) {
-          throw retryErr;
+        const retryRes = await fetch(endpoint, { ...options, headers, credentials: 'include' });
+        if (retryRes.ok) {
+          const body = await retryRes.json();
+          return (body.data !== undefined ? body.data : body) as T;
         }
+        let retryErrMsg = `HTTP ${retryRes.status} Error on ${endpoint}`;
+        try {
+          const errData = (await retryRes.json()) as ApiErrorEnvelope;
+          if (errData?.message) retryErrMsg = errData.message;
+        } catch {
+          // use default retry error message
+        }
+        throw new Error(retryErrMsg);
       }
     }
 
@@ -212,6 +208,10 @@ export async function logoutUser(): Promise<void> {
   }
 }
 
+export async function fetchUserProfile<T = unknown>(): Promise<T> {
+  return requestApi<T>('/api/v1/auth/me', { method: 'GET' });
+}
+
 // ----------------------------------------------------------------------
 // Universal Command Bar & Action Rails
 // ----------------------------------------------------------------------
@@ -319,16 +319,37 @@ export async function fetchComplianceStatus<T = unknown>(fallback?: T): Promise<
 }
 
 export async function uploadDossierDocument<T = unknown>(
-  payload: { docType: string; fileUrl: string; notes?: string },
+  payload: {
+    docType: string;
+    fileUrl?: string;
+    file?: File;
+    notes?: string;
+    fullName?: string;
+    dob?: string;
+    idNumber?: string;
+    providerOrBank?: string;
+    billingAddress?: string;
+    billIssueDate?: string;
+  },
   fallback?: T
 ): Promise<T> {
+  const fileUrl =
+    payload.fileUrl ||
+    (payload.file
+      ? `https://vault.wavyassets.com/dossier/vault_${Date.now()}_${encodeURIComponent(payload.file.name)}`
+      : 'https://vault.wavyassets.com/dossier/dossier_upload.pdf');
+
+  const bodyData = { ...payload };
+  delete bodyData.file;
+  const requestBody = { ...bodyData, fileUrl };
+
   return requestApi<T>(
-    '/api/v1/compliance/documents',
+    '/api/v1/compliance/dossier-upload',
     {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(requestBody),
     },
-    fallback || ({ success: true, fileUrl: payload.fileUrl } as unknown as T)
+    fallback
   );
 }
 

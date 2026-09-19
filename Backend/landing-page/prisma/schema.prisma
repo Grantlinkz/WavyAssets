@@ -1,5 +1,5 @@
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -220,8 +220,8 @@ model StockPosition {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   symbol       String   // NVDA | MSFT | AAPL | SPACEX | ANTHROPIC
   exchange     String   // NASDAQ | NYSE | LSE | SIX
-  shares       Float
-  avgCostBasis Float
+  shares       Decimal
+  avgCostBasis Decimal
   dripEnabled  Boolean  @default(false)
   updatedAt    DateTime @updatedAt
 }
@@ -233,8 +233,8 @@ model StockOrder {
   symbol     String
   orderType  String   // MARKET | LIMIT | STOP_LOSS
   side       String   // BUY | SELL
-  shares     Float
-  limitPrice Float?
+  shares     Decimal
+  limitPrice Decimal?
   status     String   // PENDING | FILLED | CANCELLED
   createdAt  DateTime @default(now())
 }

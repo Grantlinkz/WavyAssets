@@ -61,8 +61,8 @@ if (initialToken) {
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: initialUser,
-  accessToken: initialToken,
-  isAuthenticated: Boolean(initialUser && initialToken),
+  accessToken: null,
+  isAuthenticated: false,
   isExchangingTicket: false,
   ticketExchangeError: null,
 
@@ -70,7 +70,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
         window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
-        window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
       } catch {
         // Ignore storage errors
       }
@@ -120,7 +119,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (typeof window !== 'undefined' && window.localStorage) {
         try {
           window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
-          window.localStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
         } catch {
           // Ignore
         }

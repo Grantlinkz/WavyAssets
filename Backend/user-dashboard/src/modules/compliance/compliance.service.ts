@@ -146,12 +146,6 @@ export class ComplianceService {
             docType: dto.docType,
             fileUrl: dto.fileUrl,
             notes: dto.notes,
-            fullName: dto.fullName,
-            dob: dto.dob,
-            idNumber: dto.idNumber,
-            providerOrBank: dto.providerOrBank,
-            billingAddress: dto.billingAddress,
-            billIssueDate: dto.billIssueDate,
           }),
         },
       });
@@ -202,6 +196,19 @@ export class ComplianceService {
         );
       }
     } else if (dto.targetTier === KycTierLevel.TIER_3) {
+      if (user.kycTier !== KycTierLevel.TIER_2) {
+        throw new BadRequestException(
+          'Tier 3 upgrade requires user to currently hold verified Tier 2 status',
+        );
+      }
+
+      const hasGovId = verifiedDocTypes.has('PASSPORT') || verifiedDocTypes.has('GOVERNMENT_ID');
+      if (!hasGovId) {
+        throw new BadRequestException(
+          'Tier 3 upgrade requires verified Government ID on file',
+        );
+      }
+
       const hasAddressOrWealth =
         verifiedDocTypes.has('UTILITY_BILL') ||
         verifiedDocTypes.has('BANK_STATEMENT') ||
@@ -424,12 +431,35 @@ export class ComplianceService {
     ]);
 
     return {
-      data: logs.map((log) => ({
-        id: log.id,
-        action: log.action,
-        createdAt: log.createdAt,
-        metadata: log.metadata ? JSON.parse(log.metadata) : null,
-      })),
+      data: logs.map((log) => {
+        let metadata = null;
+        if (log.metadata) {
+          try {
+            const parsed = JSON.parse(log.metadata);
+            if (parsed && typeof parsed === 'object') {
+              const {
+                dob,
+                idNumber,
+                providerOrBank,
+                billingAddress,
+                billIssueDate,
+                ...cleanMetadata
+              } = parsed;
+              metadata = cleanMetadata;
+            } else {
+              metadata = parsed;
+            }
+          } catch {
+            metadata = null;
+          }
+        }
+        return {
+          id: log.id,
+          action: log.action,
+          createdAt: log.createdAt,
+          metadata,
+        };
+      }),
       pagination: {
         total,
         page,

@@ -77,13 +77,18 @@ export const App: React.FC<AppProps> = ({ is404: is404Prop }) => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const authParam = urlParams.get('auth');
-      if (authParam === 'signin' || authParam === 'login') {
-        openAuthModal('institutional', 'login');
-        const cleanUrl = window.location.pathname + window.location.hash;
-        window.history.replaceState({}, document.title, cleanUrl);
-      } else if (authParam === 'mandate' || authParam === 'register') {
-        openAuthModal('institutional', 'mandate');
-        const cleanUrl = window.location.pathname + window.location.hash;
+      if (authParam === 'signin' || authParam === 'login' || authParam === 'mandate' || authParam === 'register') {
+        if (authParam === 'signin' || authParam === 'login') {
+          openAuthModal('institutional', 'login');
+        } else {
+          openAuthModal('institutional', 'mandate');
+        }
+        urlParams.delete('auth');
+        const remainingQuery = urlParams.toString();
+        const cleanUrl =
+          window.location.pathname +
+          (remainingQuery ? `?${remainingQuery}` : '') +
+          window.location.hash;
         window.history.replaceState({}, document.title, cleanUrl);
       }
     }

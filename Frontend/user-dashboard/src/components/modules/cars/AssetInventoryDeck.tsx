@@ -1,7 +1,9 @@
-import React from 'react';
-import { FileText, ArrowLeftRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { FileText, ArrowLeftRight, DollarSign, Calendar } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
-import { EXOTIC_ASSETS } from '../../../lib/alternativeAssetData';
+import { useAlternativeStore } from '../../../store/useAlternativeStore';
+import { EXOTIC_ASSETS, type ExoticAsset } from '../../../lib/alternativeAssetData';
+import { VehicleActionModal } from './VehicleActionModal';
 
 interface AssetInventoryDeckProps {
   maskBalances?: boolean;
@@ -12,6 +14,17 @@ export const AssetInventoryDeck: React.FC<AssetInventoryDeckProps> = ({
 }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
+  const userHoldings = useAlternativeStore((s) => s.userVehicleHoldings);
+
+  const [actionAsset, setActionAsset] = useState<ExoticAsset | null>(null);
+  const [actionMode, setActionMode] = useState<'buy' | 'rent'>('buy');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openAction = (asset: ExoticAsset, mode: 'buy' | 'rent') => {
+    setActionAsset(asset);
+    setActionMode(mode);
+    setIsModalOpen(true);
+  };
 
   return (
     <div className="space-y-3">
@@ -51,6 +64,11 @@ export const AssetInventoryDeck: React.FC<AssetInventoryDeckProps> = ({
                   <span className="px-2 py-0.5 bg-surface/90 text-primary font-mono text-[10px] font-bold uppercase tracking-wider rounded border border-border-hairline">
                     BONDED
                   </span>
+                  {userHoldings[asset.id] && (
+                    <span className="px-2 py-0.5 bg-primary/20 text-primary font-mono text-[10px] font-bold uppercase tracking-wider rounded border border-primary/40">
+                      {userHoldings[asset.id].type === 'full' ? 'OWNED TITLE' : `${userHoldings[asset.id].shares} SHARES`}
+                    </span>
+                  )}
                 </div>
                 <div className="absolute top-2.5 right-2.5">
                   <span className="px-2 py-0.5 bg-surface/90 text-tertiary font-mono text-[10px] rounded border border-border-hairline flex items-center gap-1">
@@ -95,34 +113,30 @@ export const AssetInventoryDeck: React.FC<AssetInventoryDeckProps> = ({
                       <span className="text-outline uppercase text-[10px] font-mono tracking-wider block">
                         {attr.label}
                       </span>
-                      <span className="text-on-surface font-mono font-medium truncate block mt-0.5">
+                      <span className="text-on-surface font-mono font-medium truncate block">
                         {attr.value}
                       </span>
                     </div>
                   ))}
                 </div>
 
-                {/* Valuation & Index Trajectory */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
+                {/* Performance Track & Alpha Benchmark */}
+                <div className="grid grid-cols-2 gap-2">
                   <div className="p-2.5 bg-surface rounded border border-border-hairline flex flex-col justify-between">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-outline">
-                      Capital Position
-                    </span>
-                    <div className="flex items-baseline gap-2 mt-1">
-                      <span className="text-xs text-outline font-mono">Acquisition:</span>
-                      <span className="text-xs font-semibold text-on-surface font-mono tabular-nums">
-                        {maskBalances
-                          ? '••••••••'
-                          : `$${asset.acquisitionPrice.toLocaleString('en-US', {
-                              minimumFractionDigits: 2,
-                            })}`}
-                      </span>
+                    <div className="text-[10px] font-mono text-outline uppercase tracking-wider">
+                      Mark-to-Market Valuation
                     </div>
-                    <div className="mt-1 flex items-center justify-between text-xs font-mono">
-                      <span className="text-outline">Unrealized Gain:</span>
-                      <span className="text-tertiary font-bold tabular-nums">
+                    <div className="text-base font-mono font-bold text-on-surface my-1 tabular-nums">
+                      {maskBalances
+                        ? '••••••••'
+                        : `$${asset.fairMarketValue.toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                          })}`}
+                    </div>
+                    <div className="text-xs font-mono text-tertiary flex items-center gap-1 font-semibold">
+                      <span>
                         {maskBalances
-                          ? '••••••••'
+                          ? '••••••'
                           : `+$${asset.unrealizedGain.toLocaleString('en-US', {
                               minimumFractionDigits: 2,
                             })} (+${asset.gainPct.toFixed(1)}%)`}
@@ -180,26 +194,65 @@ export const AssetInventoryDeck: React.FC<AssetInventoryDeckProps> = ({
               </div>
             </div>
 
-            {/* Action Bar */}
-            <div className="p-3 pt-0 flex items-center gap-2">
-              <button
-                type="button"
-                className="flex-1 py-1.5 px-2.5 bg-primary text-on-primary font-mono text-xs font-semibold uppercase tracking-wider rounded hover:bg-primary-container transition-colors flex items-center justify-center gap-1.5 cursor-pointer truncate"
-              >
-                <FileText className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">Archives &amp; Title</span>
-              </button>
-              <button
-                type="button"
-                className="py-1.5 px-2.5 bg-surface border border-border-hairline text-on-surface hover:bg-surface-container-high font-mono text-xs uppercase tracking-wider rounded transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
-              >
-                <ArrowLeftRight className="w-3.5 h-3.5 shrink-0" />
-                <span>Vault Transfer</span>
-              </button>
+            {/* Card Action Footer */}
+            <div className="p-3 pt-0 space-y-2.5">
+              {/* User holdings badge */}
+              {userHoldings[asset.id] && (
+                <div className="p-1.5 bg-primary/10 border border-primary/20 rounded text-[10px] font-mono text-primary flex justify-between">
+                  <span>
+                    Your Position:{' '}
+                    {userHoldings[asset.id].type === 'full'
+                      ? '100% Full Legal Title'
+                      : `${userHoldings[asset.id].shares} Syndicate Shares`}
+                  </span>
+                  {userHoldings[asset.id].leases.length > 0 && (
+                    <span className="text-tertiary font-bold">
+                      {userHoldings[asset.id].leases.length} Active Lease
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => openAction(asset, 'buy')}
+                  className="py-1.5 px-2 bg-primary text-on-primary font-mono text-xs font-semibold uppercase tracking-wider rounded hover:bg-primary-container transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <DollarSign className="w-3 h-3" />
+                  <span>Buy / Syndicate</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openAction(asset, 'rent')}
+                  className="py-1.5 px-2 bg-surface border border-border-hairline text-on-surface hover:bg-surface-container-high font-mono text-xs uppercase tracking-wider rounded transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <Calendar className="w-3 h-3 text-tertiary" />
+                  <span>Rent / Club Lease</span>
+                </button>
+              </div>
+
+              <div className="pt-2 border-t border-border-hairline flex items-center justify-between text-[11px] font-mono text-outline">
+                <div className="flex items-center gap-1.5 truncate">
+                  <FileText className="w-3 h-3 shrink-0" />
+                  <span className="truncate">Proven Title &amp; Assay</span>
+                </div>
+                <div className="flex items-center gap-1 text-tertiary shrink-0">
+                  <ArrowLeftRight className="w-3 h-3" />
+                  <span>Vault Depository</span>
+                </div>
+              </div>
             </div>
           </div>
         ))}
       </div>
+
+      <VehicleActionModal
+        asset={actionAsset}
+        mode={actionMode}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 };

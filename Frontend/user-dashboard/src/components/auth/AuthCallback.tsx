@@ -41,7 +41,7 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
 
   const [errorMessage, setErrorMessage] = useState<string | null>(() => {
     if (!initialTicket && !isAuth) {
-      return 'No authentication found.';
+      return 'No authentication handoff ticket found.';
     }
     return null;
   });
@@ -98,7 +98,7 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
             Sovereign Enclave Authentication
           </h2>
           <p className="text-xs text-on-surface-variant mt-1">
-            Verifying 
+            Verifying HMAC-SHA256 sovereign handoff ticket
           </p>
         </div>
 
@@ -109,7 +109,7 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
               <Loader2 className="h-6 w-6 text-primary animate-spin" />
               <div className="space-y-1">
                 <span className="text-xs font-mono font-medium text-on-surface block">
-                  Exchanging Ticket...
+                  Exchanging Handoff Ticket...
                 </span>
                 <span className="text-[11px] font-mono text-on-surface-variant block">
                   Validating against Prisma Identity Vault
@@ -195,7 +195,7 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
                   }
                 }}
               >
-                Return to WavyAssets Home
+                Return to Terminal
               </Button>
             </div>
           </div>

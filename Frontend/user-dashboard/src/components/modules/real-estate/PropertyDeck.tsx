@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { DollarSign, Calendar } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useAlternativeStore, type RealEstateRegionFilter } from '../../../store/useAlternativeStore';
-import { REAL_ESTATE_ASSETS } from '../../../lib/alternativeAssetData';
+import { REAL_ESTATE_ASSETS, type RealEstateAsset } from '../../../lib/alternativeAssetData';
+import { RealEstateActionModal } from './RealEstateActionModal';
 
 const REGIONS: RealEstateRegionFilter[] = [
   'ALL REGIONS',
@@ -19,6 +21,17 @@ export const PropertyDeck: React.FC<PropertyDeckProps> = ({ maskBalances: propMa
   const maskBalances = propMask ?? storeMask;
   const selectedRegion = useAlternativeStore((s) => s.selectedRegionFilter);
   const setRegion = useAlternativeStore((s) => s.setRegionFilter);
+  const userHoldings = useAlternativeStore((s) => s.userRealEstateHoldings);
+
+  const [actionProperty, setActionProperty] = useState<RealEstateAsset | null>(null);
+  const [actionMode, setActionMode] = useState<'buy' | 'rent'>('buy');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openAction = (property: RealEstateAsset, mode: 'buy' | 'rent') => {
+    setActionProperty(property);
+    setActionMode(mode);
+    setIsModalOpen(true);
+  };
 
   const filteredAssets = REAL_ESTATE_ASSETS.filter((asset) => {
     if (selectedRegion === 'ALL REGIONS') return true;
@@ -145,7 +158,38 @@ export const PropertyDeck: React.FC<PropertyDeckProps> = ({ maskBalances: propMa
             </div>
 
             {/* Card Action Footer */}
-            <div className="p-3 pt-0">
+            <div className="p-3 pt-0 space-y-2.5">
+              {/* User holdings or active leases badge */}
+              {userHoldings[property.id] && (
+                <div className="p-1.5 bg-primary/10 border border-primary/20 rounded text-[10px] font-mono text-primary flex justify-between">
+                  <span>Your Position: {userHoldings[property.id].tokens} Tokens</span>
+                  {userHoldings[property.id].leases.length > 0 && (
+                    <span className="text-tertiary font-bold">
+                      {userHoldings[property.id].leases.length} Active Lease
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => openAction(property, 'buy')}
+                  className="py-1.5 px-2 bg-primary text-on-primary font-mono text-xs font-semibold uppercase tracking-wider rounded hover:bg-primary-container transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <DollarSign className="w-3 h-3" />
+                  <span>Buy / Invest</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openAction(property, 'rent')}
+                  className="py-1.5 px-2 bg-surface border border-border-hairline text-on-surface hover:bg-surface-container-high font-mono text-xs uppercase tracking-wider rounded transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <Calendar className="w-3 h-3 text-tertiary" />
+                  <span>Rent / Lease</span>
+                </button>
+              </div>
+
               <div className="pt-2 border-t border-border-hairline flex items-center justify-between text-[11px] font-mono text-outline">
                 <span className="truncate">{property.appraisalStandard}</span>
                 <span className="text-tertiary shrink-0">Cadastre Verified</span>
@@ -154,6 +198,14 @@ export const PropertyDeck: React.FC<PropertyDeckProps> = ({ maskBalances: propMa
           </div>
         ))}
       </div>
+
+      {/* Real Estate Buy & Rent Action Modal */}
+      <RealEstateActionModal
+        property={actionProperty}
+        mode={actionMode}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </section>
   );
 };

@@ -26,7 +26,7 @@ describe('Liquid Asset Modules Integration Tests', () => {
       expect(html).toContain('Sovereign MPC Cold');
       expect(html).toContain('ETH VALIDATOR NODE 04');
       expect(html).toContain('Automated Dollar-Cost Averaging (DCA) Scheduler');
-      expect(html).toContain('$5,187,157.50');
+      expect(html).toContain('$6,928,237.50');
     });
 
     it('respects privacy toggle and masks financial numbers when maskBalances is true', () => {
@@ -48,7 +48,7 @@ describe('Liquid Asset Modules Integration Tests', () => {
       expect(html).toContain('138.82');
       expect(html).toContain('138.85');
       expect(html).toContain('0.94'); // Beta
-      expect(html).toContain('$2,964,090.00');
+      expect(html).toContain('$3,248,420.00');
     });
 
     it('renders pre-IPO assets and respects privacy masking', () => {
