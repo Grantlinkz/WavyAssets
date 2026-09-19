@@ -109,7 +109,7 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
               <Loader2 className="h-6 w-6 text-primary animate-spin" />
               <div className="space-y-1">
                 <span className="text-xs font-mono font-medium text-on-surface block">
-                  Exchanging Handoff Ticket...
+                  Exchanging Ticket...
                 </span>
                 <span className="text-[11px] font-mono text-on-surface-variant block">
                   Validating against Prisma Identity Vault
@@ -195,7 +195,7 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
                   }
                 }}
               >
-                Return to Terminal Showcase
+                Return to WavyAssets Home
               </Button>
             </div>
           </div>
