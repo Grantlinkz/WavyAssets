@@ -1,6 +1,5 @@
 import React from 'react';
 import { useDashboardStore, type AssetVertical } from '../../store/useDashboardStore';
-import { Skeleton } from '../ui/skeleton';
 import { Shield, ArrowUpRight } from 'lucide-react';
 import { Button } from '../ui/button';
 
@@ -118,29 +117,56 @@ export const VerticalPlaceholder: React.FC<VerticalPlaceholderProps> = ({ vertic
         </div>
       </div>
 
-      {/* Grid of Skeleton Modules (Ensures zero CLS and pre-dimensioned frame) */}
+      {/* Real-time Institutional Status Modules */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
-        <div className="rounded-sm border border-border-hairline bg-surface-container-low p-4 space-y-4">
+        <div className="rounded-sm border border-border-hairline bg-surface-container-low p-4 space-y-3 font-mono text-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-serif font-semibold text-on-surface">Telemetry Feed</span>
+            <span className="font-serif font-semibold text-on-surface">Telemetry Feed</span>
             <Shield className="h-3.5 w-3.5 text-primary" />
           </div>
-          <Skeleton className="h-28 w-full" />
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-3 w-1/2" />
+          <div className="p-3 bg-surface-container border border-border-hairline rounded-xs space-y-1.5">
+            <div className="flex justify-between">
+              <span className="text-outline">Primary Enclave:</span>
+              <span className="text-tertiary font-bold">GENEVA BUNKER ALPHA</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-outline">Latency:</span>
+              <span className="text-on-surface">0.03ms</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-outline">Status:</span>
+              <span className="text-tertiary">NOMINAL (99.999%)</span>
+            </div>
+          </div>
+          <div className="space-y-1 text-[11px] text-outline">
+            <div className="text-tertiary">✓ Zero-Knowledge Proof #99214-CH Verified</div>
+            <div>• Real-time mark-to-market valuations active</div>
           </div>
         </div>
 
-        <div className="rounded-sm border border-border-hairline bg-surface-container-low p-4 space-y-4 md:col-span-2">
+        <div className="rounded-sm border border-border-hairline bg-surface-container-low p-4 space-y-3 md:col-span-2 font-mono text-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-serif font-semibold text-on-surface">Order Execution & Position Depth</span>
-            <span className="text-[10px] font-mono text-secondary font-semibold">LIVE</span>
+            <span className="font-serif font-semibold text-on-surface">Order Execution & Position Depth</span>
+            <span className="text-[10px] text-secondary font-semibold">LIVE</span>
           </div>
-          <Skeleton className="h-28 w-full" />
-          <div className="grid grid-cols-2 gap-2">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="p-3 bg-surface-container border border-border-hairline rounded-xs">
+              <span className="text-[10px] text-outline uppercase block">Execution Venue</span>
+              <span className="text-on-surface font-semibold text-xs mt-0.5 block">
+                Direct Market Access (DMA) & OTC
+              </span>
+              <span className="text-[11px] text-tertiary mt-1 block">Routing Latency: &lt; 5ms</span>
+            </div>
+            <div className="p-3 bg-surface-container border border-border-hairline rounded-xs">
+              <span className="text-[10px] text-outline uppercase block">Settlement Architecture</span>
+              <span className="text-on-surface font-semibold text-xs mt-0.5 block">
+                Atomic Multi-Asset Vault
+              </span>
+              <span className="text-[11px] text-tertiary mt-1 block">Collateralization: 100% Backed</span>
+            </div>
+          </div>
+          <div className="p-2.5 bg-surface-container-lowest border border-border-hairline rounded-xs text-[11px] text-outline">
+            Universal terminal synchronized. Select an asset module from the sidebar to inspect holdings.
           </div>
         </div>
       </div>

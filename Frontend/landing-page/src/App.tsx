@@ -63,6 +63,8 @@ export const App: React.FC<AppProps> = ({ is404: is404Prop }) => {
   const activeAssetId = useTerminalStore((state) => state.activeAssetId);
   const syncFromHash = useTerminalStore((state) => state.syncFromHash);
 
+  const openAuthModal = useTerminalStore((state) => state.openAuthModal);
+
   // Initialize system language and listen to hash / popstate routing changes
   React.useEffect(() => {
     initSystemLanguage();
@@ -70,11 +72,32 @@ export const App: React.FC<AppProps> = ({ is404: is404Prop }) => {
     const handleRoutingChange = () => syncFromHash();
     window.addEventListener('hashchange', handleRoutingChange);
     window.addEventListener('popstate', handleRoutingChange);
+
+    // Detect ?auth=signin or ?auth=mandate from User Dashboard redirection
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const authParam = urlParams.get('auth');
+      if (authParam === 'signin' || authParam === 'login' || authParam === 'mandate' || authParam === 'register') {
+        if (authParam === 'signin' || authParam === 'login') {
+          openAuthModal('institutional', 'login');
+        } else {
+          openAuthModal('institutional', 'mandate');
+        }
+        urlParams.delete('auth');
+        const remainingQuery = urlParams.toString();
+        const cleanUrl =
+          window.location.pathname +
+          (remainingQuery ? `?${remainingQuery}` : '') +
+          window.location.hash;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+    }
+
     return () => {
       window.removeEventListener('hashchange', handleRoutingChange);
       window.removeEventListener('popstate', handleRoutingChange);
     };
-  }, [syncFromHash]);
+  }, [syncFromHash, openAuthModal]);
 
   // Fetch real-time market benchmark quotes from telemetry gateway
   React.useEffect(() => {

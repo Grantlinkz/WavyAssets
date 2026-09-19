@@ -55,6 +55,7 @@ describe('AuthService (Two-Step Authentication & Gateway Logic)', () => {
       hashOtp: vi.fn().mockResolvedValue('$argon2id$hashedOtpCode'),
       verifyOtp: vi.fn(),
       hashToken: vi.fn().mockImplementation((token: string) => `hash_of_${token}`),
+      hashHandoffTicket: vi.fn().mockImplementation((ticket: string) => `hash_of_${ticket}`),
       generateRefreshToken: vi.fn().mockReturnValue('refresh_token_xyz'),
       generateHandoffTicket: vi.fn().mockReturnValue('wavy_ticket_abc'),
     };

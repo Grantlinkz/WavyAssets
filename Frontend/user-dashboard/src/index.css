@@ -180,11 +180,19 @@
 }
 
 /* Base Body Styles */
+html,
 body {
+  min-height: 100vh;
   background-color: var(--surface);
   color: var(--on-surface);
   font-family: var(--font-sans);
   overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Tabular lining figures for all financial data */

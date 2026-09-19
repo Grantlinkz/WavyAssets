@@ -13,7 +13,9 @@ import { Type } from 'class-transformer';
 
 export enum KycDocumentType {
   PASSPORT = 'PASSPORT',
+  GOVERNMENT_ID = 'GOVERNMENT_ID',
   UTILITY_BILL = 'UTILITY_BILL',
+  BANK_STATEMENT = 'BANK_STATEMENT',
   ARTICLES_OF_INC = 'ARTICLES_OF_INC',
   TAX_AFFIDAVIT = 'TAX_AFFIDAVIT',
   SOURCE_OF_WEALTH = 'SOURCE_OF_WEALTH',
@@ -41,6 +43,32 @@ export class UploadDossierDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  // Level 2 KYC Metadata
+  @IsOptional()
+  @IsString()
+  fullName?: string;
+
+  @IsOptional()
+  @IsString()
+  dob?: string;
+
+  @IsOptional()
+  @IsString()
+  idNumber?: string;
+
+  // Level 3 KYC Metadata
+  @IsOptional()
+  @IsString()
+  providerOrBank?: string;
+
+  @IsOptional()
+  @IsString()
+  billingAddress?: string;
+
+  @IsOptional()
+  @IsString()
+  billIssueDate?: string;
 }
 
 export class UpgradeTierDto {

@@ -7,19 +7,41 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ------------------------------------------------------------------------------
+// Identity, Session & Security Models
+// ------------------------------------------------------------------------------
+
 model User {
-  id              String             @id @default(uuid())
-  email           String             @unique
-  fullName        String?
-  passphraseHash  String
-  tier            String             @default("PRIVATE_WEALTH") // RETAIL | PRIVATE_WEALTH | INSTITUTIONAL
-  isCorporate     Boolean            @default(false)
-  isActive        Boolean            @default(true)
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  sessions        Session[]
-  otpCodes        OtpCode[]
-  simulationIntent SimulationIntent?
+  id                 String               @id @default(uuid())
+  email              String               @unique
+  fullName           String?
+  passphraseHash     String
+  tier               String               @default("PRIVATE_WEALTH") // RETAIL | PRIVATE_WEALTH | INSTITUTIONAL
+  kycTier            String               @default("TIER_1")         // TIER_1 | TIER_2 | TIER_3
+  isCorporate        Boolean              @default(false)
+  isActive           Boolean              @default(true)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  sessions           Session[]
+  otpCodes           OtpCode[]
+  simulationIntent   SimulationIntent?
+  webAuthnKeys       WebAuthnCredential[]
+  whitelistAddresses WhitelistDestination[]
+  kycDocuments       KycDocument[]
+  
+  // Ledger & Portfolio
+  ledgerAccounts     LedgerAccount[]
+  cryptoHoldings     CryptoHolding[]
+  dcaSchedules       DcaSchedule[]
+  stockPositions     StockPosition[]
+  stockOrders        StockOrder[]
+  aiFundPositions    AiFundPosition[]
+  realEstateShares   RealEstateShare[]
+  carShares          CarShare[]
+  driveBookings      DriveBooking[]
+  vipCard            VipCard?
+  auditLogs          AuditLog[]
 }
 
 model Session {
@@ -87,11 +109,284 @@ model NewsletterSubscriber {
   createdAt         DateTime  @default(now())
 }
 
+model WebAuthnCredential {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialId String   @unique
+  publicKey    String
+  counter      Int      @default(0)
+  deviceLabel  String?
+  createdAt    DateTime @default(now())
+}
+
+model WhitelistDestination {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assetRail        String   // BTC | ETH | ERC20_USDC | WIRE_IBAN
+  destinationLabel String
+  beneficiaryOrg   String
+  addressOrIban    String
+  status           String   @default("QUARANTINE") // QUARANTINE | ACTIVE | REJECTED | REVOKED
+  quarantineUntil  DateTime // Deterministic 48h Time-Lock
+  signersRequired  Int      @default(2)
+  signersCompleted Int      @default(1)
+  approvedSigners  String   @default("[]") // JSON string array of user IDs who approved
+  createdAt        DateTime @default(now())
+}
+
+// ------------------------------------------------------------------------------
+// Double-Entry Financial Ledger Models
+// ------------------------------------------------------------------------------
+
+model LedgerAccount {
+  id          String        @id @default(uuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountType String        // AVAILABLE_CASH | INVESTED_CAPITAL | STAKING_ESCROW | FEE_RECEIVABLE
+  currency    String        @default("USD") // USD | EUR | CHF | USDC | BTC | ETH
+  balance     Decimal       @default(0.0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  entries     LedgerEntry[]
+
+  @@unique([userId, accountType, currency])
+}
+
+model LedgerTransaction {
+  id          String        @id @default(uuid())
+  referenceId String        @unique // Idempotency key
+  type        String        // DEPOSIT | WITHDRAWAL | TRADE | STAKE | REWARD | DIVIDEND | SWEEP
+  status      String        // PENDING | SETTLED | FAILED
+  description String
+  createdAt   DateTime      @default(now())
+
+  entries     LedgerEntry[]
+}
+
+model LedgerEntry {
+  id            String            @id @default(uuid())
+  transactionId String
+  transaction   LedgerTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  accountId     String
+  account       LedgerAccount     @relation(fields: [accountId], references: [id])
+  amount        Decimal           // Positive for Credit, Negative for Debit
+  createdAt     DateTime          @default(now())
+
+  @@index([accountId])
+  @@index([transactionId])
+}
+
+// ------------------------------------------------------------------------------
+// Vertical 1: Crypto & Yield Models
+// ------------------------------------------------------------------------------
+
+model CryptoHolding {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol        String   // BTC | ETH | SOL | LINK
+  custodyType   String   // SOVEREIGN_VAULT | EXTERNAL_WEB3 | STAKED
+  quantity      Float
+  avgBuyPrice   Float
+  stakedAmount  Float    @default(0.0)
+  pendingReward Float    @default(0.0)
+  apy           Float    @default(0.0)
+  updatedAt     DateTime @updatedAt
+}
+
+model DcaSchedule {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol     String
+  amountUsd  Float
+  frequency  String    // DAILY | WEEKLY | BIWEEKLY | MONTHLY
+  isActive   Boolean   @default(true)
+  lastRunAt  DateTime?
+  nextRunAt  DateTime
+  createdAt  DateTime  @default(now())
+}
+
+// ------------------------------------------------------------------------------
+// Vertical 2: Equities & Pre-IPO Models
+// ------------------------------------------------------------------------------
+
+model StockPosition {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol       String   // NVDA | MSFT | AAPL | SPACEX | ANTHROPIC
+  exchange     String   // NASDAQ | NYSE | LSE | SIX
+  shares       Decimal
+  avgCostBasis Decimal
+  dripEnabled  Boolean  @default(false)
+  updatedAt    DateTime @updatedAt
+}
+
+model StockOrder {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol     String
+  orderType  String   // MARKET | LIMIT | STOP_LOSS
+  side       String   // BUY | SELL
+  shares     Decimal
+  limitPrice Decimal?
+  status     String   // PENDING | FILLED | CANCELLED
+  createdAt  DateTime @default(now())
+}
+
+// ------------------------------------------------------------------------------
+// Vertical 3: AI Systematic Models
+// ------------------------------------------------------------------------------
+
+model AiFundPosition {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  strategyTier    String   @default("balanced") // preservation | balanced | high-vol
+  allocatedUsd    Float
+  unrealizedAlpha Float    @default(0.0)
+  circuitBreaker  Boolean  @default(false)
+  claimedYield    Float    @default(0.0)
+  pendingYield    Float    @default(0.0)
+  updatedAt       DateTime @updatedAt
+}
+
+model AiRationaleLog {
+  id          String   @id @default(uuid())
+  strategy    String
+  actionType  String   // REBALANCE | HEDGE | ARBITRAGE
+  asset       String
+  rationale   String
+  slippageBps Float
+  confidence  Float
+  createdAt   DateTime @default(now())
+}
+
+// ------------------------------------------------------------------------------
+// Vertical 4: Real Estate Models
+// ------------------------------------------------------------------------------
+
+model RealEstateProperty {
+  id              String               @id @default(uuid())
+  title           String
+  region          String               // SWITZERLAND | UNITED KINGDOM | GERMANY
+  totalValuation  Float
+  totalTokens     Int
+  tokenPriceUsd   Float
+  annualizedYield Float
+  occupancyRate   Float
+  spvContractUrl  String
+  createdAt       DateTime             @default(now())
+  shares          RealEstateShare[]
+  otcOrders       RealEstateOtcOrder[]
+}
+
+model RealEstateShare {
+  id         String             @id @default(uuid())
+  userId     String
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   RealEstateProperty @relation(fields: [propertyId], references: [id])
+  tokenCount Int
+  updatedAt  DateTime           @updatedAt
+}
+
+model RealEstateOtcOrder {
+  id            String             @id @default(uuid())
+  propertyId    String
+  property      RealEstateProperty @relation(fields: [propertyId], references: [id])
+  orderType     String             // BID | OFFER
+  tokenAmount   Int
+  pricePerToken Float
+  status        String             // OPEN | FILLED | CANCELLED
+  createdAt     DateTime           @default(now())
+}
+
+// ------------------------------------------------------------------------------
+// Vertical 5: Exotic Cars & Horology Models
+// ------------------------------------------------------------------------------
+
+model ExoticCar {
+  id            String         @id @default(uuid())
+  vin           String         @unique
+  make          String
+  model         String
+  year          Int
+  vaultLocation String         // Geneva FreePort | Zurich Vault | London
+  insuredValue  Float
+  hagertyIndex  Float
+  shares        CarShare[]
+  driveBookings DriveBooking[]
+}
+
+model CarShare {
+  id       String    @id @default(uuid())
+  userId   String
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  carId    String
+  car      ExoticCar @relation(fields: [carId], references: [id])
+  sharePct Float
+}
+
+model DriveBooking {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  carId         String
+  car           ExoticCar @relation(fields: [carId], references: [id])
+  trackLocation String
+  bookingDate   DateTime
+  status        String    // CONFIRMED | COMPLETED | CANCELLED
+  createdAt     DateTime  @default(now())
+
+  @@unique([carId, bookingDate])
+}
+
+// ------------------------------------------------------------------------------
+// Vertical 6: VIP Cards
+// ------------------------------------------------------------------------------
+
+model VipCard {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cardNumberLast4 String
+  cardType        String   @default("PHYSICAL") // PHYSICAL | VIRTUAL
+  tier            String   @default("OBSIDIAN") // SILVER | OBSIDIAN | BLACK
+  isFrozen        Boolean  @default(false)
+  dailySpendLimit Float    @default(50000.0)
+  pinEncrypted    String   // AES-256-GCM encrypted
+  shippingStatus  String?  // DELIVERED | IN_TRANSIT
+  updatedAt       DateTime @updatedAt
+}
+
+// ------------------------------------------------------------------------------
+// Compliance & Audit
+// ------------------------------------------------------------------------------
+
+model KycDocument {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  docType    String   // PASSPORT | UTILITY_BILL | ARTICLES_OF_INC | TAX_AFFIDAVIT
+  fileUrl    String
+  isVerified Boolean  @default(false)
+  uploadedAt DateTime @default(now())
+}
+
 model AuditLog {
   id            String   @id @default(uuid())
-  action        String
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
   actorId       String?
-  ipAddressHash String
+  action        String
+  ipHash        String?
+  ipAddressHash String?
   userAgent     String?
   metadata      String?  // JSON string
   createdAt     DateTime @default(now())

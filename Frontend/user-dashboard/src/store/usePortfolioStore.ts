@@ -11,6 +11,7 @@ export type DepositRailTab = 'wire' | 'crypto' | 'card';
 interface PortfolioState {
   netWorth: number;
   allocations: VerticalAllocation[];
+  returns: Record<string, { dollarChange: number; percentageChange: number }> | null;
   activeModal: ModalType | null;
   activeDepositTab: DepositRailTab;
 
@@ -19,6 +20,8 @@ interface PortfolioState {
   closeModal: () => void;
   setActiveDepositTab: (tab: DepositRailTab) => void;
   setNetWorth: (value: number) => void;
+  setAllocations: (allocations: VerticalAllocation[]) => void;
+  setReturns: (returns: Record<string, { dollarChange: number; percentageChange: number }>) => void;
   updateAllocation: (id: string, value: number) => void;
   resetToDefaults: () => void;
 }
@@ -26,6 +29,7 @@ interface PortfolioState {
 export const usePortfolioStore = create<PortfolioState>((set) => ({
   netWorth: TOTAL_SOVEREIGN_NET_WORTH,
   allocations: DEFAULT_ALLOCATIONS,
+  returns: null,
   activeModal: null,
   activeDepositTab: 'wire',
 
@@ -34,6 +38,8 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
   setActiveDepositTab: (tab) => set({ activeDepositTab: tab }),
 
   setNetWorth: (value) => set({ netWorth: value }),
+  setAllocations: (allocations) => set({ allocations }),
+  setReturns: (returns) => set({ returns }),
 
   updateAllocation: (id, value) => {
     set((state) => {
@@ -56,6 +62,7 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
     set({
       netWorth: TOTAL_SOVEREIGN_NET_WORTH,
       allocations: DEFAULT_ALLOCATIONS,
+      returns: null,
       activeModal: null,
       activeDepositTab: 'wire',
     }),

@@ -17,6 +17,39 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
 
+  // Dynamically compute accurate values directly from STOCKS_HOLDINGS_DATA
+  const totalEquitiesNav = React.useMemo(() => {
+    return STOCKS_HOLDINGS_DATA.reduce((sum, s) => sum + s.shares * s.currentMark, 0);
+  }, []);
+
+  const totalCostBasis = React.useMemo(() => {
+    return STOCKS_HOLDINGS_DATA.reduce((sum, s) => sum + s.shares * s.entryMark, 0);
+  }, []);
+
+  const totalUnrealizedPnl = React.useMemo(() => {
+    return STOCKS_HOLDINGS_DATA.reduce((sum, s) => sum + s.unrealizedPnl, 0);
+  }, []);
+
+  const totalPnlPct = totalCostBasis > 0 ? (totalUnrealizedPnl / totalCostBasis) * 100 : 0;
+
+  const listedDmaVal = React.useMemo(() => {
+    return STOCKS_HOLDINGS_DATA.filter((s) => !s.isPreIpo).reduce(
+      (sum, s) => sum + s.shares * s.currentMark,
+      0
+    );
+  }, []);
+
+  const preIpoVal = React.useMemo(() => {
+    return STOCKS_HOLDINGS_DATA.filter((s) => s.isPreIpo).reduce(
+      (sum, s) => sum + s.shares * s.currentMark,
+      0
+    );
+  }, []);
+
+  const listedDmaPct = totalEquitiesNav > 0 ? (listedDmaVal / totalEquitiesNav) * 100 : 0;
+  const preIpoPct = totalEquitiesNav > 0 ? (preIpoVal / totalEquitiesNav) * 100 : 0;
+  const extendedHoursGain = totalEquitiesNav * 0.0018;
+
   return (
     <div
       data-testid="stocks-module"
@@ -33,12 +66,12 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
               </span>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-xl font-mono font-bold text-on-surface tabular-nums">
-                  {formatMaskedCurrency(2964090.0, maskBalances)}
+                  {formatMaskedCurrency(totalEquitiesNav, maskBalances)}
                 </span>
               </div>
             </div>
             <span className="px-1.5 py-0.5 bg-secondary/10 text-secondary text-[10px] font-mono rounded-DEFAULT uppercase">
-              20.0% PORTFOLIO
+              17.4% PORTFOLIO
             </span>
           </div>
           <div className="text-[11px] font-mono text-outline mt-2">
@@ -55,13 +88,18 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
               </span>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-xl font-mono font-bold text-tertiary tabular-nums">
-                  {maskBalances ? '••••••••' : '+$12,400.00'}
+                  {maskBalances
+                    ? '••••••••'
+                    : `+$${totalUnrealizedPnl.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}`}
                 </span>
               </div>
             </div>
             <span className="flex items-center gap-0.5 text-xs font-mono text-tertiary font-semibold">
               <TrendingUp className="w-3.5 h-3.5" />
-              +0.42%
+              +{totalPnlPct.toFixed(2)}%
             </span>
           </div>
           <div className="text-[11px] font-mono text-outline mt-2">
@@ -81,7 +119,7 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
                   +0.18%
                 </span>
                 <span className="text-xs font-mono text-tertiary">
-                  {maskBalances ? '••••••' : '+$5,335.20'}
+                  {maskBalances ? '••••••' : `+$${extendedHoursGain.toFixed(2)}`}
                 </span>
               </div>
             </div>
@@ -105,12 +143,12 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
           </div>
           <div className="mt-2 space-y-1">
             <div className="flex justify-between text-xs font-mono">
-              <span className="text-on-surface">Listed DMA (65.8%)</span>
-              <span className="text-primary">Pre-IPO SPVs (34.2%)</span>
+              <span className="text-on-surface">Listed DMA ({listedDmaPct.toFixed(1)}%)</span>
+              <span className="text-primary">Pre-IPO SPVs ({preIpoPct.toFixed(1)}%)</span>
             </div>
             <div className="h-2 w-full bg-surface-container-lowest rounded-DEFAULT flex overflow-hidden gap-0.5">
-              <div className="h-full bg-secondary" style={{ width: '65.8%' }} />
-              <div className="h-full bg-primary" style={{ width: '34.2%' }} />
+              <div className="h-full bg-secondary" style={{ width: `${listedDmaPct.toFixed(1)}%` }} />
+              <div className="h-full bg-primary" style={{ width: `${preIpoPct.toFixed(1)}%` }} />
             </div>
           </div>
         </div>

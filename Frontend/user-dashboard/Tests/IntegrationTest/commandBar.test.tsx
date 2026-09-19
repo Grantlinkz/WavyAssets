@@ -67,7 +67,7 @@ describe('GlobalCommandBar Integration Suite (Node 24 / SSR Parity)', () => {
     expect(html).toContain('Deposit');
     expect(html).toContain('Withdraw');
     expect(html).toContain('Trade / Swap');
-    expect(html).toContain('KYC LEVEL 3');
+    expect(html).toContain('KYC LEVEL 1');
   });
 
   it('triggers modal state transitions for all 4 action triggers', () => {

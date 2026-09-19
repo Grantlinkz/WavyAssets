@@ -85,7 +85,7 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
   return (
     <div
       data-testid="auth-callback-container"
-      className="min-h-[540px] flex items-center justify-center p-6 bg-surface-container-lowest"
+      className="min-h-screen flex items-center justify-center p-6 bg-surface-container-lowest"
     >
       <div className="w-full max-w-md p-6 rounded-sm border border-border-hairline bg-surface-container-low shadow-xl text-center space-y-6">
         {/* Enclave Crest */}
@@ -98,7 +98,7 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
             Sovereign Enclave Authentication
           </h2>
           <p className="text-xs text-on-surface-variant mt-1">
-            Verifying single-use HMAC-SHA256 handoff ticket
+            Verifying HMAC-SHA256 sovereign handoff ticket
           </p>
         </div>
 
@@ -148,18 +148,56 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
         </div>
 
         {ticketStatus === 'error' && (
-          <div className="flex justify-center pt-2">
-            <Button
-              variant="default"
-              size="default"
-              onClick={() => {
-                if (typeof window !== 'undefined') {
-                  window.location.href = '/';
-                }
-              }}
-            >
-              Return to Terminal
-            </Button>
+          <div className="flex flex-col gap-2 pt-2">
+            <div className="flex items-center justify-center gap-2">
+              <Button
+                variant="default"
+                size="default"
+                className="font-mono text-xs"
+                onClick={() => {
+                  const landingUrl = typeof window !== 'undefined'
+                    ? (import.meta.env.VITE_LANDING_URL || `${window.location.protocol}//${window.location.hostname}:5173`)
+                    : 'http://localhost:5173';
+                  if (typeof window !== 'undefined') {
+                    window.location.href = `${landingUrl}/?auth=signin`;
+                  }
+                }}
+              >
+                Sign In Again
+              </Button>
+              <Button
+                variant="goldOutline"
+                size="default"
+                className="font-mono text-xs"
+                onClick={() => {
+                  const landingUrl = typeof window !== 'undefined'
+                    ? (import.meta.env.VITE_LANDING_URL || `${window.location.protocol}//${window.location.hostname}:5173`)
+                    : 'http://localhost:5173';
+                  if (typeof window !== 'undefined') {
+                    window.location.href = `${landingUrl}/?auth=mandate`;
+                  }
+                }}
+              >
+                Request Mandate
+              </Button>
+            </div>
+            <div className="pt-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-on-surface-variant hover:text-on-surface text-[11px] font-mono"
+                onClick={() => {
+                  const landingUrl = typeof window !== 'undefined'
+                    ? (import.meta.env.VITE_LANDING_URL || `${window.location.protocol}//${window.location.hostname}:5173`)
+                    : 'http://localhost:5173';
+                  if (typeof window !== 'undefined') {
+                    window.location.href = landingUrl;
+                  }
+                }}
+              >
+                Return to Terminal
+              </Button>
+            </div>
           </div>
         )}
       </div>
