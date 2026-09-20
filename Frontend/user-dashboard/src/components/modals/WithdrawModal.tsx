@@ -32,17 +32,27 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
 
+  const parsedAmount = parseFloat(amount || '0');
+  const isValidAmount = Number.isFinite(parsedAmount) && parsedAmount > 0 && parsedAmount <= availableCash;
+
   const handleAuthorize = () => {
+    if (!isValidAmount) return;
     setIsVerifying(true);
     setTimeout(() => {
-      const numAmount = parseFloat(amount || '0') || 0;
-      adjustAvailableCash(-numAmount);
+      const currentCash = usePortfolioStore.getState().availableCash;
+      if (parsedAmount > currentCash) {
+        setIsVerifying(false);
+        return;
+      }
+      const success = adjustAvailableCash(-parsedAmount);
       setIsVerifying(false);
-      setIsSuccess(true);
-      setTimeout(() => {
-        setIsSuccess(false);
-        closeModal();
-      }, 1500);
+      if (success) {
+        setIsSuccess(true);
+        setTimeout(() => {
+          setIsSuccess(false);
+          closeModal();
+        }, 1500);
+      }
     }, 1000);
   };
 
@@ -150,7 +160,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
               <button
                 type="button"
                 data-testid="authorize-withdraw-btn"
-                disabled={isVerifying}
+                disabled={isVerifying || !isValidAmount}
                 onClick={handleAuthorize}
                 className="w-full py-2.5 bg-primary-container text-on-primary hover:bg-primary font-mono text-xs font-bold uppercase tracking-wider rounded-DEFAULT flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md disabled:opacity-50"
               >

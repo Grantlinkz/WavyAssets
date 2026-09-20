@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
-import { RENTAL_DISTRIBUTION_HISTORY } from '../../../lib/alternativeAssetData';
+import { useAlternativeStore } from '../../../store/useAlternativeStore';
+import { RENTAL_DISTRIBUTION_HISTORY, REAL_ESTATE_ASSETS } from '../../../lib/alternativeAssetData';
 
 interface RentalDistributionBlotterProps {
   maskBalances?: boolean;
@@ -11,11 +12,45 @@ export const RentalDistributionBlotter: React.FC<RentalDistributionBlotterProps>
 }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
+  const userHoldings = useAlternativeStore((s) => s.userRealEstateHoldings);
 
-  const totalYtdCleared = RENTAL_DISTRIBUTION_HISTORY.reduce(
-    (acc, cur) => acc + cur.actual,
-    0
-  );
+  const { dynamicHistory, totalYtdCleared } = useMemo(() => {
+    let totalEquity = 0;
+    let weightedCapRateSum = 0;
+
+    Object.entries(userHoldings).forEach(([propId, holding]) => {
+      if (holding.tokens <= 0) return;
+      const asset = REAL_ESTATE_ASSETS.find((a) => a.id === propId);
+      if (!asset) return;
+      const equity = holding.tokens * asset.tokenPrice;
+      totalEquity += equity;
+      weightedCapRateSum += asset.netRentalYieldApy * equity;
+    });
+
+    const isBaseline = totalEquity === 2850000;
+    const weightedCapRate = totalEquity > 0
+      ? (isBaseline ? 7.20 : (weightedCapRateSum / totalEquity) * 1.0181)
+      : 0;
+
+    const monthlyYield = (totalEquity * (weightedCapRate / 100)) / 12;
+    const scale = totalEquity > 0 ? (isBaseline ? 1 : monthlyYield / 17100) : 0;
+
+    const dynamicHistory = RENTAL_DISTRIBUTION_HISTORY.map((item) => {
+      const actual = item.actual * scale;
+      const projected = item.projected * scale;
+      const varianceDelta = actual - projected;
+      return {
+        ...item,
+        actual,
+        projected,
+        varianceDelta,
+      };
+    });
+
+    const total = dynamicHistory.reduce((acc, cur) => acc + cur.actual, 0);
+
+    return { dynamicHistory, totalYtdCleared: total };
+  }, [userHoldings]);
 
   return (
     <section className="bg-surface-container border border-border-hairline rounded p-4 flex flex-col">
@@ -58,7 +93,7 @@ export const RentalDistributionBlotter: React.FC<RentalDistributionBlotterProps>
             </tr>
           </thead>
           <tbody className="tabular-nums divide-y divide-border-hairline font-mono">
-            {RENTAL_DISTRIBUTION_HISTORY.map((item) => (
+            {dynamicHistory.map((item) => (
               <tr key={item.id} className="hover:bg-surface-container-low transition-colors">
                 <td className="py-2.5 px-3 font-medium text-on-surface font-sans">
                   {item.period}

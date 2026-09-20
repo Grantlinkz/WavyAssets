@@ -22,7 +22,7 @@ interface PortfolioState {
   setActiveDepositTab: (tab: DepositRailTab) => void;
   setNetWorth: (value: number) => void;
   setAvailableCash: (value: number) => void;
-  adjustAvailableCash: (delta: number) => void;
+  adjustAvailableCash: (delta: number) => boolean;
   setAllocations: (allocations: VerticalAllocation[]) => void;
   setReturns: (returns: Record<string, { dollarChange: number; percentageChange: number }>) => void;
   updateAllocation: (id: string, value: number) => void;
@@ -43,8 +43,17 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 
   setNetWorth: (value) => set({ netWorth: value }),
   setAvailableCash: (value) => set({ availableCash: value }),
-  adjustAvailableCash: (delta) =>
-    set((state) => ({ availableCash: Math.max(0, state.availableCash + delta) })),
+  adjustAvailableCash: (delta) => {
+    let success = false;
+    set((state) => {
+      if (state.availableCash + delta >= 0) {
+        success = true;
+        return { availableCash: state.availableCash + delta };
+      }
+      return state;
+    });
+    return success;
+  },
   setAllocations: (allocations) => set({ allocations }),
   setReturns: (returns) => set({ returns }),
 

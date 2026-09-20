@@ -298,7 +298,7 @@ export const GPU_CLUSTER_TELEMETRY: GpuClusterTelemetry = {
 export const REAL_ESTATE_SUMMARY_CARDS = [
   {
     label: 'TOTAL PROPERTY EQUITY',
-    subLabel: '19.2% of Consolidated NAV',
+    subLabel: 'Featured Enclave Holdings (4 SPVs)',
     value: '$2,850,000.00',
     delta: '+$270,000.00 (+10.46%)',
     deltaSub: 'Unrealized Uplift',

@@ -59,16 +59,30 @@ export const TradeModal: React.FC<TradeModalProps> = ({
       ? `$${availableInPayAsset.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       : `€${availableInPayAsset.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+  const parsedPayAmount = parseFloat(payAmount || '0');
+  const isValidAmount =
+    Number.isFinite(parsedPayAmount) &&
+    parsedPayAmount > 0 &&
+    usdAllocated <= availableCash;
+
   const handleExecute = () => {
+    if (!isValidAmount) return;
     setIsExecuting(true);
     setTimeout(() => {
-      adjustAvailableCash(-usdAllocated);
+      const currentCash = usePortfolioStore.getState().availableCash;
+      if (usdAllocated > currentCash) {
+        setIsExecuting(false);
+        return;
+      }
+      const success = adjustAvailableCash(-usdAllocated);
       setIsExecuting(false);
-      setIsDone(true);
-      setTimeout(() => {
-        setIsDone(false);
-        closeModal();
-      }, 1500);
+      if (success) {
+        setIsDone(true);
+        setTimeout(() => {
+          setIsDone(false);
+          closeModal();
+        }, 1500);
+      }
     }, 600);
   };
 
@@ -197,7 +211,7 @@ export const TradeModal: React.FC<TradeModalProps> = ({
               <button
                 type="button"
                 data-testid="execute-trade-btn"
-                disabled={isExecuting}
+                disabled={isExecuting || !isValidAmount}
                 onClick={handleExecute}
                 className="w-full py-2.5 bg-primary-container text-on-primary hover:bg-primary font-mono text-xs font-bold uppercase tracking-wider rounded-DEFAULT flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md disabled:opacity-50"
               >

@@ -3,7 +3,7 @@
 # ==============================================================================
 # Specification:
 # - High-availability NestJS API Gateway & WebSocket Telemetry Server
-# - SQLite Relational Database Engine with Volume Persistence
+# - PostgreSQL Database Connection
 # - Non-root execution security & integrated liveness/readiness probes
 # ==============================================================================
 
@@ -23,13 +23,10 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=4000
-      - DATABASE_URL=${DATABASE_URL:-file:./dev.db}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/wavyassets?schema=public}
       - APP_URL=${APP_URL:-http://localhost:4000}
       - CLIENT_URL=${CLIENT_URL:-http://localhost:5173}
       - DASHBOARD_URL=${DASHBOARD_URL:-http://localhost:5174}
-    volumes:
-      # Persistent named volume for SQLite database across container restarts
-      - backend_sqlite_data:/app/prisma
     networks:
       - wavyassets-network
     healthcheck:
@@ -51,11 +48,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-volumes:
-  backend_sqlite_data:
-    name: wavyassets_landing_backend_data
-    driver: local
 
 networks:
   wavyassets-network:

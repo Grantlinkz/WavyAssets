@@ -19,6 +19,7 @@ export const OverviewModule: React.FC = () => {
   const maskBalances = useDashboardStore((s) => s.maskBalances);
   const openModal = usePortfolioStore((s) => s.openModal);
   const netWorth = usePortfolioStore((s) => s.netWorth);
+  const storeReturns = usePortfolioStore((s) => s.returns);
   const storeAllocations = usePortfolioStore((s) => s.allocations);
 
   // Live streaming heartbeat simulation
@@ -29,6 +30,28 @@ export const OverviewModule: React.FC = () => {
   }, []);
 
   const totalPortfolioValue = netWorth;
+
+  const allTimeGain = React.useMemo(() => {
+    if (storeReturns?.ALL) {
+      const { dollarChange, percentageChange } = storeReturns.ALL;
+      const sign = dollarChange >= 0 ? '+' : '-';
+      return `${sign}$${Math.abs(dollarChange).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${sign}${Math.abs(percentageChange).toFixed(2)}%) ALL-TIME`;
+    }
+    if (storeReturns?.allTime) {
+      const { dollarChange, percentageChange } = storeReturns.allTime;
+      const sign = dollarChange >= 0 ? '+' : '-';
+      return `${sign}$${Math.abs(dollarChange).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${sign}${Math.abs(percentageChange).toFixed(2)}%) ALL-TIME`;
+    }
+    if (totalPortfolioValue > 0) {
+      // Baseline cost basis for the $14,820,450 sovereign portfolio with +$1,562,200 gain
+      const baselineCostBasis = 13258250.0;
+      const dollarGain = totalPortfolioValue - baselineCostBasis;
+      const pctGain = baselineCostBasis > 0 ? (dollarGain / baselineCostBasis) * 100 : 0;
+      const sign = dollarGain >= 0 ? '+' : '-';
+      return `${sign}$${Math.abs(dollarGain).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${sign}${Math.abs(pctGain).toFixed(2)}%) ALL-TIME`;
+    }
+    return null;
+  }, [storeReturns, totalPortfolioValue]);
 
   const telemetryNodes = [
     {
@@ -172,10 +195,12 @@ export const OverviewModule: React.FC = () => {
               100% ASSETS
             </span>
           </div>
-          <div className="flex items-center gap-1.5 text-tertiary font-mono text-xs tabular-nums font-semibold mt-2">
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>{maskBalances ? '•••••• (+9.12%)' : '+$1,562,200.00 (+9.12%) ALL-TIME'}</span>
-          </div>
+          {allTimeGain && (
+            <div className="flex items-center gap-1.5 text-tertiary font-mono text-xs tabular-nums font-semibold mt-2">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>{maskBalances ? '••••••' : allTimeGain}</span>
+            </div>
+          )}
         </div>
 
         {/* KPI 2: Fiduciary Risk Rating */}

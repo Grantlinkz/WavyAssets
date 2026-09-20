@@ -4,6 +4,8 @@ import { HoldingsTable } from './HoldingsTable';
 import { DcaScheduler } from './DcaScheduler';
 import { StakingTelemetry } from './StakingTelemetry';
 import { useDashboardStore } from '../../../store/useDashboardStore';
+import { useLiquidStore } from '../../../store/useLiquidStore';
+import { usePortfolioStore } from '../../../store/usePortfolioStore';
 import { formatMaskedCurrency } from '../../../lib/calculations';
 import { CRYPTO_HOLDINGS_DATA } from '../../../lib/liquidAssetData';
 
@@ -14,6 +16,8 @@ interface CryptoModuleProps {
 export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMask }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
+  const unclaimedRewards = useLiquidStore((s) => s.unclaimedRewards);
+  const netWorth = usePortfolioStore((s) => s.netWorth);
 
   // Dynamically compute accurate real values directly from user's active holdings (balance > 0)
   const heldCrypto = useMemo(() => CRYPTO_HOLDINGS_DATA.filter((h) => h.balance > 0), []);
@@ -52,7 +56,7 @@ export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMa
   }, [stakedHoldings, totalStakedCapital]);
 
   const dailyRunRate = (totalStakedCapital * (blendedApy / 100)) / 365;
-  const accruedYield = 18492.3;
+  const cryptoPortfolioPct = netWorth > 0 ? (totalCryptoNav / netWorth) * 100 : 0;
 
   return (
     <div
@@ -75,7 +79,7 @@ export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMa
               </div>
             </div>
             <span className="px-1.5 py-0.5 bg-tertiary/10 text-tertiary text-[10px] font-mono rounded-DEFAULT uppercase">
-              37.1% PORTFOLIO
+              {cryptoPortfolioPct.toFixed(1)}% PORTFOLIO
             </span>
           </div>
           <div className="flex items-center gap-1.5 text-tertiary font-mono text-xs tabular-nums font-semibold mt-2">
@@ -144,7 +148,7 @@ export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMa
               </span>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-xl font-mono font-bold text-tertiary tabular-nums">
-                  {formatMaskedCurrency(accruedYield, maskBalances)}
+                  {formatMaskedCurrency(unclaimedRewards, maskBalances)}
                 </span>
               </div>
             </div>
@@ -165,7 +169,11 @@ export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMa
       {/* Lower Split: DCA Automation & Staking Telemetry */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <DcaScheduler maskBalances={maskBalances} />
-        <StakingTelemetry maskBalances={maskBalances} />
+        <StakingTelemetry
+          maskBalances={maskBalances}
+          stakedHoldings={stakedHoldings}
+          blendedApy={blendedApy}
+        />
       </section>
     </div>
   );

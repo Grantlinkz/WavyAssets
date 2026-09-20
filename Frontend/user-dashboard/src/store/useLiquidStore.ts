@@ -1,10 +1,19 @@
 import { create } from 'zustand';
 import {
-  INITIAL_DCA_SCHEDULES,
   WALLET_TRANSACTIONS_DATA,
   type DcaScheduleItem,
   type WalletTransaction,
 } from '../lib/liquidAssetData';
+
+export interface ActiveOrder {
+  id: string;
+  symbol: string;
+  type: 'BUY_LIMIT' | 'SELL_LIMIT' | 'STOP_LOSS';
+  shares: number;
+  limitPrice: number;
+  status: 'PENDING' | 'ROUTING' | 'CANCELLED';
+  expires: string;
+}
 
 interface LiquidState {
   // Crypto module state
@@ -13,15 +22,19 @@ interface LiquidState {
   isCompounding: boolean;
   toggleDcaSchedule: (id: string) => void;
   addDcaSchedule: (schedule: Omit<DcaScheduleItem, 'id'>) => void;
+  deleteDcaSchedule: (id: string) => void;
   triggerFastCompound: () => void;
 
   // Stocks module state
   selectedStock: string;
   isPreMarket: boolean;
   dripSettings: Record<string, boolean>;
+  activeOrders: ActiveOrder[];
   setSelectedStock: (symbol: string) => void;
   togglePreMarket: () => void;
   toggleDrip: (symbol: string) => void;
+  addActiveOrder: (order: Omit<ActiveOrder, 'id'>) => void;
+  cancelActiveOrder: (id: string) => void;
 
   // Wallet module state
   autoSweepEnabled: boolean;
@@ -36,7 +49,7 @@ interface LiquidState {
 
 export const useLiquidStore = create<LiquidState>((set) => ({
   // Crypto
-  dcaSchedules: INITIAL_DCA_SCHEDULES,
+  dcaSchedules: [],
   unclaimedRewards: 18492.30,
   isCompounding: false,
 
@@ -57,6 +70,12 @@ export const useLiquidStore = create<LiquidState>((set) => ({
     }));
   },
 
+  deleteDcaSchedule: (id) => {
+    set((state) => ({
+      dcaSchedules: state.dcaSchedules.filter((item) => item.id !== id),
+    }));
+  },
+
   triggerFastCompound: () => {
     set({ isCompounding: true });
     setTimeout(() => {
@@ -73,6 +92,7 @@ export const useLiquidStore = create<LiquidState>((set) => ({
     SPACEX: false,
     ANTHROPIC: false,
   },
+  activeOrders: [],
 
   setSelectedStock: (symbol) => set({ selectedStock: symbol }),
   togglePreMarket: () => set((state) => ({ isPreMarket: !state.isPreMarket })),
@@ -82,6 +102,22 @@ export const useLiquidStore = create<LiquidState>((set) => ({
         ...state.dripSettings,
         [symbol]: !state.dripSettings[symbol],
       },
+    })),
+
+  addActiveOrder: (order) =>
+    set((state) => ({
+      activeOrders: [
+        {
+          ...order,
+          id: `ord-${Math.floor(100 + Math.random() * 900)}`,
+        },
+        ...state.activeOrders,
+      ],
+    })),
+
+  cancelActiveOrder: (id) =>
+    set((state) => ({
+      activeOrders: state.activeOrders.filter((order) => order.id !== id),
     })),
 
   // Wallet

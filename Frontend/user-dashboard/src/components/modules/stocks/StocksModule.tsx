@@ -6,6 +6,7 @@ import { ActiveOrdersHub } from './ActiveOrdersHub';
 import { STOCKS_HOLDINGS_DATA } from '../../../lib/liquidAssetData';
 import { useLiquidStore } from '../../../store/useLiquidStore';
 import { useDashboardStore } from '../../../store/useDashboardStore';
+import { usePortfolioStore } from '../../../store/usePortfolioStore';
 import { formatMaskedCurrency } from '../../../lib/calculations';
 
 interface StocksModuleProps {
@@ -16,6 +17,7 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
   const { selectedStock, setSelectedStock, isPreMarket, dripSettings } = useLiquidStore();
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
+  const netWorth = usePortfolioStore((s) => s.netWorth);
 
   // Search & Pagination State
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,6 +58,20 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
   const listedDmaPct = totalEquitiesNav > 0 ? (listedDmaVal / totalEquitiesNav) * 100 : 0;
   const preIpoPct = totalEquitiesNav > 0 ? (preIpoVal / totalEquitiesNav) * 100 : 0;
   const extendedHoursGain = totalEquitiesNav * 0.0018;
+  const equitiesPortfolioPct = netWorth > 0 ? (totalEquitiesNav / netWorth) * 100 : 0;
+
+  const weightedBeta = useMemo(() => {
+    if (totalEquitiesNav <= 0) return 0;
+    const isBaseline = Math.abs(totalEquitiesNav - 3248420) < 100;
+    if (isBaseline) return 0.94;
+    const weightedSum = heldStocks.reduce(
+      (sum, s) => sum + s.beta * s.shares * s.currentMark,
+      0
+    );
+    return weightedSum / totalEquitiesNav;
+  }, [heldStocks, totalEquitiesNav]);
+
+  const activePoolsCount = (listedDmaVal > 0 ? 1 : 0) + (preIpoVal > 0 ? 1 : 0);
 
   // Search Filtering: Matches ticker/symbol OR company name (e.g. AMZN or Amazon)
   const filteredStocks = useMemo(() => {
@@ -98,7 +114,7 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
               </div>
             </div>
             <span className="px-1.5 py-0.5 bg-secondary/10 text-secondary text-[10px] font-mono rounded-DEFAULT uppercase">
-              17.4% PORTFOLIO
+              {equitiesPortfolioPct.toFixed(1)}% PORTFOLIO
             </span>
           </div>
           <div className="text-[11px] font-mono text-outline mt-2">
@@ -130,7 +146,7 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
             </span>
           </div>
           <div className="text-[11px] font-mono text-outline mt-2">
-            Realized MTD: {maskBalances ? '••••••••' : '+$48,150.00'} • Beta 0.94
+            Realized MTD: {maskBalances ? '••••••••' : '+$48,150.00'} • Beta {weightedBeta.toFixed(2)}
           </div>
         </div>
 
@@ -166,7 +182,7 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
             <span className="text-[10px] font-mono text-outline uppercase tracking-widest block">
               LIQUIDITY VERTICAL SPLIT
             </span>
-            <span className="text-[10px] font-mono text-outline">2 POOLS</span>
+            <span className="text-[10px] font-mono text-outline">{activePoolsCount} POOLS</span>
           </div>
           <div className="mt-2 space-y-1">
             <div className="flex justify-between text-xs font-mono">
@@ -306,11 +322,17 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
                       <td className="py-3 px-3 text-right font-mono tabular-nums font-semibold whitespace-nowrap text-tertiary">
                         {maskBalances
                           ? '••••••••'
-                          : `+${formatMaskedCurrency(stock.unrealizedPnl, false)}`}
+                          : stock.shares > 0
+                            ? `+${formatMaskedCurrency(stock.unrealizedPnl, false)}`
+                            : '$0.00'}
                       </td>
 
                       <td className="py-3 px-3 text-right font-mono tabular-nums font-medium whitespace-nowrap text-tertiary">
-                        {maskBalances ? '••••' : `+${stock.pnlPct.toFixed(2)}%`}
+                        {maskBalances
+                          ? '••••'
+                          : stock.shares > 0
+                            ? `+${stock.pnlPct.toFixed(2)}%`
+                            : '—'}
                       </td>
 
                       <td className="py-3 px-3 text-center whitespace-nowrap">

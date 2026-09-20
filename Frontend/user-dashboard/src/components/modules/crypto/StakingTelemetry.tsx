@@ -1,23 +1,117 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Gauge, Download, RotateCw, CheckCircle2 } from 'lucide-react';
 import { useLiquidStore } from '../../../store/useLiquidStore';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { formatMaskedCurrency } from '../../../lib/calculations';
+import { CRYPTO_HOLDINGS_DATA, type CryptoHolding } from '../../../lib/liquidAssetData';
 
-export const StakingTelemetry: React.FC<{ maskBalances?: boolean }> = ({ maskBalances: propMask }) => {
+export interface StakingTelemetryProps {
+  maskBalances?: boolean;
+  stakedHoldings?: CryptoHolding[];
+  blendedApy?: number;
+}
+
+export const StakingTelemetry: React.FC<StakingTelemetryProps> = ({
+  maskBalances: propMask,
+  stakedHoldings: propStaked,
+  blendedApy: propBlendedApy,
+}) => {
   const { unclaimedRewards, isCompounding, triggerFastCompound } = useLiquidStore();
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
   const [exportedFormat, setExportedFormat] = useState<string | null>(null);
 
+  // Compute live staked assets directly from active holdings
+  const activeStaked = useMemo(() => {
+    if (propStaked) return propStaked;
+    return CRYPTO_HOLDINGS_DATA.filter((h) => h.custodyType === 'STAKING_LOCKUP' && h.balance > 0);
+  }, [propStaked]);
+
+  const totalStakedVal = useMemo(() => {
+    return activeStaked.reduce((sum, h) => sum + h.balance * h.spotPrice, 0);
+  }, [activeStaked]);
+
+  const dynamicBlendedApy = useMemo(() => {
+    if (propBlendedApy !== undefined) return propBlendedApy;
+    if (totalStakedVal === 0) return 0;
+    const weightedSum = activeStaked.reduce(
+      (sum, h) => sum + h.balance * h.spotPrice * (h.stakingApy || 0),
+      0
+    );
+    return weightedSum / totalStakedVal;
+  }, [propBlendedApy, totalStakedVal, activeStaked]);
+
+  // Asset-specific holdings for live validator gauges
+  const ethHolding = useMemo(() => {
+    return (
+      activeStaked.find((h) => h.symbol === 'ETH') ||
+      CRYPTO_HOLDINGS_DATA.find((h) => h.symbol === 'ETH')
+    );
+  }, [activeStaked]);
+
+  const solHolding = useMemo(() => {
+    return (
+      activeStaked.find((h) => h.symbol === 'SOL') ||
+      CRYPTO_HOLDINGS_DATA.find((h) => h.symbol === 'SOL')
+    );
+  }, [activeStaked]);
+
+  const avaxHolding = useMemo(() => {
+    return (
+      activeStaked.find((h) => h.symbol === 'AVAX') ||
+      CRYPTO_HOLDINGS_DATA.find((h) => h.symbol === 'AVAX')
+    );
+  }, [activeStaked]);
+
   const handleExport = (format: string) => {
-    const headers = ['Lot_ID', 'Timestamp', 'Asset', 'Accounting_Method', 'Bonded_Qty', 'Cost_Basis_USD', 'Accrued_Yield_USD', 'Validator_Node'];
-    const rows = [
-      ['LOT-ETH-01', '2024-01-15T08:30:00Z', 'ETH', format, '380.0', '1079200.00', '14210.40', 'ETH VALIDATOR NODE 04'],
-      ['LOT-SOL-01', '2024-02-01T12:00:00Z', 'SOL', format, '2400.0', '324000.00', '3120.90', 'SOL MARINADE SOVEREIGN'],
-      ['LOT-AVAX-01', '2024-02-18T16:45:00Z', 'AVAX', format, '8500.0', '208250.00', '1161.00', 'AVALANCHE SUBNET CORE'],
+    const headers = [
+      'Lot_ID',
+      'Timestamp',
+      'Asset',
+      'Accounting_Method',
+      'Bonded_Qty',
+      'Cost_Basis_USD',
+      'Accrued_Yield_USD',
+      'Validator_Node',
     ];
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+
+    const rows = [
+      [
+        'LOT-ETH-01',
+        '2024-01-15T08:30:00Z',
+        'ETH',
+        format,
+        (ethHolding?.balance || 0).toFixed(1),
+        ((ethHolding?.balance || 0) * (ethHolding?.entryPrice || 2840)).toFixed(2),
+        ((unclaimedRewards * 0.77) || 0).toFixed(2),
+        'ETH VALIDATOR NODE 04',
+      ],
+      [
+        'LOT-SOL-01',
+        '2024-02-01T12:00:00Z',
+        'SOL',
+        format,
+        (solHolding?.balance || 0).toFixed(1),
+        ((solHolding?.balance || 0) * (solHolding?.entryPrice || 135)).toFixed(2),
+        ((unclaimedRewards * 0.17) || 0).toFixed(2),
+        'SOL MARINADE SOVEREIGN',
+      ],
+      [
+        'LOT-AVAX-01',
+        '2024-02-18T16:45:00Z',
+        'AVAX',
+        format,
+        (avaxHolding?.balance || 0).toFixed(1),
+        ((avaxHolding?.balance || 0) * (avaxHolding?.entryPrice || 24.5)).toFixed(2),
+        ((unclaimedRewards * 0.06) || 0).toFixed(2),
+        'AVALANCHE SUBNET CORE',
+      ],
+    ];
+
+    const csvContent =
+      'data:text/csv;charset=utf-8,' +
+      [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+
     if (typeof window !== 'undefined' && window.document) {
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement('a');
@@ -42,21 +136,26 @@ export const StakingTelemetry: React.FC<{ maskBalances?: boolean }> = ({ maskBal
           </h2>
         </div>
         <span className="text-[10px] font-mono text-tertiary bg-tertiary/10 border border-tertiary/30 px-1.5 py-0.5 rounded-DEFAULT">
-          7.42% BLENDED RUN-RATE
+          {dynamicBlendedApy > 0 ? `${dynamicBlendedApy.toFixed(2)}% BLENDED RUN-RATE` : '0.00% BLENDED RUN-RATE'}
         </span>
       </div>
 
       {/* 3 Staking Protocol Gauges */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Node 1: ETH */}
         <div className="p-3 bg-surface-container-lowest rounded-DEFAULT border border-border-hairline">
           <div className="flex items-center justify-between text-[10px] font-mono text-outline">
             <span>ETH VALIDATOR NODE 04</span>
             <span className="text-tertiary font-bold">ONLINE</span>
           </div>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-lg font-mono font-bold text-on-surface">3.82% APY</span>
+            <span className="text-lg font-mono font-bold text-on-surface">
+              {(ethHolding?.stakingApy || 3.82).toFixed(2)}% APY
+            </span>
             <span className="text-[10px] font-mono text-outline">
-              {maskBalances ? '•••• ETH Bonded' : '380 ETH Bonded'}
+              {maskBalances
+                ? '•••• ETH Bonded'
+                : `${(ethHolding?.balance || 0).toLocaleString()} ETH Bonded`}
             </span>
           </div>
           <div className="w-full bg-surface-container h-1 rounded-DEFAULT mt-2 overflow-hidden">
@@ -65,15 +164,20 @@ export const StakingTelemetry: React.FC<{ maskBalances?: boolean }> = ({ maskBal
           <span className="text-[10px] font-mono text-outline block mt-1">Next epoch: 18m 42s</span>
         </div>
 
+        {/* Node 2: SOL */}
         <div className="p-3 bg-surface-container-lowest rounded-DEFAULT border border-border-hairline">
           <div className="flex items-center justify-between text-[10px] font-mono text-outline">
             <span>SOL MARINADE SOVEREIGN</span>
             <span className="text-tertiary font-bold">OPTIMAL</span>
           </div>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-lg font-mono font-bold text-tertiary">7.42% APY</span>
+            <span className="text-lg font-mono font-bold text-tertiary">
+              {(solHolding?.stakingApy || 7.42).toFixed(2)}% APY
+            </span>
             <span className="text-[10px] font-mono text-outline">
-              {maskBalances ? '•••• SOL Bonded' : '2,400 SOL Bonded'}
+              {maskBalances
+                ? '•••• SOL Bonded'
+                : `${(solHolding?.balance || 0).toLocaleString()} SOL Bonded`}
             </span>
           </div>
           <div className="w-full bg-surface-container h-1 rounded-DEFAULT mt-2 overflow-hidden">
@@ -82,15 +186,20 @@ export const StakingTelemetry: React.FC<{ maskBalances?: boolean }> = ({ maskBal
           <span className="text-[10px] font-mono text-outline block mt-1">Epoch 682 // 99.98% uptime</span>
         </div>
 
+        {/* Node 3: AVAX */}
         <div className="p-3 bg-surface-container-lowest rounded-DEFAULT border border-border-hairline">
           <div className="flex items-center justify-between text-[10px] font-mono text-outline">
             <span>AVALANCHE SUBNET CORE</span>
             <span className="text-secondary font-bold">SYNCED</span>
           </div>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-lg font-mono font-bold text-secondary">5.90% APY</span>
+            <span className="text-lg font-mono font-bold text-secondary">
+              {(avaxHolding?.stakingApy || 5.9).toFixed(2)}% APY
+            </span>
             <span className="text-[10px] font-mono text-outline">
-              {maskBalances ? '•••• AVAX Bonded' : '8,500 AVAX Bonded'}
+              {maskBalances
+                ? '•••• AVAX Bonded'
+                : `${(avaxHolding?.balance || 0).toLocaleString()} AVAX Bonded`}
             </span>
           </div>
           <div className="w-full bg-surface-container h-1 rounded-DEFAULT mt-2 overflow-hidden">

@@ -84,6 +84,16 @@ interface AlternativeStoreState {
   leaseVehicleAsset: (assetId: string, type: string, duration: string, cost: number) => boolean;
 }
 
+export const INITIAL_USER_REAL_ESTATE_HOLDINGS: Record<
+  string,
+  { tokens: number; totalInvested: number; leases: RealEstateLease[] }
+> = {
+  're-1': { tokens: 2400, totalInvested: 1200000, leases: [] },
+  're-2': { tokens: 1500, totalInvested: 750000, leases: [] },
+  're-3': { tokens: 1100, totalInvested: 550000, leases: [] },
+  're-4': { tokens: 700, totalInvested: 350000, leases: [] },
+};
+
 export const useAlternativeStore = create<AlternativeStoreState>((set, get) => ({
   // AI Funds initial state
   selectedRiskTier: 'balanced',
@@ -97,7 +107,7 @@ export const useAlternativeStore = create<AlternativeStoreState>((set, get) => (
   otcOrders: INITIAL_OTC_ORDERS,
   activeOtcTab: 'ALL',
   lastExecutedOrderId: null,
-  userRealEstateHoldings: {},
+  userRealEstateHoldings: INITIAL_USER_REAL_ESTATE_HOLDINGS,
 
   // Cars initial state
   driveSlots: INITIAL_DRIVE_SLOTS,

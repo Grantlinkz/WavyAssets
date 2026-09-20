@@ -17,10 +17,8 @@ COPY prisma ./prisma/
 # Install all dependencies including devDependencies for build
 RUN npm ci
 
-# Generate Prisma Client and initialize SQLite database schema template
+# Generate Prisma Client
 RUN npx prisma generate
-RUN npx prisma db push --skip-generate
-RUN cp ./prisma/dev.db ./prisma/dev.db.template
 
 # Copy source and configurations
 COPY tsconfig*.json nest-cli.json ./

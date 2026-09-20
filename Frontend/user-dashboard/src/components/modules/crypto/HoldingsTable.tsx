@@ -164,11 +164,17 @@ export const HoldingsTable: React.FC<{ maskBalances?: boolean }> = ({ maskBalanc
                     <td className="py-3 px-3 text-right font-mono tabular-nums font-semibold whitespace-nowrap text-tertiary">
                       {maskBalances
                         ? '••••••••'
-                        : `+${formatMaskedCurrency(item.unrealizedPnl, false)}`}
+                        : item.balance > 0
+                          ? `+${formatMaskedCurrency(item.unrealizedPnl, false)}`
+                          : '$0.00'}
                     </td>
 
                     <td className="py-3 px-3 text-right font-mono tabular-nums font-medium whitespace-nowrap text-tertiary">
-                      {maskBalances ? '••••' : `+${item.pnlPct.toFixed(2)}%`}
+                      {maskBalances
+                        ? '••••'
+                        : item.balance > 0
+                          ? `+${item.pnlPct.toFixed(2)}%`
+                          : '—'}
                     </td>
 
                     <td className="py-3 px-3 text-center whitespace-nowrap">

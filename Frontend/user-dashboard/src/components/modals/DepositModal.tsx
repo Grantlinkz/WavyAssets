@@ -74,6 +74,13 @@ export const ASSET_STANDARDS_CONFIG: Record<string, TokenStandardConfig> = {
   },
 };
 
+export const ASSET_USD_RATES: Record<string, number> = {
+  USDC: 1.0,
+  USDT: 1.0,
+  BTC: 89420.0,
+  ETH: 3410.5,
+};
+
 export const DepositModal: React.FC<DepositModalProps> = ({
   isOpen: propIsOpen,
   activeTab: propTab,
@@ -109,6 +116,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   const [isPendingApproval, setIsPendingApproval] = useState<boolean>(false);
   const [pendingTxData, setPendingTxData] = useState<{
     refId: string;
+    txHash?: string;
     asset: string;
     standard: string;
     amount: string;
@@ -168,7 +176,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         trustwallet?: EthereumProvider;
       };
       if (name === 'MetaMask') {
-        const hasMetaMask = Boolean(win.ethereum?.isMetaMask || win.ethereum);
+        const hasMetaMask = Boolean(win.ethereum?.isMetaMask);
         if (!hasMetaMask) {
           setIsConnecting(false);
           setWalletNotFoundPrompt({
@@ -242,12 +250,50 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     setIsConnecting(false);
   };
 
-  const handleWalletDeposit = () => {
+  const handleWalletDeposit = async () => {
     setIsDepositing(true);
-    setTimeout(() => {
-      const refId = `WY-DEP-${Date.now().toString().slice(-6)}`;
+    const refId = `WY-DEP-${Date.now().toString().slice(-6)}`;
+    let txHash: string | undefined = undefined;
+
+    try {
+      if (typeof window !== 'undefined') {
+        const win = window as unknown as Window & {
+          ethereum?: EthereumProvider;
+          trustwallet?: EthereumProvider;
+        };
+        const provider = win.ethereum || win.trustwallet;
+        if (provider && !isTestEnv && connectedWallet) {
+          try {
+            const rawAmount = parseFloat(depositAmount || '0') || 0;
+            const valueHex = `0x${BigInt(Math.floor(rawAmount * 1e18)).toString(16)}`;
+            const hash = await provider.request({
+              method: 'eth_sendTransaction',
+              params: [
+                {
+                  from: connectedWallet,
+                  to: currentDepositAddress,
+                  value: selectedAsset === 'ETH' ? valueHex : '0x0',
+                },
+              ],
+            });
+            if (typeof hash === 'string') {
+              txHash = hash;
+            }
+          } catch (err) {
+            console.error('Wallet transfer rejected or failed:', err);
+            setIsDepositing(false);
+            return;
+          }
+        }
+      }
+
+      const rate = ASSET_USD_RATES[selectedAsset] ?? 1.0;
+      const parsedDepositAmount = parseFloat(depositAmount || '0') || 0;
+      const amountUsd = parsedDepositAmount * rate;
+
       const txData = {
         refId,
+        txHash,
         asset: selectedAsset,
         standard: selectedStandard,
         amount: depositAmount,
@@ -256,14 +302,14 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
       };
 
-      // Add to liquid store transactions blotter as PENDING
+      // Add to liquid store transactions blotter as PENDING only after successful transfer
       addTransaction({
         id: `tx-${Date.now()}`,
         timestamp: 'Just now',
         vertical: 'CRYPTO',
         type: 'DEPOSIT',
         description: `Direct Web3 Deposit (${selectedAsset} ${selectedStandard})`,
-        amountUsd: parseFloat(depositAmount || '0') || 0,
+        amountUsd,
         status: 'PENDING',
         reference: refId,
       });
@@ -271,7 +317,10 @@ export const DepositModal: React.FC<DepositModalProps> = ({
       setPendingTxData(txData);
       setIsDepositing(false);
       setIsPendingApproval(true);
-    }, 800);
+    } catch (err) {
+      console.error('Deposit flow encountered an error:', err);
+      setIsDepositing(false);
+    }
   };
 
   const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -310,7 +359,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && closeModal()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleResetFlow()}>
       <DialogContent data-testid="deposit-modal" className="max-w-[540px]">
         {/* Header */}
         <DialogHeader className="flex flex-row items-center justify-between pb-3">
@@ -336,7 +385,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
           <button
             type="button"
             data-testid="close-deposit-modal"
-            onClick={closeModal}
+            onClick={handleResetFlow}
             className="text-outline hover:text-on-surface p-1 rounded-DEFAULT transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
@@ -908,7 +957,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
           <span>ENCLAVE: GENEVA HS-M 01</span>
           <button
             type="button"
-            onClick={closeModal}
+            onClick={handleResetFlow}
             className="px-3 py-1 bg-surface-container-high hover:bg-surface-container text-on-surface rounded-DEFAULT border border-border-hairline font-mono text-xs transition-colors cursor-pointer"
           >
             Dismiss

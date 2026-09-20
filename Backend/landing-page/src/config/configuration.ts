@@ -63,7 +63,7 @@ export default (): AppConfiguration => {
       dashboardUrl: process.env.DASHBOARD_URL || 'http://localhost:5174',
     },
     database: {
-      url: process.env.DATABASE_URL || 'file:./dev.db',
+      url: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/wavyassets?schema=public',
     },
     security: {
       jwtSecret: process.env.JWT_SECRET || 'wavy_sovereign_terminal_jwt_secret_dev_key_must_be_rotated_in_prod',
