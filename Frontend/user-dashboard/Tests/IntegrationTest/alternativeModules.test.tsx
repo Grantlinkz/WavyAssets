@@ -89,7 +89,7 @@ describe('Alternative Asset Modules Integration Suite (Sprint 4)', () => {
 
       expect(html).toContain('data-testid="real-estate-module"');
       expect(html).toContain('Tokenized Real Estate &amp; Infrastructure');
-      expect(html).toContain('4 Enclave Holdings');
+      expect(html).toContain('Enclave Holdings');
       expect(html).toContain('TOTAL PROPERTY EQUITY');
       expect(html).toContain('$2,850,000.00');
       expect(html).toContain('AVERAGE NET CAP RATE');

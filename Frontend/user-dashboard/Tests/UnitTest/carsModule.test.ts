@@ -31,7 +31,7 @@ describe('Exotic Vehicles & Horology Vault Module Unit Tests', () => {
   });
 
   it('validates Porsche 993 GT2 and Patek 5270P provenance and Hagerty index', () => {
-    expect(EXOTIC_ASSETS).toHaveLength(2);
+    expect(EXOTIC_ASSETS.length).toBeGreaterThanOrEqual(50);
 
     const porsche = EXOTIC_ASSETS.find((a) => a.id === 'car-1');
     expect(porsche?.fairMarketValue).toBe(580000);

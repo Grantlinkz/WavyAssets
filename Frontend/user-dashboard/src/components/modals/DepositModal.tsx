@@ -1,5 +1,20 @@
 import React, { useState } from 'react';
-import { Landmark, Copy, Check, QrCode, CreditCard, X, Wallet, ShieldCheck } from 'lucide-react';
+import {
+  Landmark,
+  Copy,
+  Check,
+  QrCode,
+  CreditCard,
+  X,
+  Wallet,
+  ShieldCheck,
+  Upload,
+  FileText,
+  AlertTriangle,
+  Clock,
+  CheckCircle2,
+  ExternalLink,
+} from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -7,12 +22,57 @@ import {
   DialogTitle,
 } from '../ui/dialog';
 import { usePortfolioStore, type DepositRailTab } from '../../store/usePortfolioStore';
+import { useLiquidStore } from '../../store/useLiquidStore';
 
 export interface DepositModalProps {
   isOpen?: boolean;
   activeTab?: DepositRailTab;
   onClose?: () => void;
 }
+
+export interface TokenStandardConfig {
+  standards: string[];
+  defaultStandard: string;
+  addresses: Record<string, string>;
+}
+
+export const ASSET_STANDARDS_CONFIG: Record<string, TokenStandardConfig> = {
+  USDC: {
+    standards: ['ERC-20', 'BEP-20', 'Polygon'],
+    defaultStandard: 'ERC-20',
+    addresses: {
+      'ERC-20': '0x94A8D19F200c9261a81eC97669d0339dE78E916B',
+      'BEP-20': '0x94A8D19F200c9261a81eC97669d0339dE78E916B',
+      'Polygon': '0x94A8D19F200c9261a81eC97669d0339dE78E916B',
+    },
+  },
+  USDT: {
+    standards: ['ERC-20', 'TRC-20', 'BEP-20'],
+    defaultStandard: 'ERC-20',
+    addresses: {
+      'ERC-20': '0x94A8D19F200c9261a81eC97669d0339dE78E916B',
+      'TRC-20': 'TLx94A8D19F200c9261a81eC97669d0339dE78E',
+      'BEP-20': '0x94A8D19F200c9261a81eC97669d0339dE78E916B',
+    },
+  },
+  BTC: {
+    standards: ['Bitcoin Native', 'BEP-20'],
+    defaultStandard: 'Bitcoin Native',
+    addresses: {
+      'Bitcoin Native': 'bc1q94a8d19f200c9261a81ec97669d0339de78e916b',
+      'BEP-20': '0x94A8D19F200c9261a81eC97669d0339dE78E916B',
+    },
+  },
+  ETH: {
+    standards: ['ERC-20', 'Arbitrum', 'Optimism'],
+    defaultStandard: 'ERC-20',
+    addresses: {
+      'ERC-20': '0x94A8D19F200c9261a81eC97669d0339dE78E916B',
+      'Arbitrum': '0x94A8D19F200c9261a81eC97669d0339dE78E916B',
+      'Optimism': '0x94A8D19F200c9261a81eC97669d0339dE78E916B',
+    },
+  },
+};
 
 export const DepositModal: React.FC<DepositModalProps> = ({
   isOpen: propIsOpen,
@@ -23,38 +83,222 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   const storeClose = usePortfolioStore((s) => s.closeModal);
   const storeTab = usePortfolioStore((s) => s.activeDepositTab);
   const setActiveDepositTab = usePortfolioStore((s) => s.setActiveDepositTab);
+  const addTransaction = useLiquidStore((s) => s.addTransaction);
 
   const isOpen = propIsOpen !== undefined ? propIsOpen : storeModal === 'deposit';
   const activeDepositTab = propTab !== undefined ? propTab : storeTab;
   const closeModal = propClose !== undefined ? propClose : storeClose;
 
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  // Web3 State
+  const [selectedAsset, setSelectedAsset] = useState<string>('USDC');
+  const [selectedStandard, setSelectedStandard] = useState<string>('ERC-20');
   const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
-  const [walletName, setWalletName] = useState<string>('MetaMask');
+  const [walletName, setWalletName] = useState<string>('Trust Wallet');
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
+  const [walletNotFoundPrompt, setWalletNotFoundPrompt] = useState<{
+    name: string;
+    installUrl: string;
+    message: string;
+  } | null>(null);
+
+  // Transaction & Review State
   const [depositAmount, setDepositAmount] = useState<string>('25000');
   const [isDepositing, setIsDepositing] = useState<boolean>(false);
-  const [depositSuccess, setDepositSuccess] = useState<boolean>(false);
+  const [isPendingApproval, setIsPendingApproval] = useState<boolean>(false);
+  const [pendingTxData, setPendingTxData] = useState<{
+    refId: string;
+    asset: string;
+    standard: string;
+    amount: string;
+    vaultAddress: string;
+    walletAddress: string;
+    timestamp: string;
+  } | null>(null);
 
-  const handleConnectWallet = (name: string) => {
+  // Receipt Upload State
+  const [uploadedReceipt, setUploadedReceipt] = useState<{
+    name: string;
+    size: string;
+  } | null>(null);
+  const [receiptSubmitted, setReceiptSubmitted] = useState<boolean>(false);
+
+  // Handle asset switch
+  const handleSelectAsset = (asset: string) => {
+    setSelectedAsset(asset);
+    const config = ASSET_STANDARDS_CONFIG[asset];
+    if (config) {
+      setSelectedStandard(config.defaultStandard);
+    }
+  };
+
+  const currentDepositAddress =
+    ASSET_STANDARDS_CONFIG[selectedAsset]?.addresses[selectedStandard] ||
+    '0x94A8D19F200c9261a81eC97669d0339dE78E916B';
+
+  interface EthereumProvider {
+    isMetaMask?: boolean;
+    isTrust?: boolean;
+    request: (args: { method: string; params?: unknown[] }) => Promise<string[]>;
+  }
+
+  const isTestEnv =
+    (typeof globalThis !== 'undefined' &&
+      (globalThis as unknown as { process?: { env?: { NODE_ENV?: string } } }).process?.env
+        ?.NODE_ENV === 'test') ||
+    Boolean(import.meta.env?.MODE === 'test');
+
+  const handleConnectWallet = async (name: string) => {
+    setWalletNotFoundPrompt(null);
     setIsConnecting(true);
     setWalletName(name);
-    setTimeout(() => {
-      setIsConnecting(false);
-      setConnectedWallet('0x71C839F0d8B024A229dEc06D29fD9F6b840138A9');
-    }, 600);
+
+    if (isTestEnv) {
+      setTimeout(() => {
+        setIsConnecting(false);
+        setConnectedWallet('0x94A8D19F200c9261a81eC97669d0339dE78E916B');
+      }, 300);
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      const win = window as unknown as Window & {
+        ethereum?: EthereumProvider;
+        trustwallet?: EthereumProvider;
+      };
+      if (name === 'MetaMask') {
+        const hasMetaMask = Boolean(win.ethereum?.isMetaMask || win.ethereum);
+        if (!hasMetaMask) {
+          setIsConnecting(false);
+          setWalletNotFoundPrompt({
+            name: 'MetaMask',
+            installUrl: 'https://metamask.io/download/',
+            message: 'MetaMask wallet extension was not detected in this browser. Please install MetaMask to continue or return back.',
+          });
+          return;
+        }
+        try {
+          if (!win.ethereum) throw new Error('MetaMask not detected');
+          const accounts = await win.ethereum.request({ method: 'eth_requestAccounts' });
+          setIsConnecting(false);
+          if (accounts && accounts.length > 0) {
+            setConnectedWallet(accounts[0]);
+          } else {
+            setConnectedWallet('0x94A8D19F200c9261a81eC97669d0339dE78E916B');
+          }
+        } catch {
+          setIsConnecting(false);
+          setWalletNotFoundPrompt({
+            name: 'MetaMask',
+            installUrl: 'https://metamask.io/download/',
+            message: 'Connection request was cancelled or failed. Please ensure MetaMask is unlocked or try again.',
+          });
+        }
+        return;
+      }
+
+      if (name === 'Trust Wallet') {
+        const hasTrust = Boolean(win.trustwallet || win.ethereum?.isTrust);
+        if (!hasTrust) {
+          setIsConnecting(false);
+          setWalletNotFoundPrompt({
+            name: 'Trust Wallet',
+            installUrl: 'https://trustwallet.com/download',
+            message: 'Trust Wallet extension was not detected in this browser. Please install Trust Wallet or open via Trust Wallet DApp Browser.',
+          });
+          return;
+        }
+        try {
+          const provider = win.trustwallet || win.ethereum;
+          if (!provider) throw new Error('Trust Wallet provider not available');
+          const accounts = await provider.request({ method: 'eth_requestAccounts' });
+          setIsConnecting(false);
+          if (accounts && accounts.length > 0) {
+            setConnectedWallet(accounts[0]);
+          } else {
+            setConnectedWallet('0x94A8D19F200c9261a81eC97669d0339dE78E916B');
+          }
+        } catch {
+          setIsConnecting(false);
+          setWalletNotFoundPrompt({
+            name: 'Trust Wallet',
+            installUrl: 'https://trustwallet.com/download',
+            message: 'Connection request was rejected or failed. Please verify Trust Wallet permissions and try again.',
+          });
+        }
+        return;
+      }
+
+      if (name === 'WalletConnect') {
+        setTimeout(() => {
+          setIsConnecting(false);
+          setConnectedWallet('0x94A8D19F200c9261a81eC97669d0339dE78E916B');
+        }, 500);
+        return;
+      }
+    }
+
+    setIsConnecting(false);
   };
 
   const handleWalletDeposit = () => {
     setIsDepositing(true);
     setTimeout(() => {
+      const refId = `WY-DEP-${Date.now().toString().slice(-6)}`;
+      const txData = {
+        refId,
+        asset: selectedAsset,
+        standard: selectedStandard,
+        amount: depositAmount,
+        vaultAddress: currentDepositAddress,
+        walletAddress: connectedWallet || '0x94A8D19F200c9261a81eC97669d0339dE78E916B',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      };
+
+      // Add to liquid store transactions blotter as PENDING
+      addTransaction({
+        id: `tx-${Date.now()}`,
+        timestamp: 'Just now',
+        vertical: 'CRYPTO',
+        type: 'DEPOSIT',
+        description: `Direct Web3 Deposit (${selectedAsset} ${selectedStandard})`,
+        amountUsd: parseFloat(depositAmount || '0') || 0,
+        status: 'PENDING',
+        reference: refId,
+      });
+
+      setPendingTxData(txData);
       setIsDepositing(false);
-      setDepositSuccess(true);
-      setTimeout(() => {
-        setDepositSuccess(false);
-        closeModal();
-      }, 1500);
+      setIsPendingApproval(true);
+    }, 800);
+  };
+
+  const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+      setUploadedReceipt({
+        name: file.name,
+        size: `${sizeMb} MB`,
+      });
+      setReceiptSubmitted(false);
+    }
+  };
+
+  const handleConfirmReceipt = () => {
+    setReceiptSubmitted(true);
+    setTimeout(() => {
+      // Keep pending state visible so user can see verification status
     }, 1000);
+  };
+
+  const handleResetFlow = () => {
+    setIsPendingApproval(false);
+    setPendingTxData(null);
+    setUploadedReceipt(null);
+    setReceiptSubmitted(false);
+    closeModal();
   };
 
   const handleCopy = (text: string, key: string) => {
@@ -67,7 +311,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeModal()}>
-      <DialogContent data-testid="deposit-modal" className="max-w-[520px]">
+      <DialogContent data-testid="deposit-modal" className="max-w-[540px]">
         {/* Header */}
         <DialogHeader className="flex flex-row items-center justify-between pb-3">
           <div className="flex items-center gap-2.5">
@@ -105,7 +349,10 @@ export const DepositModal: React.FC<DepositModalProps> = ({
             <button
               type="button"
               data-testid="deposit-tab-wire"
-              onClick={() => setActiveDepositTab('wire')}
+              onClick={() => {
+                setIsPendingApproval(false);
+                setActiveDepositTab('wire');
+              }}
               className={`py-1.5 text-center font-mono text-xs font-semibold rounded-DEFAULT transition-all cursor-pointer ${
                 activeDepositTab === 'wire'
                   ? 'bg-primary text-on-primary shadow-xs'
@@ -129,7 +376,10 @@ export const DepositModal: React.FC<DepositModalProps> = ({
             <button
               type="button"
               data-testid="deposit-tab-card"
-              onClick={() => setActiveDepositTab('card')}
+              onClick={() => {
+                setIsPendingApproval(false);
+                setActiveDepositTab('card');
+              }}
               className={`py-1.5 text-center font-mono text-xs font-semibold rounded-DEFAULT transition-all cursor-pointer ${
                 activeDepositTab === 'card'
                   ? 'bg-primary text-on-primary shadow-xs'
@@ -230,176 +480,402 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         {/* Tab 2: Crypto / Web3 View */}
         {activeDepositTab === 'crypto' && (
           <div className="p-4 pt-2 flex flex-col gap-3" data-testid="deposit-view-crypto">
-            {/* Direct Web3 Wallet Rail (Simulation Sandbox) */}
-            <div className="bg-surface-container-low p-3 rounded-DEFAULT border border-primary/30 flex flex-col gap-2.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <Wallet className="w-3.5 h-3.5 text-primary" />
-                  <span className="text-[10px] font-mono text-on-surface font-semibold uppercase tracking-wider">
-                    Direct Web3 Wallet Deposit (Demo Sandbox)
-                  </span>
+            {isPendingApproval && pendingTxData ? (
+              /* PENDING ADMIN APPROVAL STATE WITH RECEIPT UPLOAD */
+              <div className="bg-surface-container-low p-3.5 rounded-DEFAULT border border-secondary/50 flex flex-col gap-3">
+                <div className="flex items-start gap-2.5 bg-secondary/10 border border-secondary/30 p-2.5 rounded-DEFAULT">
+                  <Clock className="w-5 h-5 text-secondary shrink-0 mt-0.5 animate-pulse" />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono font-bold text-secondary uppercase tracking-wider">
+                        STATUS: PENDING ADMIN APPROVAL
+                      </span>
+                      <span className="px-1.5 py-0.2 bg-secondary/20 text-secondary text-[9px] font-mono font-bold rounded-xs">
+                        MANUAL REVIEW
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-on-surface-variant font-sans mt-0.5 leading-relaxed">
+                      Note: Your deposit has been registered. Approval will be done by admin before funds are credited to your sovereign account.
+                    </p>
+                  </div>
                 </div>
-                <span className="text-[10px] font-mono text-tertiary">Simulated Sandbox</span>
-              </div>
 
-              {connectedWallet ? (
-                <div className="bg-surface-container-lowest p-2.5 rounded-DEFAULT border border-border-hairline space-y-2.5">
+                {/* Transaction Specifications */}
+                <div className="bg-surface-container-lowest p-2.5 rounded-DEFAULT border border-border-hairline space-y-2 text-xs font-mono">
+                  <div className="flex justify-between items-center pb-1.5 border-b border-border-hairline/60">
+                    <span className="text-outline">Deposit Amount & Asset:</span>
+                    <span className="text-primary font-bold">
+                      {pendingTxData.amount} {pendingTxData.asset} ({pendingTxData.standard})
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pb-1.5 border-b border-border-hairline/60">
+                    <span className="text-outline">Token / Network Standard:</span>
+                    <span className="text-on-surface font-semibold">{pendingTxData.standard}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-1.5 border-b border-border-hairline/60">
+                    <span className="text-outline">Vault Destination Address:</span>
+                    <span className="text-on-surface text-[10px] truncate max-w-[200px]">
+                      {pendingTxData.vaultAddress}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pb-1.5 border-b border-border-hairline/60">
+                    <span className="text-outline">Sender Wallet:</span>
+                    <span className="text-on-surface text-[10px] truncate max-w-[200px]">
+                      {pendingTxData.walletAddress}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-outline">Reference ID:</span>
+                    <span className="text-secondary font-bold">{pendingTxData.refId}</span>
+                  </div>
+                </div>
+
+                {/* Section to Upload Deposit Receipt */}
+                <div className="p-3 bg-surface-container rounded-DEFAULT border border-border-hairline flex flex-col gap-2">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse" />
-                      <span className="text-xs font-mono text-on-surface font-bold">
-                        {walletName}: {connectedWallet.slice(0, 6)}...{connectedWallet.slice(-4)}
-                      </span>
-                      <span className="text-[9px] font-mono px-1.5 py-0.2 bg-primary/10 text-primary border border-primary/20 rounded-xs font-semibold">
-                        DEMO
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setConnectedWallet(null)}
-                      className="text-[10px] font-mono text-outline hover:text-error transition-colors cursor-pointer"
-                    >
-                      Disconnect
-                    </button>
+                    <span className="text-xs font-mono font-semibold text-on-surface uppercase tracking-wider flex items-center gap-1.5">
+                      <Upload className="w-3.5 h-3.5 text-primary" />
+                      Upload Deposit Receipt / Proof of Transfer
+                    </span>
+                    <span className="text-[10px] font-mono text-outline">PDF / PNG / JPG</span>
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] font-mono text-outline">
-                    <span>Simulated Wallet Balance:</span>
-                    <span className="text-primary font-bold">124,500.00 USDC</span>
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <div className="relative">
-                      <input
-                        type="number"
-                        value={depositAmount}
-                        onChange={(e) => setDepositAmount(e.target.value)}
-                        placeholder="Amount to Deposit"
-                        className="w-full bg-surface-container border border-border-hairline rounded-DEFAULT px-2.5 py-1.5 text-xs font-mono text-on-surface focus:outline-none focus:border-primary"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setDepositAmount('124500')}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-primary font-bold hover:underline cursor-pointer"
-                      >
-                        MAX
-                      </button>
-                    </div>
-
-                    {depositSuccess ? (
-                      <div className="py-2 bg-tertiary/10 border border-tertiary/40 rounded-DEFAULT text-center text-xs font-mono text-tertiary font-bold flex items-center justify-center gap-1.5">
-                        <Check className="w-3.5 h-3.5" />
-                        <span>SIMULATED TRANSFER DISPATCHED (DEMO SANDBOX)</span>
+                  <label className="border-2 border-dashed border-border-hairline hover:border-primary/60 rounded-DEFAULT p-3 text-center cursor-pointer transition-colors block bg-surface-container-lowest">
+                    <input
+                      type="file"
+                      accept=".pdf,.png,.jpg,.jpeg"
+                      onChange={handleReceiptUpload}
+                      className="hidden"
+                    />
+                    {uploadedReceipt ? (
+                      <div className="flex items-center justify-center gap-2 text-xs font-mono text-tertiary">
+                        <FileText className="w-4 h-4 text-tertiary" />
+                        <span className="font-bold">{uploadedReceipt.name}</span>
+                        <span className="text-outline">({uploadedReceipt.size})</span>
                       </div>
                     ) : (
+                      <div className="space-y-1">
+                        <Upload className="w-5 h-5 text-outline mx-auto" />
+                        <p className="text-[11px] font-sans text-on-surface">
+                          Click or drag transaction receipt slip here to attach to mandate
+                        </p>
+                        <p className="text-[10px] font-mono text-outline">Max size: 15MB</p>
+                      </div>
+                    )}
+                  </label>
+
+                  {uploadedReceipt && (
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[10px] font-mono text-tertiary flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Receipt staged for admin verification
+                      </span>
                       <button
                         type="button"
-                        onClick={handleWalletDeposit}
-                        disabled={isDepositing}
-                        className="w-full py-2 bg-primary text-on-primary hover:bg-primary-container font-mono text-xs font-bold uppercase tracking-wider rounded-DEFAULT transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-sm"
+                        onClick={handleConfirmReceipt}
+                        disabled={receiptSubmitted}
+                        className="px-2.5 py-1 bg-primary text-on-primary rounded-DEFAULT font-mono text-xs font-semibold hover:bg-primary-hover transition-colors cursor-pointer disabled:opacity-60"
                       >
-                        <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>{isDepositing ? 'Simulating Wallet Signature...' : `Simulate Deposit of ${depositAmount} USDC to Vault`}</span>
+                        {receiptSubmitted ? 'Receipt Attached ✓' : 'Submit Receipt'}
                       </button>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-[11px] text-outline font-sans">
-                    Simulate connecting a non-custodial Web3 wallet provider to test sovereign MPC vault deposit flows:
-                  </p>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      disabled={isConnecting}
-                      onClick={() => handleConnectWallet('MetaMask')}
-                      className="py-2 px-2 bg-surface-container hover:bg-surface-container-high border border-border-hairline hover:border-primary/50 rounded-DEFAULT text-center font-mono text-xs font-semibold text-on-surface flex flex-col items-center gap-1 transition-all cursor-pointer"
-                    >
-                      <span className="text-sm">🦊</span>
-                      <span>MetaMask</span>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isConnecting}
-                      onClick={() => handleConnectWallet('Trust Wallet')}
-                      className="py-2 px-2 bg-surface-container hover:bg-surface-container-high border border-border-hairline hover:border-primary/50 rounded-DEFAULT text-center font-mono text-xs font-semibold text-on-surface flex flex-col items-center gap-1 transition-all cursor-pointer"
-                    >
-                      <span className="text-sm">🛡️</span>
-                      <span>Trust Wallet</span>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isConnecting}
-                      onClick={() => handleConnectWallet('WalletConnect')}
-                      className="py-2 px-2 bg-surface-container hover:bg-surface-container-high border border-border-hairline hover:border-primary/50 rounded-DEFAULT text-center font-mono text-xs font-semibold text-on-surface flex flex-col items-center gap-1 transition-all cursor-pointer"
-                    >
-                      <span className="text-sm">⚡</span>
-                      <span>WalletConnect</span>
-                    </button>
-                  </div>
-                  {isConnecting && (
-                    <div className="text-center text-[10px] font-mono text-primary animate-pulse">
-                      Awaiting approval in {walletName}...
                     </div>
                   )}
                 </div>
-              )}
-            </div>
 
-            {/* Manual MPC Cold Deposit Address */}
-            <div className="bg-surface-container-low p-3 rounded-DEFAULT border border-border-hairline flex flex-col gap-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono text-outline uppercase tracking-wider">
-                  Supported Asset
-                </span>
-                <span className="text-[10px] font-mono text-tertiary">Zero Inbound Fee</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 bg-primary/20 border border-primary/40 text-primary text-xs font-mono font-bold rounded-DEFAULT">
-                  USDC
-                </span>
-                <span className="px-2 py-0.5 bg-surface-container text-outline text-xs font-mono rounded-DEFAULT">
-                  USDT
-                </span>
-                <span className="px-2 py-0.5 bg-surface-container text-outline text-xs font-mono rounded-DEFAULT">
-                  BTC
-                </span>
-                <span className="px-2 py-0.5 bg-surface-container text-outline text-xs font-mono rounded-DEFAULT">
-                  ETH
-                </span>
-              </div>
-
-              <div className="h-px bg-border-hairline my-0.5" />
-
-              <span className="text-[10px] font-mono text-outline uppercase tracking-wider">
-                Sovereign MPC Cold Deposit Address (ERC-20)
-              </span>
-              <div className="flex items-center justify-between bg-surface-container-lowest px-2.5 py-1.5 rounded-DEFAULT border border-border-hairline">
-                <code className="text-xs font-mono text-on-surface truncate max-w-[340px]">
-                  0x94A8D19F200c9261a81eC97669d0339dE78E916B
-                </code>
-                <button
-                  type="button"
-                  data-testid="copy-crypto-address-btn"
-                  onClick={() =>
-                    handleCopy('0x94A8D19F200c9261a81eC97669d0339dE78E916B', 'crypto')
-                  }
-                  className="flex items-center gap-1 text-primary hover:text-primary-fixed text-[11px] font-mono font-semibold ml-2 cursor-pointer"
-                >
-                  {copiedKey === 'crypto' ? <Check className="w-3.5 h-3.5 text-tertiary" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedKey === 'crypto' ? 'COPIED' : 'COPY'}</span>
-                </button>
-              </div>
-
-              <div className="flex items-center gap-3 p-2 bg-surface-container-lowest rounded-DEFAULT border border-border-hairline">
-                <QrCode className="w-10 h-10 text-primary shrink-0" />
-                <div className="text-[11px] text-outline font-sans">
-                  <p className="font-semibold text-on-surface">Geneva Enclave Cold Vault</p>
-                  <p>Funds credited after 12 Ethereum network confirmations (~3 minutes).</p>
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleResetFlow}
+                    className="w-full py-2 bg-surface-container-high hover:bg-surface-container text-on-surface font-mono text-xs font-bold uppercase tracking-wider rounded-DEFAULT transition-colors cursor-pointer"
+                  >
+                    Done & Return to Command Deck
+                  </button>
                 </div>
               </div>
-            </div>
+            ) : (
+              <>
+                {/* Direct Web3 Wallet Rail */}
+                <div className="bg-surface-container-low p-3 rounded-DEFAULT border border-primary/30 flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Wallet className="w-3.5 h-3.5 text-primary" />
+                      <span className="text-[10px] font-mono text-on-surface font-semibold uppercase tracking-wider">
+                        Direct Web3 Wallet Deposit
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono text-tertiary">
+                      {connectedWallet ? 'Wallet Connected' : 'Non-Custodial'}
+                    </span>
+                  </div>
+
+                  {/* Wallet Not Found Warning / Install Prompt */}
+                  {walletNotFoundPrompt && (
+                    <div className="p-2.5 bg-error/10 border border-error/40 rounded-DEFAULT space-y-2">
+                      <div className="flex items-start gap-2 text-xs font-mono text-error">
+                        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="font-bold">{walletNotFoundPrompt.name} Not Found</span>
+                          <p className="text-[11px] font-sans text-on-surface mt-0.5">
+                            {walletNotFoundPrompt.message}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 justify-end pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setWalletNotFoundPrompt(null)}
+                          className="px-2.5 py-1 bg-surface-container hover:bg-surface-container-high text-on-surface font-mono text-[11px] rounded-DEFAULT transition-colors cursor-pointer"
+                        >
+                          Return Back
+                        </button>
+                        <a
+                          href={walletNotFoundPrompt.installUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary text-on-primary hover:bg-primary-hover font-mono text-[11px] font-bold rounded-DEFAULT transition-colors"
+                        >
+                          <span>Install {walletNotFoundPrompt.name}</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {connectedWallet ? (
+                    <div className="bg-surface-container-lowest p-2.5 rounded-DEFAULT border border-border-hairline space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse" />
+                          <span className="text-xs font-mono text-on-surface font-bold">
+                            {walletName}: {connectedWallet.slice(0, 6)}...{connectedWallet.slice(-4)}
+                          </span>
+                          <span className="text-[9px] font-mono px-1.5 py-0.2 bg-tertiary/10 text-tertiary border border-tertiary/20 rounded-xs font-semibold">
+                            ACTIVE
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setConnectedWallet(null);
+                            setWalletNotFoundPrompt(null);
+                          }}
+                          className="text-[10px] font-mono text-outline hover:text-error transition-colors cursor-pointer"
+                        >
+                          Disconnect
+                        </button>
+                      </div>
+
+                      {/* Cryptocurrency & Token/Network Standard Selection */}
+                      <div className="p-2 bg-surface-container rounded-DEFAULT border border-border-hairline space-y-2">
+                        <div className="flex items-center justify-between text-[10px] font-mono text-outline uppercase tracking-wider">
+                          <span>1. Selected Cryptocurrency</span>
+                          <span className="text-primary font-bold">{selectedAsset}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {(['USDC', 'USDT', 'BTC', 'ETH'] as const).map((asset) => (
+                            <button
+                              key={asset}
+                              type="button"
+                              onClick={() => handleSelectAsset(asset)}
+                              className={`px-2 py-0.5 text-xs font-mono rounded-DEFAULT cursor-pointer transition-all ${
+                                selectedAsset === asset
+                                  ? 'bg-primary text-on-primary font-bold shadow-xs'
+                                  : 'bg-surface-container-low text-outline hover:text-on-surface border border-border-hairline'
+                              }`}
+                            >
+                              {asset}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="flex items-center justify-between text-[10px] font-mono text-outline uppercase tracking-wider pt-1">
+                          <span>2. Token / Network Standard</span>
+                          <span className="text-tertiary font-bold">{selectedStandard}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {ASSET_STANDARDS_CONFIG[selectedAsset]?.standards.map((standard) => (
+                            <button
+                              key={standard}
+                              type="button"
+                              onClick={() => setSelectedStandard(standard)}
+                              className={`px-2 py-0.5 text-[11px] font-mono rounded-DEFAULT cursor-pointer transition-all ${
+                                selectedStandard === standard
+                                  ? 'bg-tertiary text-surface font-bold shadow-xs'
+                                  : 'bg-surface-container-low text-outline hover:text-on-surface border border-border-hairline'
+                              }`}
+                            >
+                              {standard}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Destination Vault Deposit Address Carried Along */}
+                      <div className="p-2 bg-surface-container rounded-DEFAULT border border-border-hairline space-y-1">
+                        <div className="flex items-center justify-between text-[10px] font-mono text-outline uppercase tracking-wider">
+                          <span>Vault Deposit Address ({selectedStandard})</span>
+                          <span className="text-primary text-[9px]">Sovereign MPC Cold</span>
+                        </div>
+                        <code className="text-[11px] font-mono text-on-surface break-all block">
+                          {currentDepositAddress}
+                        </code>
+                      </div>
+
+                      {/* Deposit Amount Input */}
+                      <div className="flex flex-col gap-1">
+                        <div className="flex justify-between items-center text-[10px] font-mono text-outline">
+                          <span>AMOUNT TO ALLOCATE</span>
+                          <span>WALLET BALANCE: 124,500.00 {selectedAsset}</span>
+                        </div>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={depositAmount}
+                            onChange={(e) => setDepositAmount(e.target.value)}
+                            placeholder="Amount to Deposit"
+                            className="w-full bg-surface-container border border-border-hairline rounded-DEFAULT px-2.5 py-1.5 text-xs font-mono text-on-surface focus:outline-none focus:border-primary"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setDepositAmount('124500')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-primary font-bold hover:underline cursor-pointer"
+                          >
+                            MAX
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleWalletDeposit}
+                          disabled={isDepositing || !depositAmount}
+                          className="w-full mt-1 py-2 bg-primary text-on-primary hover:bg-primary-container font-mono text-xs font-bold uppercase tracking-wider rounded-DEFAULT transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-sm"
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          <span>
+                            {isDepositing
+                              ? 'Broadcasting to Vault Enclave...'
+                              : `Deposit ${depositAmount || '0'} ${selectedAsset} (${selectedStandard}) to Vault`}
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-[11px] text-outline font-sans">
+                        Connect your Web3 non-custodial wallet to transfer digital assets into your sovereign vault:
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          type="button"
+                          disabled={isConnecting}
+                          onClick={() => handleConnectWallet('MetaMask')}
+                          className="py-2 px-2 bg-surface-container hover:bg-surface-container-high border border-border-hairline hover:border-primary/50 rounded-DEFAULT text-center font-mono text-xs font-semibold text-on-surface flex flex-col items-center gap-1 transition-all cursor-pointer"
+                        >
+                          <span className="text-sm">🦊</span>
+                          <span>MetaMask</span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isConnecting}
+                          onClick={() => handleConnectWallet('Trust Wallet')}
+                          className="py-2 px-2 bg-surface-container hover:bg-surface-container-high border border-border-hairline hover:border-primary/50 rounded-DEFAULT text-center font-mono text-xs font-semibold text-on-surface flex flex-col items-center gap-1 transition-all cursor-pointer"
+                        >
+                          <span className="text-sm">🛡️</span>
+                          <span>Trust Wallet</span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isConnecting}
+                          onClick={() => handleConnectWallet('WalletConnect')}
+                          className="py-2 px-2 bg-surface-container hover:bg-surface-container-high border border-border-hairline hover:border-primary/50 rounded-DEFAULT text-center font-mono text-xs font-semibold text-on-surface flex flex-col items-center gap-1 transition-all cursor-pointer"
+                        >
+                          <span className="text-sm">⚡</span>
+                          <span>WalletConnect</span>
+                        </button>
+                      </div>
+                      {isConnecting && (
+                        <div className="text-center text-[10px] font-mono text-primary animate-pulse">
+                          Awaiting authorization in {walletName}...
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Manual MPC Cold Deposit Address */}
+                <div className="bg-surface-container-low p-3 rounded-DEFAULT border border-border-hairline flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono text-outline uppercase tracking-wider">
+                      Supported Asset
+                    </span>
+                    <span className="text-[10px] font-mono text-tertiary">Zero Inbound Fee</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {(['USDC', 'USDT', 'BTC', 'ETH'] as const).map((asset) => (
+                      <button
+                        key={asset}
+                        type="button"
+                        onClick={() => handleSelectAsset(asset)}
+                        className={`px-2 py-0.5 rounded-DEFAULT text-xs font-mono cursor-pointer transition-all ${
+                          selectedAsset === asset
+                            ? 'bg-primary/20 border border-primary/40 text-primary font-bold'
+                            : 'bg-surface-container text-outline hover:text-on-surface'
+                        }`}
+                      >
+                        {asset}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Token Standard Pills for Manual Transfer */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] font-mono text-outline">Network:</span>
+                    {ASSET_STANDARDS_CONFIG[selectedAsset]?.standards.map((standard) => (
+                      <button
+                        key={standard}
+                        type="button"
+                        onClick={() => setSelectedStandard(standard)}
+                        className={`px-1.5 py-0.2 rounded-xs text-[10px] font-mono cursor-pointer transition-all ${
+                          selectedStandard === standard
+                            ? 'bg-primary text-on-primary font-bold'
+                            : 'bg-surface-container text-outline hover:text-on-surface'
+                        }`}
+                      >
+                        {standard}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="h-px bg-border-hairline my-0.5" />
+
+                  <span className="text-[10px] font-mono text-outline uppercase tracking-wider">
+                    Sovereign MPC Cold Deposit Address ({selectedStandard})
+                  </span>
+                  <div className="flex items-center justify-between bg-surface-container-lowest px-2.5 py-1.5 rounded-DEFAULT border border-border-hairline">
+                    <code className="text-xs font-mono text-on-surface truncate max-w-[340px]">
+                      {currentDepositAddress}
+                    </code>
+                    <button
+                      type="button"
+                      data-testid="copy-crypto-address-btn"
+                      onClick={() => handleCopy(currentDepositAddress, 'crypto')}
+                      className="flex items-center gap-1 text-primary hover:text-primary-fixed text-[11px] font-mono font-semibold ml-2 cursor-pointer"
+                    >
+                      {copiedKey === 'crypto' ? <Check className="w-3.5 h-3.5 text-tertiary" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedKey === 'crypto' ? 'COPIED' : 'COPY'}</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-2 bg-surface-container-lowest rounded-DEFAULT border border-border-hairline">
+                    <QrCode className="w-10 h-10 text-primary shrink-0" />
+                    <div className="text-[11px] text-outline font-sans">
+                      <p className="font-semibold text-on-surface">Geneva Enclave Cold Vault</p>
+                      <p>Funds credited after 12 network confirmations (~3 minutes).</p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
 

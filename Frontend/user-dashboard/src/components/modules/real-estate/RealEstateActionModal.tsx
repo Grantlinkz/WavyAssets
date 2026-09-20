@@ -53,6 +53,7 @@ export const RealEstateActionModal: React.FC<RealEstateActionModalProps> = ({
     lat: string;
     lon: string;
     osmId?: string;
+    verified?: boolean;
   } | null>(null);
   const [loadingGeo, setLoadingGeo] = useState<boolean>(false);
 
@@ -92,22 +93,25 @@ export const RealEstateActionModal: React.FC<RealEstateActionModalProps> = ({
             lat: Number(data[0].lat).toFixed(4),
             lon: Number(data[0].lon).toFixed(4),
             osmId: data[0].osm_id,
+            verified: true,
           });
         } else {
-          // Graceful fallback coordinates for Swiss/European prime zones
+          // Graceful fallback coordinates for Swiss/European prime zones (unverified)
           setGeoData({
-            displayName: `${property.location}, ${property.region} (Cadastre Zone)`,
+            displayName: `${property.location}, ${property.region} (Cadastre Telemetry Offline)`,
             lat: property.region === 'Switzerland' ? '47.3769' : property.region === 'United Kingdom' ? '51.5074' : '50.1109',
             lon: property.region === 'Switzerland' ? '8.5417' : property.region === 'United Kingdom' ? '-0.1278' : '8.6821',
+            verified: false,
           });
         }
       })
       .catch(() => {
         if (isMounted) {
           setGeoData({
-            displayName: `${property.location}, ${property.region} (Swiss Cadastre Verified)`,
+            displayName: `${property.location}, ${property.region} (Cadastre Telemetry Offline)`,
             lat: '47.3769',
             lon: '8.5417',
+            verified: false,
           });
         }
       })
@@ -128,7 +132,16 @@ export const RealEstateActionModal: React.FC<RealEstateActionModalProps> = ({
   const estimatedAnnualYield = (totalBuyCost * (property.netRentalYieldApy / 100));
 
   // Rent calculations
-  const baseMonthlyRent = Math.round(property.valuation * (property.netRentalYieldApy / 100) / 12);
+  const UNIT_TYPE_MULTIPLIERS: Record<string, number> = {
+    'Full Commercial Floor': 1.0,
+    'Executive Penthouse Floor': 1.25,
+    'Ground Retail Unit': 0.8,
+    'Full Building Triple-Net': 2.0,
+  };
+  const spaceMultiplier = UNIT_TYPE_MULTIPLIERS[unitType] || 1.0;
+  const baseMonthlyRent = Math.round(
+    (property.valuation * (property.netRentalYieldApy / 100) / 12) * spaceMultiplier
+  );
   const termDiscount = leaseTerm === 36 ? 0.9 : leaseTerm === 24 ? 0.95 : 1.0;
   const effectiveMonthlyRent = Math.round(baseMonthlyRent * termDiscount);
   const securityDeposit = effectiveMonthlyRent * 2;
@@ -141,7 +154,7 @@ export const RealEstateActionModal: React.FC<RealEstateActionModalProps> = ({
           buyType === 'full' ? property.tokenCount : tokenQty;
         buyProperty(property.id, tokensAcquired, tokenPrice);
       } else {
-        leaseProperty(property.id, leaseTerm, effectiveMonthlyRent);
+        leaseProperty(property.id, leaseTerm, effectiveMonthlyRent, unitType);
       }
       const randomTx = `0x${Array.from({ length: 16 }, () =>
         Math.floor(Math.random() * 16).toString(16)
@@ -188,11 +201,15 @@ export const RealEstateActionModal: React.FC<RealEstateActionModalProps> = ({
         <div className="grid grid-cols-2 bg-surface-container border-b border-border-hairline font-mono text-xs">
           <button
             type="button"
+            disabled={isProcessing}
             onClick={() => {
+              if (isProcessing) return;
               setActiveMode('buy');
               setIsSuccess(false);
             }}
-            className={`py-3 px-4 flex items-center justify-center gap-2 border-b-2 font-semibold transition-colors cursor-pointer ${
+            className={`py-3 px-4 flex items-center justify-center gap-2 border-b-2 font-semibold transition-colors ${
+              isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+            } ${
               activeMode === 'buy'
                 ? 'border-primary text-primary bg-surface-container-lowest'
                 : 'border-transparent text-outline hover:text-on-surface'
@@ -204,11 +221,15 @@ export const RealEstateActionModal: React.FC<RealEstateActionModalProps> = ({
 
           <button
             type="button"
+            disabled={isProcessing}
             onClick={() => {
+              if (isProcessing) return;
               setActiveMode('rent');
               setIsSuccess(false);
             }}
-            className={`py-3 px-4 flex items-center justify-center gap-2 border-b-2 font-semibold transition-colors cursor-pointer ${
+            className={`py-3 px-4 flex items-center justify-center gap-2 border-b-2 font-semibold transition-colors ${
+              isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+            } ${
               activeMode === 'rent'
                 ? 'border-primary text-primary bg-surface-container-lowest'
                 : 'border-transparent text-outline hover:text-on-surface'
@@ -230,9 +251,13 @@ export const RealEstateActionModal: React.FC<RealEstateActionModalProps> = ({
               </span>
               {loadingGeo ? (
                 <Loader2 className="w-3 h-3 animate-spin text-primary" />
-              ) : (
+              ) : geoData?.verified ? (
                 <span className="text-[10px] text-tertiary">
                   Lat: {geoData?.lat}° | Lon: {geoData?.lon}°
+                </span>
+              ) : (
+                <span className="text-[10px] text-outline">
+                  Cadastre Coordinates Offline / Unverified
                 </span>
               )}
             </div>

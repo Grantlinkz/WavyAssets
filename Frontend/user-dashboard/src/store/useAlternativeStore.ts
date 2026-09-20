@@ -11,6 +11,22 @@ export type RiskTierId = 'preservation' | 'balanced' | 'high-vol';
 export type RealEstateRegionFilter = 'ALL REGIONS' | 'SWITZERLAND' | 'UNITED KINGDOM' | 'GERMANY';
 export type OtcTabType = 'ALL' | 'BIDS' | 'OFFERS';
 
+export interface RealEstateLease {
+  id: string;
+  termMonths: number;
+  monthlyRent: number;
+  unitType?: string;
+  startDate: string;
+}
+
+export interface VehicleHolding {
+  owned: boolean;
+  purchaseType?: 'full' | 'fractional';
+  fractionalPct?: number;
+  totalInvested?: number;
+  leases: Array<{ id: string; type: string; duration: string; cost: number; date: string }>;
+}
+
 interface AlternativeStoreState {
   // AI Funds state
   selectedRiskTier: RiskTierId;
@@ -37,18 +53,12 @@ interface AlternativeStoreState {
     {
       tokens: number;
       totalInvested: number;
-      leases: Array<{ id: string; termMonths: number; monthlyRent: number; startDate: string }>;
+      leases: RealEstateLease[];
     }
   >;
 
   // User-acquired Vehicles & Horology holdings & leases
-  userVehicleHoldings: Record<
-    string,
-    {
-      owned: boolean;
-      leases: Array<{ id: string; type: string; duration: string; cost: number; date: string }>;
-    }
-  >;
+  userVehicleHoldings: Record<string, VehicleHolding>;
 
   // Actions
   setRiskTier: (tier: RiskTierId) => void;
@@ -61,11 +71,16 @@ interface AlternativeStoreState {
   setOtcTab: (tab: OtcTabType) => void;
   executeOtcOrder: (orderId: string) => void;
   buyProperty: (propertyId: string, tokens: number, tokenPrice: number) => boolean;
-  leaseProperty: (propertyId: string, termMonths: number, monthlyRent: number) => boolean;
+  leaseProperty: (propertyId: string, termMonths: number, monthlyRent: number, unitType?: string) => boolean;
 
   setSelectedLocation: (location: string) => void;
   reserveDriveSlot: (day: number) => boolean;
-  buyVehicleAsset: (assetId: string, price: number) => boolean;
+  buyVehicleAsset: (
+    assetId: string,
+    price: number,
+    purchaseType?: 'full' | 'fractional',
+    fractionalPct?: number
+  ) => boolean;
   leaseVehicleAsset: (assetId: string, type: string, duration: string, cost: number) => boolean;
 }
 
@@ -143,17 +158,18 @@ export const useAlternativeStore = create<AlternativeStoreState>((set, get) => (
     return true;
   },
 
-  leaseProperty: (propertyId, termMonths, monthlyRent) => {
+  leaseProperty: (propertyId, termMonths, monthlyRent, unitType = 'Full Commercial Floor') => {
     set((state) => {
       const existing = state.userRealEstateHoldings[propertyId] || {
         tokens: 0,
         totalInvested: 0,
         leases: [],
       };
-      const newLease = {
+      const newLease: RealEstateLease = {
         id: `lease-${Date.now()}`,
         termMonths,
         monthlyRent,
+        unitType,
         startDate: new Date().toISOString(),
       };
       return {
@@ -196,15 +212,21 @@ export const useAlternativeStore = create<AlternativeStoreState>((set, get) => (
     return true;
   },
 
-  buyVehicleAsset: (assetId, _price) => {
+  buyVehicleAsset: (assetId, price, purchaseType = 'full', fractionalPct = 100) => {
     set((state) => {
-      const existing = state.userVehicleHoldings[assetId] || { owned: false, leases: [] };
+      const existing = state.userVehicleHoldings[assetId] || {
+        owned: false,
+        leases: [],
+      };
       return {
         userVehicleHoldings: {
           ...state.userVehicleHoldings,
           [assetId]: {
             ...existing,
-            owned: true,
+            owned: purchaseType === 'full',
+            purchaseType,
+            fractionalPct: purchaseType === 'fractional' ? fractionalPct : 100,
+            totalInvested: (existing.totalInvested || 0) + price,
           },
         },
       };

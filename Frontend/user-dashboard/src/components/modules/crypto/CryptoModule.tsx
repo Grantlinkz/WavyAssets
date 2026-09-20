@@ -15,24 +15,26 @@ export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMa
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
 
-  // Dynamically compute accurate values directly from CRYPTO_HOLDINGS_DATA
+  // Dynamically compute accurate real values directly from user's active holdings (balance > 0)
+  const heldCrypto = useMemo(() => CRYPTO_HOLDINGS_DATA.filter((h) => h.balance > 0), []);
+
   const totalCryptoNav = useMemo(() => {
-    return CRYPTO_HOLDINGS_DATA.reduce((sum, h) => sum + h.balance * h.spotPrice, 0);
-  }, []);
+    return heldCrypto.reduce((sum, h) => sum + h.balance * h.spotPrice, 0);
+  }, [heldCrypto]);
 
   const totalUnrealizedPnl = useMemo(() => {
-    return CRYPTO_HOLDINGS_DATA.reduce((sum, h) => sum + h.unrealizedPnl, 0);
-  }, []);
+    return heldCrypto.reduce((sum, h) => sum + h.unrealizedPnl, 0);
+  }, [heldCrypto]);
 
   const totalCostBasis = useMemo(() => {
-    return CRYPTO_HOLDINGS_DATA.reduce((sum, h) => sum + h.balance * h.entryPrice, 0);
-  }, []);
+    return heldCrypto.reduce((sum, h) => sum + h.balance * h.entryPrice, 0);
+  }, [heldCrypto]);
 
   const totalPnlPct = totalCostBasis > 0 ? (totalUnrealizedPnl / totalCostBasis) * 100 : 0;
 
   const stakedHoldings = useMemo(() => {
-    return CRYPTO_HOLDINGS_DATA.filter((h) => h.custodyType === 'STAKING_LOCKUP');
-  }, []);
+    return heldCrypto.filter((h) => h.custodyType === 'STAKING_LOCKUP');
+  }, [heldCrypto]);
 
   const totalStakedCapital = useMemo(() => {
     return stakedHoldings.reduce((sum, h) => sum + h.balance * h.spotPrice, 0);
@@ -80,11 +82,11 @@ export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMa
             <TrendingUp className="w-3.5 h-3.5" />
             <span>
               {maskBalances
-                ? '•••••• (+29.11%)'
+                ? '•••••• (••••%) UNREALIZED P&L'
                 : `+$${totalUnrealizedPnl.toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
-                  })} (+${totalPnlPct.toFixed(2)}%) 24H`}
+                  })} (+${totalPnlPct.toFixed(2)}%) UNREALIZED P&L`}
             </span>
           </div>
         </div>

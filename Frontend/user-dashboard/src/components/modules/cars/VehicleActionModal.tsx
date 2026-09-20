@@ -46,7 +46,9 @@ export const VehicleActionModal: React.FC<VehicleActionModalProps> = ({
   const [vaultLocation, setVaultLocation] = useState<string>('Geneva Freeport Vault #4B');
 
   // Rent state
-  const [leaseOption, setLeaseOption] = useState<string>('weekend');
+  const [leaseOption, setLeaseOption] = useState<string>(
+    asset?.type === 'vehicle' ? 'weekend' : 'gala'
+  );
   const [deliveryLocation, setDeliveryLocation] = useState<string>('Monaco GP Circuit');
 
   // Free API VIN / Homologation state (NHTSA API)
@@ -67,6 +69,7 @@ export const VehicleActionModal: React.FC<VehicleActionModalProps> = ({
 
   useEffect(() => {
     setActiveMode(initialMode);
+    setLeaseOption(asset?.type === 'vehicle' ? 'weekend' : 'gala');
     setIsSuccess(false);
     setIsProcessing(false);
   }, [initialMode, isOpen, asset]);
@@ -98,24 +101,20 @@ export const VehicleActionModal: React.FC<VehicleActionModalProps> = ({
           });
         } else {
           setNhtsaData({
-            make: 'Porsche Classic',
-            model: '911 GT2 (993) Clubsport',
-            modelYear: '1997',
-            plantCountry: 'Germany (Stuttgart)',
-            bodyClass: 'Homologation Special',
-            verified: true,
+            make: asset.title,
+            plantCountry: 'Unavailable',
+            bodyClass: 'Unverified',
+            verified: false,
           });
         }
       })
       .catch(() => {
         if (isMounted) {
           setNhtsaData({
-            make: 'Porsche Classic',
-            model: '911 GT2',
-            modelYear: '1997',
-            plantCountry: 'Germany',
-            bodyClass: 'Coupe',
-            verified: true,
+            make: asset.title,
+            plantCountry: 'Unavailable',
+            bodyClass: 'Unverified',
+            verified: false,
           });
         }
       })
@@ -151,19 +150,32 @@ export const VehicleActionModal: React.FC<VehicleActionModalProps> = ({
         month: 9000,
       };
 
-  const effectiveRentCost = rentPrices[leaseOption] || 4800;
+  const effectiveRentCost = rentPrices[leaseOption] || (isVehicle ? 4800 : 1200);
   const insuranceEscrowDeposit = Math.round(effectiveRentCost * 0.5);
 
   const handleExecute = () => {
     setIsProcessing(true);
     setTimeout(() => {
       if (activeMode === 'buy') {
-        buyVehicleAsset(asset.id, totalBuyCost);
+        buyVehicleAsset(
+          asset.id,
+          totalBuyCost,
+          buyType,
+          buyType === 'fractional' ? syndicatePct : 100
+        );
       } else {
+        const durationLabel =
+          leaseOption === 'monthly' || leaseOption === 'month'
+            ? '30 Days'
+            : leaseOption === 'week'
+            ? '7 Days'
+            : isVehicle
+            ? 'Weekend'
+            : 'Gala Event';
         leaseVehicleAsset(
           asset.id,
           leaseOption,
-          leaseOption === 'monthly' || leaseOption === 'month' ? '30 Days' : 'Weekend',
+          durationLabel,
           effectiveRentCost
         );
       }
@@ -212,11 +224,15 @@ export const VehicleActionModal: React.FC<VehicleActionModalProps> = ({
         <div className="grid grid-cols-2 bg-surface-container border-b border-border-hairline font-mono text-xs">
           <button
             type="button"
+            disabled={isProcessing}
             onClick={() => {
+              if (isProcessing) return;
               setActiveMode('buy');
               setIsSuccess(false);
             }}
-            className={`py-3 px-4 flex items-center justify-center gap-2 border-b-2 font-semibold transition-colors cursor-pointer ${
+            className={`py-3 px-4 flex items-center justify-center gap-2 border-b-2 font-semibold transition-colors ${
+              isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+            } ${
               activeMode === 'buy'
                 ? 'border-primary text-primary bg-surface-container-lowest'
                 : 'border-transparent text-outline hover:text-on-surface'
@@ -228,11 +244,15 @@ export const VehicleActionModal: React.FC<VehicleActionModalProps> = ({
 
           <button
             type="button"
+            disabled={isProcessing}
             onClick={() => {
+              if (isProcessing) return;
               setActiveMode('rent');
               setIsSuccess(false);
             }}
-            className={`py-3 px-4 flex items-center justify-center gap-2 border-b-2 font-semibold transition-colors cursor-pointer ${
+            className={`py-3 px-4 flex items-center justify-center gap-2 border-b-2 font-semibold transition-colors ${
+              isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+            } ${
               activeMode === 'rent'
                 ? 'border-primary text-primary bg-surface-container-lowest'
                 : 'border-transparent text-outline hover:text-on-surface'
@@ -255,14 +275,20 @@ export const VehicleActionModal: React.FC<VehicleActionModalProps> = ({
                 </span>
                 {loadingVin ? (
                   <Loader2 className="w-3 h-3 animate-spin text-primary" />
-                ) : (
+                ) : nhtsaData?.verified ? (
                   <span className="text-[10px] text-tertiary">
                     ✓ NHTSA Verified: {nhtsaData?.plantCountry}
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-outline">
+                    VIN Telemetry Unverified / Unavailable
                   </span>
                 )}
               </div>
               <div className="text-[11px] text-on-surface truncate">
-                {nhtsaData?.modelYear} {nhtsaData?.make} {nhtsaData?.model} ({nhtsaData?.bodyClass})
+                {nhtsaData?.verified
+                  ? `${nhtsaData?.modelYear || ''} ${nhtsaData?.make || ''} ${nhtsaData?.model || ''} (${nhtsaData?.bodyClass || ''})`.trim()
+                  : `${asset.title} (Registry Telemetry Offline)`}
               </div>
               <div className="flex justify-between items-center text-[10px] text-outline pt-1 border-t border-border-hairline">
                 <span>Hagerty Index: {asset.indexBenchmark}</span>

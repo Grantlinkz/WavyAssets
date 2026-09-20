@@ -3,10 +3,8 @@ import {
   Shield,
   ArrowUpRight,
   TrendingUp,
-  Activity,
   CheckCircle2,
   Server,
-  Zap,
   ArrowRightLeft,
   DollarSign,
   Layers,
@@ -20,6 +18,8 @@ import { Button } from '../../ui/button';
 export const OverviewModule: React.FC = () => {
   const maskBalances = useDashboardStore((s) => s.maskBalances);
   const openModal = usePortfolioStore((s) => s.openModal);
+  const netWorth = usePortfolioStore((s) => s.netWorth);
+  const storeAllocations = usePortfolioStore((s) => s.allocations);
 
   // Live streaming heartbeat simulation
   const [pulseTime, setPulseTime] = useState(new Date());
@@ -28,7 +28,7 @@ export const OverviewModule: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const totalPortfolioValue = 18658260.0;
+  const totalPortfolioValue = netWorth;
 
   const telemetryNodes = [
     {
@@ -101,15 +101,12 @@ export const OverviewModule: React.FC = () => {
     },
   ];
 
-  const verticalAllocations = [
-    { name: 'Crypto & Digital Assets', value: 6928237.5, pct: 37.1, color: '#f2ca50' },
-    { name: 'Global Equities & SPVs', value: 3248420.0, pct: 17.4, color: '#ecc160' },
-    { name: 'Tokenized Real Estate', value: 2964090.0, pct: 15.9, color: '#5fe7a2' },
-    { name: 'AI Quantitative Funds', value: 1482045.0, pct: 7.9, color: '#99907c' },
-    { name: 'Geneva Gold Vault', value: 1482045.0, pct: 7.9, color: '#d4af37' },
-    { name: 'Exotic Vehicles & Horology', value: 1438085.0, pct: 7.7, color: '#e9c349' },
-    { name: 'Sovereign Treasury Cash', value: 1115337.5, pct: 6.0, color: '#68e29a' },
-  ];
+  const verticalAllocations = storeAllocations.map((alloc) => ({
+    name: alloc.name,
+    value: alloc.actualValue,
+    pct: alloc.actualPct,
+    color: alloc.color,
+  }));
 
   return (
     <div

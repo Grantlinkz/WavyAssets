@@ -1,5 +1,5 @@
-import React from 'react';
-import { TrendingUp, BarChart3 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { TrendingUp, BarChart3, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { OrderBookTable } from './OrderBookTable';
 import { PositionAnalytics } from './PositionAnalytics';
 import { ActiveOrdersHub } from './ActiveOrdersHub';
@@ -17,38 +17,65 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
 
-  // Dynamically compute accurate values directly from STOCKS_HOLDINGS_DATA
-  const totalEquitiesNav = React.useMemo(() => {
-    return STOCKS_HOLDINGS_DATA.reduce((sum, s) => sum + s.shares * s.currentMark, 0);
-  }, []);
+  // Search & Pagination State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
 
-  const totalCostBasis = React.useMemo(() => {
-    return STOCKS_HOLDINGS_DATA.reduce((sum, s) => sum + s.shares * s.entryMark, 0);
-  }, []);
+  // Dynamically compute accurate values directly from active held positions in STOCKS_HOLDINGS_DATA
+  const heldStocks = useMemo(() => STOCKS_HOLDINGS_DATA.filter((s) => s.shares > 0), []);
 
-  const totalUnrealizedPnl = React.useMemo(() => {
-    return STOCKS_HOLDINGS_DATA.reduce((sum, s) => sum + s.unrealizedPnl, 0);
-  }, []);
+  const totalEquitiesNav = useMemo(() => {
+    return heldStocks.reduce((sum, s) => sum + s.shares * s.currentMark, 0);
+  }, [heldStocks]);
+
+  const totalCostBasis = useMemo(() => {
+    return heldStocks.reduce((sum, s) => sum + s.shares * s.entryMark, 0);
+  }, [heldStocks]);
+
+  const totalUnrealizedPnl = useMemo(() => {
+    return heldStocks.reduce((sum, s) => sum + s.unrealizedPnl, 0);
+  }, [heldStocks]);
 
   const totalPnlPct = totalCostBasis > 0 ? (totalUnrealizedPnl / totalCostBasis) * 100 : 0;
 
-  const listedDmaVal = React.useMemo(() => {
-    return STOCKS_HOLDINGS_DATA.filter((s) => !s.isPreIpo).reduce(
+  const listedDmaVal = useMemo(() => {
+    return heldStocks.filter((s) => !s.isPreIpo).reduce(
       (sum, s) => sum + s.shares * s.currentMark,
       0
     );
-  }, []);
+  }, [heldStocks]);
 
-  const preIpoVal = React.useMemo(() => {
-    return STOCKS_HOLDINGS_DATA.filter((s) => s.isPreIpo).reduce(
+  const preIpoVal = useMemo(() => {
+    return heldStocks.filter((s) => s.isPreIpo).reduce(
       (sum, s) => sum + s.shares * s.currentMark,
       0
     );
-  }, []);
+  }, [heldStocks]);
 
   const listedDmaPct = totalEquitiesNav > 0 ? (listedDmaVal / totalEquitiesNav) * 100 : 0;
   const preIpoPct = totalEquitiesNav > 0 ? (preIpoVal / totalEquitiesNav) * 100 : 0;
   const extendedHoursGain = totalEquitiesNav * 0.0018;
+
+  // Search Filtering: Matches ticker/symbol OR company name (e.g. AMZN or Amazon)
+  const filteredStocks = useMemo(() => {
+    if (!searchQuery.trim()) return STOCKS_HOLDINGS_DATA;
+    const q = searchQuery.toLowerCase().trim();
+    return STOCKS_HOLDINGS_DATA.filter(
+      (s) =>
+        s.symbol.toLowerCase().includes(q) ||
+        s.name.toLowerCase().includes(q) ||
+        s.category.toLowerCase().includes(q) ||
+        (s.isPreIpo ? 'pre-ipo spv' : 'listed dma').includes(q)
+    );
+  }, [searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredStocks.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedStocks = useMemo(() => {
+    const start = (safeCurrentPage - 1) * PAGE_SIZE;
+    return filteredStocks.slice(start, start + PAGE_SIZE);
+  }, [filteredStocks, safeCurrentPage]);
 
   return (
     <div
@@ -154,18 +181,49 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
         </div>
       </section>
 
-      {/* Holdings Blotter with Asset Selection */}
+      {/* Holdings Blotter with Asset Selection, Search, and Pagination */}
       <section className="bg-surface-container-low rounded-DEFAULT border border-border-hairline overflow-hidden">
-        <div className="p-3.5 bg-surface-container flex items-center justify-between border-b border-border-hairline">
+        <div className="p-3.5 bg-surface-container flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-border-hairline">
           <div className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-secondary" />
+            <BarChart3 className="w-4 h-4 text-secondary shrink-0" />
             <h2 className="font-serif text-sm font-semibold uppercase tracking-wide text-on-surface">
-              Direct Market Access Equities & Pre-IPO SPVs
+              Direct Market Access Equities &amp; Pre-IPO SPVs
             </h2>
+            <span className="text-[10px] font-mono text-outline uppercase bg-surface-container-high px-2 py-0.5 rounded-DEFAULT shrink-0">
+              {filteredStocks.length} Assets
+            </span>
           </div>
-          <span className="text-[10px] font-mono text-outline uppercase bg-surface-container-high px-2 py-0.5 rounded-DEFAULT">
-            CLICK ROW TO FOCUS ORDER BOOK
-          </span>
+
+          {/* Search Bar matching symbol or company name */}
+          <div className="flex items-center gap-2">
+            <div className="relative w-full md:w-72">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-outline pointer-events-none" />
+              <input
+                type="text"
+                data-testid="stocks-search-input"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                placeholder="Search symbol (AMZN) or name (Amazon)..."
+                aria-label="Search equities and SPVs"
+                className="w-full pl-8 pr-7 py-1.5 bg-surface border border-border-hairline rounded text-xs font-mono text-on-surface placeholder:text-outline focus:outline-none focus:border-primary transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setCurrentPage(1);
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface text-xs font-mono px-1"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -177,98 +235,166 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
                 <th className="py-2.5 px-3 text-right">Shares / Qty</th>
                 <th className="py-2.5 px-3 text-right">Entry Mark</th>
                 <th className="py-2.5 px-3 text-right">Current Mark</th>
-                <th className="py-2.5 px-3 text-right">Unrealized P&L</th>
-                <th className="py-2.5 px-3 text-right">P&L (%)</th>
+                <th className="py-2.5 px-3 text-right">Unrealized P&amp;L</th>
+                <th className="py-2.5 px-3 text-right">P&amp;L (%)</th>
                 <th className="py-2.5 px-3 text-center">DRIP</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-hairline font-sans text-xs">
-              {STOCKS_HOLDINGS_DATA.map((stock) => {
-                const isSelected = selectedStock === stock.symbol;
-                return (
-                  <tr
-                    key={stock.symbol}
-                    data-testid={`stock-row-${stock.symbol}`}
-                    onClick={() => setSelectedStock(stock.symbol)}
-                    className={`cursor-pointer transition-colors ${
-                      isSelected
-                        ? 'bg-surface-container-high/80 border-l-2 border-primary'
-                        : 'hover:bg-surface-container/60'
-                    }`}
-                  >
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            stock.isPreIpo ? 'bg-primary' : 'bg-secondary'
-                          }`}
-                        />
-                        <div>
-                          <span className="font-bold text-on-surface font-mono tracking-tight block">
-                            {stock.symbol}
-                          </span>
-                          <span className="text-[10px] text-outline font-mono">
-                            {stock.name}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="py-3 px-3 whitespace-nowrap">
-                      <span
-                        className={`px-1.5 py-0.5 rounded-xs text-[10px] font-mono font-semibold border ${
-                          stock.isPreIpo
-                            ? 'bg-primary/15 border-primary/30 text-primary'
-                            : 'bg-secondary/15 border-secondary/30 text-secondary'
-                        }`}
-                      >
-                        {stock.isPreIpo ? 'PRE-IPO SPV' : 'LISTED DMA'}
-                      </span>
-                    </td>
-
-                    <td className="py-3 px-3 text-right font-mono tabular-nums text-on-surface whitespace-nowrap">
-                      {maskBalances ? '•••• SHRS' : `${stock.shares.toLocaleString()} SHRS`}
-                    </td>
-
-                    <td className="py-3 px-3 text-right font-mono tabular-nums text-outline whitespace-nowrap">
-                      {maskBalances ? '••••' : `$${stock.entryMark.toFixed(2)}`}
-                    </td>
-
-                    <td className="py-3 px-3 text-right font-mono tabular-nums text-on-surface font-semibold whitespace-nowrap">
-                      ${stock.currentMark.toFixed(2)}
-                    </td>
-
-                    <td className="py-3 px-3 text-right font-mono tabular-nums font-semibold whitespace-nowrap text-tertiary">
-                      {maskBalances
-                        ? '••••••••'
-                        : `+${formatMaskedCurrency(stock.unrealizedPnl, false)}`}
-                    </td>
-
-                    <td className="py-3 px-3 text-right font-mono tabular-nums font-medium whitespace-nowrap text-tertiary">
-                      {maskBalances ? '••••' : `+${stock.pnlPct.toFixed(2)}%`}
-                    </td>
-
-                    <td className="py-3 px-3 text-center whitespace-nowrap">
-                      {(() => {
-                        const isDripOn = dripSettings[stock.symbol] ?? stock.dripEnabled;
-                        return (
+              {paginatedStocks.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-outline font-mono text-xs">
+                    No global stocks or SPVs matching &ldquo;{searchQuery}&rdquo;
+                  </td>
+                </tr>
+              ) : (
+                paginatedStocks.map((stock) => {
+                  const isSelected = selectedStock === stock.symbol;
+                  return (
+                    <tr
+                      key={stock.symbol}
+                      data-testid={`stock-row-${stock.symbol}`}
+                      onClick={() => setSelectedStock(stock.symbol)}
+                      className={`cursor-pointer transition-colors ${
+                        isSelected
+                          ? 'bg-surface-container-high/80 border-l-2 border-primary'
+                          : 'hover:bg-surface-container/60'
+                      }`}
+                    >
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
                           <span
-                            className={`px-1.5 py-0.2 rounded-xs text-[10px] font-mono font-bold ${
-                              isDripOn
-                                ? 'bg-tertiary/10 text-tertiary border border-tertiary/30'
-                                : 'bg-surface-container text-outline'
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              stock.isPreIpo ? 'bg-primary' : 'bg-secondary'
                             }`}
-                          >
-                            {isDripOn ? 'AUTO' : 'OFF'}
-                          </span>
-                        );
-                      })()}
-                    </td>
-                  </tr>
-                );
-              })}
+                          />
+                          <div>
+                            <span className="font-bold text-on-surface font-mono tracking-tight block">
+                              {stock.symbol}
+                            </span>
+                            <span className="text-[10px] text-outline font-mono">
+                              {stock.name}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="py-3 px-3 whitespace-nowrap">
+                        <span
+                          className={`px-1.5 py-0.5 rounded-xs text-[10px] font-mono font-semibold border ${
+                            stock.isPreIpo
+                              ? 'bg-primary/15 border-primary/30 text-primary'
+                              : 'bg-secondary/15 border-secondary/30 text-secondary'
+                          }`}
+                        >
+                          {stock.isPreIpo ? 'PRE-IPO SPV' : 'LISTED DMA'}
+                        </span>
+                      </td>
+
+                      <td className="py-3 px-3 text-right font-mono tabular-nums text-on-surface whitespace-nowrap">
+                        {maskBalances ? '•••• SHRS' : `${stock.shares.toLocaleString()} SHRS`}
+                      </td>
+
+                      <td className="py-3 px-3 text-right font-mono tabular-nums text-outline whitespace-nowrap">
+                        {maskBalances ? '••••' : `$${stock.entryMark.toFixed(2)}`}
+                      </td>
+
+                      <td className="py-3 px-3 text-right font-mono tabular-nums text-on-surface font-semibold whitespace-nowrap">
+                        ${stock.currentMark.toFixed(2)}
+                      </td>
+
+                      <td className="py-3 px-3 text-right font-mono tabular-nums font-semibold whitespace-nowrap text-tertiary">
+                        {maskBalances
+                          ? '••••••••'
+                          : `+${formatMaskedCurrency(stock.unrealizedPnl, false)}`}
+                      </td>
+
+                      <td className="py-3 px-3 text-right font-mono tabular-nums font-medium whitespace-nowrap text-tertiary">
+                        {maskBalances ? '••••' : `+${stock.pnlPct.toFixed(2)}%`}
+                      </td>
+
+                      <td className="py-3 px-3 text-center whitespace-nowrap">
+                        {(() => {
+                          const isDripOn = dripSettings[stock.symbol] ?? stock.dripEnabled;
+                          return (
+                            <span
+                              className={`px-1.5 py-0.2 rounded-xs text-[10px] font-mono font-bold ${
+                                isDripOn
+                                  ? 'bg-tertiary/10 text-tertiary border border-tertiary/30'
+                                  : 'bg-surface-container text-outline'
+                              }`}
+                            >
+                              {isDripOn ? 'AUTO' : 'OFF'}
+                            </span>
+                          );
+                        })()}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="p-3 bg-surface-container border-t border-border-hairline flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+          <span className="text-outline text-[11px]">
+            Showing{' '}
+            <span className="text-on-surface font-semibold">
+              {filteredStocks.length === 0 ? 0 : (safeCurrentPage - 1) * PAGE_SIZE + 1}
+            </span>
+            -
+            <span className="text-on-surface font-semibold">
+              {Math.min(safeCurrentPage * PAGE_SIZE, filteredStocks.length)}
+            </span>{' '}
+            of{' '}
+            <span className="text-on-surface font-semibold">{filteredStocks.length}</span>{' '}
+            global equities &amp; SPVs
+          </span>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              data-testid="stocks-pagination-prev"
+              disabled={safeCurrentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              className="px-2 py-1 rounded bg-surface border border-border-hairline text-outline hover:text-on-surface disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 text-[11px]"
+            >
+              <ChevronLeft className="w-3 h-3" />
+              <span>PREV</span>
+            </button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }).map((_, i) => {
+                const pageNum = i + 1;
+                const isActive = pageNum === safeCurrentPage;
+                return (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`w-6 h-6 rounded text-[11px] font-semibold flex items-center justify-center transition-colors ${
+                      isActive
+                        ? 'bg-primary text-on-primary'
+                        : 'bg-surface border border-border-hairline text-outline hover:text-on-surface'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              data-testid="stocks-pagination-next"
+              disabled={safeCurrentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              className="px-2 py-1 rounded bg-surface border border-border-hairline text-outline hover:text-on-surface disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 text-[11px]"
+            >
+              <span>NEXT</span>
+              <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
         </div>
       </section>
 

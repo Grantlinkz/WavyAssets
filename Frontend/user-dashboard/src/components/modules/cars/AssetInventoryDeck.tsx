@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FileText, ArrowLeftRight, DollarSign, Calendar } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { FileText, ArrowLeftRight, DollarSign, Calendar, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useAlternativeStore } from '../../../store/useAlternativeStore';
 import { EXOTIC_ASSETS, type ExoticAsset } from '../../../lib/alternativeAssetData';
@@ -16,6 +16,11 @@ export const AssetInventoryDeck: React.FC<AssetInventoryDeckProps> = ({
   const maskBalances = propMask ?? storeMask;
   const userHoldings = useAlternativeStore((s) => s.userVehicleHoldings);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'vehicle' | 'horology'>('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 6;
+
   const [actionAsset, setActionAsset] = useState<ExoticAsset | null>(null);
   const [actionMode, setActionMode] = useState<'buy' | 'rent'>('buy');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,27 +31,103 @@ export const AssetInventoryDeck: React.FC<AssetInventoryDeckProps> = ({
     setIsModalOpen(true);
   };
 
+  const filteredAssets = useMemo(() => {
+    return EXOTIC_ASSETS.filter((asset) => {
+      const matchesCat = categoryFilter === 'ALL' || asset.type === categoryFilter;
+      if (!matchesCat) return false;
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase().trim();
+      return (
+        asset.title.toLowerCase().includes(q) ||
+        asset.subtitle.toLowerCase().includes(q) ||
+        asset.vaultLocation.toLowerCase().includes(q) ||
+        asset.type.toLowerCase().includes(q)
+      );
+    });
+  }, [categoryFilter, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredAssets.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedAssets = useMemo(() => {
+    const start = (safeCurrentPage - 1) * PAGE_SIZE;
+    return filteredAssets.slice(start, start + PAGE_SIZE);
+  }, [filteredAssets, safeCurrentPage]);
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
         <div className="flex items-center gap-2">
           <span className="w-1 h-3.5 bg-primary"></span>
           <h2 className="font-serif font-semibold text-on-surface text-base">
             Tier-1 Vaulted Tangible Assets
           </h2>
-          <span className="text-outline text-xs font-mono">• Physical Holdings</span>
-        </div>
-        <div className="flex items-center gap-2 text-xs font-mono text-outline">
-          <span className="flex items-center gap-1">
-            <span className="w-1.5 h-1.5 bg-tertiary rounded-full"></span> Bonded In-Vault
+          <span className="text-outline text-xs font-mono">
+            • {filteredAssets.length} of {EXOTIC_ASSETS.length} Vault Holdings
           </span>
-          <span>•</span>
-          <span>Last Fiduciary Assay: 48h ago</span>
+        </div>
+
+        {/* Search & Category Filter Controls */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative w-full sm:w-64">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-outline pointer-events-none" />
+            <input
+              type="text"
+              data-testid="exotic-search-input"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Search Porsche, Patek, Rolex..."
+              aria-label="Search luxury vaulted assets"
+              className="w-full pl-8 pr-7 py-1 bg-surface border border-border-hairline rounded text-xs font-mono text-on-surface placeholder:text-outline focus:outline-none focus:border-primary transition-colors"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setCurrentPage(1);
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface text-xs font-mono px-1"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1">
+            {(['ALL', 'vehicle', 'horology'] as const).map((cat) => {
+              const isSelected = categoryFilter === cat;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => {
+                    setCategoryFilter(cat);
+                    setCurrentPage(1);
+                  }}
+                  className={`px-2 py-0.5 font-mono text-xs rounded uppercase transition-colors ${
+                    isSelected
+                      ? 'bg-primary text-on-primary font-semibold'
+                      : 'bg-surface-container border border-border-hairline text-outline hover:text-on-surface'
+                  }`}
+                >
+                  {cat === 'ALL' ? 'All' : cat === 'vehicle' ? 'Vehicles' : 'Horology'}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {EXOTIC_ASSETS.map((asset) => (
+        {paginatedAssets.length === 0 ? (
+          <div className="col-span-full py-12 text-center text-outline font-mono text-xs bg-surface-container rounded border border-border-hairline">
+            No luxury assets found matching &ldquo;{searchQuery}&rdquo;
+          </div>
+        ) : (
+          paginatedAssets.map((asset) => (
           <div
             key={asset.id}
             className="bg-surface-container border border-border-hairline rounded flex flex-col overflow-hidden justify-between hover:border-primary/40 transition-colors"
@@ -64,9 +145,9 @@ export const AssetInventoryDeck: React.FC<AssetInventoryDeckProps> = ({
                   <span className="px-2 py-0.5 bg-surface/90 text-primary font-mono text-[10px] font-bold uppercase tracking-wider rounded border border-border-hairline">
                     BONDED
                   </span>
-                  {userHoldings[asset.id] && (
+                  {userHoldings[asset.id]?.owned && (
                     <span className="px-2 py-0.5 bg-primary/20 text-primary font-mono text-[10px] font-bold uppercase tracking-wider rounded border border-primary/40">
-                      {userHoldings[asset.id].type === 'full' ? 'OWNED TITLE' : `${userHoldings[asset.id].shares} SHARES`}
+                      OWNED TITLE
                     </span>
                   )}
                 </div>
@@ -197,17 +278,23 @@ export const AssetInventoryDeck: React.FC<AssetInventoryDeckProps> = ({
             {/* Card Action Footer */}
             <div className="p-3 pt-0 space-y-2.5">
               {/* User holdings badge */}
-              {userHoldings[asset.id] && (
+              {userHoldings[asset.id] &&
+                (userHoldings[asset.id].owned ||
+                  userHoldings[asset.id].purchaseType ||
+                  (userHoldings[asset.id].leases && userHoldings[asset.id].leases.length > 0)) && (
                 <div className="p-1.5 bg-primary/10 border border-primary/20 rounded text-[10px] font-mono text-primary flex justify-between">
                   <span>
                     Your Position:{' '}
-                    {userHoldings[asset.id].type === 'full'
+                    {userHoldings[asset.id].purchaseType === 'full' ||
+                    (userHoldings[asset.id].owned && !userHoldings[asset.id].purchaseType)
                       ? '100% Full Legal Title'
-                      : `${userHoldings[asset.id].shares} Syndicate Shares`}
+                      : userHoldings[asset.id].purchaseType === 'fractional'
+                      ? `${userHoldings[asset.id].fractionalPct}% Syndicate Share`
+                      : 'Fractional Vault Allocation'}
                   </span>
-                  {userHoldings[asset.id].leases.length > 0 && (
+                  {userHoldings[asset.id].leases?.length > 0 && (
                     <span className="text-tertiary font-bold">
-                      {userHoldings[asset.id].leases.length} Active Lease
+                      {userHoldings[asset.id].leases.length} Active Lease{userHoldings[asset.id].leases.length > 1 ? 's' : ''}
                     </span>
                   )}
                 </div>
@@ -244,7 +331,68 @@ export const AssetInventoryDeck: React.FC<AssetInventoryDeckProps> = ({
               </div>
             </div>
           </div>
-        ))}
+        ))
+      )}
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="p-3 bg-surface-container border border-border-hairline rounded flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+        <span className="text-outline text-[11px]">
+          Showing{' '}
+          <span className="text-on-surface font-semibold">
+            {filteredAssets.length === 0 ? 0 : (safeCurrentPage - 1) * PAGE_SIZE + 1}
+          </span>
+          -
+          <span className="text-on-surface font-semibold">
+            {Math.min(safeCurrentPage * PAGE_SIZE, filteredAssets.length)}
+          </span>{' '}
+          of{' '}
+          <span className="text-on-surface font-semibold">{filteredAssets.length}</span>{' '}
+          luxury vaulted assets
+        </span>
+
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            data-testid="exotic-pagination-prev"
+            disabled={safeCurrentPage <= 1}
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            className="px-2 py-1 rounded bg-surface border border-border-hairline text-outline hover:text-on-surface disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 text-[11px]"
+          >
+            <ChevronLeft className="w-3 h-3" />
+            <span>PREV</span>
+          </button>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalPages }).map((_, i) => {
+              const pageNum = i + 1;
+              const isActive = pageNum === safeCurrentPage;
+              return (
+                <button
+                  key={pageNum}
+                  type="button"
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={`w-6 h-6 rounded text-[11px] font-semibold flex items-center justify-center transition-colors ${
+                    isActive
+                      ? 'bg-primary text-on-primary'
+                      : 'bg-surface border border-border-hairline text-outline hover:text-on-surface'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            data-testid="exotic-pagination-next"
+            disabled={safeCurrentPage >= totalPages}
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            className="px-2 py-1 rounded bg-surface border border-border-hairline text-outline hover:text-on-surface disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 text-[11px]"
+          >
+            <span>NEXT</span>
+            <ChevronRight className="w-3 h-3" />
+          </button>
+        </div>
       </div>
 
       <VehicleActionModal

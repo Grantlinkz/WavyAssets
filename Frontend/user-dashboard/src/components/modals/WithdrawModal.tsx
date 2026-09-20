@@ -7,6 +7,8 @@ import {
   DialogTitle,
 } from '../ui/dialog';
 import { usePortfolioStore } from '../../store/usePortfolioStore';
+import { useDashboardStore } from '../../store/useDashboardStore';
+import { formatMaskedCurrency } from '../../lib/calculations';
 
 export interface WithdrawModalProps {
   isOpen?: boolean;
@@ -19,6 +21,9 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
 }) => {
   const storeModal = usePortfolioStore((s) => s.activeModal);
   const storeClose = usePortfolioStore((s) => s.closeModal);
+  const availableCash = usePortfolioStore((s) => s.availableCash);
+  const adjustAvailableCash = usePortfolioStore((s) => s.adjustAvailableCash);
+  const maskBalances = useDashboardStore((s) => s.maskBalances);
 
   const isOpen = propIsOpen !== undefined ? propIsOpen : storeModal === 'withdraw';
   const closeModal = propClose !== undefined ? propClose : storeClose;
@@ -30,6 +35,8 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
   const handleAuthorize = () => {
     setIsVerifying(true);
     setTimeout(() => {
+      const numAmount = parseFloat(amount || '0') || 0;
+      adjustAvailableCash(-numAmount);
       setIsVerifying(false);
       setIsSuccess(true);
       setTimeout(() => {
@@ -108,7 +115,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-[10px] font-mono text-outline">
               <span>WITHDRAWAL AMOUNT (USD)</span>
-              <span>AVAILABLE: $1,482,045.00</span>
+              <span>AVAILABLE: {formatMaskedCurrency(availableCash, maskBalances)}</span>
             </div>
             <div className="relative">
               <input
@@ -121,7 +128,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
               />
               <button
                 type="button"
-                onClick={() => setAmount('1482045')}
+                onClick={() => setAmount(availableCash.toString())}
                 className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-0.5 bg-surface-container text-[10px] font-mono text-primary font-semibold rounded-DEFAULT hover:bg-surface-container-high cursor-pointer"
               >
                 MAX

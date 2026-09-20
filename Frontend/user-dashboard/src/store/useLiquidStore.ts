@@ -28,6 +28,7 @@ interface LiquidState {
   sweepThreshold: number;
   transactions: WalletTransaction[];
   filterVertical: string;
+  addTransaction: (tx: WalletTransaction) => void;
   toggleAutoSweep: () => void;
   setSweepThreshold: (amount: number) => void;
   setFilterVertical: (v: string) => void;
@@ -89,6 +90,10 @@ export const useLiquidStore = create<LiquidState>((set) => ({
   transactions: WALLET_TRANSACTIONS_DATA,
   filterVertical: 'ALL',
 
+  addTransaction: (tx) =>
+    set((state) => ({
+      transactions: [tx, ...state.transactions],
+    })),
   toggleAutoSweep: () => set((state) => ({ autoSweepEnabled: !state.autoSweepEnabled })),
   setSweepThreshold: (amount) => set({ sweepThreshold: amount }),
   setFilterVertical: (v) => set({ filterVertical: v }),

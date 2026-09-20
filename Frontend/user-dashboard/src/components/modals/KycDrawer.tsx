@@ -523,9 +523,6 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
                     Verification is manually reviewed by the administrative compliance guild. You will receive immediate notification once approved.
                   </p>
                   <div className="pt-2 text-[11px] text-outline border-t border-border-hairline space-y-1">
-                    <div>Applicant Name: <strong className="text-on-surface">{submissions.level2?.fullName}</strong></div>
-                    <div>DOB: <strong className="text-on-surface">{submissions.level2?.dob}</strong></div>
-                    <div>ID Number: <strong className="text-on-surface">{submissions.level2?.idNumber}</strong></div>
                     <div>Submitted: <span className="text-on-surface">{new Date(submissions.level2?.submittedAt || '').toLocaleString()}</span></div>
                   </div>
                 </div>
@@ -680,9 +677,6 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
                     The admin panel is reviewing the address match and issue date (&lt;3 months old).
                   </p>
                   <div className="pt-2 text-[11px] text-outline border-t border-border-hairline space-y-1">
-                    <div>Provider / Bank: <strong className="text-on-surface">{submissions.level3?.providerOrBank}</strong></div>
-                    <div>Address: <strong className="text-on-surface">{submissions.level3?.billingAddress}</strong></div>
-                    <div>Issue Date: <strong className="text-on-surface">{submissions.level3?.billIssueDate}</strong></div>
                     <div>Submitted: <span className="text-on-surface">{new Date(submissions.level3?.submittedAt || '').toLocaleString()}</span></div>
                   </div>
                 </div>
