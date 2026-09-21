@@ -237,7 +237,7 @@ describe('AuthService (Two-Step Authentication & Gateway Logic)', () => {
       ).rejects.toThrow(UnauthorizedException);
     });
 
-    it('should issue JWT access token, handoff ticket, and session on valid OTP', async () => {
+    it('should issue JWT access token, Authentication, and session on valid OTP', async () => {
       mockPrisma.otpCode.findUnique.mockResolvedValue({
         id: 'challenge_valid',
         email: 'investor@firm.com',
@@ -273,7 +273,7 @@ describe('AuthService (Two-Step Authentication & Gateway Logic)', () => {
   });
 
   describe('exchangeTicket()', () => {
-    it('should redeem single-use handoff ticket and burn ticket hash at rest', async () => {
+    it('should redeem single-use Authentication and burn ticket hash at rest', async () => {
       mockPrisma.session.findUnique.mockResolvedValue({
         id: 'session_1',
         handoffTicketHash: 'hash_of_wavy_ticket_123',

@@ -4,7 +4,7 @@ import * as crypto from 'crypto';
 
 describe('Foundational Environment & Security Utilities', () => {
   it('should successfully hash and verify passwords using Argon2id', async () => {
-    const password = 'InstitutionalSovereignPass123!';
+    const password = 'InstitutionalGlobalPass123!';
     const hash = await argon2.hash(password, {
       type: argon2.argon2id,
       memoryCost: 65536,

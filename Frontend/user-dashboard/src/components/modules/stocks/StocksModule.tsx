@@ -7,7 +7,7 @@ import { STOCKS_HOLDINGS_DATA } from '../../../lib/liquidAssetData';
 import { useLiquidStore } from '../../../store/useLiquidStore';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { usePortfolioStore } from '../../../store/usePortfolioStore';
-import { formatMaskedCurrency } from '../../../lib/calculations';
+import { formatMaskedCurrency, TOTAL_Global_NET_WORTH } from '../../../lib/calculations';
 
 interface StocksModuleProps {
   maskBalances?: boolean;
@@ -58,7 +58,8 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
   const listedDmaPct = totalEquitiesNav > 0 ? (listedDmaVal / totalEquitiesNav) * 100 : 0;
   const preIpoPct = totalEquitiesNav > 0 ? (preIpoVal / totalEquitiesNav) * 100 : 0;
   const extendedHoursGain = totalEquitiesNav * 0.0018;
-  const equitiesPortfolioPct = netWorth > 0 ? (totalEquitiesNav / netWorth) * 100 : 0;
+  const effectiveNetWorth = netWorth > 0 ? netWorth : TOTAL_Global_NET_WORTH;
+  const equitiesPortfolioPct = effectiveNetWorth > 0 ? (totalEquitiesNav / effectiveNetWorth) * 100 : 0;
 
   const weightedBeta = useMemo(() => {
     if (totalEquitiesNav <= 0) return 0;
@@ -205,9 +206,6 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
             <h2 className="font-serif text-sm font-semibold uppercase tracking-wide text-on-surface">
               Direct Market Access Equities &amp; Pre-IPO SPVs
             </h2>
-            <span className="text-[10px] font-mono text-outline uppercase bg-surface-container-high px-2 py-0.5 rounded-DEFAULT shrink-0">
-              {filteredStocks.length} Assets
-            </span>
           </div>
 
           {/* Search Bar matching symbol or company name */}
@@ -319,19 +317,27 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
                         ${stock.currentMark.toFixed(2)}
                       </td>
 
-                      <td className="py-3 px-3 text-right font-mono tabular-nums font-semibold whitespace-nowrap text-tertiary">
+                      <td
+                        className={`py-3 px-3 text-right font-mono tabular-nums font-semibold whitespace-nowrap ${
+                          stock.unrealizedPnl < 0 ? 'text-error' : 'text-tertiary'
+                        }`}
+                      >
                         {maskBalances
                           ? '••••••••'
                           : stock.shares > 0
-                            ? `+${formatMaskedCurrency(stock.unrealizedPnl, false)}`
+                            ? `${stock.unrealizedPnl > 0 ? '+' : ''}${formatMaskedCurrency(stock.unrealizedPnl, false)}`
                             : '$0.00'}
                       </td>
 
-                      <td className="py-3 px-3 text-right font-mono tabular-nums font-medium whitespace-nowrap text-tertiary">
+                      <td
+                        className={`py-3 px-3 text-right font-mono tabular-nums font-medium whitespace-nowrap ${
+                          stock.pnlPct < 0 ? 'text-error' : 'text-tertiary'
+                        }`}
+                      >
                         {maskBalances
                           ? '••••'
                           : stock.shares > 0
-                            ? `+${stock.pnlPct.toFixed(2)}%`
+                            ? `${stock.pnlPct > 0 ? '+' : ''}${stock.pnlPct.toFixed(2)}%`
                             : '—'}
                       </td>
 

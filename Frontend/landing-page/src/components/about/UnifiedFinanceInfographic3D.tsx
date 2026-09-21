@@ -283,7 +283,7 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
     const connectMesh = new THREE.Mesh(connectGeo, connectMat);
     pipelinesGroup.add(connectMesh);
 
-    // Outer sovereign gold spiral aura around the connection bridge
+    // Outer Global gold spiral aura around the connection bridge
     const connectAuraCurve = new THREE.CatmullRomCurve3([
       new THREE.Vector3(-3.5, 0.12, 0),
       new THREE.Vector3(-1.8, 0.38, -0.15),
@@ -590,7 +590,7 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
             </div>
 
             <p className="font-sans text-[11px] text-slate-600 dark:text-on-surface-variant leading-relaxed">
-              Convergence of traditional sovereign wealth and liquid digital assets on a single ledger.
+              Convergence of traditional Global wealth and liquid digital assets on a single ledger.
             </p>
 
             {/* Asset Clusters */}
@@ -615,7 +615,7 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
               {/* Physical Gold */}
               <div className="space-y-1">
                 <span className="font-mono text-[9px] text-slate-500 dark:text-outline uppercase tracking-wider block">
-                  Sovereign Metals
+                  Global Metals
                 </span>
                 <div className="flex items-center gap-1.5">
                   <span className="px-2 py-0.5 rounded-sm bg-[#D4AF37]/15 border border-[#D4AF37]/40 font-mono text-xs font-bold text-[#B38F1E] dark:text-[#D4AF37] flex items-center gap-1">
@@ -712,7 +712,7 @@ export const UnifiedFinanceInfographic3D: React.FC = () => {
                 <span>Institutions</span>
               </div>
               <p className="font-sans text-[10px] text-slate-600 dark:text-on-surface-variant pt-1 leading-snug">
-                Sleek, modern skyscrapers representing sovereign corporate treasuries, hedge funds, and prime brokers.
+                Sleek, modern skyscrapers representing Global corporate treasuries, hedge funds, and prime brokers.
               </p>
             </motion.div>
 

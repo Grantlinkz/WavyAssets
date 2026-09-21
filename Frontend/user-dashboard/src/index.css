@@ -13,13 +13,13 @@
   --color-surface-container-highest: var(--surface-container-highest);
   --color-on-surface: var(--on-surface);
   --color-on-surface-variant: var(--on-surface-variant);
-  
+
   --color-primary: var(--primary);
   --color-primary-container: var(--primary-container);
   --color-primary-hover: var(--primary-hover);
   --color-on-primary: var(--on-primary);
   --color-on-primary-container: var(--on-primary-container);
-  
+
   --color-secondary: var(--secondary);
   --color-secondary-container: var(--secondary-container);
   --color-on-secondary: var(--on-secondary);
@@ -28,11 +28,11 @@
   --color-tertiary: var(--tertiary);
   --color-tertiary-container: var(--tertiary-container);
   --color-on-tertiary: var(--on-tertiary);
-  
+
   --color-error: var(--error);
   --color-error-container: var(--error-container);
   --color-on-error: var(--on-error);
-  
+
   --color-outline: var(--outline);
   --color-outline-variant: var(--outline-variant);
   --color-border-hairline: var(--border-hairline);
@@ -65,118 +65,120 @@
 
   /* Fonts */
   --font-serif: "Noto Serif", Georgia, serif;
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: "Inter", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono:
+    "Inter", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 :root {
   /* Luxury Light Mode */
-  --surface: #F9F9FF;
-  --surface-dim: #D5DAE7;
-  --surface-bright: #FFFFFF;
-  --surface-container-lowest: #FFFFFF;
-  --surface-container-low: #F0F3FA;
-  --surface-container: #E8EDF5;
-  --surface-container-high: #DDE3EC;
-  --surface-container-highest: #D3DAE4;
-  
+  --surface: #f9f9ff;
+  --surface-dim: #d5dae7;
+  --surface-bright: #ffffff;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f0f3fa;
+  --surface-container: #e8edf5;
+  --surface-container-high: #dde3ec;
+  --surface-container-highest: #d3dae4;
+
   --on-surface: #101319;
-  --on-surface-variant: #4A5568;
-  
-  --primary: #926F13;
-  --primary-container: #D4AF37;
-  --primary-hover: #BFA044;
-  --on-primary: #FFFFFF;
+  --on-surface-variant: #4a5568;
+
+  --primary: #926f13;
+  --primary-container: #d4af37;
+  --primary-hover: #bfa044;
+  --on-primary: #ffffff;
   --on-primary-container: #101319;
-  
-  --secondary: #ECC160;
+
+  --secondary: #ecc160;
   --secondary-container: #826000;
-  --on-secondary: #3F2E00;
-  --on-secondary-container: #FFE1A4;
-  
-  --tertiary: #006D42;
-  --tertiary-container: #3DCA88;
-  --on-tertiary: #FFFFFF;
-  
-  --error: #BA1A1A;
-  --error-container: #FFDAD6;
-  --on-error: #FFFFFF;
-  --destructive: #BA1A1A;
-  --destructive-foreground: #FFFFFF;
-  
-  --outline: #99907C;
-  --outline-variant: #E2E8F0;
-  --border-hairline: #E2E8F0;
-  --border-active: #CBD5E1;
-  
-  --background: #F9F9FF;
+  --on-secondary: #3f2e00;
+  --on-secondary-container: #ffe1a4;
+
+  --tertiary: #006d42;
+  --tertiary-container: #3dca88;
+  --on-tertiary: #ffffff;
+
+  --error: #ba1a1a;
+  --error-container: #ffdad6;
+  --on-error: #ffffff;
+  --destructive: #ba1a1a;
+  --destructive-foreground: #ffffff;
+
+  --outline: #99907c;
+  --outline-variant: #e2e8f0;
+  --border-hairline: #e2e8f0;
+  --border-active: #cbd5e1;
+
+  --background: #f9f9ff;
   --foreground: #101319;
-  --card: #FFFFFF;
+  --card: #ffffff;
   --card-foreground: #101319;
-  --popover: #FFFFFF;
+  --popover: #ffffff;
   --popover-foreground: #101319;
-  --muted: #F0F3FA;
-  --muted-foreground: #64748B;
-  --accent: #E8EDF5;
-  --accent-foreground: #926F13;
-  --border: #E2E8F0;
-  --input: #E8EDF5;
-  --ring: #926F13;
+  --muted: #f0f3fa;
+  --muted-foreground: #64748b;
+  --accent: #e8edf5;
+  --accent-foreground: #926f13;
+  --border: #e2e8f0;
+  --input: #e8edf5;
+  --ring: #926f13;
 }
 
 .dark {
-  /* Sovereign Obsidian Dark (tools/UI/# sovereign_asset_terminal/DESIGN.md) */
+  /* Global Obsidian Dark (tools/UI/# Global_asset_terminal/DESIGN.md) */
   --surface: #101319;
   --surface-dim: #101319;
   --surface-bright: #363940;
-  --surface-container-lowest: #0B0E14;
-  --surface-container-low: #191C22;
-  --surface-container: #1D2026;
-  --surface-container-high: #272A30;
-  --surface-container-highest: #32353B;
-  
-  --on-surface: #E1E2EB;
-  --on-surface-variant: #D0C5AF;
-  
-  --primary: #F2CA50;
-  --primary-container: #D4AF37;
-  --primary-hover: #E5C158;
-  --on-primary: #3C2F00;
+  --surface-container-lowest: #0b0e14;
+  --surface-container-low: #191c22;
+  --surface-container: #1d2026;
+  --surface-container-high: #272a30;
+  --surface-container-highest: #32353b;
+
+  --on-surface: #e1e2eb;
+  --on-surface-variant: #d0c5af;
+
+  --primary: #f2ca50;
+  --primary-container: #d4af37;
+  --primary-hover: #e5c158;
+  --on-primary: #3c2f00;
   --on-primary-container: #554300;
-  
-  --secondary: #ECC160;
+
+  --secondary: #ecc160;
   --secondary-container: #826000;
-  --on-secondary: #3F2E00;
-  --on-secondary-container: #FFE1A4;
-  
-  --tertiary: #5FE7A2;
-  --tertiary-container: #3DCA88;
+  --on-secondary: #3f2e00;
+  --on-secondary-container: #ffe1a4;
+
+  --tertiary: #5fe7a2;
+  --tertiary-container: #3dca88;
   --on-tertiary: #003921;
-  
-  --error: #FFB4AB;
-  --error-container: #93000A;
+
+  --error: #ffb4ab;
+  --error-container: #93000a;
   --on-error: #690005;
-  --destructive: #FFB4AB;
+  --destructive: #ffb4ab;
   --destructive-foreground: #690005;
-  
-  --outline: #99907C;
-  --outline-variant: #4D4635;
-  --border-hairline: #232A38;
-  --border-active: #4D4635;
-  
+
+  --outline: #99907c;
+  --outline-variant: #4d4635;
+  --border-hairline: #232a38;
+  --border-active: #4d4635;
+
   --background: #101319;
-  --foreground: #E1E2EB;
-  --card: #191C22;
-  --card-foreground: #E1E2EB;
-  --popover: #1D2026;
-  --popover-foreground: #E1E2EB;
-  --muted: #191C22;
-  --muted-foreground: #9CA3AF;
-  --accent: #1D2026;
-  --accent-foreground: #F2CA50;
-  --border: #232A38;
-  --input: #1D2026;
-  --ring: #F2CA50;
+  --foreground: #e1e2eb;
+  --card: #191c22;
+  --card-foreground: #e1e2eb;
+  --popover: #1d2026;
+  --popover-foreground: #e1e2eb;
+  --muted: #191c22;
+  --muted-foreground: #9ca3af;
+  --accent: #1d2026;
+  --accent-foreground: #f2ca50;
+  --border: #232a38;
+  --input: #1d2026;
+  --ring: #f2ca50;
 }
 
 /* Base Body Styles */

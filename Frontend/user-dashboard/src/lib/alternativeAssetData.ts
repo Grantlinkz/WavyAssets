@@ -264,7 +264,7 @@ export const AI_RATIONALE_EVENTS: ExecutionRationaleEvent[] = [
     categoryColor: 'primary',
     venue: 'Monte-Carlo 10,000 Runs',
     summary: '99% 1-Day Value-at-Risk calculated at $18,400.00 (1.27% of portfolio). Stress testing passed with 0% liquidation probability.',
-    rationale: 'Daily sovereign risk audit verification against flash crash scenarios.',
+    rationale: 'Daily Global risk audit verification against flash crash scenarios.',
     metrics: ['Max Tolerated Stress: 4.8x', 'Solvency Confidence: 99.98%'],
     txHash: '0x7c21...8b54',
     pnlYield: 'Audit Passed',
@@ -284,7 +284,7 @@ export const GPU_CLUSTER_TELEMETRY: GpuClusterTelemetry = {
   hourlyRate: 18.42,
   monthlyCashFlow: 13262.40,
   hardwareApy: 15.2,
-  activeTenant: 'Tier-1 Sovereign AI Lab',
+  activeTenant: 'Tier-1 Global AI Lab',
   taskDescription: 'Distributed LoRA Tuning (Llama-3 70B Quantized)',
   avgCoreTemp: '42°C Avg Core (PUE: 1.12 Hydro)',
   powerSource: '100% Swiss Hydroelectric',
@@ -369,7 +369,7 @@ export const REAL_ESTATE_ASSETS: RealEstateAsset[] = [
     "occupancyPct": 96.8,
     "netRentalYieldApy": 7.4,
     "waltYears": 4.8,
-    "legalEntity": "Mayfair Sovereign Holdings Ltd",
+    "legalEntity": "Mayfair Global Holdings Ltd",
     "imageUrl": "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=600&q=80",
     "appraisalStandard": "Knight Frank Mayfair Advisory"
   },
@@ -505,7 +505,7 @@ export const REAL_ESTATE_ASSETS: RealEstateAsset[] = [
     "occupancyPct": 100,
     "netRentalYieldApy": 5.85,
     "waltYears": 12,
-    "legalEntity": "Royal Borough Sovereign SPV Ltd",
+    "legalEntity": "Royal Borough Global SPV Ltd",
     "imageUrl": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80",
     "appraisalStandard": "Knight Frank Prime London"
   },
@@ -777,7 +777,7 @@ export const REAL_ESTATE_ASSETS: RealEstateAsset[] = [
     "occupancyPct": 100,
     "netRentalYieldApy": 6.3,
     "waltYears": 12,
-    "legalEntity": "Valais Alpine Sovereign AG",
+    "legalEntity": "Valais Alpine Global AG",
     "imageUrl": "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=600&q=80",
     "appraisalStandard": "Engel & Völkers Luxury CH"
   },
@@ -913,7 +913,7 @@ export const REAL_ESTATE_ASSETS: RealEstateAsset[] = [
     "occupancyPct": 100,
     "netRentalYieldApy": 5.95,
     "waltYears": 10,
-    "legalEntity": "Brompton Sovereign Realty Ltd",
+    "legalEntity": "Brompton Global Realty Ltd",
     "imageUrl": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=600&q=80",
     "appraisalStandard": "Knight Frank Knightsbridge"
   },
@@ -1117,7 +1117,7 @@ export const REAL_ESTATE_ASSETS: RealEstateAsset[] = [
     "occupancyPct": 99,
     "netRentalYieldApy": 6.75,
     "waltYears": 11.5,
-    "legalEntity": "City of London Sovereign Estates Ltd",
+    "legalEntity": "City of London Global Estates Ltd",
     "imageUrl": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80",
     "appraisalStandard": "CBRE City of London"
   },
@@ -1157,7 +1157,7 @@ export const REAL_ESTATE_ASSETS: RealEstateAsset[] = [
   },
   {
     "id": "re-49",
-    "name": "Glasgow George Square Sovereign Chambers",
+    "name": "Glasgow George Square Global Chambers",
     "region": "United Kingdom",
     "location": "Glasgow: George Square 14",
     "spvCode": "UK-SPV-GLA-05",
@@ -1276,7 +1276,7 @@ export const INITIAL_OTC_ORDERS: SecondaryOtcOrder[] = [
     tokenCount: 150,
     pricePerToken: 512.0,
     navPremiumDiscountPct: 2.4,
-    counterpartyEnclave: 'Nordic Sovereign Vault #12',
+    counterpartyEnclave: 'Nordic Global Vault #12',
     totalUsd: 76800.0,
   },
   {
@@ -1463,7 +1463,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "20.1°C / 44% RH Nitrogen Buffer",
-    "underwritingPolicy": "Lloyds Specie Sovereign Hypercar #LL-CH-99411",
+    "underwritingPolicy": "Lloyds Specie Global Hypercar #LL-CH-99411",
     "insuredValue": 25000000,
     "imageUrl": "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80"
   },
@@ -1715,7 +1715,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
     "unrealizedGain": 600000,
     "gainPct": 14.29,
     "indexTrend5YrPct": 41.2,
-    "indexBenchmark": "Bugatti Molsheim Sovereign Benchmark",
+    "indexBenchmark": "Bugatti Molsheim Global Benchmark",
     "vaultLocation": "Geneva Freeport Vault #4B",
     "custodyEnclave": "CH-FREEPORT-GEN-04B",
     "conditionScore": 99.9,
@@ -1735,7 +1735,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 48% RH (Geneva Enclave Auto)",
-    "underwritingPolicy": "Lloyds Sovereign Hypercar #LL-BUGATTI-21",
+    "underwritingPolicy": "Lloyds Global Hypercar #LL-BUGATTI-21",
     "insuredValue": 5500000,
     "imageUrl": "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=800&q=80"
   },
@@ -1973,7 +1973,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 13225000,
     "imageUrl": "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80"
   },
@@ -2007,7 +2007,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 189750,
     "imageUrl": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80"
   },
@@ -2041,7 +2041,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 4830000,
     "imageUrl": "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=800&q=80"
   },
@@ -2075,7 +2075,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 276000,
     "imageUrl": "https://images.unsplash.com/photo-1547996160-71dfa6358248?auto=format&fit=crop&w=800&q=80"
   },
@@ -2109,7 +2109,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 21275000,
     "imageUrl": "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80"
   },
@@ -2143,7 +2143,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 327750,
     "imageUrl": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80"
   },
@@ -2177,7 +2177,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 598000,
     "imageUrl": "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80"
   },
@@ -2211,7 +2211,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 109250,
     "imageUrl": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80"
   },
@@ -2245,7 +2245,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 4542500,
     "imageUrl": "https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=800&q=80"
   },
@@ -2279,7 +2279,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 101200,
     "imageUrl": "https://images.unsplash.com/photo-1547996160-71dfa6358248?auto=format&fit=crop&w=800&q=80"
   },
@@ -2313,7 +2313,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 391000,
     "imageUrl": "https://images.unsplash.com/photo-1592198084033-aade902d1aae?auto=format&fit=crop&w=800&q=80"
   },
@@ -2347,7 +2347,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 166750,
     "imageUrl": "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=800&q=80"
   },
@@ -2381,7 +2381,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 713000,
     "imageUrl": "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80"
   },
@@ -2415,7 +2415,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 483000,
     "imageUrl": "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=800&q=80"
   },
@@ -2449,7 +2449,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 3335000,
     "imageUrl": "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=800&q=80"
   },
@@ -2483,7 +2483,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 368000,
     "imageUrl": "https://images.unsplash.com/photo-1547996160-71dfa6358248?auto=format&fit=crop&w=800&q=80"
   },
@@ -2517,7 +2517,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 1897500,
     "imageUrl": "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80"
   },
@@ -2551,7 +2551,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 448500,
     "imageUrl": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80"
   },
@@ -2585,7 +2585,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 1127000,
     "imageUrl": "https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=800&q=80"
   },
@@ -2619,7 +2619,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 339250,
     "imageUrl": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80"
   },
@@ -2653,7 +2653,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 3220000,
     "imageUrl": "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80"
   },
@@ -2687,7 +2687,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 356500,
     "imageUrl": "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=800&q=80"
   },
@@ -2721,7 +2721,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 736000,
     "imageUrl": "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=800&q=80"
   },
@@ -2755,7 +2755,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 66700,
     "imageUrl": "https://images.unsplash.com/photo-1547996160-71dfa6358248?auto=format&fit=crop&w=800&q=80"
   },
@@ -2789,7 +2789,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 339250,
     "imageUrl": "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80"
   },
@@ -2823,7 +2823,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 563500,
     "imageUrl": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80"
   },
@@ -2857,7 +2857,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 667000,
     "imageUrl": "https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=800&q=80"
   },
@@ -2891,7 +2891,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 132250,
     "imageUrl": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80"
   },
@@ -2925,7 +2925,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 908500,
     "imageUrl": "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80"
   },
@@ -2959,7 +2959,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 212750,
     "imageUrl": "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=800&q=80"
   },
@@ -2993,7 +2993,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 3680000,
     "imageUrl": "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=800&q=80"
   },
@@ -3027,7 +3027,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Sovereign #LL-SPECIE-2025",
+    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
     "insuredValue": 517500,
     "imageUrl": "https://images.unsplash.com/photo-1547996160-71dfa6358248?auto=format&fit=crop&w=800&q=80"
   }

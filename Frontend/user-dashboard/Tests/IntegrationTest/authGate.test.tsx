@@ -13,11 +13,11 @@ describe('Institutional Access Gate & Authentication Guard Suite', () => {
     const html = renderToString(<InstitutionalGate />);
 
     expect(html).toContain('data-testid="institutional-gate-container"');
-    expect(html).toContain('Sovereign Command Deck Restricted');
+    expect(html).toContain('Global Command Deck Restricted');
     expect(html).toContain('WavyAssets Institutional System');
     expect(html).toContain('data-testid="gate-signin-button"');
     expect(html).toContain('data-testid="gate-mandate-button"');
-    expect(html).toContain('Sign In with Sovereign 2FA');
+    expect(html).toContain('Sign In with Global 2FA');
     expect(html).toContain('Request Institutional Mandate');
   });
 
@@ -34,14 +34,14 @@ describe('Institutional Access Gate & Authentication Guard Suite', () => {
     const html = renderToString(<App requireAuth={true} />);
 
     expect(html).toContain('data-testid="institutional-gate-container"');
-    expect(html).toContain('Sovereign Command Deck Restricted');
+    expect(html).toContain('Global Command Deck Restricted');
     expect(html).toContain('data-testid="gate-signin-button"');
     expect(html).toContain('data-testid="gate-mandate-button"');
     expect(html).not.toContain('data-testid="top-header"');
     expect(html).not.toContain('data-testid="dashboard-sidebar"');
   });
 
-  it('App renders full sovereign dashboard when authenticated', () => {
+  it('App renders full Global dashboard when authenticated', () => {
     useAuthStore.getState().setSession(
       {
         id: 'usr-auth-001',

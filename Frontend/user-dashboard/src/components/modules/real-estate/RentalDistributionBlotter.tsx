@@ -36,6 +36,10 @@ export const RentalDistributionBlotter: React.FC<RentalDistributionBlotterProps>
     const scale = totalEquity > 0 ? (isBaseline ? 1 : monthlyYield / 17100) : 0;
 
     const dynamicHistory = RENTAL_DISTRIBUTION_HISTORY.map((item) => {
+      // Settled records retain original immutable actual and projected amounts
+      if (item.status === 'CLEARED') {
+        return item;
+      }
       const actual = item.actual * scale;
       const projected = item.projected * scale;
       const varianceDelta = actual - projected;

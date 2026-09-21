@@ -384,7 +384,7 @@ export class EmailService {
             <td style="padding-top: 32px;">
               <h1 style="font-size: 20px; font-weight: 600; color: #FFFFFF; margin: 0 0 12px 0;">Confirm Institutional Subscription</h1>
               <p style="font-size: 14px; line-height: 22px; color: #8C96A5; margin: 0 0 28px 0;">
-                You have requested subscription to WavyAssets Macro & Sovereign Yield Intelligence. In accordance with SEC and FINMA transparency protocols, please confirm your double opt-in authorization below.
+                You have requested subscription to WavyAssets Macro & Global Yield Intelligence. In accordance with SEC and FINMA transparency protocols, please confirm your double opt-in authorization below.
               </p>
             </td>
           </tr>

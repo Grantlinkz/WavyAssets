@@ -188,7 +188,7 @@ model CryptoHolding {
   userId        String
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   symbol        String   // BTC | ETH | SOL | LINK
-  custodyType   String   // SOVEREIGN_VAULT | EXTERNAL_WEB3 | STAKED
+  custodyType   String   // Global_VAULT | EXTERNAL_WEB3 | STAKED
   quantity      Float
   avgBuyPrice   Float
   stakedAmount  Float    @default(0.0)

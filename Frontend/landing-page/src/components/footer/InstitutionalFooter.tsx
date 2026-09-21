@@ -117,7 +117,7 @@ export const InstitutionalFooter: React.FC = () => {
                   onClick={() => handleAssetClick("wallet")}
                   className="hover:text-primary transition-colors cursor-pointer w-full text-left"
                 >
-                  Sovereign Treasury Wallet &amp; Rails
+                  Global Treasury Wallet &amp; Rails
                 </button>
               </li>
             </ul>
@@ -211,7 +211,7 @@ export const InstitutionalFooter: React.FC = () => {
               jurisdiction where such an offer or solicitation would be
               unlawful. Cross-collateral yields and systematic quantitative
               models are subject to market volatility. Past audited returns do
-              not guarantee sovereign alpha or total capital preservation. Swiss
+              not guarantee Global alpha or total capital preservation. Swiss
               client representations comply with the Federal Act on Financial
               Services (FinSA) and Federal Act on Financial Institutions
               (FinIA). Real-time Merkle tree attestations confirm 1:1 asset
@@ -223,7 +223,7 @@ export const InstitutionalFooter: React.FC = () => {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-3 border-t border-outline/20 font-mono text-[11px] text-on-surface-variant dark:text-neutral-400">
             <div>
               &copy; 2026 WavyAssets / WavyAssetss Global Limited. Engineered
-              for Sovereign Capital. All rights reserved.
+              for Global Capital. All rights reserved.
             </div>
             <div className="flex items-center gap-4 flex-wrap">
               <span className="hover:text-on-surface transition-colors cursor-pointer">

@@ -6,7 +6,7 @@ import { StakingTelemetry } from './StakingTelemetry';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useLiquidStore } from '../../../store/useLiquidStore';
 import { usePortfolioStore } from '../../../store/usePortfolioStore';
-import { formatMaskedCurrency } from '../../../lib/calculations';
+import { formatMaskedCurrency, TOTAL_Global_NET_WORTH } from '../../../lib/calculations';
 import { CRYPTO_HOLDINGS_DATA } from '../../../lib/liquidAssetData';
 
 interface CryptoModuleProps {
@@ -56,7 +56,8 @@ export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMa
   }, [stakedHoldings, totalStakedCapital]);
 
   const dailyRunRate = (totalStakedCapital * (blendedApy / 100)) / 365;
-  const cryptoPortfolioPct = netWorth > 0 ? (totalCryptoNav / netWorth) * 100 : 0;
+  const effectiveNetWorth = netWorth > 0 ? netWorth : TOTAL_Global_NET_WORTH;
+  const cryptoPortfolioPct = effectiveNetWorth > 0 ? (totalCryptoNav / effectiveNetWorth) * 100 : 0;
 
   return (
     <div

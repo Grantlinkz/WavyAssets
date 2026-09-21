@@ -23,14 +23,14 @@ export const KycTierChecklist: React.FC = () => {
           <Award className="w-5 h-5 text-primary" />
           <div>
             <span className="font-mono text-[10px] text-outline uppercase tracking-widest block">
-              Sovereign Tier Architecture
+              Global Tier Architecture
             </span>
             <h2 className="font-serif text-sm font-semibold text-on-surface">
               {userLevel === 3
                 ? 'Institutional Accreditation & Custody Tier 3'
                 : userLevel === 2
                 ? 'Private Wealth & Enhanced Liquidity Tier 2'
-                : 'Sovereign Standard Individual & Liquidity Tier 1'}
+                : 'Global Standard Individual & Liquidity Tier 1'}
             </h2>
           </div>
         </div>
@@ -38,7 +38,7 @@ export const KycTierChecklist: React.FC = () => {
         <div className="flex items-center gap-2 font-mono text-[11px]">
           <span className="px-2.5 py-1 bg-tertiary/10 text-tertiary border border-tertiary/30 rounded-DEFAULT font-semibold flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-tertiary" />
-            {userLevel >= 2 ? 'Perpetual Sovereign Standing Active' : 'Level 1 Active • Upgrade Available'}
+            {userLevel >= 2 ? 'Perpetual Global Standing Active' : 'Level 1 Active • Upgrade Available'}
           </span>
           <button
             type="button"

@@ -215,7 +215,7 @@ export const TradeModal: React.FC<TradeModalProps> = ({
                 onClick={handleExecute}
                 className="w-full py-2.5 bg-primary-container text-on-primary hover:bg-primary font-mono text-xs font-bold uppercase tracking-wider rounded-DEFAULT flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md disabled:opacity-50"
               >
-                <span>{isExecuting ? 'Routing through FIX Dark Pool...' : 'Execute Instant Sovereign Swap'}</span>
+                <span>{isExecuting ? 'Routing through FIX Dark Pool...' : 'Execute Instant Global Swap'}</span>
               </button>
             )}
           </div>

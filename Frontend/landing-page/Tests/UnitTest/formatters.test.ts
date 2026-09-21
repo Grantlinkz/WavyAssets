@@ -40,7 +40,7 @@ describe('Institutional Financial Formatters', () => {
     expect(formatBps(null)).toBe('0 BPS');
   });
 
-  it('formats compact numbers properly for sovereign metrics', () => {
+  it('formats compact numbers properly for Global metrics', () => {
     expect(formatCompactNumber(4820000000)).toBe('$4.82B');
     expect(formatCompactNumber(150500000)).toBe('$150.50M');
     expect(formatCompactNumber(25000)).toBe('$25.0K');

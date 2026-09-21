@@ -54,7 +54,7 @@ const VERTICAL_METADATA: Record<AssetVertical, VerticalInfo> = {
     description: 'Heavy metal debit/charge cards backed by multi-currency treasury reserves, biometric CVV/PIN reveal, and 24/7 dedicated concierge desk.',
   },
   wallet: {
-    title: 'Sovereign MPC Custody & Multi-Currency Wallet',
+    title: 'Global MPC Custody & Multi-Currency Wallet',
     category: 'Core Treasury Rails',
     tag: '5.2% CASH SWEEP',
     description: 'Segregated Available vs Invested capital split, fiat wire on/off-ramp (Fedwire/SEPA/SWIFT), instant spot FX, and automated monthly tax packets.',
@@ -175,7 +175,7 @@ export const VerticalPlaceholder: React.FC<VerticalPlaceholderProps> = ({ vertic
       <div className="h-8 rounded-xs border border-border-hairline/80 bg-surface-container-lowest px-3 flex items-center justify-between text-[11px] font-mono text-on-surface-variant">
         <div className="flex items-center space-x-2">
           <span className="h-1.5 w-1.5 rounded-full bg-secondary animate-pulse" />
-          <span>Sovereign Enclave Status: Nominal</span>
+          <span>WavyAssets Status: Nominal</span>
         </div>
         <div className="flex items-center space-x-3">
           <span>Latency: 0.03ms</span>

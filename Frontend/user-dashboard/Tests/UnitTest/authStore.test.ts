@@ -40,7 +40,7 @@ describe('useAuthStore', () => {
     expect(state.accessToken).toBe('mock_token_123');
   });
 
-  it('successfully consumes a valid handoff ticket', async () => {
+  it('successfully consumes a valid Authentication', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -48,7 +48,7 @@ describe('useAuthStore', () => {
         accessToken: 'mock_jwt_token_abc',
         user: {
           id: 'usr_sov_99182',
-          email: 'allocator@sovereign-vault.ch',
+          email: 'allocator@Global-vault.ch',
           fullName: 'Geneva Alpha Mandate',
           tier: 'PRIVATE_WEALTH',
           isCorporate: true,

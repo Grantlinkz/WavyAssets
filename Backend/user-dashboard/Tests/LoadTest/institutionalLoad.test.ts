@@ -14,7 +14,7 @@ describe('Performance & Load Benchmark — 1,000 Concurrent Institutional Sessio
 
   const mockUsers = Array.from({ length: 20 }, (_, i) => ({
     id: `usr-inst-load-${i + 1}`,
-    email: `institutional-${i + 1}@sovereign-wealth.ch`,
+    email: `institutional-${i + 1}@Global-wealth.ch`,
     fullName: `Institutional Custodian ${i + 1}`,
     tier: 'INSTITUTIONAL',
     kycTier: 'TIER_3',

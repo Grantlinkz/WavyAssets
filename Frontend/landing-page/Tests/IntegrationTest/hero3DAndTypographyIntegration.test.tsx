@@ -49,7 +49,7 @@ describe('3D Hero Asset Gyroscope & Kinetic Typography Integration Suite (SSR / 
 
     it('does not render card badges or telemetry HUD boxes, preserving pure 3D presentation', () => {
       const html = renderToString(<HeroAssetGyroscope />);
-      expect(html).not.toContain('7-TIER SOVEREIGN GYROSCOPE');
+      expect(html).not.toContain('7-TIER Global GYROSCOPE');
       expect(html).not.toContain('MPC MPC-VAULT');
       expect(html).not.toContain('Total Assets Tracked');
     });

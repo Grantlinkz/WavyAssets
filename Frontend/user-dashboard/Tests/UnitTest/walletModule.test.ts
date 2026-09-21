@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { WALLET_TRANSACTIONS_DATA } from '../../src/lib/liquidAssetData';
 import { useLiquidStore } from '../../src/store/useLiquidStore';
 
-describe('Wallet & Sovereign Treasury Module Unit Tests', () => {
+describe('Wallet & Global Treasury Module Unit Tests', () => {
   beforeEach(() => {
     useLiquidStore.setState({
       autoSweepEnabled: true,

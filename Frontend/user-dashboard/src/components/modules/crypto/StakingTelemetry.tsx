@@ -11,6 +11,55 @@ export interface StakingTelemetryProps {
   blendedApy?: number;
 }
 
+interface StakingTaxLot {
+  lotId: string;
+  timestamp: string;
+  asset: string;
+  bondedQty: number;
+  costBasisUsd: number;
+  accruedYieldUsd: number;
+  validatorNode: string;
+}
+
+const IMMUTABLE_STAKING_TAX_LOTS: StakingTaxLot[] = [
+  {
+    lotId: 'LOT-ETH-2024-001',
+    timestamp: '2024-01-15T08:30:00Z',
+    asset: 'ETH',
+    bondedQty: 250.0,
+    costBasisUsd: 710000.0,
+    accruedYieldUsd: 8240.5,
+    validatorNode: 'ETH VALIDATOR NODE 04',
+  },
+  {
+    lotId: 'LOT-ETH-2024-002',
+    timestamp: '2024-02-10T14:15:00Z',
+    asset: 'ETH',
+    bondedQty: 100.0,
+    costBasisUsd: 295000.0,
+    accruedYieldUsd: 3150.2,
+    validatorNode: 'ETH VALIDATOR NODE 04',
+  },
+  {
+    lotId: 'LOT-SOL-2024-001',
+    timestamp: '2024-02-01T12:00:00Z',
+    asset: 'SOL',
+    bondedQty: 2200.0,
+    costBasisUsd: 297000.0,
+    accruedYieldUsd: 4120.8,
+    validatorNode: 'SOL MARINADE Global',
+  },
+  {
+    lotId: 'LOT-AVAX-2024-001',
+    timestamp: '2024-02-18T16:45:00Z',
+    asset: 'AVAX',
+    bondedQty: 4800.0,
+    costBasisUsd: 117600.0,
+    accruedYieldUsd: 1840.4,
+    validatorNode: 'AVALANCHE SUBNET CORE',
+  },
+];
+
 export const StakingTelemetry: React.FC<StakingTelemetryProps> = ({
   maskBalances: propMask,
   stakedHoldings: propStaked,
@@ -41,26 +90,17 @@ export const StakingTelemetry: React.FC<StakingTelemetryProps> = ({
     return weightedSum / totalStakedVal;
   }, [propBlendedApy, totalStakedVal, activeStaked]);
 
-  // Asset-specific holdings for live validator gauges
+  // Asset-specific holdings for live validator gauges (only active staked, no fallback to unstaked)
   const ethHolding = useMemo(() => {
-    return (
-      activeStaked.find((h) => h.symbol === 'ETH') ||
-      CRYPTO_HOLDINGS_DATA.find((h) => h.symbol === 'ETH')
-    );
+    return activeStaked.find((h) => h.symbol === 'ETH');
   }, [activeStaked]);
 
   const solHolding = useMemo(() => {
-    return (
-      activeStaked.find((h) => h.symbol === 'SOL') ||
-      CRYPTO_HOLDINGS_DATA.find((h) => h.symbol === 'SOL')
-    );
+    return activeStaked.find((h) => h.symbol === 'SOL');
   }, [activeStaked]);
 
   const avaxHolding = useMemo(() => {
-    return (
-      activeStaked.find((h) => h.symbol === 'AVAX') ||
-      CRYPTO_HOLDINGS_DATA.find((h) => h.symbol === 'AVAX')
-    );
+    return activeStaked.find((h) => h.symbol === 'AVAX');
   }, [activeStaked]);
 
   const handleExport = (format: string) => {
@@ -75,38 +115,22 @@ export const StakingTelemetry: React.FC<StakingTelemetryProps> = ({
       'Validator_Node',
     ];
 
-    const rows = [
-      [
-        'LOT-ETH-01',
-        '2024-01-15T08:30:00Z',
-        'ETH',
-        format,
-        (ethHolding?.balance || 0).toFixed(1),
-        ((ethHolding?.balance || 0) * (ethHolding?.entryPrice || 2840)).toFixed(2),
-        ((unclaimedRewards * 0.77) || 0).toFixed(2),
-        'ETH VALIDATOR NODE 04',
-      ],
-      [
-        'LOT-SOL-01',
-        '2024-02-01T12:00:00Z',
-        'SOL',
-        format,
-        (solHolding?.balance || 0).toFixed(1),
-        ((solHolding?.balance || 0) * (solHolding?.entryPrice || 135)).toFixed(2),
-        ((unclaimedRewards * 0.17) || 0).toFixed(2),
-        'SOL MARINADE SOVEREIGN',
-      ],
-      [
-        'LOT-AVAX-01',
-        '2024-02-18T16:45:00Z',
-        'AVAX',
-        format,
-        (avaxHolding?.balance || 0).toFixed(1),
-        ((avaxHolding?.balance || 0) * (avaxHolding?.entryPrice || 24.5)).toFixed(2),
-        ((unclaimedRewards * 0.06) || 0).toFixed(2),
-        'AVALANCHE SUBNET CORE',
-      ],
-    ];
+    const sortedLots = [...IMMUTABLE_STAKING_TAX_LOTS].sort((a, b) => {
+      const timeA = new Date(a.timestamp).getTime();
+      const timeB = new Date(b.timestamp).getTime();
+      return format === 'LIFO' ? timeB - timeA : timeA - timeB;
+    });
+
+    const rows = sortedLots.map((lot) => [
+      lot.lotId,
+      lot.timestamp,
+      lot.asset,
+      format,
+      lot.bondedQty.toFixed(1),
+      lot.costBasisUsd.toFixed(2),
+      lot.accruedYieldUsd.toFixed(2),
+      lot.validatorNode,
+    ]);
 
     const csvContent =
       'data:text/csv;charset=utf-8,' +
@@ -146,11 +170,11 @@ export const StakingTelemetry: React.FC<StakingTelemetryProps> = ({
         <div className="p-3 bg-surface-container-lowest rounded-DEFAULT border border-border-hairline">
           <div className="flex items-center justify-between text-[10px] font-mono text-outline">
             <span>ETH VALIDATOR NODE 04</span>
-            <span className="text-tertiary font-bold">ONLINE</span>
+            <span className="text-tertiary font-bold">{ethHolding && ethHolding.balance > 0 ? 'ONLINE' : 'INACTIVE'}</span>
           </div>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="text-lg font-mono font-bold text-on-surface">
-              {(ethHolding?.stakingApy || 3.82).toFixed(2)}% APY
+              {(ethHolding?.stakingApy ?? 0).toFixed(2)}% APY
             </span>
             <span className="text-[10px] font-mono text-outline">
               {maskBalances
@@ -159,7 +183,7 @@ export const StakingTelemetry: React.FC<StakingTelemetryProps> = ({
             </span>
           </div>
           <div className="w-full bg-surface-container h-1 rounded-DEFAULT mt-2 overflow-hidden">
-            <div className="bg-primary h-full" style={{ width: '65%' }} />
+            <div className="bg-primary h-full" style={{ width: ethHolding && ethHolding.balance > 0 ? '65%' : '0%' }} />
           </div>
           <span className="text-[10px] font-mono text-outline block mt-1">Next epoch: 18m 42s</span>
         </div>
@@ -167,12 +191,12 @@ export const StakingTelemetry: React.FC<StakingTelemetryProps> = ({
         {/* Node 2: SOL */}
         <div className="p-3 bg-surface-container-lowest rounded-DEFAULT border border-border-hairline">
           <div className="flex items-center justify-between text-[10px] font-mono text-outline">
-            <span>SOL MARINADE SOVEREIGN</span>
-            <span className="text-tertiary font-bold">OPTIMAL</span>
+            <span>SOL MARINADE Global</span>
+            <span className="text-tertiary font-bold">{solHolding && solHolding.balance > 0 ? 'OPTIMAL' : 'INACTIVE'}</span>
           </div>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="text-lg font-mono font-bold text-tertiary">
-              {(solHolding?.stakingApy || 7.42).toFixed(2)}% APY
+              {(solHolding?.stakingApy ?? 0).toFixed(2)}% APY
             </span>
             <span className="text-[10px] font-mono text-outline">
               {maskBalances
@@ -181,7 +205,7 @@ export const StakingTelemetry: React.FC<StakingTelemetryProps> = ({
             </span>
           </div>
           <div className="w-full bg-surface-container h-1 rounded-DEFAULT mt-2 overflow-hidden">
-            <div className="bg-tertiary h-full" style={{ width: '85%' }} />
+            <div className="bg-tertiary h-full" style={{ width: solHolding && solHolding.balance > 0 ? '85%' : '0%' }} />
           </div>
           <span className="text-[10px] font-mono text-outline block mt-1">Epoch 682 // 99.98% uptime</span>
         </div>
@@ -190,11 +214,11 @@ export const StakingTelemetry: React.FC<StakingTelemetryProps> = ({
         <div className="p-3 bg-surface-container-lowest rounded-DEFAULT border border-border-hairline">
           <div className="flex items-center justify-between text-[10px] font-mono text-outline">
             <span>AVALANCHE SUBNET CORE</span>
-            <span className="text-secondary font-bold">SYNCED</span>
+            <span className="text-secondary font-bold">{avaxHolding && avaxHolding.balance > 0 ? 'SYNCED' : 'INACTIVE'}</span>
           </div>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="text-lg font-mono font-bold text-secondary">
-              {(avaxHolding?.stakingApy || 5.9).toFixed(2)}% APY
+              {(avaxHolding?.stakingApy ?? 0).toFixed(2)}% APY
             </span>
             <span className="text-[10px] font-mono text-outline">
               {maskBalances
@@ -203,7 +227,7 @@ export const StakingTelemetry: React.FC<StakingTelemetryProps> = ({
             </span>
           </div>
           <div className="w-full bg-surface-container h-1 rounded-DEFAULT mt-2 overflow-hidden">
-            <div className="bg-secondary h-full" style={{ width: '50%' }} />
+            <div className="bg-secondary h-full" style={{ width: avaxHolding && avaxHolding.balance > 0 ? '50%' : '0%' }} />
           </div>
           <span className="text-[10px] font-mono text-outline block mt-1">Delegated validator: Geneva #02</span>
         </div>

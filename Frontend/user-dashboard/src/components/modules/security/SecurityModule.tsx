@@ -59,7 +59,7 @@ export const SecurityModule: React.FC<SecurityModuleProps> = ({ maskBalances: pr
           <div className="flex items-center gap-2 font-mono text-[10px] text-outline tracking-wider uppercase">
             <span>Portfolio</span>
             <span>/</span>
-            <span>Governance & Sovereign Attestation</span>
+            <span>Governance & Global Attestation</span>
             <span>/</span>
             <span className="text-primary font-semibold">Security Command Center & Access Vault</span>
           </div>

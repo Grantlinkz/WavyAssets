@@ -27,7 +27,7 @@ export const TrustInfrastructure: React.FC<TrustInfrastructureProps> = ({ initia
           </div>
 
           <h2 className="font-headline-xl text-2xl sm:text-3xl text-on-surface tracking-tight font-bold uppercase">
-            Audited Performance &amp; Sovereign Trust
+            Audited Performance &amp; Global Trust
           </h2>
 
           <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed">

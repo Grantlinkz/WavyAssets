@@ -95,7 +95,7 @@ export const DriveBookingEngine: React.FC<DriveBookingEngineProps> = ({
             </span>
             <div className="flex items-center justify-between mt-0.5">
               <span className="text-xs text-on-surface font-medium">
-                Sovereign Luxury Film Campaign (Geneva)
+                Global Luxury Film Campaign (Geneva)
               </span>
               <span className="text-[11px] text-tertiary font-mono px-1.5 py-0.5 bg-tertiary/10 rounded">
                 Cleared &amp; Insured

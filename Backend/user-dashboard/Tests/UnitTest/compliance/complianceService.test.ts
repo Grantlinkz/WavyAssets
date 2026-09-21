@@ -181,7 +181,7 @@ describe('ComplianceService — Tiered KYC, Dossier Uploads, Tier Promotion & Ta
       })) as any;
 
       expect(pack.taxYear).toBe(2024);
-      expect(pack.reportingEntity).toContain('WavyAssets Sovereign Wealth');
+      expect(pack.reportingEntity).toContain('WavyAssets Global Wealth');
       expect(pack.form8949Summary.totalNetCapitalGains).toBeGreaterThan(0);
       expect(pack.scheduleEOrdinaryIncome.totalOrdinaryDistributions).toBeGreaterThan(0);
       expect(pack.transactions.shortTerm.length).toBe(2);

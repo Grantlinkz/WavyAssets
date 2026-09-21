@@ -109,7 +109,7 @@ const VaultCoreMesh: React.FC<VaultMeshProps> = ({
 
   return (
     <group ref={groupRef}>
-      {/* 1. Outer Polyhedral Sovereign Vault (Dodecahedron Facet Lattice) */}
+      {/* 1. Outer Polyhedral Global Vault (Dodecahedron Facet Lattice) */}
       <mesh ref={coreRef}>
         <dodecahedronGeometry args={[1.35, 0]} />
         <meshStandardMaterial
@@ -313,7 +313,7 @@ export const AboutVaultCanvas3D: React.FC = () => {
           <div className="w-32 h-32 rounded-full border border-primary/40 flex items-center justify-center mb-2">
             <span className="w-16 h-16 rounded-full bg-primary/20 animate-pulse" />
           </div>
-          <span>3D SOVEREIGN VAULT CORE // WEBGL ACCELERATED</span>
+          <span>3D Global VAULT CORE // WEBGL ACCELERATED</span>
         </div>
       )}
 
@@ -321,7 +321,7 @@ export const AboutVaultCanvas3D: React.FC = () => {
       <div className="pointer-events-none absolute bottom-3 left-4 z-20 flex items-center gap-2 px-2.5 py-1 rounded-sm bg-surface-container-lowest/80 border border-outline/30 backdrop-blur-md">
         <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
         <span className="font-mono text-[10px] text-on-surface-variant uppercase tracking-wider">
-          SOVEREIGN CUSTODY NODE // VERIFIED
+          Global CUSTODY NODE // VERIFIED
         </span>
       </div>
     </div>

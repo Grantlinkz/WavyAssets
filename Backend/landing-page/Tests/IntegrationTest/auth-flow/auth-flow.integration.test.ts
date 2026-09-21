@@ -148,14 +148,14 @@ describe('Auth Flow Integration Test (Two-Step Authentication & Dashboard Hand-O
   });
 
   it('Single-Use Security Invariant: Second POST /api/v1/auth/exchange attempt must be rejected (401)', async () => {
-    // Attempting to reuse the already consumed handoff ticket
+    // Attempting to reuse the already consumed Authentication
     const res = await request(app.getHttpAdapter().getInstance())
       .post('/api/v1/auth/exchange')
       .send({ ticket: handoffTicket })
       .expect(401);
 
     expect(res.body.success).toBe(false);
-    expect(res.body.error).toContain('Invalid or expired handoff ticket');
+    expect(res.body.error).toContain('Invalid or expired Authentication');
   });
 
   it('Login Flow: POST /api/v1/auth/initiate (Login mode) should verify registered user and issue challenge', async () => {

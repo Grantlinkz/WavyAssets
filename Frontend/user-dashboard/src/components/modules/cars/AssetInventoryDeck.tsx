@@ -61,9 +61,6 @@ export const AssetInventoryDeck: React.FC<AssetInventoryDeckProps> = ({
           <h2 className="font-serif font-semibold text-on-surface text-base">
             Tier-1 Vaulted Tangible Assets
           </h2>
-          <span className="text-outline text-xs font-mono">
-            • {filteredAssets.length} of {EXOTIC_ASSETS.length} Vault Holdings
-          </span>
         </div>
 
         {/* Search & Category Filter Controls */}

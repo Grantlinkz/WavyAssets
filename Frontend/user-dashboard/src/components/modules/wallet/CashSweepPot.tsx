@@ -56,13 +56,13 @@ export const CashSweepPot: React.FC<CashSweepPotProps> = ({ maskBalances: propMa
 
   return (
     <div className="flex flex-col gap-4">
-      {/* 1. AUTOMATED SOVEREIGN CASH SWEEP POT */}
+      {/* 1. AUTOMATED Global CASH SWEEP POT */}
       <div className="bg-surface-container-lowest border border-border-hairline rounded-DEFAULT p-4 flex flex-col justify-between">
         <div className="flex items-center justify-between pb-3 border-b border-border-hairline">
           <div className="flex items-center gap-2">
             <PiggyBank className="w-4 h-4 text-tertiary" />
             <span className="text-xs font-mono text-on-surface uppercase tracking-wider font-bold">
-              Automated Sovereign Cash Sweep
+              Automated Global Cash Sweep
             </span>
           </div>
           <div className="flex items-center gap-2">

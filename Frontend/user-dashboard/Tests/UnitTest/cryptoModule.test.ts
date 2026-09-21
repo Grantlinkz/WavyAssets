@@ -25,7 +25,7 @@ describe('Crypto Module Unit Tests', () => {
       expect(btcHolding.spotPrice).toBe(89420.0);
       const totalVal = btcHolding.balance * btcHolding.spotPrice;
       expect(totalVal).toBeCloseTo(3800350.0, 1);
-      expect(btcHolding.custodyType).toBe('SOVEREIGN_CUSTODY');
+      expect(btcHolding.custodyType).toBe('Global_CUSTODY');
     }
 
     const ethHolding = CRYPTO_HOLDINGS_DATA.find((h) => h.symbol === 'ETH');
@@ -37,7 +37,7 @@ describe('Crypto Module Unit Tests', () => {
   });
 
   it('validates institutional custody badge classifications', () => {
-    const validBadges: CustodyBadge[] = ['SOVEREIGN_CUSTODY', 'STAKING_LOCKUP', 'EXTERNAL_WEB3'];
+    const validBadges: CustodyBadge[] = ['Global_CUSTODY', 'STAKING_LOCKUP', 'EXTERNAL_WEB3'];
     CRYPTO_HOLDINGS_DATA.forEach((holding) => {
       expect(validBadges).toContain(holding.custodyType);
       expect(holding.riskRating).toMatch(/^(AAA|AA\+|AA|A\+)$/);

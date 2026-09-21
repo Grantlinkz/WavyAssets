@@ -52,7 +52,7 @@ describe('Cryptographic OTP Generation & Bearer Token Hashing', () => {
     expect(isWrongMatch).toBe(false);
   });
 
-  it('should compute deterministic HMAC-SHA256 hash for bearer tokens', () => {
+  it('should compute deterministic  hash for bearer tokens', () => {
     const token = 'wavy_ticket_99a88b77c66d21e8';
     const hash1 = cryptoService.hashToken(token);
     const hash2 = cryptoService.hashToken(token);

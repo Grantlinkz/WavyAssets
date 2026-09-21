@@ -21,7 +21,7 @@ interface RawAssetDefinition {
 const BENCHMARK_ASSETS: RawAssetDefinition[] = [
   {
     symbol: 'BTC/USD',
-    name: 'Bitcoin Sovereign Spot',
+    name: 'Bitcoin Global Spot',
     category: 'CRYPTO',
     basePrice: 98450.25,
     change24h: '+3.48%',
@@ -102,7 +102,7 @@ const BENCHMARK_ASSETS: RawAssetDefinition[] = [
   },
   {
     symbol: 'XAU/USD',
-    name: 'Gold Bullion Sovereign Spot',
+    name: 'Gold Bullion Global Spot',
     category: 'COMMODITIES',
     basePrice: 2742.6,
     change24h: '+1.18%',

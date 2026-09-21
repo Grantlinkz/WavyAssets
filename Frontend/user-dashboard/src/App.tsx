@@ -203,7 +203,7 @@ export const App: React.FC<AppProps> = ({
         <div className="flex flex-col items-center gap-3 p-6 rounded-sm border border-border-hairline bg-surface-container-low shadow-lg">
           <Loader2 className="w-6 h-6 text-primary animate-spin" />
           <span className="text-xs font-mono tracking-wider uppercase text-on-surface-variant">
-            Verifying Sovereign Credentials...
+            Verifying Global Credentials...
           </span>
         </div>
       </div>

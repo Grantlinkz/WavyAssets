@@ -156,7 +156,7 @@ describe('E2E Integration — VIP & Metal Membership Cards API (/api/v1/vip-card
     it('reveals decrypted PIN and dynamic 60s CVV upon valid passphrase', async () => {
       const pin = '9912';
       const pinEncrypted = CryptoUtils.encryptAes256Gcm(pin, testKeyHex);
-      const passphraseHash = await argon2.hash('InstitutionalSovereign2026!');
+      const passphraseHash = await argon2.hash('InstitutionalGlobal2026!');
 
       mockPrisma.user.findUnique.mockResolvedValue({
         id: testUser.id,
@@ -173,7 +173,7 @@ describe('E2E Integration — VIP & Metal Membership Cards API (/api/v1/vip-card
         .post('/api/v1/vip-cards/reveal-sensitive')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
-          passphrase: 'InstitutionalSovereign2026!',
+          passphrase: 'InstitutionalGlobal2026!',
         })
         .expect(201);
 

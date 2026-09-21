@@ -83,7 +83,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 4001;
   await app.listen(port);
-  logger.log(`WavyAssets Sovereign Backend User Dashboard initialized on port ${port}`);
+  logger.log(`WavyAssets Global Backend User Dashboard initialized on port ${port}`);
 }
 
 bootstrap();

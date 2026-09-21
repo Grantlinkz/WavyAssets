@@ -13,7 +13,7 @@ describe('Production Sandbox Guard Integration Test', () => {
   let prisma: PrismaService;
   let configService: ConfigService;
 
-  const testEmail = 'production_guard_probe@sovereign-vault.ch';
+  const testEmail = 'production_guard_probe@Global-vault.ch';
 
   beforeAll(async () => {
     // Override NODE_ENV to production for this dedicated security test

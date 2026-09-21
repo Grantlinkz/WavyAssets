@@ -62,7 +62,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
         {/* Subtle Ambient Radial Glow */}
         <circle cx="18" cy="18" r="10" fill="#D4AF37" fillOpacity="0.12" />
 
-        {/* Primary Sinusoidal Wave in Sovereign Gold */}
+        {/* Primary Sinusoidal Wave in Global Gold */}
         <path
           d="M 7 19 C 10 11, 14 11, 18 19 C 22 27, 26 27, 29 19"
           stroke="#D4AF37"

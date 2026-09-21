@@ -11,7 +11,7 @@ import {
   INITIAL_WHITELIST_DESTINATIONS,
 } from '../../src/lib/governanceAssetData';
 
-describe('Governance & Sovereign Modules Integration Suite (Sprint 5)', () => {
+describe('Governance & Global Modules Integration Suite (Sprint 5)', () => {
   beforeEach(() => {
     useDashboardStore.setState({
       theme: 'dark',
@@ -34,12 +34,12 @@ describe('Governance & Sovereign Modules Integration Suite (Sprint 5)', () => {
     });
   });
 
-  describe('VIP Metal Cards & Sovereign Concierge SSR Rendering', () => {
+  describe('VIP Metal Cards & Global Concierge SSR Rendering', () => {
     it('renders VIP cards module with tungsten card, spending limits, and tier progression', () => {
       const html = renderToString(<VipCardsModule />);
 
       expect(html).toContain('data-testid="vip-cards-module"');
-      expect(html).toContain('Obsidian Metal Card &amp; Sovereign Concierge');
+      expect(html).toContain('Obsidian Metal Card &amp; Global Concierge');
       expect(html).toContain('Obsidian Elite Tier (42g Tungsten)');
       expect(html).toContain('data-testid="obsidian-metal-card-panel"');
       expect(html).toContain('42g SOLID TUNGSTEN');
@@ -66,7 +66,7 @@ describe('Governance & Sovereign Modules Integration Suite (Sprint 5)', () => {
       expect(html).toContain('Tier 01 Baseline');
       expect(html).toContain('Tier 02 Qualified');
       expect(html).toContain('Tier 03 Active');
-      expect(html).toContain('Grant Sovereign Holdings AG');
+      expect(html).toContain('Grant Global Holdings AG');
       expect(html).toContain('CHE-382.910.442');
       expect(html).toContain('Marcus Aurelius Grant');
       expect(html).toContain('100%');

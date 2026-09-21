@@ -72,7 +72,7 @@ export class RealEstateService {
         },
         {
           id: 'prop-mayfair-res-002',
-          title: 'Mayfair Sovereign Luxury Residences',
+          title: 'Mayfair Global Luxury Residences',
           region: 'UNITED KINGDOM',
           totalValuation: 62000000.0,
           totalTokens: 124000,
@@ -214,7 +214,7 @@ export class RealEstateService {
           slaPerformancePct: 99.4,
         },
         {
-          propertyTitle: 'Mayfair Sovereign Luxury Residences',
+          propertyTitle: 'Mayfair Global Luxury Residences',
           tenantName: 'Mayfair Diplomatic Mission Services',
           sector: 'Institutional Consular Office',
           leaseExpiry: '2030-09-30',
@@ -418,7 +418,7 @@ export class RealEstateService {
 
   /**
    * Pre-signed secure document vault URL generation
-   * Inviolable Invariant: 900-second expiration with HMAC-SHA256 signature
+   * Inviolable Invariant: 900-second expiration with  signature
    */
   async getPresignedDocumentUrl(userId: string, docId: string): Promise<PresignedDocumentResponse> {
     const validDocs: Record<string, { title: string; docType: string; mimeType: string }> = {
@@ -428,7 +428,7 @@ export class RealEstateService {
         mimeType: 'application/pdf',
       },
       'spv-mayfair-appraisal-002': {
-        title: 'Mayfair Sovereign Luxury Residences Independent Savills RICS Appraisal',
+        title: 'Mayfair Global Luxury Residences Independent Savills RICS Appraisal',
         docType: 'RICS_APPRAISAL',
         mimeType: 'application/pdf',
       },

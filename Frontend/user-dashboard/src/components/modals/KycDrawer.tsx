@@ -644,7 +644,7 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
                       Level 3 is Locked
                     </span>
                     <p className="text-[11px] text-outline max-w-sm mx-auto mt-1">
-                      In accordance with sovereign compliance protocols, Level 3 is only available after Level 2 Government ID verification has been completed and approved by the admin panel.
+                      In accordance with Global compliance protocols, Level 3 is only available after Level 2 Government ID verification has been completed and approved by the admin panel.
                     </p>
                   </div>
                   <Button
@@ -822,7 +822,7 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
               <div className="p-2.5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Building className="w-3.5 h-3.5 text-outline" />
-                  <span className="font-sans text-on-surface">Grant Sovereign Holdings AG Charter</span>
+                  <span className="font-sans text-on-surface">Grant Global Holdings AG Charter</span>
                 </div>
                 <span className="text-tertiary font-mono text-[10px] flex items-center gap-1 font-semibold">
                   <Check className="w-3 h-3" /> VERIFIED

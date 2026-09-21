@@ -64,7 +64,7 @@ describe('GlobalHeader & ServicesMegaMenu Integration (Node 24 Engine)', () => {
     expect(html).toContain('Fractional Prime Commercial Real Estate');
     expect(html).toContain('Exotic Collector Cars &amp; Rare Horology Vault');
     expect(html).toContain('VIP Titanium Metal Concierge Cards');
-    expect(html).toContain('Multi-Currency Sovereign Digital Wallet');
+    expect(html).toContain('Multi-Currency Global Digital Wallet');
 
     // 3D Vector SVG unique gradient markers
     expect(html).toContain('crypto-face');
@@ -99,7 +99,7 @@ describe('GlobalHeader & ServicesMegaMenu Integration (Node 24 Engine)', () => {
     const dmaHtml = renderToString(<ServicesMegaMenu isOpen={true} category="dma-equities" />);
 
     expect(dmaHtml).toContain('Global Stocks &amp; Pre-IPO Tech Shares');
-    expect(dmaHtml).toContain('Multi-Currency Sovereign Digital Wallet'); // Treasury layer always included
+    expect(dmaHtml).toContain('Multi-Currency Global Digital Wallet'); // Treasury layer always included
     expect(dmaHtml).not.toContain('High-Yield Crypto Staking &amp; Cold Storage');
     expect(dmaHtml).not.toContain('Exotic Collector Cars &amp; Rare Horology Vault');
 

@@ -18,7 +18,7 @@ describe('Tiered Compliance & Tax Alpha Module Unit Tests (Sprint 5)', () => {
     });
   });
 
-  it('validates 3-tier sovereign KYC framework hierarchy', () => {
+  it('validates 3-tier Global KYC framework hierarchy', () => {
     expect(KYC_TIERS).toHaveLength(3);
 
     const tier1 = KYC_TIERS.find((t) => t.level === 1);
@@ -39,7 +39,7 @@ describe('Tiered Compliance & Tax Alpha Module Unit Tests (Sprint 5)', () => {
   });
 
   it('verifies corporate UBO entity profile and 2-of-3 HSM signer structure', () => {
-    expect(CORPORATE_ENTITY_PROFILE.legalName).toBe('Grant Sovereign Holdings AG');
+    expect(CORPORATE_ENTITY_PROFILE.legalName).toBe('Grant Global Holdings AG');
     expect(CORPORATE_ENTITY_PROFILE.uidJurisdiction).toBe('CHE-382.910.442');
     expect(CORPORATE_ENTITY_PROFILE.canton).toContain('Zürich');
     expect(CORPORATE_ENTITY_PROFILE.quorum).toBe('2 of 3 Required Keys');
@@ -96,7 +96,7 @@ describe('Tiered Compliance & Tax Alpha Module Unit Tests (Sprint 5)', () => {
     expect(total2025).toBe(349400);
   });
 
-  it('validates 4 sovereign regulatory corridors (CH, US, UK, SG)', () => {
+  it('validates 4 Global regulatory corridors (CH, US, UK, SG)', () => {
     expect(REGULATORY_CORRIDORS).toHaveLength(4);
 
     const corridors = REGULATORY_CORRIDORS.map((c) => c.countryCode);

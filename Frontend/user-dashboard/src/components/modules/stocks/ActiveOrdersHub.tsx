@@ -28,6 +28,7 @@ export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBala
 
   const handlePlaceOrder = (e: React.FormEvent) => {
     e.preventDefault();
+    if (justPlaced) return;
     if (!Number.isFinite(shares) || shares <= 0 || !Number.isFinite(limitPrice) || limitPrice <= 0) {
       return;
     }
@@ -148,8 +149,9 @@ export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBala
           <div className="flex items-end">
             <button
               type="submit"
+              disabled={justPlaced}
               data-testid="submit-desk-order-btn"
-              className="w-full py-1.5 bg-primary-container text-on-primary hover:bg-primary font-bold uppercase rounded flex items-center justify-center gap-1 transition-colors cursor-pointer"
+              className="w-full py-1.5 bg-primary-container text-on-primary hover:bg-primary font-bold uppercase rounded flex items-center justify-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
             >
               {justPlaced ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
               <span>{justPlaced ? 'Deployed' : 'Deploy Order'}</span>

@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Lock, ShieldCheck, FileText, Scale } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
-import { CARS_SUMMARY_METRICS } from '../../../lib/alternativeAssetData';
+import { useAlternativeStore } from '../../../store/useAlternativeStore';
+import { usePortfolioStore } from '../../../store/usePortfolioStore';
+import { EXOTIC_ASSETS } from '../../../lib/alternativeAssetData';
+import { TOTAL_Global_NET_WORTH } from '../../../lib/calculations';
 import { AssetInventoryDeck } from './AssetInventoryDeck';
 import { DriveBookingEngine } from './DriveBookingEngine';
 import { CustodyLedger } from './CustodyLedger';
@@ -13,6 +16,71 @@ interface CarsModuleProps {
 export const CarsModule: React.FC<CarsModuleProps> = ({ maskBalances: propMask }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
+  const userHoldings = useAlternativeStore((s) => s.userVehicleHoldings);
+  const netWorth = usePortfolioStore((s) => s.netWorth);
+
+  // Dynamically compute individual values directly from vaulted assets in user's collection
+  const vaultedAssets = useMemo(() => {
+    const ownedIds = Object.keys(userHoldings).filter((id) => userHoldings[id]?.owned);
+    if (ownedIds.length > 0) {
+      return EXOTIC_ASSETS.filter((a) => ownedIds.includes(a.id));
+    }
+    // Default Global vaulted collection (car-1 Porsche 911 GT2 & watch-1 Patek Philippe 5270P)
+    return EXOTIC_ASSETS.filter((a) => a.id === 'car-1' || a.id === 'watch-1');
+  }, [userHoldings]);
+
+  const dynamicMetrics = useMemo(() => {
+    const totalValuation = vaultedAssets.reduce((sum, a) => sum + a.fairMarketValue, 0);
+    const totalAcquisition = vaultedAssets.reduce((sum, a) => sum + a.acquisitionPrice, 0);
+    const totalUnrealizedGain = totalValuation - totalAcquisition;
+    const totalGainPct = totalAcquisition > 0 ? (totalUnrealizedGain / totalAcquisition) * 100 : 0;
+    const totalInsuredValue = vaultedAssets.reduce((sum, a) => sum + a.insuredValue, 0);
+
+    const effectiveNetWorth = netWorth > 0 ? netWorth : TOTAL_Global_NET_WORTH;
+    const navPct = effectiveNetWorth > 0 ? (totalValuation / effectiveNetWorth) * 100 : 5.7;
+
+    // 1-Year Index Growth calculated from collection asset gains
+    const weightedGrowth = totalValuation > 0
+      ? vaultedAssets.reduce((sum, a) => sum + (a.gainPct || 14.2) * a.fairMarketValue, 0) / totalValuation
+      : 14.2;
+
+    const sign = totalUnrealizedGain >= 0 ? '+' : '-';
+
+    return [
+      {
+        label: 'VAULTED VALUATION',
+        badge: `${navPct.toFixed(1)}% Consolidated NAV`,
+        value: `$${totalValuation.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        delta: `${sign}$${Math.abs(totalUnrealizedGain).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${sign}${totalGainPct.toFixed(2)}%)`,
+        footerKey: `Consolidated NAV Basis: $${(effectiveNetWorth / 1e6).toFixed(2)}M`,
+        footerVal: 'Marked Uncompromised',
+      },
+      {
+        label: '1-YEAR INDEX GROWTH',
+        badge: '+8.1% vs Benchmark',
+        value: `+${weightedGrowth.toFixed(1)}%`,
+        delta: 'Hagerty Blue Chip',
+        footerKey: 'Vintage Collector Alpha',
+        footerVal: 'Top Decile Trajectory',
+      },
+      {
+        label: 'ACTIVE INSURED LIMIT',
+        badge: 'Policy #LL-CH-892401',
+        value: `$${totalInsuredValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        delta: 'Agreed Value (Lloyds Specie)',
+        footerKey: 'Lloyds Syndicate 2003',
+        footerVal: 'Active & Bonded',
+      },
+      {
+        label: 'PHYSICAL VAULT TELEMETRY',
+        badge: 'Dual Sensor Feed',
+        value: 'Dual Vaults',
+        delta: 'Geneva: 19.5°C | Zurich: 20.0°C',
+        footerKey: 'Preservation Standard',
+        footerVal: 'DIN 14096 Certified',
+      },
+    ];
+  }, [vaultedAssets, netWorth]);
 
   return (
     <div data-testid="cars-module" className="space-y-4 min-h-[540px] animate-fade-in">
@@ -58,7 +126,7 @@ export const CarsModule: React.FC<CarsModuleProps> = ({ maskBalances: propMask }
 
       {/* Physical Asset Executive Overview Matrix */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2.5">
-        {CARS_SUMMARY_METRICS.map((metric, idx) => (
+        {dynamicMetrics.map((metric, idx) => (
           <div
             key={idx}
             className="p-3 bg-surface-container border border-border-hairline rounded flex flex-col justify-between"

@@ -6,7 +6,7 @@ import { useDashboardStore } from '../../../store/useDashboardStore';
 
 const getBadgeStyles = (type: CustodyBadge) => {
   switch (type) {
-    case 'SOVEREIGN_CUSTODY':
+    case 'Global_CUSTODY':
       return 'bg-primary/15 border-primary/30 text-primary';
     case 'STAKING_LOCKUP':
       return 'bg-tertiary/15 border-tertiary/30 text-tertiary';
@@ -51,11 +51,8 @@ export const HoldingsTable: React.FC<{ maskBalances?: boolean }> = ({ maskBalanc
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4 text-primary shrink-0" />
           <h2 className="font-serif text-sm font-semibold uppercase tracking-wide text-on-surface">
-            Live Spot Holdings &amp; Sovereign Custody Matrix
+            Live Spot Holdings &amp; Global Custody Matrix
           </h2>
-          <span className="text-[10px] font-mono text-outline uppercase bg-surface-container-high px-2 py-0.5 rounded-DEFAULT shrink-0">
-            {filteredHoldings.length} Assets
-          </span>
         </div>
 
         {/* Search Bar matching symbol (BTC) or name (Bitcoin) */}

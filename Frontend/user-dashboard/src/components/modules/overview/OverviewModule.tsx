@@ -43,7 +43,7 @@ export const OverviewModule: React.FC = () => {
       return `${sign}$${Math.abs(dollarChange).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${sign}${Math.abs(percentageChange).toFixed(2)}%) ALL-TIME`;
     }
     if (totalPortfolioValue > 0) {
-      // Baseline cost basis for the $14,820,450 sovereign portfolio with +$1,562,200 gain
+      // Baseline cost basis for the $14,820,450 Global portfolio with +$1,562,200 gain
       const baselineCostBasis = 13258250.0;
       const dollarGain = totalPortfolioValue - baselineCostBasis;
       const pctGain = baselineCostBasis > 0 ? (dollarGain / baselineCostBasis) * 100 : 0;
@@ -56,7 +56,7 @@ export const OverviewModule: React.FC = () => {
   const telemetryNodes = [
     {
       name: 'Geneva Bunker Alpha',
-      role: 'MPC Sovereign Cold Vault',
+      role: 'MPC Global Cold Vault',
       status: 'OPTIMAL',
       latency: '0.02ms',
       climate: '19.2°C • 45% RH',
@@ -515,11 +515,11 @@ export const OverviewModule: React.FC = () => {
         </div>
       </div>
 
-      {/* Sovereign Enclave Telemetry Footer */}
+      {/* WavyAssets Telemetry Footer */}
       <div className="h-9 rounded-xs border border-border-hairline bg-surface-container-lowest px-3.5 flex items-center justify-between text-[11px] font-mono text-on-surface-variant">
         <div className="flex items-center space-x-2">
           <span className="h-1.5 w-1.5 rounded-full bg-tertiary animate-pulse" />
-          <span>Sovereign Enclave Status: Optimal (99.999% SLA)</span>
+          <span>WavyAssets Status: Optimal (99.999% SLA)</span>
         </div>
         <div className="flex items-center space-x-4">
           <span>Settlement Engine: Sub-50ms</span>

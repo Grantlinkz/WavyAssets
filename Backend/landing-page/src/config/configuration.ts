@@ -66,10 +66,10 @@ export default (): AppConfiguration => {
       url: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/wavyassets?schema=public',
     },
     security: {
-      jwtSecret: process.env.JWT_SECRET || 'wavy_sovereign_terminal_jwt_secret_dev_key_must_be_rotated_in_prod',
+      jwtSecret: process.env.JWT_SECRET || 'wavy_Global_terminal_jwt_secret_dev_key_must_be_rotated_in_prod',
       jwtExpiration: process.env.JWT_EXPIRATION || '15m',
       refreshTokenSecret:
-        process.env.REFRESH_TOKEN_SECRET || 'wavy_sovereign_refresh_secret_dev_key_must_be_rotated',
+        process.env.REFRESH_TOKEN_SECRET || 'wavy_Global_refresh_secret_dev_key_must_be_rotated',
       refreshTokenExpiration: process.env.REFRESH_TOKEN_EXPIRATION || '7d',
       handoffTicketSecret,
       fieldEncryptionKey:

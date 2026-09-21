@@ -437,7 +437,7 @@ export const VehicleActionModal: React.FC<VehicleActionModalProps> = ({
                 </div>
                 <div className="flex justify-between text-outline text-[10px] pt-1 border-t border-border-hairline">
                   <span>Provenance Assay Fee:</span>
-                  <span>Waived (Institutional Sovereign Exemption)</span>
+                  <span>Waived (Institutional Global Exemption)</span>
                 </div>
               </div>
 

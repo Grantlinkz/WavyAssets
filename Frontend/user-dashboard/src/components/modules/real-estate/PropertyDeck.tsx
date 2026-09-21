@@ -70,9 +70,6 @@ export const PropertyDeck: React.FC<PropertyDeckProps> = ({ maskBalances: propMa
           <h2 className="font-serif font-semibold text-on-surface text-base">
             Institutional Asset Inventory
           </h2>
-          <span className="text-outline font-mono text-xs uppercase tracking-wider ml-1">
-            {`${filteredAssets.length} of ${REAL_ESTATE_ASSETS.length} Enclave Holdings`}
-          </span>
         </div>
 
         {/* Search & Region Filter Controls */}

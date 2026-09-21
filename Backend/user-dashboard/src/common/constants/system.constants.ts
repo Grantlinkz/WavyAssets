@@ -1,5 +1,5 @@
 export const SYSTEM_CONSTANTS = {
-  APP_NAME: 'WavyAssets Sovereign Backend User Dashboard',
+  APP_NAME: 'WavyAssets Global Backend User Dashboard',
   DEFAULT_PAGE_SIZE: 25,
   MAX_PAGE_SIZE: 100,
   TIME_LOCK_HOURS: 48,

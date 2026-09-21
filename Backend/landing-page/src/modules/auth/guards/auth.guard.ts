@@ -18,7 +18,7 @@ export class AuthGuard implements CanActivate {
   ) {
     this.jwtSecret =
       this.configService.get<string>('security.jwtSecret') ||
-      'wavy_sovereign_terminal_jwt_secret_dev_key_must_be_rotated_in_prod';
+      'wavy_Global_terminal_jwt_secret_dev_key_must_be_rotated_in_prod';
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {

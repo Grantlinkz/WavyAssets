@@ -46,7 +46,7 @@ export const InstitutionalGate: React.FC<InstitutionalGateProps> = () => {
           <div className="space-y-1">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-xs bg-primary/10 border border-primary/30 text-[10px] font-mono font-semibold tracking-wider text-primary uppercase">
               <Shield className="w-3 h-3" />
-              Sovereign Command Deck Restricted
+              Global Command Deck Restricted
             </div>
             <h1 className="text-xl sm:text-2xl font-serif font-bold text-on-surface tracking-tight">
               WavyAssets Institutional System
@@ -69,7 +69,7 @@ export const InstitutionalGate: React.FC<InstitutionalGateProps> = () => {
           >
             <span className="flex items-center gap-2">
               <KeyRound className="w-4 h-4" />
-              Sign In with Sovereign 2FA
+              Sign In with Global 2FA
             </span>
             <ArrowRight className="w-4 h-4" />
           </Button>

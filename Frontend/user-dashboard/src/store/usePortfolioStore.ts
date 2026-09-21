@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import {
   DEFAULT_ALLOCATIONS,
-  TOTAL_SOVEREIGN_NET_WORTH,
+  TOTAL_Global_NET_WORTH,
   type VerticalAllocation,
 } from '../lib/calculations';
 
@@ -30,7 +30,7 @@ interface PortfolioState {
 }
 
 export const usePortfolioStore = create<PortfolioState>((set) => ({
-  netWorth: TOTAL_SOVEREIGN_NET_WORTH,
+  netWorth: TOTAL_Global_NET_WORTH,
   availableCash: 1820450.00,
   allocations: DEFAULT_ALLOCATIONS,
   returns: null,
@@ -76,7 +76,7 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 
   resetToDefaults: () =>
     set({
-      netWorth: TOTAL_SOVEREIGN_NET_WORTH,
+      netWorth: TOTAL_Global_NET_WORTH,
       availableCash: 1820450.00,
       allocations: DEFAULT_ALLOCATIONS,
       returns: null,

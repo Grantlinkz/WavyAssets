@@ -12,9 +12,9 @@ const MeshSubstrate: React.FC<MeshSubstrateProps> = ({ reducedMotion, theme }) =
   const meshRef = useRef<THREE.Points>(null);
   const mouseRef = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
 
-  // Sovereign palette colors based on active theme
+  // Global palette colors based on active theme
   const particleColor = useMemo(() => {
-    return theme === 'dark' ? '#D4AF37' : '#997d26'; // Sovereign gold
+    return theme === 'dark' ? '#D4AF37' : '#997d26'; // Global gold
   }, [theme]);
 
   // Generate deterministic grid of geometric coordinate points

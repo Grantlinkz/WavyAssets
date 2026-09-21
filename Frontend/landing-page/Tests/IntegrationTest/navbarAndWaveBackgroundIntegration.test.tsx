@@ -20,7 +20,7 @@ describe('Navbar Sliding Dot Indicator & Wavy Background Integration Suite (SSR 
     it('renders the GlobalHeader with sliding dot indicator mounted', () => {
       const html = renderToString(<GlobalHeader />);
       expect(html).toContain('data-testid="navbar-sliding-dot"');
-      // Sovereign Gold styling and micro-geometry
+      // Global Gold styling and micro-geometry
       expect(html).toContain('bg-primary');
       expect(html).toContain('rounded-full');
       expect(html).toContain('absolute bottom-0 left-0');

@@ -7,7 +7,7 @@ import { useAuthStore, type UserEntity } from '../../src/store/useAuthStore';
 import { usePortfolioStore } from '../../src/store/usePortfolioStore';
 import { calculateUserTimeframePnL } from '../../src/lib/calculations';
 
-describe('Sovereign KYC Progressive Architecture & Auth Verification Suite', () => {
+describe('Global KYC Progressive Architecture & Auth Verification Suite', () => {
   beforeEach(() => {
     usePortfolioStore.getState().resetToDefaults();
     useAuthStore.getState().logout();
@@ -49,7 +49,7 @@ describe('Sovereign KYC Progressive Architecture & Auth Verification Suite', () 
       );
 
       const html = renderToString(<KycTierChecklist />);
-      expect(html).toContain('Sovereign Standard Individual &amp; Liquidity Tier 1');
+      expect(html).toContain('Global Standard Individual &amp; Liquidity Tier 1');
       expect(html).toContain('CURRENT TIER');
       expect(html).toContain('Level 1 Active • Upgrade Available');
       expect(html).toContain('VERIFY NOW');
@@ -63,7 +63,7 @@ describe('Sovereign KYC Progressive Architecture & Auth Verification Suite', () 
         {
           id: 'usr-level1-locked-test',
           email: 'locked@wavyassets.com',
-          fullName: 'Sovereign Client',
+          fullName: 'Global Client',
           tier: 'PRIVATE_WEALTH',
           isCorporate: false,
           kycTier: 'TIER_1',

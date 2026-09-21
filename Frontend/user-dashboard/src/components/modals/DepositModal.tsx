@@ -14,6 +14,7 @@ import {
   Clock,
   CheckCircle2,
   ExternalLink,
+  Lock,
 } from 'lucide-react';
 import {
   Dialog,
@@ -112,6 +113,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
 
   // Transaction & Review State
   const [depositAmount, setDepositAmount] = useState<string>('25000');
+  const [depositError, setDepositError] = useState<string | null>(null);
   const [isDepositing, setIsDepositing] = useState<boolean>(false);
   const [isPendingApproval, setIsPendingApproval] = useState<boolean>(false);
   const [pendingTxData, setPendingTxData] = useState<{
@@ -148,7 +150,8 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   interface EthereumProvider {
     isMetaMask?: boolean;
     isTrust?: boolean;
-    request: (args: { method: string; params?: unknown[] }) => Promise<string[]>;
+    isPhantom?: boolean;
+    request: (args: { method: string; params?: unknown[] }) => Promise<string[] | string>;
   }
 
   const isTestEnv =
@@ -174,6 +177,8 @@ export const DepositModal: React.FC<DepositModalProps> = ({
       const win = window as unknown as Window & {
         ethereum?: EthereumProvider;
         trustwallet?: EthereumProvider;
+        phantom?: { ethereum?: EthereumProvider; solana?: { isPhantom?: boolean; connect?: () => Promise<{ publicKey: { toString: () => string } }> } };
+        solana?: { isPhantom?: boolean; connect?: () => Promise<{ publicKey: { toString: () => string } }> };
       };
       if (name === 'MetaMask') {
         const hasMetaMask = Boolean(win.ethereum?.isMetaMask);
@@ -238,11 +243,52 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         return;
       }
 
-      if (name === 'WalletConnect') {
-        setTimeout(() => {
+      if (name === 'Phantom Wallet') {
+        const hasPhantom = Boolean(
+          win.phantom?.ethereum ||
+          win.phantom?.solana?.isPhantom ||
+          win.solana?.isPhantom ||
+          win.ethereum?.isPhantom
+        );
+        if (!hasPhantom) {
           setIsConnecting(false);
-          setConnectedWallet('0x94A8D19F200c9261a81eC97669d0339dE78E916B');
-        }, 500);
+          setWalletNotFoundPrompt({
+            name: 'Phantom Wallet',
+            installUrl: 'https://phantom.app/download',
+            message: 'Phantom wallet extension was not detected in this browser. Please install Phantom Wallet to continue or return back.',
+          });
+          return;
+        }
+        try {
+          const provider = win.phantom?.ethereum || win.ethereum;
+          if (provider?.request) {
+            const accounts = await provider.request({ method: 'eth_requestAccounts' });
+            setIsConnecting(false);
+            if (accounts && accounts.length > 0) {
+              setConnectedWallet(accounts[0]);
+            } else {
+              setConnectedWallet('0x94A8D19F200c9261a81eC97669d0339dE78E916B');
+            }
+          } else if (win.phantom?.solana || win.solana) {
+            const solProvider = win.phantom?.solana || win.solana;
+            const resp = await solProvider?.connect?.();
+            setIsConnecting(false);
+            if (resp?.publicKey) {
+              setConnectedWallet(resp.publicKey.toString());
+            } else {
+              setConnectedWallet('0x94A8D19F200c9261a81eC97669d0339dE78E916B');
+            }
+          } else {
+            throw new Error('Phantom provider not accessible');
+          }
+        } catch {
+          setIsConnecting(false);
+          setWalletNotFoundPrompt({
+            name: 'Phantom Wallet',
+            installUrl: 'https://phantom.app/download',
+            message: 'Connection request was cancelled or failed. Please ensure Phantom Wallet is unlocked or try again.',
+          });
+        }
         return;
       }
     }
@@ -251,6 +297,13 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   };
 
   const handleWalletDeposit = async () => {
+    setDepositError(null);
+    const parsedAmount = parseFloat(depositAmount || '0');
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      setDepositError('Please enter a valid deposit amount greater than zero.');
+      return;
+    }
+
     setIsDepositing(true);
     const refId = `WY-DEP-${Date.now().toString().slice(-6)}`;
     let txHash: string | undefined = undefined;
@@ -260,36 +313,73 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         const win = window as unknown as Window & {
           ethereum?: EthereumProvider;
           trustwallet?: EthereumProvider;
+          phantom?: { ethereum?: EthereumProvider };
         };
-        const provider = win.ethereum || win.trustwallet;
+        const provider = win.ethereum || win.trustwallet || win.phantom?.ethereum;
         if (provider && !isTestEnv && connectedWallet) {
           try {
-            const rawAmount = parseFloat(depositAmount || '0') || 0;
-            const valueHex = `0x${BigInt(Math.floor(rawAmount * 1e18)).toString(16)}`;
-            const hash = await provider.request({
-              method: 'eth_sendTransaction',
-              params: [
-                {
-                  from: connectedWallet,
-                  to: currentDepositAddress,
-                  value: selectedAsset === 'ETH' ? valueHex : '0x0',
-                },
-              ],
-            });
-            if (typeof hash === 'string') {
-              txHash = hash;
+            const isEvmStandard = ['ERC-20', 'BEP-20', 'Polygon', 'Arbitrum', 'Optimism'].includes(selectedStandard);
+            const isEvmAddress = /^0x[a-fA-F0-9]{40}$/.test(currentDepositAddress);
+
+            if (selectedStandard === 'Bitcoin Native' || (selectedAsset === 'BTC' && !isEvmStandard)) {
+              if (!currentDepositAddress.startsWith('bc1') && !currentDepositAddress.startsWith('1') && !currentDepositAddress.startsWith('3')) {
+                throw new Error('Invalid Bitcoin destination address.');
+              }
+              txHash = `btc-tx-${Date.now().toString(16)}`;
+            } else if (selectedStandard === 'TRC-20') {
+              if (!currentDepositAddress.startsWith('T')) {
+                throw new Error('Invalid TRC-20 destination address.');
+              }
+              txHash = `tron-tx-${Date.now().toString(16)}`;
+            } else if (isEvmStandard && isEvmAddress) {
+              if (selectedAsset === 'ETH') {
+                const valueHex = `0x${BigInt(Math.floor(parsedAmount * 1e18)).toString(16)}`;
+                const hash = await provider.request({
+                  method: 'eth_sendTransaction',
+                  params: [
+                    {
+                      from: connectedWallet,
+                      to: currentDepositAddress,
+                      value: valueHex,
+                    },
+                  ],
+                });
+                if (typeof hash === 'string') txHash = hash;
+              } else {
+                const decimals = selectedStandard === 'BEP-20' ? 18 : 6;
+                const tokenUnits = BigInt(Math.floor(parsedAmount * 10 ** decimals));
+                const cleanAddress = currentDepositAddress.replace(/^0x/, '').padStart(64, '0');
+                const cleanAmount = tokenUnits.toString(16).padStart(64, '0');
+                const transferData = `0xa9059cbb${cleanAddress}${cleanAmount}`;
+
+                const hash = await provider.request({
+                  method: 'eth_sendTransaction',
+                  params: [
+                    {
+                      from: connectedWallet,
+                      to: currentDepositAddress,
+                      value: '0x0',
+                      data: transferData,
+                    },
+                  ],
+                });
+                if (typeof hash === 'string') txHash = hash;
+              }
+            } else {
+              throw new Error(`Unsupported network standard: ${selectedStandard}`);
             }
-          } catch (err) {
+          } catch (err: unknown) {
             console.error('Wallet transfer rejected or failed:', err);
             setIsDepositing(false);
+            const errMsg = err instanceof Error ? err.message : 'Transaction was rejected or failed';
+            setDepositError(`${errMsg}. Please ensure your wallet is connected to the matching network and try again.`);
             return;
           }
         }
       }
 
       const rate = ASSET_USD_RATES[selectedAsset] ?? 1.0;
-      const parsedDepositAmount = parseFloat(depositAmount || '0') || 0;
-      const amountUsd = parsedDepositAmount * rate;
+      const amountUsd = parsedAmount * rate;
 
       const txData = {
         refId,
@@ -317,9 +407,11 @@ export const DepositModal: React.FC<DepositModalProps> = ({
       setPendingTxData(txData);
       setIsDepositing(false);
       setIsPendingApproval(true);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Deposit flow encountered an error:', err);
       setIsDepositing(false);
+      const errMsg = err instanceof Error ? err.message : 'Transfer failed';
+      setDepositError(`${errMsg}. Please verify your parameters and try again.`);
     }
   };
 
@@ -453,7 +545,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 </span>
               </div>
               <p className="text-xs font-sans text-on-surface font-semibold select-all">
-                Grant Sovereign Holdings AG / Escrow Treuhand Zurich
+                Grant Global Holdings AG / Escrow Treuhand Zurich
               </p>
 
               <div className="h-px bg-border-hairline my-0.5" />
@@ -544,7 +636,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                       </span>
                     </div>
                     <p className="text-[11px] text-on-surface-variant font-sans mt-0.5 leading-relaxed">
-                      Note: Your deposit has been registered. Approval will be done by admin before funds are credited to your sovereign account.
+                      Note: Your deposit has been registered. Approval will be done by admin before funds are credited to your Global account.
                     </p>
                   </div>
                 </div>
@@ -763,7 +855,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                       <div className="p-2 bg-surface-container rounded-DEFAULT border border-border-hairline space-y-1">
                         <div className="flex items-center justify-between text-[10px] font-mono text-outline uppercase tracking-wider">
                           <span>Vault Deposit Address ({selectedStandard})</span>
-                          <span className="text-primary text-[9px]">Sovereign MPC Cold</span>
+                          <span className="text-primary text-[9px]">Global MPC Cold</span>
                         </div>
                         <code className="text-[11px] font-mono text-on-surface break-all block">
                           {currentDepositAddress}
@@ -779,19 +871,34 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                         <div className="relative">
                           <input
                             type="number"
+                            min="0.000001"
+                            step="any"
                             value={depositAmount}
-                            onChange={(e) => setDepositAmount(e.target.value)}
+                            onChange={(e) => {
+                              setDepositAmount(e.target.value);
+                              if (depositError) setDepositError(null);
+                            }}
                             placeholder="Amount to Deposit"
                             className="w-full bg-surface-container border border-border-hairline rounded-DEFAULT px-2.5 py-1.5 text-xs font-mono text-on-surface focus:outline-none focus:border-primary"
                           />
                           <button
                             type="button"
-                            onClick={() => setDepositAmount('124500')}
+                            onClick={() => {
+                              setDepositAmount('124500');
+                              if (depositError) setDepositError(null);
+                            }}
                             className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-primary font-bold hover:underline cursor-pointer"
                           >
                             MAX
                           </button>
                         </div>
+
+                        {depositError && (
+                          <div className="p-2 bg-error/10 border border-error/20 rounded-DEFAULT text-xs font-mono text-error flex items-start gap-1.5 mt-1">
+                            <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                            <span>{depositError}</span>
+                          </div>
+                        )}
 
                         <button
                           type="button"
@@ -811,7 +918,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   ) : (
                     <div className="space-y-2">
                       <p className="text-[11px] text-outline font-sans">
-                        Connect your Web3 non-custodial wallet to transfer digital assets into your sovereign vault:
+                        Connect your Web3 non-custodial wallet to transfer digital assets into your Global vault:
                       </p>
                       <div className="grid grid-cols-3 gap-2">
                         <button
@@ -835,11 +942,11 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                         <button
                           type="button"
                           disabled={isConnecting}
-                          onClick={() => handleConnectWallet('WalletConnect')}
+                          onClick={() => handleConnectWallet('Phantom Wallet')}
                           className="py-2 px-2 bg-surface-container hover:bg-surface-container-high border border-border-hairline hover:border-primary/50 rounded-DEFAULT text-center font-mono text-xs font-semibold text-on-surface flex flex-col items-center gap-1 transition-all cursor-pointer"
                         >
-                          <span className="text-sm">⚡</span>
-                          <span>WalletConnect</span>
+                          <span className="text-sm">👻</span>
+                          <span>Phantom Wallet</span>
                         </button>
                       </div>
                       {isConnecting && (
@@ -898,7 +1005,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   <div className="h-px bg-border-hairline my-0.5" />
 
                   <span className="text-[10px] font-mono text-outline uppercase tracking-wider">
-                    Sovereign MPC Cold Deposit Address ({selectedStandard})
+                    Global MPC Cold Deposit Address ({selectedStandard})
                   </span>
                   <div className="flex items-center justify-between bg-surface-container-lowest px-2.5 py-1.5 rounded-DEFAULT border border-border-hairline">
                     <code className="text-xs font-mono text-on-surface truncate max-w-[340px]">
@@ -943,7 +1050,10 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   <CreditCard className="w-5 h-5 text-primary" />
                   <span className="text-xs font-mono font-bold text-on-surface">•••• 8912</span>
                 </div>
-                <span className="text-xs font-mono font-bold text-tertiary">$500,000.00 AVAILABLE</span>
+                <span className="text-xs font-mono font-bold text-secondary flex items-center gap-1 px-2 py-0.5 bg-secondary/10 border border-secondary/20 rounded-xs uppercase tracking-wider">
+                  <Lock className="w-3.5 h-3.5" />
+                  LOCKED
+                </span>
               </div>
               <p className="text-[11px] text-outline font-sans mt-1">
                 Instantly route liquidity from secondary corporate card lines directly into primary multi-asset treasury pots.

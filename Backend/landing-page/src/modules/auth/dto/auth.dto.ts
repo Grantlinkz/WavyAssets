@@ -23,7 +23,7 @@ export class InitiateAuthDto {
 
   @ApiProperty({
     description: 'Cryptographic passphrase (minimum 8 characters)',
-    example: 'SovereignPass123!',
+    example: 'GlobalPass123!',
     minLength: 8,
     maxLength: 128,
   })

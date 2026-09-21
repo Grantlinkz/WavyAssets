@@ -106,7 +106,7 @@ export const ObsidianMetalCard: React.FC<ObsidianMetalCardProps> = ({ maskBalanc
           <div className="absolute inset-0 rounded-DEFAULT pointer-events-none border border-white/5" />
           <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-primary-container/60 to-transparent" />
 
-          {/* Top Row: Sovereign Crest & Weight */}
+          {/* Top Row: Global Crest & Weight */}
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center">
@@ -114,7 +114,7 @@ export const ObsidianMetalCard: React.FC<ObsidianMetalCardProps> = ({ maskBalanc
               </div>
               <div className="flex flex-col">
                 <span className="font-serif text-xs text-primary-container font-bold tracking-wider uppercase">
-                  WavyAssets Sovereign
+                  WavyAssets Global
                 </span>
                 <span className="font-mono text-[8px] text-outline tracking-widest uppercase">
                   ZURICH

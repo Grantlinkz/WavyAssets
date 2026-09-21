@@ -5,8 +5,8 @@ describe('CryptoUtils', () => {
   const testSecret = 'wavy-test-secret-key-institutional-2026';
   const testKeyHex = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 
-  it('generates deterministic HMAC-SHA256 hashes', () => {
-    const data = 'sovereign-handoff-ticket-test-data';
+  it('generates deterministic  hashes', () => {
+    const data = 'Global-handoff-ticket-test-data';
     const hash1 = CryptoUtils.hashHmacSha256(data, testSecret);
     const hash2 = CryptoUtils.hashHmacSha256(data, testSecret);
 
@@ -33,8 +33,8 @@ describe('CryptoUtils', () => {
   });
 
   it('performs constant-time string equality comparisons correctly', () => {
-    expect(CryptoUtils.timingSafeEqual('sovereign-token', 'sovereign-token')).toBe(true);
-    expect(CryptoUtils.timingSafeEqual('sovereign-token', 'different-token')).toBe(false);
+    expect(CryptoUtils.timingSafeEqual('Global-token', 'Global-token')).toBe(true);
+    expect(CryptoUtils.timingSafeEqual('Global-token', 'different-token')).toBe(false);
     expect(CryptoUtils.timingSafeEqual('short', 'longer-string')).toBe(false);
   });
 

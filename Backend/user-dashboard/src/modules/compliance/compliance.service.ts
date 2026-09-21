@@ -391,7 +391,7 @@ export class ComplianceService {
 
     return {
       taxYear: targetYear,
-      reportingEntity: 'WavyAssets Sovereign Wealth Custody AG (Zurich)',
+      reportingEntity: 'WavyAssets Global Wealth Custody AG (Zurich)',
       form8949Summary: {
         shortTermTotalGain: totalShortTermGain,
         longTermTotalGain: totalLongTermGain,

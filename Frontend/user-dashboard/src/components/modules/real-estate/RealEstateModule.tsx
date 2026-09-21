@@ -3,6 +3,7 @@ import { Shield, Archive, FileText } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useAlternativeStore } from '../../../store/useAlternativeStore';
 import { usePortfolioStore } from '../../../store/usePortfolioStore';
+import { TOTAL_Global_NET_WORTH } from '../../../lib/calculations';
 import { REAL_ESTATE_ASSETS } from '../../../lib/alternativeAssetData';
 import { PropertyDeck } from './PropertyDeck';
 import { RentalDistributionBlotter } from './RentalDistributionBlotter';
@@ -46,13 +47,14 @@ export const RealEstateModule: React.FC<RealEstateModuleProps> = ({ maskBalances
     });
 
     const isBaseline = totalEquity === 2850000;
-    const consolidatedNavPct = netWorth > 0 ? (totalEquity / netWorth) * 100 : 19.2;
+    const effectiveNetWorth = netWorth > 0 ? netWorth : TOTAL_Global_NET_WORTH;
+    const consolidatedNavPct = effectiveNetWorth > 0 ? (totalEquity / effectiveNetWorth) * 100 : 19.2;
     const upliftDollars = isBaseline ? 270000 : totalEquity - totalBasis;
     const upliftPct = isBaseline ? 10.46 : totalBasis > 0 ? (upliftDollars / totalBasis) * 100 : 0;
     const acquisitionBasis = isBaseline ? 2580000 : totalBasis;
 
     const weightedCapRate = totalEquity > 0
-      ? (isBaseline ? 7.20 : (weightedCapRateSum / totalEquity) * 1.0181)
+      ? (isBaseline ? 7.20 : weightedCapRateSum / totalEquity)
       : 0;
 
     const annualRentalYield = isBaseline ? 205200 : (totalEquity * (weightedCapRate / 100));

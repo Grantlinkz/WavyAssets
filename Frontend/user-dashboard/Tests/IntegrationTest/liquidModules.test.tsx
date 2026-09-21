@@ -23,7 +23,7 @@ describe('Liquid Asset Modules Integration Tests', () => {
       expect(html).toContain('BTC');
       expect(html).toContain('ETH');
       expect(html).toContain('SOL');
-      expect(html).toContain('Sovereign MPC Cold');
+      expect(html).toContain('Global MPC Cold');
       expect(html).toContain('ETH VALIDATOR NODE 04');
       expect(html).toContain('Automated Dollar-Cost Averaging (DCA) Scheduler');
       expect(html).toContain('$6,928,237.50');
@@ -68,7 +68,7 @@ describe('Liquid Asset Modules Integration Tests', () => {
       expect(html).toContain('$1,820,450.00');
       expect(html).toContain('$13,000,000.00');
       expect(html).toContain('Interactive Settlement Terminal');
-      expect(html).toContain('Automated Sovereign Cash Sweep');
+      expect(html).toContain('Automated Global Cash Sweep');
       expect(html).toContain('5.20% NET APY');
       expect(html).toContain('Zero-Markup Interbank Spot FX Desk');
       expect(html).toContain('Unified Historical Activity Ledger');

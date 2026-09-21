@@ -8,7 +8,7 @@ import {
 import { ObsidianMetalCard } from './ObsidianMetalCard';
 import { CardSpendingLimits } from './CardSpendingLimits';
 import { BiometricRevealModal } from './BiometricRevealModal';
-import { SovereignConciergeModal } from './SovereignConciergeModal';
+import { GlobalConciergeModal } from './GlobalConciergeModal';
 import { VIP_CARD_TIERS, VIP_CARD_PRIVILEGES } from '../../../lib/governanceAssetData';
 import { formatMaskedCurrency } from '../../../lib/calculations';
 import { useDashboardStore } from '../../../store/useDashboardStore';
@@ -40,10 +40,10 @@ export const VipCardsModule: React.FC<VipCardsModuleProps> = ({ maskBalances: pr
             <span>/</span>
             <span>Treasury & Cards</span>
             <span>/</span>
-            <span className="text-primary font-semibold">Sovereign VIP Metal Cards & Concierge</span>
+            <span className="text-primary font-semibold">Global VIP Metal Cards & Concierge</span>
           </div>
           <h1 className="font-serif text-xl font-bold text-on-surface tracking-tight mt-1">
-            Obsidian Metal Card & Sovereign Concierge
+            Obsidian Metal Card & Global Concierge
           </h1>
         </div>
 
@@ -60,7 +60,7 @@ export const VipCardsModule: React.FC<VipCardsModuleProps> = ({ maskBalances: pr
         </div>
       </div>
 
-      {/* 2. 3-Tier Sovereign AUM Progression Bar */}
+      {/* 2. 3-Tier Global AUM Progression Bar */}
       <section
         data-testid="tier-progression-bar"
         className="bg-surface-container-lowest border border-border-hairline rounded-DEFAULT p-4 space-y-3"
@@ -126,7 +126,7 @@ export const VipCardsModule: React.FC<VipCardsModuleProps> = ({ maskBalances: pr
         </div>
       </section>
 
-      {/* 4. Sovereign Cardholder Privileges & Services Grid */}
+      {/* 4. Global Cardholder Privileges & Services Grid */}
       <section className="space-y-3">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary" />
@@ -164,7 +164,7 @@ export const VipCardsModule: React.FC<VipCardsModuleProps> = ({ maskBalances: pr
 
       {/* 5. Modals */}
       <BiometricRevealModal />
-      <SovereignConciergeModal />
+      <GlobalConciergeModal />
     </div>
   );
 };

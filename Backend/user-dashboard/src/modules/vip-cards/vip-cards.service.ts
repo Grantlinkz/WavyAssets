@@ -327,7 +327,7 @@ export class VipCardsService {
         fxSpreadBps: 0,
         loungeAccess: 'Lufthansa First Class Lounges + Zurich VIP Lounge Suite Unlimited',
         conciergeSlaMinutes: 15,
-        preIpoAllocationMultiplier: '10x Priority Sovereign Drop',
+        preIpoAllocationMultiplier: '10x Priority Global Drop',
         freePhysicalCardReplacements: 'Unlimited Bespoke Titanium',
         dedicatedAccountManager: true,
       },
@@ -347,7 +347,7 @@ export class VipCardsService {
     const isDelivered = card?.shippingStatus === 'DELIVERED';
 
     return {
-      carrier: 'FedEx Sovereign Priority Overnight',
+      carrier: 'FedEx Global Priority Overnight',
       trackingNumber: `FDX-SVRGN-${card?.cardNumberLast4 || '8842'}-CH`,
       status: card?.shippingStatus || 'DELIVERED',
       origin: 'Zurich Vault & Precious Metals Atelier, Switzerland',

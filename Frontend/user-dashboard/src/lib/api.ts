@@ -1,5 +1,5 @@
 /**
- * WavyAssets Institutional API Client — Sovereign User Dashboard
+ * WavyAssets Institutional API Client — Global User Dashboard
  * Supports authentication handoff, token lifecycle, and full REST endpoints
  * across all 7 asset classes with graceful offline fallback.
  */
@@ -116,11 +116,11 @@ async function requestApi<T>(
 }
 
 /**
- * Exchanges single-use handoff ticket from Landing Page for Access JWT
+ * Exchanges single-use Authentication from Landing Page for Access JWT
  */
 export async function exchangeHandoffTicket(ticket: string): Promise<AuthExchangeResponse> {
   if (!ticket || ticket.trim().length === 0) {
-    throw new Error('Handoff ticket is required for session exchange.');
+    throw new Error('Authentication is required for session exchange.');
   }
 
   const res = await fetch('/api/v1/auth/exchange-ticket', {
@@ -378,7 +378,7 @@ export async function registerWhitelistDestination(payload: {
             ? 'WIRE_IBAN'
             : 'ERC20_USDC'),
     destinationLabel: payload.destinationLabel || payload.label || 'Whitelisted Address',
-    beneficiaryOrg: payload.beneficiaryOrg || 'Sovereign Beneficiary',
+    beneficiaryOrg: payload.beneficiaryOrg || 'Global Beneficiary',
     addressOrIban: payload.addressOrIban || payload.address || '',
   };
   return requestApi<unknown>('/api/v1/security/whitelist-destinations', {

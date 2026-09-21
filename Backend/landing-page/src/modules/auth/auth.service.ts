@@ -279,7 +279,7 @@ export class AuthService {
       { expiresIn: '15m' },
     );
 
-    // 7. Generate refresh token & dashboard handoff ticket
+    // 7. Generate refresh token & dashboard Authentication
     const rawRefreshToken = this.crypto.generateRefreshToken();
     const refreshTokenHash = this.crypto.hashToken(rawRefreshToken);
 
@@ -332,12 +332,12 @@ export class AuthService {
     });
 
     if (!session) {
-      throw new UnauthorizedException('Invalid or expired handoff ticket');
+      throw new UnauthorizedException('Invalid or expired Authentication');
     }
 
     if (session.expiresAt < new Date()) {
       await this.prisma.session.delete({ where: { id: session.id } });
-      throw new UnauthorizedException('Handoff ticket session has expired');
+      throw new UnauthorizedException('Authentication session has expired');
     }
 
     // Burn ticket immediately: single-use protection

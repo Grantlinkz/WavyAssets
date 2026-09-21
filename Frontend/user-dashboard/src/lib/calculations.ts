@@ -184,7 +184,7 @@ export const DEFAULT_ALLOCATIONS: VerticalAllocation[] = [
   },
 ];
 
-export const TOTAL_SOVEREIGN_NET_WORTH = 14820450.00;
+export const TOTAL_Global_NET_WORTH = 14820450.00;
 
 /**
  * Format a number as currency, or return a masked placeholder if maskBalances is enabled.

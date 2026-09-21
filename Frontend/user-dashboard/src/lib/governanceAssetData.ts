@@ -1,5 +1,5 @@
 /**
- * WavyAssets Sovereign Governance, VIP Cards, Compliance & Security Datasets
+ * WavyAssets Global Governance, VIP Cards, Compliance & Security Datasets
  * Aligned with Prototypes #7, #9, and #10 and Institutional Specifications.
  */
 
@@ -59,7 +59,7 @@ export const VIP_CARD_TIERS: CardTier[] = [
     material: 'Laser-Etched Space-Grade Alloy',
     weightGrams: 48,
     status: 'UPCOMING',
-    description: 'Sovereign single-family office echelon with zero-limit dark pool settlement, direct bespoke charter desk, and private aviation.',
+    description: 'Global single-family office echelon with zero-limit dark pool settlement, direct bespoke charter desk, and private aviation.',
   },
 ];
 
@@ -169,7 +169,7 @@ export const KYC_TIERS: KycTierLevel[] = [
   },
   {
     level: 3,
-    name: 'Accredited Institution & Sovereign SPV',
+    name: 'Accredited Institution & Global SPV',
     tag: 'Tier 03 Active',
     dailyLiquidityCap: 'UNLIMITED / ATOMIC DvP',
     status: 'ACTIVE_TIER',
@@ -180,7 +180,7 @@ export const KYC_TIERS: KycTierLevel[] = [
 ];
 
 export const CORPORATE_ENTITY_PROFILE = {
-  legalName: 'Grant Sovereign Holdings AG',
+  legalName: 'Grant Global Holdings AG',
   uidJurisdiction: 'CHE-382.910.442',
   canton: 'Kanton Zürich, Switzerland',
   entityStructure: 'Aktiengesellschaft (AG)',
@@ -202,7 +202,7 @@ export const BENEFICIAL_SIGNERS: BeneficialOwner[] = [
   {
     name: 'Marcus Aurelius Grant',
     initials: 'M',
-    role: 'Primary Sovereign Beneficiary',
+    role: 'Primary Global Beneficiary',
     ownershipPct: 100,
     passportNo: 'CH-7492102-X',
     keyStatus: 'HARDWARE HSM ARMED',
@@ -373,7 +373,7 @@ export const REGULATORY_CORRIDORS: RegulatoryCorridor[] = [
     countryCode: 'SG',
     countryName: 'Singapore',
     status: 'ACTIVE',
-    framework: 'MAS Sovereign Wealth Exemption',
+    framework: 'MAS Global Wealth Exemption',
     settlementChannel: 'MEPS+ RTGS Channel',
   },
 ];
@@ -476,7 +476,7 @@ export const INITIAL_CLIENT_SESSIONS: ClientSession[] = [
   },
   {
     id: 'sess-2',
-    deviceName: 'iPhone 15 Pro — Sovereign iOS Enclave',
+    deviceName: 'iPhone 15 Pro — Global iOS Enclave',
     clientBadge: 'BIOMETRIC ARMED',
     location: 'Geneva, Switzerland 🇨🇭',
     ipAddress: 'Swisscom 5G SA (178.238.224.50)',

@@ -132,7 +132,7 @@ const GyroscopeMesh: React.FC<GyroscopeMeshProps> = ({
         </mesh>
       ))}
 
-      {/* 7th Tier: Central MPC Sovereign Vault Core */}
+      {/* 7th Tier: Central MPC Global Vault Core */}
       <mesh ref={coreRef}>
         <icosahedronGeometry args={[0.42, 1]} />
         <meshStandardMaterial

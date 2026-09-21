@@ -89,7 +89,7 @@ describe('RealEstateService — Fractional Properties, Rental Distributions, OTC
     };
 
     const mockConfigService = {
-      get: vi.fn().mockReturnValue('wavy_sovereign_document_vault_hmac_secret_2026'),
+      get: vi.fn().mockReturnValue('wavy_Global_document_vault_hmac_secret_2026'),
     };
 
     realEstateService = new RealEstateService(
@@ -224,7 +224,7 @@ describe('RealEstateService — Fractional Properties, Rental Distributions, OTC
   });
 
   describe('Pre-Signed Document Vault & HMAC Invariants', () => {
-    it('generates secure 900s time-limited HMAC-SHA256 pre-signed download URL', async () => {
+    it('generates secure 900s time-limited  pre-signed download URL', async () => {
       const doc = await realEstateService.getPresignedDocumentUrl(testUserId, 'spv-zurich-deed-001');
       expect(doc.docId).toBe('spv-zurich-deed-001');
       expect(doc.downloadUrl).toContain('vault.wavyassets.com');

@@ -217,7 +217,7 @@ export const TaxPackAggregator: React.FC<TaxPackAggregatorProps> = ({
               </span>
             </div>
             <h2 className="font-serif text-sm font-semibold text-on-surface">
-              Unified Sovereign Tax Pack & Gains Aggregation
+              Unified Global Tax Pack & Gains Aggregation
             </h2>
           </div>
         </div>

@@ -131,7 +131,7 @@ export const App: React.FC<AppProps> = ({ is404: is404Prop }) => {
   }, []);
 
   return (
-    <TerminalErrorBoundary sectionName="Sovereign Terminal Shell">
+    <TerminalErrorBoundary sectionName="Global Terminal Shell">
       <div className="min-h-screen bg-surface text-on-surface flex flex-col selection:bg-primary-container selection:text-on-primary-container relative">
         {/* WCAG 2.1 AA Keyboard Accessibility: Skip to Main Content Link */}
         <a
