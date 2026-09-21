@@ -26,7 +26,8 @@ describe('Liquid Asset Modules Integration Tests', () => {
       expect(html).toContain('Global MPC Cold');
       expect(html).toContain('ETH VALIDATOR NODE 04');
       expect(html).toContain('Automated Dollar-Cost Averaging (DCA) Scheduler');
-      expect(html).toContain('$6,928,237.50');
+      expect(html).toContain('CRYPTO NET ASSET VALUE');
+      expect(html).toContain('TOTAL STAKED CAPITAL');
     });
 
     it('respects privacy toggle and masks financial numbers when maskBalances is true', () => {

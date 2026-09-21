@@ -3,13 +3,10 @@ import {
   ArrowUpRight,
   ShieldAlert,
   KeyRound,
-  CheckCircle2,
   X,
   Landmark,
   Wallet,
   Clock,
-  AlertCircle,
-  FileCheck,
 } from 'lucide-react';
 import {
   Dialog,
@@ -347,31 +344,6 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                 </button>
               </div>
 
-              {/* Destination Whitelist Selector (Provides test & institutional whitelist address parity) */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-mono text-outline uppercase tracking-wider">
-                  Pre-Approved Whitelist Destination
-                </label>
-                <select
-                  data-testid="withdraw-destination-select"
-                  onChange={(e) => {
-                    if (e.target.value === 'cold-01') {
-                      setWithdrawalAddress('0x39aB22cDE82914Afb7104bC67D289A294c71eE22');
-                    } else if (e.target.value === 'ubs-ch') {
-                      setAccountNumber('CH88 0024 0000 1234 5678 9');
-                      setBankName('UBS Switzerland AG');
-                    }
-                  }}
-                  className="w-full bg-surface-container-lowest border border-border-hairline rounded-DEFAULT px-3 py-2 text-xs font-mono text-on-surface focus:outline-none focus:border-primary"
-                >
-                  <option value="cold-01">
-                    Cold Storage Vault #1 (Zurich Treuhand - 0x39aB...22cD) [48h Verified]
-                  </option>
-                  <option value="ubs-ch">
-                    UBS Switzerland Corporate Operating (CH88 0024...9912) [Permanent]
-                  </option>
-                </select>
-              </div>
 
               {/* Section 1: Bank Withdrawal */}
               {activeRail === 'bank' && (

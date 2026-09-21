@@ -68,7 +68,8 @@ describe('Institutional Modal Overlays Suite (Node 24 / SSR Parity)', () => {
       expect(html).toContain('WITHDRAW');
       expect(html).toContain('24-48H WHITELIST ENFORCED');
       expect(html).toContain('Zero-Trust Whitelist Lock Active');
-      expect(html).toContain('Cold Storage Vault #1');
+      expect(html).toContain('Bank Withdrawal');
+      expect(html).not.toContain('Pre-Approved Whitelist Destination');
       expect(html).toContain('Authorize with YubiKey / WebAuthn');
     });
   });

@@ -8,6 +8,7 @@ import { RealEstateModule } from '../../src/components/modules/real-estate/RealE
 import { CarsModule } from '../../src/components/modules/cars/CarsModule';
 import { usePortfolioStore } from '../../src/store/usePortfolioStore';
 import { useDashboardStore } from '../../src/store/useDashboardStore';
+import { useLiquidStore } from '../../src/store/useLiquidStore';
 
 describe('User Custom Requirements Verification Suite', () => {
   beforeEach(() => {
@@ -94,4 +95,42 @@ describe('User Custom Requirements Verification Suite', () => {
       expect(html).toContain('PHYSICAL VAULT TELEMETRY');
     });
   });
+
+  describe('Sprint Requirements: Active Execution Schedule, Whitelist Removal & MetaMask Isolation', () => {
+    it('verifies Pre-Approved Whitelist Destination is removed from WithdrawModal', () => {
+      const html = renderToString(<WithdrawModal isOpen={true} />);
+      expect(html).not.toContain('Pre-Approved Whitelist Destination');
+      expect(html).toContain('Bank Withdrawal');
+      expect(html).toContain('Wallet (Crypto) Withdrawal');
+      expect(html).toContain('Bank Name');
+    });
+
+    it('verifies HoldingsTable and CryptoModule reflect user Active Execution Schedule ($25,000.00)', () => {
+      useLiquidStore.setState({
+        dcaSchedules: [
+          {
+            id: 'test-btc-01',
+            asset: 'BTC',
+            frequency: 'WEEKLY',
+            amountUsd: 25000,
+            sourceAccount: 'USD Fedwire Treasury',
+            nextExecution: 'Scheduled next cycle',
+            active: true,
+          },
+        ],
+      });
+
+      const html = renderToString(<CryptoModule maskBalances={false} />);
+      expect(html).toContain('CRYPTO NET ASSET VALUE');
+      expect(html).toContain('$25,000.00');
+      expect(html).toContain('Live Spot Holdings &amp; Global Custody Matrix');
+      expect(html).toContain('Automated Dollar-Cost Averaging (DCA) Scheduler');
+    });
+
+    it('verifies clicking an asset row updates targetDcaAsset in store', () => {
+      useLiquidStore.getState().setTargetDcaAsset('SOL');
+      expect(useLiquidStore.getState().targetDcaAsset).toBe('SOL');
+    });
+  });
 });
+

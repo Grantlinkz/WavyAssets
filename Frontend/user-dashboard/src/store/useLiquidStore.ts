@@ -1,9 +1,11 @@
 import { create } from 'zustand';
 import {
   WALLET_TRANSACTIONS_DATA,
+  INITIAL_DCA_SCHEDULES,
   type DcaScheduleItem,
   type WalletTransaction,
 } from '../lib/liquidAssetData';
+import { BASELINE_SPOT_PRICES } from '../lib/priceService';
 
 export interface ActiveOrder {
   id: string;
@@ -15,14 +17,46 @@ export interface ActiveOrder {
   expires: string;
 }
 
+const DCA_STORAGE_PREFIX = 'wavyassets_dca_schedules_';
+
+function getStoredDca(userId?: string): DcaScheduleItem[] | null {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const raw = window.localStorage.getItem(`${DCA_STORAGE_PREFIX}${userId || 'default'}`);
+      if (raw) return JSON.parse(raw);
+    } catch {
+      // ignore
+    }
+  }
+  return null;
+}
+
+function persistDca(schedules: DcaScheduleItem[], userId?: string): void {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(
+        `${DCA_STORAGE_PREFIX}${userId || 'default'}`,
+        JSON.stringify(schedules)
+      );
+    } catch {
+      // ignore
+    }
+  }
+}
+
 interface LiquidState {
   // Crypto module state
   dcaSchedules: DcaScheduleItem[];
   unclaimedRewards: number;
   isCompounding: boolean;
-  toggleDcaSchedule: (id: string) => void;
-  addDcaSchedule: (schedule: Omit<DcaScheduleItem, 'id'>) => void;
-  deleteDcaSchedule: (id: string) => void;
+  targetDcaAsset: string;
+  livePrices: Record<string, number>;
+  setTargetDcaAsset: (asset: string) => void;
+  setLivePrices: (prices: Record<string, number>) => void;
+  loadUserDcaSchedules: (userId?: string) => void;
+  toggleDcaSchedule: (id: string, userId?: string) => void;
+  addDcaSchedule: (schedule: Omit<DcaScheduleItem, 'id'>, userId?: string) => void;
+  deleteDcaSchedule: (id: string, userId?: string) => void;
   triggerFastCompound: () => void;
 
   // Stocks module state
@@ -52,28 +86,51 @@ export const useLiquidStore = create<LiquidState>((set) => ({
   dcaSchedules: [],
   unclaimedRewards: 18492.30,
   isCompounding: false,
+  targetDcaAsset: 'BTC',
+  livePrices: { ...BASELINE_SPOT_PRICES },
 
-  toggleDcaSchedule: (id) => {
-    set((state) => ({
-      dcaSchedules: state.dcaSchedules.map((item) =>
-        item.id === id ? { ...item, active: !item.active } : item
-      ),
-    }));
+  setTargetDcaAsset: (asset: string) => set({ targetDcaAsset: asset }),
+  setLivePrices: (prices: Record<string, number>) =>
+    set((state) => ({ livePrices: { ...state.livePrices, ...prices } })),
+
+  loadUserDcaSchedules: (userId?: string) => {
+    const stored = getStoredDca(userId);
+    if (stored && stored.length > 0) {
+      set({ dcaSchedules: stored });
+    } else {
+      // Default to initial schedules with $25,000 BTC active execution schedule
+      set({ dcaSchedules: INITIAL_DCA_SCHEDULES });
+      persistDca(INITIAL_DCA_SCHEDULES, userId);
+    }
   },
 
-  addDcaSchedule: (schedule) => {
-    set((state) => ({
-      dcaSchedules: [
+  toggleDcaSchedule: (id, userId) => {
+    set((state) => {
+      const updated = state.dcaSchedules.map((item) =>
+        item.id === id ? { ...item, active: !item.active } : item
+      );
+      persistDca(updated, userId);
+      return { dcaSchedules: updated };
+    });
+  },
+
+  addDcaSchedule: (schedule, userId) => {
+    set((state) => {
+      const updated = [
         ...state.dcaSchedules,
         { ...schedule, id: `dca-${Date.now()}` },
-      ],
-    }));
+      ];
+      persistDca(updated, userId);
+      return { dcaSchedules: updated };
+    });
   },
 
-  deleteDcaSchedule: (id) => {
-    set((state) => ({
-      dcaSchedules: state.dcaSchedules.filter((item) => item.id !== id),
-    }));
+  deleteDcaSchedule: (id, userId) => {
+    set((state) => {
+      const updated = state.dcaSchedules.filter((item) => item.id !== id);
+      persistDca(updated, userId);
+      return { dcaSchedules: updated };
+    });
   },
 
   triggerFastCompound: () => {
