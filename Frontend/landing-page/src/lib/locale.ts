@@ -1,5 +1,5 @@
 /**
- * Sovereign System Language & Locale Engine
+ * Global System Language & Locale Engine
  * Automatically detects the user's default operating system / browser language and locale,
  * synchronizes the document root lang attribute, and allows regional formatting overrides.
  */

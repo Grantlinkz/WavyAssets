@@ -10,7 +10,7 @@ import { CryptoUtils } from '../../../src/common/utils/crypto.utils';
 describe('E2E Integration — Monorepo Cross-Domain Authentication & Multi-Asset Handoff', () => {
   let app: INestApplication;
 
-  const handoffSecret = 'wavy_sovereign_cross_domain_handoff_ticket_secret_key_2026';
+  const handoffSecret = 'wavy_Global_cross_domain_handoff_ticket_secret_key_2026';
   const rawTicket = 'a9f7d2e4b8c105634827164928374619a9f7d2e4b8c105634827164928374619';
   const ticketHash = CryptoUtils.hashHmacSha256(rawTicket, handoffSecret);
 
@@ -139,7 +139,7 @@ describe('E2E Integration — Monorepo Cross-Domain Authentication & Multi-Asset
   let accessToken: string;
   let refreshTokenCookie: string;
 
-  it('Step 1: Exchange ephemeral single-use handoff ticket for JWT tokens', async () => {
+  it('Step 1: Exchange ephemeral single-use Authentication for JWT tokens', async () => {
     const response = await request(app.getHttpServer())
       .post('/api/v1/auth/exchange-ticket')
       .send({ ticket: rawTicket })

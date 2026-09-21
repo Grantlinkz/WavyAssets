@@ -25,7 +25,7 @@ describe('Trust Infrastructure & Compliance Integration Suite (SSR / Node 24)', 
     const html = renderToString(<TrustInfrastructure />);
 
     // Section title
-    expect(html).toContain('Audited Performance &amp; Sovereign Trust');
+    expect(html).toContain('Audited Performance &amp; Global Trust');
 
     // Institutional defaults ($12.40B, 99.999%)
     expect(html).toContain('$12.40B');
@@ -131,7 +131,7 @@ describe('Trust Infrastructure & Compliance Integration Suite (SSR / Node 24)', 
     expect(html).toContain('Fractional Prime Real Estate');
     expect(html).toContain('Exotic Hypercars Inventory (38 Units)');
     expect(html).toContain('VIP Concierge Titanium Cards');
-    expect(html).toContain('Sovereign Treasury Wallet &amp; Rails');
+    expect(html).toContain('Global Treasury Wallet &amp; Rails');
 
     // Mandatory Regulatory Disclaimers
     expect(html).toContain('REGULATORY DISCLOSURES &amp; FIDUCIARY GOVERNANCE:');

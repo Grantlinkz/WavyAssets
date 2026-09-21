@@ -75,7 +75,7 @@ describe('Security Command Center & Time-Lock Enclaves Module Unit Tests (Sprint
       assetRail: 'Bitcoin',
       assetName: 'BTC Segregated Custody',
       railBadge: 'BTC',
-      destinationLabel: 'Sovereign Multi-Sig Cold Safe #09',
+      destinationLabel: 'Global Multi-Sig Cold Safe #09',
       beneficiaryOrg: 'Zurich Vault Co.',
       addressOrIban: 'bc1p9842xyt...5421q8',
     });
@@ -85,7 +85,7 @@ describe('Security Command Center & Time-Lock Enclaves Module Unit Tests (Sprint
 
     const newlyAdded = updated[0];
     // Critical zero-trust invariants:
-    expect(newlyAdded.destinationLabel).toBe('Sovereign Multi-Sig Cold Safe #09');
+    expect(newlyAdded.destinationLabel).toBe('Global Multi-Sig Cold Safe #09');
     expect(newlyAdded.isTimeLocked).toBe(true);
     expect(newlyAdded.quarantineHoursTotal).toBe(48);
     expect(newlyAdded.quarantineHoursRemaining).toBe(48.0);

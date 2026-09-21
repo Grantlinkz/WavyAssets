@@ -57,15 +57,15 @@ describe('Leads Pipeline Integration Test (/api/v1/leads)', () => {
   });
 
   it('POST /api/v1/leads/inquire should accept valid corporate inquiry and persist encrypted PII', async () => {
-    const corporateEmail = 'partner@zurich-sovereign.ch';
+    const corporateEmail = 'partner@zurich-Global.ch';
 
     const response = await request(app.getHttpAdapter().getInstance())
       .post('/api/v1/leads/inquire')
       .send({
         fullName: 'Heinrich Zimmermann',
         workEmail: corporateEmail,
-        companyName: 'Zurich Sovereign AG',
-        websiteUrl: 'https://zurich-sovereign.ch',
+        companyName: 'Zurich Global AG',
+        websiteUrl: 'https://zurich-Global.ch',
         telegram: '@heinrich_zurich',
         service: 'AI_FUNDS',
         allocationRange: '$5M - $10M',
@@ -86,7 +86,7 @@ describe('Leads Pipeline Integration Test (/api/v1/leads)', () => {
     expect(dbRecord).toBeDefined();
     expect(dbRecord?.workEmailEncrypted).not.toContain(corporateEmail);
     expect(dbRecord?.fullNameEncrypted).not.toContain('Heinrich Zimmermann');
-    expect(dbRecord?.workEmailHash).toHaveLength(64); // HMAC-SHA256 blind index
+    expect(dbRecord?.workEmailHash).toHaveLength(64); //  blind index
     expect(dbRecord?.domainScore).toBe(1.0);
     expect(dbRecord?.isSpam).toBe(false);
 

@@ -152,13 +152,13 @@ export class SecurityService {
     return {
       challenge,
       rp: {
-        name: 'WavyAssets Sovereign Wealth Custody AG',
+        name: 'WavyAssets Global Wealth Custody AG',
         id: 'wavyassets.com',
       },
       user: {
         id: Buffer.from(user.id).toString('base64url'),
         name: user.email,
-        displayName: user.fullName || 'Sovereign Institutional Investor',
+        displayName: user.fullName || 'Global Institutional Investor',
       },
       pubKeyCredParams: [
         { type: 'public-key', alg: -7 }, // ES256

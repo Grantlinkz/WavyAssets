@@ -57,7 +57,6 @@ describe('ComplianceService — Tiered KYC, Dossier Uploads, Tier Promotion & Ta
         kycTier: 'TIER_2',
         kycDocuments: [
           { id: 'doc-001', docType: 'PASSPORT', fileUrl: 'https://vault.wavyassets.com/docs/passport.pdf', isVerified: true },
-          { id: 'doc-002', docType: 'UTILITY_BILL', fileUrl: 'https://vault.wavyassets.com/docs/utility.pdf', isVerified: true },
         ],
       });
 
@@ -66,8 +65,8 @@ describe('ComplianceService — Tiered KYC, Dossier Uploads, Tier Promotion & Ta
       expect(result.kycTier).toBe(KycTierLevel.TIER_2);
       expect(result.limits.dailyLimitUsd).toBe(250000);
       expect(result.requirements[1].isMet).toBe(true); // Tier 2 requirements met
-      expect(result.requirements[2].isMet).toBe(false); // Tier 3 missing articles of inc
-      expect(result.documents.length).toBe(2);
+      expect(result.requirements[2].isMet).toBe(false); // Tier 3 missing utility bill / bank statement
+      expect(result.documents.length).toBe(1);
     });
 
     it('throws NotFoundException if user does not exist', async () => {
@@ -145,7 +144,7 @@ describe('ComplianceService — Tiered KYC, Dossier Uploads, Tier Promotion & Ta
       mockPrisma.user.findUnique.mockResolvedValue({
         id: testUserId,
         kycTier: 'TIER_1',
-        kycDocuments: [{ docType: 'PASSPORT', isVerified: true }, { docType: 'UTILITY_BILL', isVerified: false }],
+        kycDocuments: [{ docType: 'PASSPORT', isVerified: false }],
       });
 
       await expect(
@@ -182,7 +181,7 @@ describe('ComplianceService — Tiered KYC, Dossier Uploads, Tier Promotion & Ta
       })) as any;
 
       expect(pack.taxYear).toBe(2024);
-      expect(pack.reportingEntity).toContain('WavyAssets Sovereign Wealth');
+      expect(pack.reportingEntity).toContain('WavyAssets Global Wealth');
       expect(pack.form8949Summary.totalNetCapitalGains).toBeGreaterThan(0);
       expect(pack.scheduleEOrdinaryIncome.totalOrdinaryDistributions).toBeGreaterThan(0);
       expect(pack.transactions.shortTerm.length).toBe(2);

@@ -210,7 +210,7 @@ function getInitialTheme(): TerminalTheme {
   if (stored === 'dark' || stored === 'light' || stored === 'system') {
     return stored;
   }
-  return 'dark'; // Default Obsidian Dark for sovereign terminal
+  return 'dark'; // Default Obsidian Dark for Global terminal
 }
 
 function applyThemeToDocument(resolved: 'dark' | 'light') {

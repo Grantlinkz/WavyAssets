@@ -348,7 +348,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
                     <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="€500k - €3M">€500k - €3M</option>
                     <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="$3M - $10M">$3M - $10M</option>
                     <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="$10M - $50M">$10M - $50M</option>
-                    <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value=">$50M Sovereign">&gt;$50M Sovereign</option>
+                    <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value=">$50M Global">&gt;$50M Global</option>
                   </select>
                   <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-outline absolute right-2 top-2 pointer-events-none" />
                 </div>

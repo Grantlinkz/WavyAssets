@@ -1,5 +1,5 @@
 # ==============================================================================
-# WavyAssets Sovereign Institutional User Dashboard — Multi-Stage Production Image
+# WavyAssets Global Institutional User Dashboard — Multi-Stage Production Image
 # ==============================================================================
 
 # --- Stage 1: Build & Compilation ---

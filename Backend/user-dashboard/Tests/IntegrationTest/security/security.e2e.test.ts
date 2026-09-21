@@ -15,7 +15,7 @@ describe('E2E Integration — Security Command Center & Inviolable 48h Time-Lock
   const testUser = {
     id: 'usr-security-e2e-001',
     email: 'ciso@wavyassets.com',
-    fullName: 'Sovereign CISO',
+    fullName: 'Global CISO',
     tier: 'INSTITUTIONAL',
     kycTier: 'TIER_3',
     isCorporate: true,
@@ -204,7 +204,7 @@ describe('E2E Integration — Security Command Center & Inviolable 48h Time-Lock
         userId: testUser.id,
         assetRail: 'WIRE_IBAN',
         destinationLabel: 'Credit Suisse Zurich Escrow',
-        beneficiaryOrg: 'Sovereign Escrow AG',
+        beneficiaryOrg: 'Global Escrow AG',
         addressOrIban: 'CH9300762011623852957',
         status: 'QUARANTINE',
         quarantineUntil: futureQuarantine,
@@ -218,7 +218,7 @@ describe('E2E Integration — Security Command Center & Inviolable 48h Time-Lock
         .send({
           assetRail: 'WIRE_IBAN',
           destinationLabel: 'Credit Suisse Zurich Escrow',
-          beneficiaryOrg: 'Sovereign Escrow AG',
+          beneficiaryOrg: 'Global Escrow AG',
           addressOrIban: 'CH9300762011623852957',
         })
         .expect(201);

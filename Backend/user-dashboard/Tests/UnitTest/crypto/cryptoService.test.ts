@@ -45,7 +45,7 @@ describe('CryptoService — Investment, Gas Telemetry & Staking Compounding', ()
         {
           id: 'h-btc',
           symbol: 'BTC',
-          custodyType: 'SOVEREIGN_VAULT',
+          custodyType: 'Global_VAULT',
           quantity: 2.0,
           avgBuyPrice: 50000.0,
           stakedAmount: 0.0,
@@ -189,7 +189,7 @@ describe('CryptoService — Investment, Gas Telemetry & Staking Compounding', ()
       mockPrisma.cryptoHolding.findMany.mockResolvedValue([
         {
           symbol: 'BTC',
-          custodyType: 'SOVEREIGN_VAULT',
+          custodyType: 'Global_VAULT',
           quantity: 1.5,
           avgBuyPrice: 60000,
           updatedAt: new Date('2026-09-10T00:00:00Z'),
@@ -199,7 +199,7 @@ describe('CryptoService — Investment, Gas Telemetry & Staking Compounding', ()
       const csv = await cryptoService.exportTaxLots(testUserId, 'FIFO');
 
       expect(csv).toContain('Timestamp,Asset,CustodyType,Quantity,CostBasisUSD');
-      expect(csv).toContain('BTC,SOVEREIGN_VAULT,1.5,90000.00');
+      expect(csv).toContain('BTC,Global_VAULT,1.5,90000.00');
       expect(csv).toContain('FIFO');
     });
   });

@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from '../ui/dialog';
 import { usePortfolioStore } from '../../store/usePortfolioStore';
+import { useDashboardStore } from '../../store/useDashboardStore';
 
 export interface TradeModalProps {
   isOpen?: boolean;
@@ -19,6 +20,9 @@ export const TradeModal: React.FC<TradeModalProps> = ({
 }) => {
   const storeModal = usePortfolioStore((s) => s.activeModal);
   const storeClose = usePortfolioStore((s) => s.closeModal);
+  const availableCash = usePortfolioStore((s) => s.availableCash);
+  const adjustAvailableCash = usePortfolioStore((s) => s.adjustAvailableCash);
+  const maskBalances = useDashboardStore((s) => s.maskBalances);
 
   const isOpen = propIsOpen !== undefined ? propIsOpen : storeModal === 'trade';
   const closeModal = propClose !== undefined ? propClose : storeClose;
@@ -47,15 +51,38 @@ export const TradeModal: React.FC<TradeModalProps> = ({
   const usdAllocated = (parseFloat(payAmount || '0') || 0) * payMultiplier;
   const receiveAmount = (usdAllocated / receivePrice).toFixed(4);
 
+  // Available money in account for selected payAsset
+  const availableInPayAsset = availableCash / payMultiplier;
+  const formattedAvailable = maskBalances
+    ? '••••••••'
+    : payAsset === 'USD' || payAsset === 'USDC'
+      ? `$${availableInPayAsset.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : `€${availableInPayAsset.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const parsedPayAmount = parseFloat(payAmount || '0');
+  const isValidAmount =
+    Number.isFinite(parsedPayAmount) &&
+    parsedPayAmount > 0 &&
+    usdAllocated <= availableCash;
+
   const handleExecute = () => {
+    if (!isValidAmount) return;
     setIsExecuting(true);
     setTimeout(() => {
+      const currentCash = usePortfolioStore.getState().availableCash;
+      if (usdAllocated > currentCash) {
+        setIsExecuting(false);
+        return;
+      }
+      const success = adjustAvailableCash(-usdAllocated);
       setIsExecuting(false);
-      setIsDone(true);
-      setTimeout(() => {
-        setIsDone(false);
-        closeModal();
-      }, 1500);
+      if (success) {
+        setIsDone(true);
+        setTimeout(() => {
+          setIsDone(false);
+          closeModal();
+        }, 1500);
+      }
     }, 600);
   };
 
@@ -98,7 +125,7 @@ export const TradeModal: React.FC<TradeModalProps> = ({
           <div className="p-3 bg-surface-container-low rounded-DEFAULT border border-border-hairline flex flex-col gap-2">
             <div className="flex items-center justify-between text-[10px] font-mono text-outline">
               <span>YOU ALLOCATE / PAY</span>
-              <span>AVAILABLE: $1,482,045.00</span>
+              <span>AVAILABLE: {formattedAvailable}</span>
             </div>
             <div className="flex items-center gap-2">
               <input
@@ -184,11 +211,11 @@ export const TradeModal: React.FC<TradeModalProps> = ({
               <button
                 type="button"
                 data-testid="execute-trade-btn"
-                disabled={isExecuting}
+                disabled={isExecuting || !isValidAmount}
                 onClick={handleExecute}
                 className="w-full py-2.5 bg-primary-container text-on-primary hover:bg-primary font-mono text-xs font-bold uppercase tracking-wider rounded-DEFAULT flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md disabled:opacity-50"
               >
-                <span>{isExecuting ? 'Routing through FIX Dark Pool...' : 'Execute Instant Sovereign Swap'}</span>
+                <span>{isExecuting ? 'Routing through FIX Dark Pool...' : 'Execute Instant Global Swap'}</span>
               </button>
             )}
           </div>

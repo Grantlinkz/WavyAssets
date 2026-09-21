@@ -1,5 +1,5 @@
 # ==============================================================================
-# WavyAssets Sovereign Institutional Platform — Unified Monorepo Docker Compose
+# WavyAssets Global Institutional Platform — Unified Monorepo Docker Compose
 # ==============================================================================
 # Services:
 # - backend:  NestJS 11 Gateway, WebSocket Broadcaster & SQLite DB (:4000)

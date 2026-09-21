@@ -68,11 +68,11 @@ describe('About Section, Research Routing & Portfolio Service Action Integration
       expect(html).toContain('TOTAL CONTROL, MATHEMATICAL TRANSPARENCY, AND PEACE OF MIND.');
     });
 
-    it('renders AboutVaultCanvas3D container with sovereign custody telemetry', () => {
+    it('renders AboutVaultCanvas3D container with Global custody telemetry', () => {
       const html = renderToString(<AboutVaultCanvas3D />);
 
       expect(html).toContain('data-testid="about-vault-canvas-container"');
-      expect(html).toContain('SOVEREIGN CUSTODY NODE // VERIFIED');
+      expect(html).toContain('Global CUSTODY NODE // VERIFIED');
     });
   });
 

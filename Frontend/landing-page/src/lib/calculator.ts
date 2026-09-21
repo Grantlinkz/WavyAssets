@@ -59,7 +59,7 @@ export const POSTURES: Record<number, PostureConfig> = {
         id: 'cars-gold',
         name: 'Luxury Cars & Gold',
         percentage: 50,
-        color: '#d4af37', // Sovereign Gold
+        color: '#d4af37', // Global Gold
         dashOffset: preservationDashes[0].dashOffset,
         dashLength: preservationDashes[0].dashLength,
       },

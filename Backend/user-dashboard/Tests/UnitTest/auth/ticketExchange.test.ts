@@ -59,7 +59,7 @@ describe('AuthService — Ticket Exchange & Session Lifecycle', () => {
   });
 
   describe('exchangeTicket', () => {
-    const rawTicket = 'sovereign-handoff-ticket-xyz789';
+    const rawTicket = 'Global-handoff-ticket-xyz789';
     const computedHash = CryptoUtils.hashHmacSha256(rawTicket, handoffSecret);
 
     it('successfully exchanges a valid single-use ticket and burns it atomically', async () => {

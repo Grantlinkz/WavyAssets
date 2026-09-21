@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   TIMEFRAME_PNL_DATA,
   DEFAULT_ALLOCATIONS,
-  TOTAL_SOVEREIGN_NET_WORTH,
+  TOTAL_Global_NET_WORTH,
   formatMaskedCurrency,
   calculateAllocationTotals,
 } from '../../src/lib/calculations';
@@ -33,9 +33,9 @@ describe('Financial Calculations & PnL Engine', () => {
     expect(totalPercentage).toBe(100.0);
   });
 
-  it('verifies default allocations sum up to TOTAL_SOVEREIGN_NET_WORTH ($14,820,450.00)', () => {
+  it('verifies default allocations sum up to TOTAL_Global_NET_WORTH ($14,820,450.00)', () => {
     const totalValue = DEFAULT_ALLOCATIONS.reduce((sum, a) => sum + a.actualValue, 0);
-    expect(totalValue).toBeCloseTo(TOTAL_SOVEREIGN_NET_WORTH, 2);
+    expect(totalValue).toBeCloseTo(TOTAL_Global_NET_WORTH, 2);
   });
 
   it('masks financial currency values when maskBalances is true', () => {
@@ -51,7 +51,7 @@ describe('Financial Calculations & PnL Engine', () => {
 
   it('calculates allocation totals and recomputes percentage breakdown correctly', () => {
     const result = calculateAllocationTotals(DEFAULT_ALLOCATIONS);
-    expect(result.totalValue).toBeCloseTo(TOTAL_SOVEREIGN_NET_WORTH, 2);
+    expect(result.totalValue).toBeCloseTo(TOTAL_Global_NET_WORTH, 2);
     expect(result.allocations.length).toBe(6);
     const sumPct = result.allocations.reduce((sum, a) => sum + a.computedPct, 0);
     expect(sumPct).toBeCloseTo(100, 1);

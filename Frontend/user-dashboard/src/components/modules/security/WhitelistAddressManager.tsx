@@ -95,7 +95,7 @@ export const WhitelistAddressManager: React.FC = () => {
             </span>
           </div>
           <p className="font-sans text-[11px] text-outline mt-0.5">
-            Cold quarantine enforcement prevents unauthorized exfiltration of sovereign liquidities
+            Cold quarantine enforcement prevents unauthorized exfiltration of Global liquidities
           </p>
         </div>
 
@@ -110,12 +110,12 @@ export const WhitelistAddressManager: React.FC = () => {
         </button>
       </div>
 
-      {/* Sovereign Fiduciary Notice Callout */}
+      {/* Global Fiduciary Notice Callout */}
       <div className="p-3.5 bg-surface-container rounded-DEFAULT border border-border-hairline flex items-start gap-3">
         <ShieldAlert className="w-5 h-5 text-primary shrink-0 mt-0.5" />
         <div className="font-sans text-xs text-on-surface-variant space-y-1">
           <span className="text-primary font-mono text-[10px] font-bold uppercase tracking-wider block">
-            SOVEREIGN FIDUCIARY CUSTODY POLICY (AMLA ART. 9 & FINMA CIRCULAR 2018/3)
+            Global FIDUCIARY CUSTODY POLICY (AMLA ART. 9 & FINMA CIRCULAR 2018/3)
           </span>
           <p className="leading-relaxed">
             Instantaneous withdrawal to newly entered external addresses or bank IBANs is strictly prohibited. Every newly registered destination undergoes a mandatory <strong>48-Hour Cryptographic Time-Lock Quarantine</strong>. Transfers to quarantined destinations remain cryptographically locked until the quarantine countdown matures.

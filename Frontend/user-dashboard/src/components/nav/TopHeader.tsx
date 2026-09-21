@@ -11,6 +11,7 @@ import {
 import { BrandLogo } from '../common/BrandLogo';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { usePortfolioStore } from '../../store/usePortfolioStore';
 
 export const TopHeader: React.FC = () => {
   const {
@@ -21,6 +22,7 @@ export const TopHeader: React.FC = () => {
     setMobileMenuOpen,
   } = useDashboardStore();
   const { user } = useAuthStore();
+  const openModal = usePortfolioStore((s) => s.openModal);
 
   const userInitials = React.useMemo(() => {
     const name = user?.fullName;
@@ -33,8 +35,16 @@ export const TopHeader: React.FC = () => {
   }, [user]);
 
   const kycLabel = React.useMemo(() => {
-    if (!user?.kycTier) return 'KYC Tier 3';
-    return user.kycTier.replace('_', ' ');
+    const tier = user?.kycTier || 'TIER_1';
+    switch (tier) {
+      case 'TIER_3':
+        return 'KYC Level 3';
+      case 'TIER_2':
+        return 'KYC Level 2';
+      case 'TIER_1':
+      default:
+        return 'KYC Level 1';
+    }
   }, [user]);
 
   return (
@@ -118,7 +128,13 @@ export const TopHeader: React.FC = () => {
         </button>
 
         {/* Account Profile Summary */}
-        <div className="flex items-center space-x-2 pl-1 border-l border-border-hairline">
+        <button
+          type="button"
+          data-testid="user-profile-btn"
+          onClick={() => openModal('kyc')}
+          className="flex items-center space-x-2 pl-1 border-l border-border-hairline text-left hover:opacity-85 transition-opacity cursor-pointer"
+          title={`Click to view ${kycLabel}`}
+        >
           <div
             data-testid="user-avatar-initials"
             className="h-8 w-8 rounded-xs border border-primary/40 bg-surface-container flex items-center justify-center text-xs font-mono font-bold text-primary"
@@ -134,7 +150,7 @@ export const TopHeader: React.FC = () => {
               <span>{kycLabel}</span>
             </span>
           </div>
-        </div>
+        </button>
       </div>
     </header>
   );

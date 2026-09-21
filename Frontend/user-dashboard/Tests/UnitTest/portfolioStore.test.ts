@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { usePortfolioStore } from '../../src/store/usePortfolioStore';
-import { TOTAL_SOVEREIGN_NET_WORTH } from '../../src/lib/calculations';
+import { TOTAL_Global_NET_WORTH } from '../../src/lib/calculations';
 
 describe('Portfolio Store (usePortfolioStore)', () => {
   beforeEach(() => {
@@ -9,7 +9,7 @@ describe('Portfolio Store (usePortfolioStore)', () => {
 
   it('initializes with default institutional net worth and 6 allocations', () => {
     const state = usePortfolioStore.getState();
-    expect(state.netWorth).toBe(TOTAL_SOVEREIGN_NET_WORTH);
+    expect(state.netWorth).toBe(TOTAL_Global_NET_WORTH);
     expect(state.allocations.length).toBe(6);
     expect(state.activeModal).toBeNull();
     expect(state.activeDepositTab).toBe('wire');
@@ -56,7 +56,7 @@ describe('Portfolio Store (usePortfolioStore)', () => {
     const state = usePortfolioStore.getState();
     const crypto = state.allocations.find((a) => a.id === 'crypto');
     expect(crypto?.actualValue).toBe(10000000);
-    expect(state.netWorth).toBeGreaterThan(TOTAL_SOVEREIGN_NET_WORTH);
+    expect(state.netWorth).toBeGreaterThan(TOTAL_Global_NET_WORTH);
     expect(crypto?.actualPct).toBeGreaterThan(35.0);
   });
 
@@ -69,7 +69,7 @@ describe('Portfolio Store (usePortfolioStore)', () => {
     resetToDefaults();
 
     const state = usePortfolioStore.getState();
-    expect(state.netWorth).toBe(TOTAL_SOVEREIGN_NET_WORTH);
+    expect(state.netWorth).toBe(TOTAL_Global_NET_WORTH);
     expect(state.activeModal).toBeNull();
   });
 });

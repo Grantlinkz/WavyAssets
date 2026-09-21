@@ -4,7 +4,7 @@ export class AssetQuoteDto {
   @ApiProperty({ example: 'BTC/USD', description: 'Asset benchmark symbol' })
   symbol!: string;
 
-  @ApiProperty({ example: 'Bitcoin Sovereign Spot', description: 'Asset title' })
+  @ApiProperty({ example: 'Bitcoin Global Spot', description: 'Asset title' })
   name!: string;
 
   @ApiProperty({

@@ -66,7 +66,7 @@ export class TerminalErrorBoundary extends Component<Props, State> {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm bg-surface-container border border-outline mb-4">
             <span className="w-2 h-2 rounded-full bg-error animate-pulse shrink-0" />
             <span className="font-mono text-[11px] text-error font-semibold uppercase tracking-wider">
-              SOVEREIGN EXCEPTION // ISOLATED
+              Global EXCEPTION // ISOLATED
             </span>
           </div>
 
@@ -84,7 +84,7 @@ export class TerminalErrorBoundary extends Component<Props, State> {
           <p className="font-sans text-sm text-on-surface-variant max-w-md mb-6 leading-relaxed">
             An isolated rendering event occurred
             {this.props.sectionName ? ` in ${this.props.sectionName}` : ''}.
-            All sovereign custody positions and clearing reserves remain fully secured.
+            All Global custody positions and clearing reserves remain fully secured.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3">

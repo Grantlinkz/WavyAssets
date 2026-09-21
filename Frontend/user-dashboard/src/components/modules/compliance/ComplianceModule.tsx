@@ -49,7 +49,7 @@ export const ComplianceModule: React.FC<ComplianceModuleProps> = ({
           <div className="flex items-center gap-2 font-mono text-[10px] text-outline tracking-wider uppercase">
             <span>Portfolio</span>
             <span>/</span>
-            <span>Governance & Sovereign Attestation</span>
+            <span>Governance & Global Attestation</span>
             <span>/</span>
             <span className="text-primary font-semibold">Compliance, KYC/AML & Tax Command</span>
           </div>
@@ -95,7 +95,7 @@ export const ComplianceModule: React.FC<ComplianceModuleProps> = ({
       {/* 3. Corporate UBO Registry & Credentials Archive */}
       <BeneficialOwnershipRegistry />
 
-      {/* 4. Unified Sovereign Tax Pack Downloader */}
+      {/* 4. Unified Global Tax Pack Downloader */}
       <TaxPackAggregator
         maskBalances={maskBalances}
         selectedTaxYear={propTaxYear ?? currentTaxYear}

@@ -191,7 +191,7 @@ export class AiFundsService {
 
     return {
       clusterTelemetry: {
-        clusterName: 'Wavy H100 Sovereign Compute Pod Alpha-9',
+        clusterName: 'Wavy H100 Global Compute Pod Alpha-9',
         accelerator: 'NVIDIA H100 SXM5 80GB',
         totalNodes: 128,
         activeNodes: 126,

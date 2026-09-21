@@ -8,11 +8,18 @@ export class CryptoService {
   private readonly logger = new Logger(CryptoService.name);
   private readonly hmacSecret: string;
   private readonly fieldEncryptionKey: Buffer;
+  private readonly handoffSecret: string;
 
   constructor(private readonly configService: ConfigService) {
     this.hmacSecret =
       this.configService.get<string>('security.jwtSecret') ||
-      'wavy_default_sovereign_hmac_secret_key_minimum_64_characters_length_required!';
+      'wavy_default_Global_hmac_secret_key_minimum_64_characters_length_required!';
+
+    const handoffConfig = this.configService.get<string>('security.handoffTicketSecret');
+    if (!handoffConfig) {
+      throw new Error('HANDOFF_TICKET_SECRET is missing from configuration');
+    }
+    this.handoffSecret = handoffConfig;
 
     const keyHex =
       this.configService.get<string>('security.fieldEncryptionKey') ||
@@ -75,11 +82,19 @@ export class CryptoService {
   }
 
   /**
-   * Computes a deterministic HMAC-SHA256 hash for bearer tokens (refreshToken, handoffTicket).
+   * Computes a deterministic  hash for bearer tokens (refreshToken).
    * Ensures bearer credentials are never stored in plaintext in the SQLite database.
    */
   hashToken(token: string): string {
     return crypto.createHmac('sha256', this.hmacSecret).update(token).digest('hex');
+  }
+
+  /**
+   * Computes a deterministic  hash for single-use Authentications
+   * using the shared HANDOFF_TICKET_SECRET, matching Backend/user-dashboard.
+   */
+  hashHandoffTicket(ticket: string): string {
+    return crypto.createHmac('sha256', this.handoffSecret).update(ticket).digest('hex');
   }
 
   /**
@@ -135,7 +150,7 @@ export class CryptoService {
   }
 
   /**
-   * Computes a deterministic HMAC-SHA256 blind index hash for indexed lookups on encrypted fields (e.g. workEmailHash).
+   * Computes a deterministic  blind index hash for indexed lookups on encrypted fields (e.g. workEmailHash).
    * Strips whitespace and lowercases string for exact lookup consistency.
    */
   hashBlindIndex(value: string): string {

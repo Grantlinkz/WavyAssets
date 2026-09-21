@@ -24,7 +24,7 @@ const MOBILE_NAV_ITEMS: { id: AssetVertical; label: string; badge?: string; icon
   { id: 'real-estate', label: 'Tokenized Real Estate', badge: 'SPV', icon: Building2 },
   { id: 'cars', label: 'Exotic Cars & Horology', badge: 'VAULT', icon: Car },
   { id: 'vip-cards', label: 'Obsidian VIP Cards', badge: 'METAL', icon: CreditCard },
-  { id: 'wallet', label: 'Sovereign MPC Wallet', badge: '5.2%', icon: Wallet },
+  { id: 'wallet', label: 'Global MPC Wallet', badge: '5.2%', icon: Wallet },
   { id: 'compliance', label: 'Compliance & Tax', icon: ShieldCheck },
   { id: 'security', label: 'Security & Access Vault', badge: 'LOCK', icon: KeyRound },
 ];

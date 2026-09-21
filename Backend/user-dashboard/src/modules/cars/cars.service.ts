@@ -159,7 +159,7 @@ export class CarsService {
       vaultFacilities: [
         {
           facilityId: 'vault-gva-freeport',
-          name: 'Geneva FreePort High-Security Sovereign Enclave',
+          name: 'Geneva FreePort High-Security WavyAssets',
           location: 'Geneva, Switzerland',
           temperatureCelsius: 21.2,
           relativeHumidityPct: 45.0,

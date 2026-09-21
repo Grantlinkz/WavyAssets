@@ -31,7 +31,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'real-estate', label: 'Tokenized Real Estate', badge: 'SPV', icon: Building2 },
   { id: 'cars', label: 'Exotic Cars & Horology', badge: 'VAULT', icon: Car },
   { id: 'vip-cards', label: 'Obsidian VIP Cards', badge: 'METAL', icon: CreditCard },
-  { id: 'wallet', label: 'Sovereign MPC Wallet', badge: '5.2%', icon: Wallet },
+  { id: 'wallet', label: 'Global MPC Wallet', badge: '5.2%', icon: Wallet },
   { id: 'compliance', label: 'Compliance & Tax', icon: ShieldCheck },
   { id: 'security', label: 'Security & Access Vault', badge: 'LOCK', icon: KeyRound },
 ];
@@ -62,7 +62,7 @@ export const SidebarRail: React.FC<SidebarRailProps> = ({ isCollapsed, activeTab
       <div className="h-14 flex items-center px-4 border-b border-border-hairline/60">
         {!isSidebarCollapsed ? (
           <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-on-surface-variant font-semibold">
-            Sovereign Verticals
+            Global Verticals
           </span>
         ) : (
           <div className="w-full flex justify-center">
@@ -72,7 +72,7 @@ export const SidebarRail: React.FC<SidebarRailProps> = ({ isCollapsed, activeTab
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto custom-scrollbar" aria-label="Sovereign asset navigation">
+      <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto custom-scrollbar" aria-label="Global asset navigation">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = activeVertical === item.id;

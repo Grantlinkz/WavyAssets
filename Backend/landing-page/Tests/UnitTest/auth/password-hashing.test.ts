@@ -14,7 +14,7 @@ describe('Argon2id Password Hashing & Constant-Time Verification', () => {
   const cryptoService = new CryptoService(mockConfigService);
 
   it('should hash password using memory-hard Argon2id parameters', async () => {
-    const password = 'SovereignWealthPassphrase2026!';
+    const password = 'GlobalWealthPassphrase2026!';
     const hash = await cryptoService.hashPassword(password);
 
     expect(hash).toBeDefined();

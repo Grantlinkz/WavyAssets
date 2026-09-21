@@ -3,7 +3,7 @@ import { Send, CheckCircle2, X, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../ui/dialog';
 import { useGovernanceStore } from '../../../store/useGovernanceStore';
 
-export const SovereignConciergeModal: React.FC = () => {
+export const GlobalConciergeModal: React.FC = () => {
   const { isConciergeModalOpen, closeConciergeModal } = useGovernanceStore();
 
   const [category, setCategory] = useState('PRIVATE_AVIATION');
@@ -53,7 +53,7 @@ export const SovereignConciergeModal: React.FC = () => {
 
   return (
     <Dialog open={isConciergeModalOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent data-testid="sovereign-concierge-modal" className="max-w-[500px]">
+      <DialogContent data-testid="Global-concierge-modal" className="max-w-[500px]">
         <DialogHeader className="flex flex-row items-center justify-between pb-3 border-b border-border-hairline">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-secondary/15 rounded-DEFAULT border border-secondary/30">
@@ -61,7 +61,7 @@ export const SovereignConciergeModal: React.FC = () => {
             </div>
             <div>
               <DialogTitle className="font-serif text-sm uppercase tracking-wide">
-                Sovereign Private Concierge Desk
+                Global Private Concierge Desk
               </DialogTitle>
               <span className="font-mono text-[10px] text-tertiary">
                 ZURICH
@@ -174,7 +174,7 @@ export const SovereignConciergeModal: React.FC = () => {
               className="w-full py-2 bg-primary hover:bg-primary-hover text-surface font-mono text-xs font-bold uppercase tracking-wider rounded-DEFAULT transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               <Send className="w-4 h-4" />
-              <span>{isSending ? 'Transmitting via PGP Enclave...' : 'Dispatch Sovereign Request'}</span>
+              <span>{isSending ? 'Transmitting via PGP Enclave...' : 'Dispatch Global Request'}</span>
             </button>
           </form>
         )}

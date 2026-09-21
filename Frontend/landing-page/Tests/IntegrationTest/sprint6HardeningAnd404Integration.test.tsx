@@ -56,7 +56,7 @@ describe('Sprint 6 Hardening, Custom 404 & System Language Integration Suite (SS
     });
   });
 
-  describe('2. Sovereign Custom 404 Depository Page', () => {
+  describe('2. Global Custom 404 Depository Page', () => {
     it('renders NotFoundPage with institutional diagnostics and plain English copy', () => {
       const html = renderToString(<NotFoundPage requestedPath="/unknown-vault-route" />);
 

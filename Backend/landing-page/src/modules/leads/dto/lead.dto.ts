@@ -81,7 +81,7 @@ export class LeadInquiryDto {
   @ApiProperty({
     enum: ALLOWED_SERVICES,
     example: 'AI_FUNDS',
-    description: 'Sovereign asset class or infrastructure service requested',
+    description: 'Global asset class or infrastructure service requested',
   })
   @IsString()
   @IsNotEmpty()

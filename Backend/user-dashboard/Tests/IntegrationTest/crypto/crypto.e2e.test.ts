@@ -95,7 +95,7 @@ describe('E2E Integration — Crypto Holdings, Gas Preview & DCA API', () => {
           id: 'h-1',
           userId: testUser.id,
           symbol: 'BTC',
-          custodyType: 'SOVEREIGN_VAULT',
+          custodyType: 'Global_VAULT',
           quantity: 5.0,
           avgBuyPrice: 58000.0,
           stakedAmount: 0.0,
@@ -224,7 +224,7 @@ describe('E2E Integration — Crypto Holdings, Gas Preview & DCA API', () => {
       mockPrisma.cryptoHolding.findMany.mockResolvedValue([
         {
           symbol: 'BTC',
-          custodyType: 'SOVEREIGN_VAULT',
+          custodyType: 'Global_VAULT',
           quantity: 2.0,
           avgBuyPrice: 55000,
           updatedAt: new Date(),

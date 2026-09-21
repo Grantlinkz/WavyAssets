@@ -112,7 +112,7 @@ const VERTICALS: AssetVerticalConfig[] = [
     id: 'vip-cards',
     name: 'VIP Titanium Metal Concierge Cards',
     category: 'liquid-digital',
-    categoryLabel: 'SOVEREIGN CARD & CREDIT',
+    categoryLabel: 'Global CARD & CREDIT',
     badge: '$5M INSTANT LIMIT',
     badgeType: 'emerald',
     subheading: 'Zero International Fees • Asset-Backed Liquidity Line',
@@ -124,7 +124,7 @@ const VERTICALS: AssetVerticalConfig[] = [
   },
   {
     id: 'wallet',
-    name: 'Multi-Currency Sovereign Digital Wallet',
+    name: 'Multi-Currency Global Digital Wallet',
     category: 'all',
     categoryLabel: 'SECURE DIGITAL WALLET',
     badge: 'MULTI-KEY MPC PROTECTION',

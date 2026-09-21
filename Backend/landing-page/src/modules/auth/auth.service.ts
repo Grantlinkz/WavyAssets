@@ -106,6 +106,7 @@ export class AuthService {
           fullName: dto.fullName.trim(),
           passphraseHash,
           tier,
+          kycTier: 'TIER_1',
           isActive: false, // Activated upon OTP confirmation
         },
       });
@@ -278,12 +279,12 @@ export class AuthService {
       { expiresIn: '15m' },
     );
 
-    // 7. Generate refresh token & dashboard handoff ticket
+    // 7. Generate refresh token & dashboard Authentication
     const rawRefreshToken = this.crypto.generateRefreshToken();
     const refreshTokenHash = this.crypto.hashToken(rawRefreshToken);
 
     const rawHandoffTicket = this.crypto.generateHandoffTicket();
-    const handoffTicketHash = this.crypto.hashToken(rawHandoffTicket);
+    const handoffTicketHash = this.crypto.hashHandoffTicket(rawHandoffTicket);
 
     const sessionExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
@@ -323,7 +324,7 @@ export class AuthService {
       throw new UnauthorizedException('Missing exchange ticket credential');
     }
 
-    const ticketHash = this.crypto.hashToken(rawTicket);
+    const ticketHash = this.crypto.hashHandoffTicket(rawTicket);
 
     const session = await this.prisma.session.findUnique({
       where: { handoffTicketHash: ticketHash },
@@ -331,12 +332,12 @@ export class AuthService {
     });
 
     if (!session) {
-      throw new UnauthorizedException('Invalid or expired handoff ticket');
+      throw new UnauthorizedException('Invalid or expired Authentication');
     }
 
     if (session.expiresAt < new Date()) {
       await this.prisma.session.delete({ where: { id: session.id } });
-      throw new UnauthorizedException('Handoff ticket session has expired');
+      throw new UnauthorizedException('Authentication session has expired');
     }
 
     // Burn ticket immediately: single-use protection

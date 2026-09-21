@@ -17,7 +17,7 @@ describe('Performance Benchmarks & Transition Latency Suite (Sprint 6)', () => {
   const verticals = [
     { id: 'crypto', label: 'Crypto & Staking' },
     { id: 'stocks', label: 'Global Stocks DMA' },
-    { id: 'wallet', label: 'Sovereign Multi-Currency Vault' },
+    { id: 'wallet', label: 'Global Multi-Currency Vault' },
     { id: 'ai-funds', label: 'AI Systematic & Quant Strategies' },
     { id: 'real-estate', label: 'Tokenized Real Estate SPV' },
     { id: 'cars', label: 'Exotic Vehicles & Horology' },

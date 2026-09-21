@@ -111,7 +111,7 @@ export const FiatRampWizard: React.FC<FiatRampWizardProps> = ({ maskBalances: pr
               Non-Custodial Web3 MPC Bridge
             </h3>
             <p className="text-xs text-outline mt-1 font-sans">
-              Connect external institutional wallets (MetaMask Institutional, Fireblocks, Safe) to bridge digital assets directly into your sovereign MPC enclave.
+              Connect external institutional wallets (MetaMask Institutional, Fireblocks, Safe) to bridge digital assets directly into your Global MPC enclave.
             </p>
           </div>
           <button
@@ -249,7 +249,7 @@ export const FiatRampWizard: React.FC<FiatRampWizardProps> = ({ maskBalances: pr
                 Reference: <strong className="text-on-surface-variant">WY-9942-TREASURY-ALLOC</strong>
               </span>
               <span>
-                Fee: <strong className="text-tertiary">0.00 USD (Sovereign Tier)</strong>
+                Fee: <strong className="text-tertiary">0.00 USD (Global Tier)</strong>
               </span>
             </div>
           </div>

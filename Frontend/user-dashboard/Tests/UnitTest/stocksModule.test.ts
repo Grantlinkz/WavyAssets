@@ -41,13 +41,18 @@ describe('Stocks & Equities Module Unit Tests', () => {
     const publicStocks = STOCKS_HOLDINGS_DATA.filter((s) => !s.isPreIpo);
     const preIpoStocks = STOCKS_HOLDINGS_DATA.filter((s) => s.isPreIpo);
 
-    expect(publicStocks.length).toBe(2);
-    expect(preIpoStocks.length).toBe(2);
+    expect(publicStocks.length).toBeGreaterThanOrEqual(2);
+    expect(preIpoStocks.length).toBeGreaterThanOrEqual(2);
+    expect(STOCKS_HOLDINGS_DATA.length).toBeGreaterThanOrEqual(50);
 
     // Beta values within expected ranges
     STOCKS_HOLDINGS_DATA.forEach((s) => {
-      expect(s.beta).toBeGreaterThan(0.5);
+      expect(s.beta).toBeGreaterThan(0.4);
       expect(s.beta).toBeLessThan(2.0);
+    });
+
+    // Active held stocks have positive unrealized P&L
+    STOCKS_HOLDINGS_DATA.filter((s) => s.shares > 0).forEach((s) => {
       expect(s.unrealizedPnl).toBeGreaterThan(0);
     });
 

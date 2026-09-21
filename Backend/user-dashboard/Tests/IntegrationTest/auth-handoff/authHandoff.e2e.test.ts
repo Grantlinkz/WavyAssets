@@ -10,7 +10,7 @@ import { CryptoUtils } from '../../../src/common/utils/crypto.utils';
 describe('E2E Integration — Auth Handoff & Session Lifecycle', () => {
   let app: INestApplication;
   const handoffSecret = process.env.HANDOFF_TICKET_SECRET || 'test-handoff-secret-key-2026';
-  const rawTicket = 'sovereign-ticket-integration-e2e-12345';
+  const rawTicket = 'Global-ticket-integration-e2e-12345';
   const computedHash = CryptoUtils.hashHmacSha256(rawTicket, handoffSecret);
 
   const mockUser = {

@@ -60,7 +60,7 @@ export const NewsletterDispatch: React.FC = () => {
         Institutional Dispatch
       </div>
       <p className="font-sans text-xs text-on-surface-variant leading-relaxed">
-        Weekly sovereign alpha briefings, regulatory filings, and audited portfolio allocation
+        Weekly Global alpha briefings, regulatory filings, and audited portfolio allocation
         memos.
       </p>
 

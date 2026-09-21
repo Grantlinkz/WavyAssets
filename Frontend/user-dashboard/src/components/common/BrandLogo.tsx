@@ -35,7 +35,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
       }}
       role="button"
       tabIndex={0}
-      aria-label="WavyAssets Sovereign Terminal Home"
+      aria-label="WavyAssets Global Terminal Home"
       className={`inline-flex items-center select-none cursor-pointer group focus:outline-none focus:ring-1 focus:ring-primary/60 rounded-xs transition-opacity hover:opacity-90 ${className}`}
       data-testid="brand-logo-link"
     >
@@ -59,7 +59,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
         {/* Subtle Ambient Radial Glow */}
         <circle cx="18" cy="18" r="10" fill="#D4AF37" fillOpacity="0.12" />
 
-        {/* Primary Sinusoidal Wave in Sovereign Gold */}
+        {/* Primary Sinusoidal Wave in Global Gold */}
         <path
           d="M 7 19 C 10 11, 14 11, 18 19 C 22 27, 26 27, 29 19"
           stroke="#D4AF37"

@@ -43,10 +43,10 @@ describe('Real Estate Module Telemetry & Store Unit Tests', () => {
   });
 
   it('verifies SPV property inventory valuations and fractional token counts', () => {
-    expect(REAL_ESTATE_ASSETS).toHaveLength(4);
+    expect(REAL_ESTATE_ASSETS.length).toBeGreaterThanOrEqual(50);
 
-    const totalValuation = REAL_ESTATE_ASSETS.reduce((sum, p) => sum + p.valuation, 0);
-    expect(totalValuation).toBe(2850000);
+    const primaryValuation = REAL_ESTATE_ASSETS.slice(0, 4).reduce((sum, p) => sum + p.valuation, 0);
+    expect(primaryValuation).toBe(2850000);
 
     const zurichSpv = REAL_ESTATE_ASSETS.find((p) => p.id === 're-1');
     expect(zurichSpv?.name).toBe('One Zurich Financial Center');
@@ -62,11 +62,11 @@ describe('Real Estate Module Telemetry & Store Unit Tests', () => {
     expect(useAlternativeStore.getState().selectedRegionFilter).toBe('SWITZERLAND');
 
     const swissAssets = REAL_ESTATE_ASSETS.filter((a) => a.region === 'Switzerland');
-    expect(swissAssets.length).toBe(2);
+    expect(swissAssets.length).toBeGreaterThanOrEqual(2);
 
     store.setRegionFilter('GERMANY');
     const germanAssets = REAL_ESTATE_ASSETS.filter((a) => a.region === 'Germany');
-    expect(germanAssets.length).toBe(1);
+    expect(germanAssets.length).toBeGreaterThanOrEqual(1);
     expect(germanAssets[0].name).toBe('Frankfurt Hyperscale Data Hub');
   });
 

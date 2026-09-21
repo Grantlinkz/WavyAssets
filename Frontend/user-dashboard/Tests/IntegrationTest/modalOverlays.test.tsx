@@ -24,7 +24,7 @@ describe('Institutional Modal Overlays Suite (Node 24 / SSR Parity)', () => {
       expect(html).toContain('DEPOSIT');
       expect(html).toContain('TIER 3 PERPETUAL CLEARANCE');
       expect(html).toContain('data-testid="deposit-view-wire"');
-      expect(html).toContain('Grant Sovereign Holdings AG / Escrow Treuhand Zurich');
+      expect(html).toContain('Grant Global Holdings AG / Escrow Treuhand Zurich');
       expect(html).toContain('CH93 0023 8812 4019 8821 0');
       expect(html).toContain('UBSWCHZH80A');
       expect(html).toContain('WY-9942-TREASURY-03');
@@ -43,7 +43,7 @@ describe('Institutional Modal Overlays Suite (Node 24 / SSR Parity)', () => {
 
       expect(html).toContain('data-testid="deposit-view-card"');
       expect(html).toContain('Tier 3 Black Card');
-      expect(html).toContain('$500,000.00 AVAILABLE');
+      expect(html).toContain('LOCKED');
     });
 
     it('closes modal correctly through store action', () => {
@@ -88,7 +88,7 @@ describe('Institutional Modal Overlays Suite (Node 24 / SSR Parity)', () => {
       expect(html).toContain('YOU ALLOCATE / PAY');
       expect(html).toContain('YOU ACQUIRE / RECEIVE (ESTIMATED)');
       expect(html).toContain('Institutional OTC Dark Pool');
-      expect(html).toContain('Execute Instant Sovereign Swap');
+      expect(html).toContain('Execute Instant Global Swap');
     });
   });
 
@@ -106,7 +106,7 @@ describe('Institutional Modal Overlays Suite (Node 24 / SSR Parity)', () => {
       expect(html).toContain('ACCREDITED INSTITUTIONAL');
       expect(html).toContain('FINMA &amp; VARA DUAL-CLEARED');
       expect(html).toContain('UNLIMITED');
-      expect(html).toContain('Grant Sovereign Holdings AG Charter');
+      expect(html).toContain('Grant Global Holdings AG Charter');
       expect(html).toContain('Source of Wealth Notarization');
       expect(html).toContain('CHAINLINK CCIP #99214-CH');
     });

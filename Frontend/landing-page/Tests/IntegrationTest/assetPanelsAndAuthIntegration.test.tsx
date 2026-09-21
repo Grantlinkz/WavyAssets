@@ -112,7 +112,7 @@ describe('Asset Panels & Unified Auth Modal Integration Suite (SSR / Node 24)', 
     // 6. VIP Cards Panel
     const cardsHtml = renderToString(<VipCardsPanel />);
     expect(cardsHtml).toContain('VIP Concierge &amp; Collateral Metal Cards');
-    expect(cardsHtml).toContain('WavyAssets Sovereign Obsidian Titanium');
+    expect(cardsHtml).toContain('WavyAssets Global Obsidian Titanium');
     expect(cardsHtml).toContain('0.00% Zero-FX in 140+ Jurisdictions');
     expect(cardsHtml).toContain('data-testid="vip-cards-video"');
     expect(cardsHtml).toMatch(/autoplay/i);

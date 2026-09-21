@@ -1,28 +1,32 @@
 import React from 'react';
 import { useDashboardStore, type TimeframeOption } from '../../store/useDashboardStore';
 import { usePortfolioStore } from '../../store/usePortfolioStore';
-import { formatMaskedCurrency, TIMEFRAME_PNL_DATA } from '../../lib/calculations';
+import { formatMaskedCurrency, calculateUserTimeframePnL } from '../../lib/calculations';
 
 const TIMEFRAMES: TimeframeOption[] = ['1D', '1W', '1M', '1Y', 'ALL'];
 
 export interface NetWorthWidgetProps {
   maskBalances?: boolean;
   timeframe?: TimeframeOption;
+  netWorth?: number;
 }
 
 export const NetWorthWidget: React.FC<NetWorthWidgetProps> = ({
   maskBalances: propMask,
   timeframe: propTimeframe,
+  netWorth: propNetWorth,
 }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const storeTimeframe = useDashboardStore((s) => s.timeframe);
   const setTimeframe = useDashboardStore((s) => s.setTimeframe);
-  const netWorth = usePortfolioStore((s) => s.netWorth);
+  const storeNetWorth = usePortfolioStore((s) => s.netWorth);
+  const returns = usePortfolioStore((s) => s.returns);
 
   const maskBalances = propMask !== undefined ? propMask : storeMask;
   const timeframe = propTimeframe !== undefined ? propTimeframe : storeTimeframe;
+  const netWorth = propNetWorth !== undefined ? propNetWorth : storeNetWorth;
 
-  const pnl = TIMEFRAME_PNL_DATA[timeframe] || TIMEFRAME_PNL_DATA['1D'];
+  const pnl = calculateUserTimeframePnL(netWorth, timeframe, returns ?? undefined);
 
   return (
     <div className="flex items-center gap-3 shrink-0" data-testid="net-worth-widget">

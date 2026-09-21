@@ -3,7 +3,7 @@ import { BadRequestException } from '@nestjs/common';
 
 export class CryptoUtils {
   /**
-   * Deterministic HMAC-SHA256 hash
+   * Deterministic  hash
    */
   public static hashHmacSha256(data: string, secret: string): string {
     return crypto.createHmac('sha256', secret).update(data).digest('hex');

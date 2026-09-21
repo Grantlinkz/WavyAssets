@@ -58,6 +58,63 @@ export const TIMEFRAME_PNL_DATA: Record<TimeframeOption, PnLMetrics> = {
   },
 };
 
+/**
+ * Dynamically computes timeframe PnL metrics for any user-specific net worth and returns.
+ */
+export function calculateUserTimeframePnL(
+  netWorth: number,
+  timeframe: TimeframeOption,
+  customReturns?: Record<string, { dollarChange: number; percentageChange: number }>
+): PnLMetrics {
+  if (customReturns && customReturns[timeframe]) {
+    const period = customReturns[timeframe];
+    const absoluteDelta = Math.abs(period.dollarChange);
+    const percentageDelta = Math.abs(period.percentageChange);
+    const isPositive = period.dollarChange >= 0;
+    const sign = isPositive ? '+' : '-';
+    const label = `${sign}${formatMaskedCurrency(absoluteDelta, false)} (${sign}${percentageDelta.toFixed(2)}%)`;
+    return {
+      timeframe,
+      absoluteDelta,
+      percentageDelta,
+      isPositive,
+      label,
+    };
+  }
+
+  if (netWorth <= 0) {
+    return {
+      timeframe,
+      absoluteDelta: 0,
+      percentageDelta: 0,
+      isPositive: true,
+      label: '+$0.00 (+0.00%)',
+    };
+  }
+
+  const benchmarkRates: Record<TimeframeOption, { rate: number; pct: number }> = {
+    '1D': { rate: 184210.40 / 14820450.00, pct: 1.26 },
+    '1W': { rate: 412850.00 / 14820450.00, pct: 2.86 },
+    '1M': { rate: 920400.00 / 14820450.00, pct: 6.62 },
+    '1Y': { rate: 2480120.00 / 14820450.00, pct: 20.09 },
+    'ALL': { rate: 5240650.00 / 14820450.00, pct: 54.70 },
+  };
+
+  const item = benchmarkRates[timeframe] || benchmarkRates['1D'];
+  const absoluteDelta = Number((netWorth * item.rate).toFixed(2));
+  const percentageDelta = item.pct;
+  const isPositive = true;
+  const label = `+${formatMaskedCurrency(absoluteDelta, false)} (+${percentageDelta.toFixed(2)}%)`;
+
+  return {
+    timeframe,
+    absoluteDelta,
+    percentageDelta,
+    isPositive,
+    label,
+  };
+}
+
 export const DEFAULT_ALLOCATIONS: VerticalAllocation[] = [
   {
     id: 'crypto',
@@ -127,7 +184,7 @@ export const DEFAULT_ALLOCATIONS: VerticalAllocation[] = [
   },
 ];
 
-export const TOTAL_SOVEREIGN_NET_WORTH = 14820450.00;
+export const TOTAL_Global_NET_WORTH = 14820450.00;
 
 /**
  * Format a number as currency, or return a masked placeholder if maskBalances is enabled.

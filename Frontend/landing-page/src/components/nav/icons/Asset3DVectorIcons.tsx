@@ -39,7 +39,7 @@ export const Crypto3DVectorIcon: React.FC<Vector3DIconProps> = ({
           <stop offset="100%" stopColor="#2E2405" />
         </linearGradient>
 
-        {/* Top Coin Face (Sovereign Gold to Warm Honey) */}
+        {/* Top Coin Face (Global Gold to Warm Honey) */}
         <linearGradient id="crypto-face" x1="20%" y1="10%" x2="80%" y2="90%">
           <stop offset="0%" stopColor="#FFE785" />
           <stop offset="35%" stopColor="#D4AF37" />
@@ -85,7 +85,7 @@ export const Crypto3DVectorIcon: React.FC<Vector3DIconProps> = ({
       {/* 5. Inner Inset Rim */}
       <ellipse cx="32" cy="25" rx="15" ry="9.5" fill="url(#crypto-inner-plate)" stroke="url(#crypto-emerald-ring)" strokeWidth="1.2" />
 
-      {/* 6. Sovereign Sinusoidal Wave Emblem + Key Crest */}
+      {/* 6. Global Sinusoidal Wave Emblem + Key Crest */}
       <path
         d="M23 25 C25 21 28 21 30 24 C32 27 35 27 38 23"
         stroke="url(#crypto-emerald-ring)"
@@ -193,7 +193,7 @@ export const Stocks3DVectorIcon: React.FC<Vector3DIconProps> = ({
         <path d="M24 26 L31 22 L41 28 L34 32 Z" fill="url(#stocks-green-top)" />
       </g>
 
-      {/* 3D Pillar 3 (Right - Tall Sovereign Gold Pillar) */}
+      {/* 3D Pillar 3 (Right - Tall Global Gold Pillar) */}
       <g>
         {/* Front Face */}
         <path d="M37 16 L48 23 L48 48 L37 41 Z" fill="url(#stocks-gold-front)" />
@@ -404,7 +404,7 @@ export const Cars3DVectorIcon: React.FC<Vector3DIconProps> = ({
           <stop offset="100%" stopColor="#000000" stopOpacity="0" />
         </radialGradient>
 
-        {/* Chassis Metallic Crimson/Sovereign Gloss Gradient */}
+        {/* Chassis Metallic Crimson/Global Gloss Gradient */}
         <linearGradient id="car-body" x1="10%" y1="10%" x2="90%" y2="90%">
           <stop offset="0%" stopColor="#FF4D4D" />
           <stop offset="35%" stopColor="#D62020" />
@@ -553,7 +553,7 @@ export const VipCards3DVectorIcon: React.FC<Vector3DIconProps> = ({
       />
       <line x1="23" y1="30" x2="28" y2="33" stroke="#664F0A" strokeWidth="0.6" />
 
-      {/* Sovereign Wave Watermark Accent Lines */}
+      {/* Global Wave Watermark Accent Lines */}
       <path
         d="M33 42 C38 41 42 38 48 39"
         stroke="#00C288"
@@ -569,7 +569,7 @@ export const VipCards3DVectorIcon: React.FC<Vector3DIconProps> = ({
         strokeOpacity="0.9"
       />
 
-      {/* VIP Sovereign Crown Deboss Accent */}
+      {/* VIP Global Crown Deboss Accent */}
       <polygon points="46,26 48,29 44,28" fill="#D4AF37" />
 
       {/* Specular Titanium Edge Glint */}
@@ -579,7 +579,7 @@ export const VipCards3DVectorIcon: React.FC<Vector3DIconProps> = ({
 };
 
 /**
- * 7. Digital Custody & Sovereign Wallet 3D Vector Icon
+ * 7. Digital Custody & Global Wallet 3D Vector Icon
  * Volumetric 3D isometric bank vault safe and hardened multi-sig hardware wallet with heavy combination dial and reinforced bolts.
  */
 export const Wallet3DVectorIcon: React.FC<Vector3DIconProps> = ({
@@ -658,7 +658,7 @@ export const Wallet3DVectorIcon: React.FC<Vector3DIconProps> = ({
       <circle cx="18" cy="40" r="0.8" fill="#A4B3C7" />
       <circle cx="28" cy="45" r="0.8" fill="#A4B3C7" />
 
-      {/* Sovereign Crest Laser Micro-Emboss on Vault Top */}
+      {/* Global Crest Laser Micro-Emboss on Vault Top */}
       <polygon points="32,22 35,26 32,30 29,26" fill="#D4AF37" fillOpacity="0.8" />
     </svg>
   );

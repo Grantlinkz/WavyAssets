@@ -172,7 +172,7 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    // Set HttpOnly secure handoff ticket cookie for frictionless client transition
+    // Set HttpOnly secure Authentication cookie for frictionless client transition
     res.cookie('wavy_handoff', result.handoffTicket, {
       httpOnly: true,
       secure: this.isProduction,
@@ -226,7 +226,7 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    // Clear consumed handoff ticket cookie
+    // Clear consumed Authentication cookie
     res.clearCookie('wavy_handoff', { path: '/auth/exchange' });
 
     return {

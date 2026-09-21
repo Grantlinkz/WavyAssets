@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Plus, Play, Pause, Check } from 'lucide-react';
+import { Calendar, Plus, Play, Pause, Check, Trash2 } from 'lucide-react';
 import { useLiquidStore } from '../../../store/useLiquidStore';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { formatMaskedCurrency } from '../../../lib/calculations';
@@ -9,7 +9,7 @@ export interface DcaSchedulerProps {
 }
 
 export const DcaScheduler: React.FC<DcaSchedulerProps> = ({ maskBalances: propMask }) => {
-  const { dcaSchedules, toggleDcaSchedule, addDcaSchedule } = useLiquidStore();
+  const { dcaSchedules, toggleDcaSchedule, addDcaSchedule, deleteDcaSchedule } = useLiquidStore();
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
 
@@ -114,53 +114,72 @@ export const DcaScheduler: React.FC<DcaSchedulerProps> = ({ maskBalances: propMa
           Active Execution Schedules ({dcaSchedules.length})
         </span>
 
-        <div className="divide-y divide-border-hairline border border-border-hairline rounded-DEFAULT bg-surface-container-lowest">
-          {dcaSchedules.map((schedule) => (
-            <div
-              key={schedule.id}
-              className="p-2.5 flex items-center justify-between text-xs font-mono"
-              data-testid={`dca-item-${schedule.id}`}
-            >
-              <div className="flex items-center gap-3">
-                <span className="font-bold text-primary text-sm">{schedule.asset}</span>
-                <span className="px-1.5 py-0.2 bg-surface-container text-[10px] rounded-xs text-on-surface-variant">
-                  {schedule.frequency}
-                </span>
-                <span className="text-on-surface font-semibold">
-                  {formatMaskedCurrency(schedule.amountUsd, maskBalances)}
-                </span>
-              </div>
+        {dcaSchedules.length === 0 ? (
+          <div
+            data-testid="dca-empty-state"
+            className="p-6 text-center text-xs font-mono text-outline border border-dashed border-border-hairline rounded-DEFAULT bg-surface-container-lowest"
+          >
+            No active DCA execution schedules configured. Deploy a schedule using the form above to automate recurring asset accumulation.
+          </div>
+        ) : (
+          <div className="divide-y divide-border-hairline border border-border-hairline rounded-DEFAULT bg-surface-container-lowest">
+            {dcaSchedules.map((schedule) => (
+              <div
+                key={schedule.id}
+                className="p-2.5 flex items-center justify-between text-xs font-mono"
+                data-testid={`dca-item-${schedule.id}`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="font-bold text-primary text-sm">{schedule.asset}</span>
+                  <span className="px-1.5 py-0.2 bg-surface-container text-[10px] rounded-xs text-on-surface-variant">
+                    {schedule.frequency}
+                  </span>
+                  <span className="text-on-surface font-semibold">
+                    {formatMaskedCurrency(schedule.amountUsd, maskBalances)}
+                  </span>
+                </div>
 
-              <div className="flex items-center gap-4">
-                <span className="text-[10px] text-outline hidden sm:inline">
-                  {schedule.nextExecution}
-                </span>
-                <button
-                  type="button"
-                  data-testid={`toggle-dca-${schedule.id}`}
-                  onClick={() => toggleDcaSchedule(schedule.id)}
-                  className={`px-2 py-0.5 rounded-DEFAULT text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer ${
-                    schedule.active
-                      ? 'bg-tertiary/15 text-tertiary border border-tertiary/30'
-                      : 'bg-surface-container text-outline border border-border-hairline'
-                  }`}
-                >
-                  {schedule.active ? (
-                    <>
-                      <Play className="w-2.5 h-2.5 fill-current" />
-                      <span>ACTIVE</span>
-                    </>
-                  ) : (
-                    <>
-                      <Pause className="w-2.5 h-2.5" />
-                      <span>PAUSED</span>
-                    </>
-                  )}
-                </button>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <span className="text-[10px] text-outline hidden sm:inline">
+                    {schedule.nextExecution}
+                  </span>
+                  <button
+                    type="button"
+                    data-testid={`toggle-dca-${schedule.id}`}
+                    onClick={() => toggleDcaSchedule(schedule.id)}
+                    className={`px-2 py-0.5 rounded-DEFAULT text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer ${
+                      schedule.active
+                        ? 'bg-tertiary/15 text-tertiary border border-tertiary/30'
+                        : 'bg-surface-container text-outline border border-border-hairline'
+                    }`}
+                  >
+                    {schedule.active ? (
+                      <>
+                        <Play className="w-2.5 h-2.5 fill-current" />
+                        <span>ACTIVE</span>
+                      </>
+                    ) : (
+                      <>
+                        <Pause className="w-2.5 h-2.5" />
+                        <span>PAUSED</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    data-testid={`delete-dca-${schedule.id}`}
+                    onClick={() => deleteDcaSchedule(schedule.id)}
+                    className="p-1 hover:text-error text-outline hover:bg-error/10 rounded-DEFAULT transition-colors cursor-pointer"
+                    title="Delete Schedule"
+                    aria-label={`Delete ${schedule.asset} DCA schedule`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

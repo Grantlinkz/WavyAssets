@@ -18,7 +18,7 @@ export const VipCardsPanel: React.FC = () => {
   const cardTiers = [
     {
       id: 'titanium-black',
-      name: 'WavyAssets Sovereign Obsidian Titanium',
+      name: 'WavyAssets Global Obsidian Titanium',
       material: 'Solid Grade-5 Laser-Etched Titanium (28g)',
       creditLine: 'Up to $10,000,000 Instant Line',
       collateral: '1:1 Multi-Asset Non-Liquidation Pledge',
@@ -30,7 +30,7 @@ export const VipCardsPanel: React.FC = () => {
       id: 'pure-gold',
       name: 'WAVY 18K Solid Gold Fiduciary Card',
       material: 'Hand-Milled 18K Yellow Gold with NFC Core',
-      creditLine: 'Up to $25,000,000 Sovereign Line',
+      creditLine: 'Up to $25,000,000 Global Line',
       collateral: 'Direct Geneva Freeport Vault Lien',
       fxSpread: 'Institutional Wholesale Interbank',
       perks: 'Freeport Physical Vault Key • Armed Custody Escort • Dedicated Private Banker',

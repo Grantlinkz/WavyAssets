@@ -1,4 +1,4 @@
-# WavyAssets Sovereign Institutional Terminal — Robots Directive
+# WavyAssets Global Institutional Terminal — Robots Directive
 # https://wavyassets.com
 
 User-agent: *

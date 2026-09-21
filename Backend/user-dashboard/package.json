@@ -1,8 +1,8 @@
 {
   "name": "wavyassets-user-dashboard-backend",
   "version": "1.0.0",
-  "description": "Sovereign Backend User Dashboard for WavyAssets — Institutional Multi-Asset Core & Double-Entry Transactional Backbone",
-  "author": "WavyAssets Sovereign Platform Architecture Guild",
+  "description": "Global Backend User Dashboard for WavyAssets — Institutional Multi-Asset Core & Double-Entry Transactional Backbone",
+  "author": "WavyAssets Global Platform Architecture Guild",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {

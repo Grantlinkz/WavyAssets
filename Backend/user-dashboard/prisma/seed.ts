@@ -16,16 +16,16 @@ async function main() {
     process.exit(1);
   }
 
-  console.log('Seeding WavyAssets Sovereign Institutional Dashboard for local development...');
+  console.log('Seeding WavyAssets Global Institutional Dashboard for local development...');
 
   const handoffSecret =
     process.env.HANDOFF_TICKET_SECRET ||
-    'wavy_sovereign_cross_domain_handoff_ticket_secret_key_2026';
+    'wavy_Global_cross_domain_handoff_ticket_secret_key_2026';
   const refreshSecret =
     process.env.JWT_REFRESH_SECRET ||
     'wavy_dashboard_jwt_refresh_super_secret_institutional_key_2026';
 
-  // 1. Generate Non-Static Sovereign Test Credentials
+  // 1. Generate Non-Static Global Test Credentials
   const seedPassphrase =
     process.env.SEED_USER_PASSPHRASE ||
     crypto.randomBytes(16).toString('hex') + '!Aa1';
@@ -45,7 +45,7 @@ async function main() {
     where: { email: 'institutional@wavyassets.com' },
     update: { passphraseHash },
     create: {
-      id: 'usr-sovereign-institutional-001',
+      id: 'usr-Global-institutional-001',
       email: 'institutional@wavyassets.com',
       fullName: 'Dr. Alexander Von Berg',
       passphraseHash,
@@ -58,7 +58,7 @@ async function main() {
 
   // Redacted logging: never emit full credentials or raw tokens
   const maskedEmail = user.email.replace(/(.{2})(.*)(?=@)/, (_g1, g2) => g2 + '***');
-  console.log(`Created Sovereign User Profile: [${maskedEmail}] (id: ${user.id})`);
+  console.log(`Created Global User Profile: [${maskedEmail}] (id: ${user.id})`);
 
   // 2. Create Active Session with Hashed Tokens
   await prisma.session.upsert({
@@ -79,7 +79,7 @@ async function main() {
     },
   });
 
-  console.log('Created Active Session with hashed handoff ticket (ID: sess-institutional-seed-001)');
+  console.log('Created Active Session with hashed Authentication (ID: sess-institutional-seed-001)');
 
   // In local development, write credentials securely to a gitignored .seed-credentials.local.json file
   const localCredsPath = path.resolve(__dirname, '../.seed-credentials.local.json');
@@ -173,7 +173,7 @@ async function main() {
       {
         userId: user.id,
         symbol: 'BTC',
-        custodyType: 'SOVEREIGN_VAULT',
+        custodyType: 'Global_VAULT',
         quantity: 35.5,
         avgBuyPrice: 62400.0,
         stakedAmount: 0.0,

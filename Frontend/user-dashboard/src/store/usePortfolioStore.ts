@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import {
   DEFAULT_ALLOCATIONS,
-  TOTAL_SOVEREIGN_NET_WORTH,
+  TOTAL_Global_NET_WORTH,
   type VerticalAllocation,
 } from '../lib/calculations';
 
@@ -10,7 +10,9 @@ export type DepositRailTab = 'wire' | 'crypto' | 'card';
 
 interface PortfolioState {
   netWorth: number;
+  availableCash: number;
   allocations: VerticalAllocation[];
+  returns: Record<string, { dollarChange: number; percentageChange: number }> | null;
   activeModal: ModalType | null;
   activeDepositTab: DepositRailTab;
 
@@ -19,13 +21,19 @@ interface PortfolioState {
   closeModal: () => void;
   setActiveDepositTab: (tab: DepositRailTab) => void;
   setNetWorth: (value: number) => void;
+  setAvailableCash: (value: number) => void;
+  adjustAvailableCash: (delta: number) => boolean;
+  setAllocations: (allocations: VerticalAllocation[]) => void;
+  setReturns: (returns: Record<string, { dollarChange: number; percentageChange: number }>) => void;
   updateAllocation: (id: string, value: number) => void;
   resetToDefaults: () => void;
 }
 
 export const usePortfolioStore = create<PortfolioState>((set) => ({
-  netWorth: TOTAL_SOVEREIGN_NET_WORTH,
+  netWorth: TOTAL_Global_NET_WORTH,
+  availableCash: 1820450.00,
   allocations: DEFAULT_ALLOCATIONS,
+  returns: null,
   activeModal: null,
   activeDepositTab: 'wire',
 
@@ -34,6 +42,20 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
   setActiveDepositTab: (tab) => set({ activeDepositTab: tab }),
 
   setNetWorth: (value) => set({ netWorth: value }),
+  setAvailableCash: (value) => set({ availableCash: value }),
+  adjustAvailableCash: (delta) => {
+    let success = false;
+    set((state) => {
+      if (state.availableCash + delta >= 0) {
+        success = true;
+        return { availableCash: state.availableCash + delta };
+      }
+      return state;
+    });
+    return success;
+  },
+  setAllocations: (allocations) => set({ allocations }),
+  setReturns: (returns) => set({ returns }),
 
   updateAllocation: (id, value) => {
     set((state) => {
@@ -54,8 +76,10 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 
   resetToDefaults: () =>
     set({
-      netWorth: TOTAL_SOVEREIGN_NET_WORTH,
+      netWorth: TOTAL_Global_NET_WORTH,
+      availableCash: 1820450.00,
       allocations: DEFAULT_ALLOCATIONS,
+      returns: null,
       activeModal: null,
       activeDepositTab: 'wire',
     }),

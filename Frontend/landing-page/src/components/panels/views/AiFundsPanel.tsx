@@ -32,7 +32,7 @@ export const AiFundsPanel: React.FC = () => {
       id: 'b200-fra',
       name: 'NVIDIA Blackwell B200 Compute Grid (512 Nodes)',
       datacenter: 'Equinix FR2 (Frankfurt, DE)',
-      client: 'European Sovereign AI Research Consortium',
+      client: 'European Global AI Research Consortium',
       yieldRate: '17.2% APY',
       contractValue: '$68.5M Committed',
       status: 'Under Setup',

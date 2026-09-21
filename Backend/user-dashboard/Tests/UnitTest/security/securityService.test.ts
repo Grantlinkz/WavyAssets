@@ -113,7 +113,7 @@ describe('SecurityService — Session Governance, WebAuthn FIDO2 & Inviolable 48
     it('generates cryptographic registration challenge options', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: testUserId,
-        email: 'sovereign@investor.ch',
+        email: 'Global@investor.ch',
         fullName: 'Baron von Zurich',
       });
 
@@ -194,7 +194,7 @@ describe('SecurityService — Session Governance, WebAuthn FIDO2 & Inviolable 48
       const result = await securityService.createWhitelistDestination(testUserId, {
         assetRail: AssetRail.ERC20_USDC,
         destinationLabel: 'Geneva Cold Custody Vault B',
-        beneficiaryOrg: 'Sovereign Wealth Escrow AG',
+        beneficiaryOrg: 'Global Wealth Escrow AG',
         addressOrIban: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
       });
 

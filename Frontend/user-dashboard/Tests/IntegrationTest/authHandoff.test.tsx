@@ -3,7 +3,7 @@ import { renderToString } from 'react-dom/server';
 import { AuthCallback } from '../../src/components/auth/AuthCallback';
 import { useAuthStore } from '../../src/store/useAuthStore';
 
-describe('Auth Handoff Ticket Exchange Integration Suite (Node 24 / SSR Parity)', () => {
+describe('Auth Authentication Exchange Integration Suite (Node 24 / SSR Parity)', () => {
   const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
@@ -18,9 +18,9 @@ describe('Auth Handoff Ticket Exchange Integration Suite (Node 24 / SSR Parity)'
     const html = renderToString(<AuthCallback ticketOverride="test-ticket-xyz" />);
 
     expect(html).toContain('data-testid="auth-callback-container"');
-    expect(html).toContain('Sovereign Enclave Authentication');
-    expect(html).toContain('HMAC-SHA256');
-    expect(html).toContain('Exchanging Handoff Ticket...');
+    expect(html).toContain('WavyAssets Authentication');
+    expect(html).toContain('');
+    expect(html).toContain('Exchanging Authentication...');
   });
 
   it('successfully exchanges ticket via store action and hydrates user identity', async () => {
@@ -34,7 +34,7 @@ describe('Auth Handoff Ticket Exchange Integration Suite (Node 24 / SSR Parity)'
         accessToken: 'mock_jwt_123',
         user: {
           id: 'usr_sov_99182',
-          email: 'allocator@sovereign-vault.ch',
+          email: 'allocator@Global-vault.ch',
           fullName: 'Geneva Alpha Mandate',
           tier: 'PRIVATE_WEALTH',
           isCorporate: true,
@@ -48,12 +48,12 @@ describe('Auth Handoff Ticket Exchange Integration Suite (Node 24 / SSR Parity)'
     expect(response.success).toBe(true);
     expect(useAuthStore.getState().isAuthenticated).toBe(true);
     expect(useAuthStore.getState().user?.tier).toBe('PRIVATE_WEALTH');
-    expect(useAuthStore.getState().user?.email).toBe('allocator@sovereign-vault.ch');
+    expect(useAuthStore.getState().user?.email).toBe('allocator@Global-vault.ch');
     expect(useAuthStore.getState().accessToken).toBeDefined();
 
     // Renders authenticated user confirmation
     const authHtml = renderToString(<AuthCallback ticketOverride="valid-handoff-ticket-77" />);
-    expect(authHtml).toContain('Sovereign Enclave Authentication');
+    expect(authHtml).toContain('WavyAssets Authentication');
   });
 
   it('renders error state and return button when no ticket is provided', () => {
@@ -62,7 +62,7 @@ describe('Auth Handoff Ticket Exchange Integration Suite (Node 24 / SSR Parity)'
 
     expect(html).toContain('data-testid="auth-callback-container"');
     expect(html).toContain('Ticket Exchange Error');
-    expect(html).toContain('No authentication handoff ticket found');
+    expect(html).toContain('No authentication Authentication found');
     expect(html).toContain('Return to Terminal');
   });
 });

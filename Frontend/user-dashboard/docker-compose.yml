@@ -1,5 +1,5 @@
 # ==============================================================================
-# WavyAssets Sovereign Institutional User Dashboard — Docker Compose Configuration
+# WavyAssets Global Institutional User Dashboard — Docker Compose Configuration
 # ==============================================================================
 # Architecture:
 # - High-performance Nginx web server with SPA catch-all routing

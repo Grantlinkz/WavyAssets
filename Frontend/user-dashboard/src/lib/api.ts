@@ -1,5 +1,5 @@
 /**
- * WavyAssets Institutional API Client — Sovereign User Dashboard
+ * WavyAssets Institutional API Client — Global User Dashboard
  * Supports authentication handoff, token lifecycle, and full REST endpoints
  * across all 7 asset classes with graceful offline fallback.
  */
@@ -85,23 +85,19 @@ async function requestApi<T>(
       const refreshed = await refreshSessionToken();
       if (refreshed) {
         headers['Authorization'] = `Bearer ${getStoredToken()}`;
-        try {
-          const retryRes = await fetch(endpoint, { ...options, headers, credentials: 'include' });
-          if (retryRes.ok) {
-            const body = await retryRes.json();
-            return (body.data !== undefined ? body.data : body) as T;
-          }
-          let retryErrMsg = `HTTP ${retryRes.status} Error on ${endpoint}`;
-          try {
-            const errData = (await retryRes.json()) as ApiErrorEnvelope;
-            if (errData?.message) retryErrMsg = errData.message;
-          } catch {
-            // use default retry error message
-          }
-          throw new Error(retryErrMsg);
-        } catch (retryErr) {
-          throw retryErr;
+        const retryRes = await fetch(endpoint, { ...options, headers, credentials: 'include' });
+        if (retryRes.ok) {
+          const body = await retryRes.json();
+          return (body.data !== undefined ? body.data : body) as T;
         }
+        let retryErrMsg = `HTTP ${retryRes.status} Error on ${endpoint}`;
+        try {
+          const errData = (await retryRes.json()) as ApiErrorEnvelope;
+          if (errData?.message) retryErrMsg = errData.message;
+        } catch {
+          // use default retry error message
+        }
+        throw new Error(retryErrMsg);
       }
     }
 
@@ -120,11 +116,11 @@ async function requestApi<T>(
 }
 
 /**
- * Exchanges single-use handoff ticket from Landing Page for Access JWT
+ * Exchanges single-use Authentication from Landing Page for Access JWT
  */
 export async function exchangeHandoffTicket(ticket: string): Promise<AuthExchangeResponse> {
   if (!ticket || ticket.trim().length === 0) {
-    throw new Error('Handoff ticket is required for session exchange.');
+    throw new Error('Authentication is required for session exchange.');
   }
 
   const res = await fetch('/api/v1/auth/exchange-ticket', {
@@ -210,6 +206,10 @@ export async function logoutUser(): Promise<void> {
   } finally {
     clearStoredToken();
   }
+}
+
+export async function fetchUserProfile<T = unknown>(): Promise<T> {
+  return requestApi<T>('/api/v1/auth/me', { method: 'GET' });
 }
 
 // ----------------------------------------------------------------------
@@ -318,6 +318,41 @@ export async function fetchComplianceStatus<T = unknown>(fallback?: T): Promise<
   return requestApi<T>('/api/v1/compliance/status', { method: 'GET' }, fallback);
 }
 
+export async function uploadDossierDocument<T = unknown>(
+  payload: {
+    docType: string;
+    fileUrl?: string;
+    file?: File;
+    notes?: string;
+    fullName?: string;
+    dob?: string;
+    idNumber?: string;
+    providerOrBank?: string;
+    billingAddress?: string;
+    billIssueDate?: string;
+  },
+  fallback?: T
+): Promise<T> {
+  const fileUrl =
+    payload.fileUrl ||
+    (payload.file
+      ? `https://vault.wavyassets.com/dossier/vault_${Date.now()}_${encodeURIComponent(payload.file.name)}`
+      : 'https://vault.wavyassets.com/dossier/dossier_upload.pdf');
+
+  const bodyData = { ...payload };
+  delete bodyData.file;
+  const requestBody = { ...bodyData, fileUrl };
+
+  return requestApi<T>(
+    '/api/v1/compliance/dossier-upload',
+    {
+      method: 'POST',
+      body: JSON.stringify(requestBody),
+    },
+    fallback
+  );
+}
+
 export async function fetchWhitelistDestinations<T = unknown>(fallback?: T): Promise<T> {
   return requestApi<T>('/api/v1/security/whitelist-destinations', { method: 'GET' }, fallback);
 }
@@ -343,7 +378,7 @@ export async function registerWhitelistDestination(payload: {
             ? 'WIRE_IBAN'
             : 'ERC20_USDC'),
     destinationLabel: payload.destinationLabel || payload.label || 'Whitelisted Address',
-    beneficiaryOrg: payload.beneficiaryOrg || 'Sovereign Beneficiary',
+    beneficiaryOrg: payload.beneficiaryOrg || 'Global Beneficiary',
     addressOrIban: payload.addressOrIban || payload.address || '',
   };
   return requestApi<unknown>('/api/v1/security/whitelist-destinations', {

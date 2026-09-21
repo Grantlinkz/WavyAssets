@@ -23,7 +23,7 @@ export const TenantCreditMatrix: React.FC = () => {
           </span>
           <div className="flex flex-col gap-1.5 font-mono text-xs">
             <div className="flex justify-between text-on-surface">
-              <span className="text-tertiary font-medium">AAA / AA Sovereign &amp; Corp</span>
+              <span className="text-tertiary font-medium">AAA / AA Global &amp; Corp</span>
               <span className="tabular-nums font-semibold">84.0%</span>
             </div>
             <div className="h-1.5 bg-surface rounded overflow-hidden">

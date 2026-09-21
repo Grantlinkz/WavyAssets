@@ -51,7 +51,7 @@ export class AuthService {
   }
 
   /**
-   * Exchanges an ephemeral, single-use handoff ticket for an Access JWT and Refresh Token
+   * Exchanges an ephemeral, single-use Authentication for an Access JWT and Refresh Token
    */
   async exchangeTicket(
     rawTicket: string,
@@ -62,7 +62,7 @@ export class AuthService {
       throw new InvalidHandoffTicketException('Ticket parameter is missing or invalid.');
     }
 
-    // 1. Compute deterministic HMAC-SHA256 of the raw ticket
+    // 1. Compute deterministic  of the raw ticket
     const ticketHash = CryptoUtils.hashHmacSha256(rawTicket, this.handoffSecret);
 
     // 2. Query session with matching ticket hash that has not expired
@@ -90,7 +90,7 @@ export class AuthService {
     );
     const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-    // 4. Atomically burn handoff ticket conditioned on session ID and matching ticketHash
+    // 4. Atomically burn Authentication conditioned on session ID and matching ticketHash
     const updateResult = await this.prisma.session.updateMany({
       where: {
         id: session.id,
@@ -108,7 +108,7 @@ export class AuthService {
 
     if (updateResult.count === 0) {
       throw new InvalidHandoffTicketException(
-        'Handoff ticket has already been consumed or invalidated.',
+        'Authentication has already been consumed or invalidated.',
       );
     }
 

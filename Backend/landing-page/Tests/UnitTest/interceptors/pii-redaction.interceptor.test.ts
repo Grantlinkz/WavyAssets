@@ -8,7 +8,7 @@ describe('PII Redaction & Security Masking Utilities', () => {
   describe('maskEmail', () => {
     it('should mask email prefix retaining only first and last characters', () => {
       expect(maskEmail('allocator@zurich-familyoffice.ch')).toBe('a***r@zurich-familyoffice.ch');
-      expect(maskEmail('john.doe@sovereign-vault.com')).toBe('j***e@sovereign-vault.com');
+      expect(maskEmail('john.doe@Global-vault.com')).toBe('j***e@Global-vault.com');
     });
 
     it('should safely handle short local parts or invalid inputs', () => {
