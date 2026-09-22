@@ -4,6 +4,7 @@ import { useLiquidStore } from '../../../store/useLiquidStore';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { formatMaskedCurrency } from '../../../lib/calculations';
+import { CRYPTO_HOLDINGS_DATA } from '../../../lib/liquidAssetData';
 
 export interface DcaSchedulerProps {
   maskBalances?: boolean;
@@ -84,15 +85,11 @@ export const DcaScheduler: React.FC<DcaSchedulerProps> = ({ maskBalances: propMa
             onChange={(e) => handleAssetChange(e.target.value)}
             className="w-full bg-surface-container border border-border-hairline rounded-DEFAULT px-2 py-1.5 text-xs font-mono font-bold text-on-surface focus:outline-none"
           >
-            <option value="BTC">Bitcoin (BTC)</option>
-            <option value="ETH">Ethereum (ETH)</option>
-            <option value="SOL">Solana (SOL)</option>
-            <option value="USDC">USDC (USDC)</option>
-            <option value="AVAX">Avalanche (AVAX)</option>
-            <option value="BNB">Binance Coin (BNB)</option>
-            <option value="XRP">Ripple (XRP)</option>
-            <option value="ADA">Cardano (ADA)</option>
-            <option value="DOT">Polkadot (DOT)</option>
+            {CRYPTO_HOLDINGS_DATA.map((item) => (
+              <option key={item.symbol} value={item.symbol}>
+                {item.symbol} ({item.name})
+              </option>
+            ))}
           </select>
         </div>
 

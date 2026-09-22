@@ -7,7 +7,7 @@ import { STOCKS_HOLDINGS_DATA } from '../../../lib/liquidAssetData';
 import { useLiquidStore } from '../../../store/useLiquidStore';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { usePortfolioStore } from '../../../store/usePortfolioStore';
-import { formatMaskedCurrency, TOTAL_Global_NET_WORTH } from '../../../lib/calculations';
+import { formatMaskedCurrency, isSsrOrTestEnv } from '../../../lib/calculations';
 
 interface StocksModuleProps {
   maskBalances?: boolean;
@@ -17,19 +17,81 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
   const { selectedStock, setSelectedStock, isPreMarket, dripSettings } = useLiquidStore();
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
-  const netWorth = usePortfolioStore((s) => s.netWorth);
+  const storeNetWorth = usePortfolioStore((s) => s.netWorth);
 
   // Search & Pagination State
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
 
-  // Dynamically compute accurate values directly from active held positions in STOCKS_HOLDINGS_DATA
-  const heldStocks = useMemo(() => STOCKS_HOLDINGS_DATA.filter((s) => s.shares > 0), []);
+  const storeActiveOrders = useLiquidStore((s) => s.activeOrders);
+  const isSsr = isSsrOrTestEnv();
+  const activeOrders = isSsr ? useLiquidStore.getState().activeOrders : storeActiveOrders;
+  const netWorth = isSsr ? usePortfolioStore.getState().netWorth : storeNetWorth;
+
+  // Map user active limit orders by ticker symbol
+  const activeOrderMap = useMemo(() => {
+    const map: Record<
+      string,
+      { totalShares: number; totalCostBasis: number; avgLimitPrice: number; orderCount: number }
+    > = {};
+    activeOrders
+      .filter((o) => o.status !== 'CANCELLED')
+      .forEach((order) => {
+        const existing = map[order.symbol] || {
+          totalShares: 0,
+          totalCostBasis: 0,
+          avgLimitPrice: 0,
+          orderCount: 0,
+        };
+        existing.totalShares += order.shares;
+        existing.totalCostBasis += order.shares * order.limitPrice;
+        existing.orderCount += 1;
+        existing.avgLimitPrice =
+          existing.totalShares > 0
+            ? existing.totalCostBasis / existing.totalShares
+            : order.limitPrice;
+        map[order.symbol] = existing;
+      });
+    return map;
+  }, [activeOrders]);
+
+  // Dynamically compute user's stock holdings reflecting Active Limit Orders & Execution Desk
+  const dynamicStocks = useMemo(() => {
+    return STOCKS_HOLDINGS_DATA.map((s) => {
+      const orderData = activeOrderMap[s.symbol];
+      const userShares = orderData ? orderData.totalShares : 0;
+      const entryMark =
+        orderData && orderData.totalShares > 0 ? orderData.avgLimitPrice : s.entryMark;
+      const currentMark = s.currentMark;
+      const unrealizedPnl =
+        userShares > 0 ? Number(((currentMark - entryMark) * userShares).toFixed(2)) : 0;
+      const pnlPct =
+        userShares > 0 && entryMark > 0
+          ? Number((((currentMark - entryMark) / entryMark) * 100).toFixed(2))
+          : 0;
+
+      return {
+        ...s,
+        shares: userShares,
+        entryMark,
+        currentMark,
+        unrealizedPnl,
+        pnlPct,
+      };
+    });
+  }, [activeOrderMap]);
+
+  const heldStocks = useMemo(() => dynamicStocks.filter((s) => s.shares > 0), [dynamicStocks]);
 
   const totalEquitiesNav = useMemo(() => {
     return heldStocks.reduce((sum, s) => sum + s.shares * s.currentMark, 0);
   }, [heldStocks]);
+
+  // Synchronize equities allocation with portfolio store
+  React.useEffect(() => {
+    usePortfolioStore.getState().updateAllocation('stocks', totalEquitiesNav);
+  }, [totalEquitiesNav]);
 
   const totalCostBasis = useMemo(() => {
     return heldStocks.reduce((sum, s) => sum + s.shares * s.entryMark, 0);
@@ -42,29 +104,26 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
   const totalPnlPct = totalCostBasis > 0 ? (totalUnrealizedPnl / totalCostBasis) * 100 : 0;
 
   const listedDmaVal = useMemo(() => {
-    return heldStocks.filter((s) => !s.isPreIpo).reduce(
-      (sum, s) => sum + s.shares * s.currentMark,
-      0
-    );
+    return heldStocks
+      .filter((s) => !s.isPreIpo)
+      .reduce((sum, s) => sum + s.shares * s.currentMark, 0);
   }, [heldStocks]);
 
   const preIpoVal = useMemo(() => {
-    return heldStocks.filter((s) => s.isPreIpo).reduce(
-      (sum, s) => sum + s.shares * s.currentMark,
-      0
-    );
+    return heldStocks
+      .filter((s) => s.isPreIpo)
+      .reduce((sum, s) => sum + s.shares * s.currentMark, 0);
   }, [heldStocks]);
 
   const listedDmaPct = totalEquitiesNav > 0 ? (listedDmaVal / totalEquitiesNav) * 100 : 0;
   const preIpoPct = totalEquitiesNav > 0 ? (preIpoVal / totalEquitiesNav) * 100 : 0;
   const extendedHoursGain = totalEquitiesNav * 0.0018;
-  const effectiveNetWorth = netWorth > 0 ? netWorth : TOTAL_Global_NET_WORTH;
-  const equitiesPortfolioPct = effectiveNetWorth > 0 ? (totalEquitiesNav / effectiveNetWorth) * 100 : 0;
+  const effectiveNetWorth = netWorth > 0 ? netWorth : totalEquitiesNav;
+  const equitiesPortfolioPct =
+    effectiveNetWorth > 0 ? (totalEquitiesNav / effectiveNetWorth) * 100 : 0;
 
   const weightedBeta = useMemo(() => {
-    if (totalEquitiesNav <= 0) return 0;
-    const isBaseline = Math.abs(totalEquitiesNav - 3248420) < 100;
-    if (isBaseline) return 0.94;
+    if (totalEquitiesNav <= 0) return 0.94;
     const weightedSum = heldStocks.reduce(
       (sum, s) => sum + s.beta * s.shares * s.currentMark,
       0
@@ -76,16 +135,16 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
 
   // Search Filtering: Matches ticker/symbol OR company name (e.g. AMZN or Amazon)
   const filteredStocks = useMemo(() => {
-    if (!searchQuery.trim()) return STOCKS_HOLDINGS_DATA;
+    if (!searchQuery.trim()) return dynamicStocks;
     const q = searchQuery.toLowerCase().trim();
-    return STOCKS_HOLDINGS_DATA.filter(
+    return dynamicStocks.filter(
       (s) =>
         s.symbol.toLowerCase().includes(q) ||
         s.name.toLowerCase().includes(q) ||
         s.category.toLowerCase().includes(q) ||
         (s.isPreIpo ? 'pre-ipo spv' : 'listed dma').includes(q)
     );
-  }, [searchQuery]);
+  }, [searchQuery, dynamicStocks]);
 
   const totalPages = Math.max(1, Math.ceil(filteredStocks.length / PAGE_SIZE));
   const safeCurrentPage = Math.min(currentPage, totalPages);
@@ -147,7 +206,7 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
             </span>
           </div>
           <div className="text-[11px] font-mono text-outline mt-2">
-            Realized MTD: {maskBalances ? '••••••••' : '+$48,150.00'} • Beta {weightedBeta.toFixed(2)}
+            Realized MTD: {maskBalances ? '••••••••' : totalEquitiesNav > 0 ? '+$48,150.00' : '$0.00'} • Beta {weightedBeta.toFixed(2)}
           </div>
         </div>
 
@@ -160,7 +219,7 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
               </span>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-xl font-mono font-bold text-on-surface tabular-nums">
-                  +0.18%
+                  {totalEquitiesNav > 0 ? '+0.18%' : '+0.00%'}
                 </span>
                 <span className="text-xs font-mono text-tertiary">
                   {maskBalances ? '••••••' : `+$${extendedHoursGain.toFixed(2)}`}
@@ -268,14 +327,24 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
                     <tr
                       key={stock.symbol}
                       data-testid={`stock-row-${stock.symbol}`}
-                      onClick={() => setSelectedStock(stock.symbol)}
+                      onClick={() => {
+                        setSelectedStock(stock.symbol);
+                        const desk = document.querySelector('[data-testid="active-orders-hub"]');
+                        if (desk) {
+                          desk.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
+                      }}
                       className={`cursor-pointer transition-colors ${
                         isSelected
                           ? 'bg-surface-container-high/80 border-l-2 border-primary'
                           : 'hover:bg-surface-container/60'
                       }`}
                     >
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <td
+                        className="py-3 px-4 whitespace-nowrap cursor-pointer group"
+                        data-testid={`stock-ticker-cell-${stock.symbol}`}
+                        title={`Click to target ${stock.symbol} in Execution Desk`}
+                      >
                         <div className="flex items-center gap-2">
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
@@ -283,11 +352,14 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
                             }`}
                           />
                           <div>
-                            <span className="font-bold text-on-surface font-mono tracking-tight block">
+                            <span className="font-bold text-on-surface font-mono tracking-tight block group-hover:text-primary transition-colors">
                               {stock.symbol}
                             </span>
-                            <span className="text-[10px] text-outline font-mono">
-                              {stock.name}
+                            <span className="text-[10px] text-outline font-mono flex items-center gap-1">
+                              <span>{stock.name}</span>
+                              <span className="text-primary/70 text-[9px] font-sans opacity-0 group-hover:opacity-100 transition-opacity">
+                                • Target in Desk
+                              </span>
                             </span>
                           </div>
                         </div>

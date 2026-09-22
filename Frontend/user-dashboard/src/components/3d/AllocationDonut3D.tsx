@@ -79,29 +79,43 @@ export const AllocationDonut3D: React.FC<AllocationDonut3DProps> = ({
     const materialsToDispose: THREE.Material[] = [];
     const meshes: { mesh: THREE.Mesh; data: VerticalAllocation }[] = [];
 
-    const totalPct = allocations.reduce((acc, a) => acc + a.actualPct, 0) || 100;
+    const sumPct = allocations.reduce((acc, a) => acc + a.actualPct, 0);
     let currentAngle = 0;
 
-    allocations.forEach((item) => {
-      const arcAngle = (item.actualPct / totalPct) * Math.PI * 2;
-      // Torus geometry segment: radius 1.2, tube 0.45
-      const segmentGeo = new THREE.TorusGeometry(1.15, 0.4, 16, 32, arcAngle - 0.05);
-      const segmentMat = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(item.color),
-        roughness: 0.35,
-        metalness: 0.65,
+    if (sumPct <= 0) {
+      const emptyGeo = new THREE.TorusGeometry(1.15, 0.4, 16, 32, Math.PI * 2);
+      const emptyMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color('#22242a'),
+        roughness: 0.8,
+        metalness: 0.1,
       });
+      geometriesToDispose.push(emptyGeo);
+      materialsToDispose.push(emptyMat);
+      const emptyMesh = new THREE.Mesh(emptyGeo, emptyMat);
+      group.add(emptyMesh);
+    } else {
+      allocations.forEach((item) => {
+        if (item.actualPct <= 0) return;
+        const arcAngle = (item.actualPct / sumPct) * Math.PI * 2;
+        if (arcAngle <= 0.05) return;
+        const segmentGeo = new THREE.TorusGeometry(1.15, 0.4, 16, 32, Math.max(0.01, arcAngle - 0.04));
+        const segmentMat = new THREE.MeshStandardMaterial({
+          color: new THREE.Color(item.color),
+          roughness: 0.35,
+          metalness: 0.65,
+        });
 
-      geometriesToDispose.push(segmentGeo);
-      materialsToDispose.push(segmentMat);
+        geometriesToDispose.push(segmentGeo);
+        materialsToDispose.push(segmentMat);
 
-      const mesh = new THREE.Mesh(segmentGeo, segmentMat);
-      mesh.rotation.z = currentAngle;
-      group.add(mesh);
+        const mesh = new THREE.Mesh(segmentGeo, segmentMat);
+        mesh.rotation.z = currentAngle;
+        group.add(mesh);
 
-      meshes.push({ mesh, data: item });
-      currentAngle += arcAngle;
-    });
+        meshes.push({ mesh, data: item });
+        currentAngle += arcAngle;
+      });
+    }
 
     // Subtle isometric tilt
     group.rotation.x = 0.55;

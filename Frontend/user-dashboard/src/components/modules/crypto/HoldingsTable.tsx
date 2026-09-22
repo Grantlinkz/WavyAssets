@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Shield, ExternalLink, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   CRYPTO_HOLDINGS_DATA,
-  INITIAL_DCA_SCHEDULES,
   type CustodyBadge,
 } from '../../../lib/liquidAssetData';
 import { formatMaskedCurrency } from '../../../lib/calculations';
@@ -46,10 +45,7 @@ export const HoldingsTable: React.FC<{ maskBalances?: boolean }> = ({ maskBalanc
 
   const activeScheduleMap = useMemo(() => {
     const map: Record<string, number> = {};
-    const effectiveSchedules =
-      dcaSchedules.length > 0
-        ? dcaSchedules.filter((s) => s.active)
-        : INITIAL_DCA_SCHEDULES.filter((s) => s.active);
+    const effectiveSchedules = dcaSchedules.filter((s) => s.active);
 
     effectiveSchedules.forEach((s) => {
       map[s.asset] = (map[s.asset] || 0) + s.amountUsd;

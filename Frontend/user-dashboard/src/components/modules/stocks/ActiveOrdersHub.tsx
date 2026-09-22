@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ListFilter, XCircle, CheckCircle2, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLiquidStore } from '../../../store/useLiquidStore';
 import { useDashboardStore } from '../../../store/useDashboardStore';
+import { useAuthStore } from '../../../store/useAuthStore';
 import { STOCKS_HOLDINGS_DATA } from '../../../lib/liquidAssetData';
 
 export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBalances: propMask }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
+  const user = useAuthStore((s) => s.user);
 
   const { activeOrders, addActiveOrder, cancelActiveOrder, selectedStock } = useLiquidStore();
   const [cancelledId, setCancelledId] = useState<string | null>(null);
@@ -20,8 +22,20 @@ export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBala
   const [duration] = useState<string>('GTC (Good-Til-Cancelled)');
   const [justPlaced, setJustPlaced] = useState<boolean>(false);
 
+  // Synchronize symbol with selectedStock whenever a user clicks any stock/SPV
+  useEffect(() => {
+    if (selectedStock) {
+      setSymbol(selectedStock);
+      setShowOrderForm(true);
+      const stock = STOCKS_HOLDINGS_DATA.find((s) => s.symbol === selectedStock);
+      if (stock) {
+        setLimitPrice(stock.currentMark);
+      }
+    }
+  }, [selectedStock]);
+
   const handleCancel = (id: string) => {
-    cancelActiveOrder(id);
+    cancelActiveOrder(id, user?.id);
     setCancelledId(id);
     setTimeout(() => setCancelledId(null), 2500);
   };
@@ -33,14 +47,17 @@ export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBala
       return;
     }
 
-    addActiveOrder({
-      symbol,
-      type,
-      shares,
-      limitPrice,
-      status: 'PENDING',
-      expires: duration,
-    });
+    addActiveOrder(
+      {
+        symbol,
+        type,
+        shares,
+        limitPrice,
+        status: 'PENDING',
+        expires: duration,
+      },
+      user?.id
+    );
 
     setJustPlaced(true);
     setTimeout(() => {
@@ -96,12 +113,18 @@ export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBala
             <select
               data-testid="order-symbol-select"
               value={symbol}
-              onChange={(e) => setSymbol(e.target.value)}
+              onChange={(e) => {
+                setSymbol(e.target.value);
+                const stock = STOCKS_HOLDINGS_DATA.find((s) => s.symbol === e.target.value);
+                if (stock) {
+                  setLimitPrice(stock.currentMark);
+                }
+              }}
               className="w-full bg-surface-container border border-border-hairline rounded px-2 py-1.5 font-bold text-on-surface focus:outline-none"
             >
-              {STOCKS_HOLDINGS_DATA.slice(0, 10).map((s) => (
+              {STOCKS_HOLDINGS_DATA.map((s) => (
                 <option key={s.symbol} value={s.symbol}>
-                  {s.symbol} ({s.isPreIpo ? 'SPV' : 'DMA'})
+                  {s.symbol} — {s.name} ({s.isPreIpo ? 'SPV' : 'DMA'})
                 </option>
               ))}
             </select>

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
   DEFAULT_ALLOCATIONS,
+  ZERO_ALLOCATIONS,
   TOTAL_Global_NET_WORTH,
   type VerticalAllocation,
 } from '../lib/calculations';
@@ -26,13 +27,15 @@ interface PortfolioState {
   setAllocations: (allocations: VerticalAllocation[]) => void;
   setReturns: (returns: Record<string, { dollarChange: number; percentageChange: number }>) => void;
   updateAllocation: (id: string, value: number) => void;
+  syncUserHoldings: (cryptoNav: number, stocksNav: number) => void;
+  resetToZero: () => void;
   resetToDefaults: () => void;
 }
 
 export const usePortfolioStore = create<PortfolioState>((set) => ({
-  netWorth: TOTAL_Global_NET_WORTH,
-  availableCash: 1820450.00,
-  allocations: DEFAULT_ALLOCATIONS,
+  netWorth: 0,
+  availableCash: 0,
+  allocations: ZERO_ALLOCATIONS,
   returns: null,
   activeModal: null,
   activeDepositTab: 'wire',
@@ -73,6 +76,35 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
       };
     });
   },
+
+  syncUserHoldings: (cryptoNav, stocksNav) => {
+    set((state) => {
+      const updated = state.allocations.map((item) => {
+        if (item.id === 'crypto') return { ...item, actualValue: cryptoNav };
+        if (item.id === 'stocks') return { ...item, actualValue: stocksNav };
+        return item;
+      });
+      const total = updated.reduce((acc, curr) => acc + curr.actualValue, 0);
+      const recomputed = updated.map((item) => ({
+        ...item,
+        actualPct: total > 0 ? Number(((item.actualValue / total) * 100).toFixed(1)) : 0,
+      }));
+      return {
+        allocations: recomputed,
+        netWorth: total,
+      };
+    });
+  },
+
+  resetToZero: () =>
+    set({
+      netWorth: 0,
+      availableCash: 0,
+      allocations: ZERO_ALLOCATIONS,
+      returns: null,
+      activeModal: null,
+      activeDepositTab: 'wire',
+    }),
 
   resetToDefaults: () =>
     set({

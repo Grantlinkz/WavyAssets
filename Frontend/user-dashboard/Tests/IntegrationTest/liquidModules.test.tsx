@@ -5,6 +5,7 @@ import { StocksModule } from '../../src/components/modules/stocks/StocksModule';
 import { WalletModule } from '../../src/components/modules/wallet/WalletModule';
 import { App } from '../../src/App';
 import { useDashboardStore } from '../../src/store/useDashboardStore';
+import { useLiquidStore } from '../../src/store/useLiquidStore';
 
 describe('Liquid Asset Modules Integration Tests', () => {
   beforeEach(() => {
@@ -13,6 +14,7 @@ describe('Liquid Asset Modules Integration Tests', () => {
       activeVertical: 'crypto',
       maskBalances: false,
     });
+    useLiquidStore.setState({ activeOrders: [] });
   });
 
   describe('CryptoModule SSR Rendering', () => {
@@ -49,7 +51,26 @@ describe('Liquid Asset Modules Integration Tests', () => {
       expect(html).toContain('138.82');
       expect(html).toContain('138.85');
       expect(html).toContain('0.94'); // Beta
-      expect(html).toContain('$3,248,420.00');
+      expect(html).toContain('$0.00');
+    });
+
+    it('reflects user active orders in stocks NAV and shares', () => {
+      useLiquidStore.setState({
+        activeOrders: [
+          {
+            id: 'ord-test-nvda',
+            symbol: 'NVDA',
+            type: 'BUY_LIMIT',
+            shares: 25000,
+            limitPrice: 138.85,
+            status: 'PENDING',
+            expires: 'GTC',
+          },
+        ],
+      });
+      const html = renderToString(<StocksModule maskBalances={false} />);
+      expect(html).toContain('25,000 SHRS');
+      expect(html).toContain('$3,471,250.00');
     });
 
     it('renders pre-IPO assets and respects privacy masking', () => {

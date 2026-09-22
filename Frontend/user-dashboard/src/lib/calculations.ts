@@ -184,7 +184,43 @@ export const DEFAULT_ALLOCATIONS: VerticalAllocation[] = [
   },
 ];
 
+export const ZERO_ALLOCATIONS: VerticalAllocation[] = DEFAULT_ALLOCATIONS.map((item) => ({
+  ...item,
+  actualValue: 0,
+  actualPct: 0,
+  deltaLabel: '0.0%',
+}));
+
+export function recomputeAllocations(
+  allocations: VerticalAllocation[],
+  forcedTotal?: number
+): { allocations: VerticalAllocation[]; total: number } {
+  const total = forcedTotal !== undefined ? forcedTotal : allocations.reduce((acc, curr) => acc + curr.actualValue, 0);
+  const recomputed = allocations.map((item) => ({
+    ...item,
+    actualPct: total > 0 ? Number(((item.actualValue / total) * 100).toFixed(1)) : 0,
+  }));
+  return { allocations: recomputed, total };
+}
+
 export const TOTAL_Global_NET_WORTH = 14820450.00;
+
+/**
+ * Detects whether execution is occurring in SSR or Node/Vitest test environment.
+ */
+export function isSsrOrTestEnv(): boolean {
+  try {
+    return (
+      typeof globalThis !== 'undefined' &&
+      Boolean(
+        (globalThis as unknown as { process?: { versions?: { node?: unknown } } })
+          .process?.versions?.node
+      )
+    );
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Format a number as currency, or return a masked placeholder if maskBalances is enabled.

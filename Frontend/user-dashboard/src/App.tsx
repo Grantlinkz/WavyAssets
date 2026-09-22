@@ -23,6 +23,7 @@ import { KycDrawer } from './components/modals/KycDrawer';
 import { InstitutionalGate } from './components/auth/InstitutionalGate';
 import { useAuthStore, type UserEntity } from './store/useAuthStore';
 import { usePortfolioStore } from './store/usePortfolioStore';
+import { useLiquidStore } from './store/useLiquidStore';
 import { refreshSessionToken, fetchCommandBarData, fetchUserProfile } from './lib/api';
 import { Loader2 } from 'lucide-react';
 import type { AssetVertical } from './store/useDashboardStore';
@@ -149,6 +150,22 @@ export const App: React.FC<AppProps> = ({
     isTest,
     landingUrl,
   ]);
+
+  // Load user-scoped execution schedules and active limit orders on mount or user change
+  useEffect(() => {
+    useLiquidStore.getState().loadUserDcaSchedules(user?.id);
+    useLiquidStore.getState().loadUserOrders(user?.id);
+
+    // Initial sync of liquid holdings into portfolio store
+    const liquidState = useLiquidStore.getState();
+    const cryptoNav = liquidState.dcaSchedules
+      .filter((s) => s.active)
+      .reduce((sum, s) => sum + s.amountUsd, 0);
+    const stocksNav = liquidState.activeOrders
+      .filter((o) => o.status !== 'CANCELLED')
+      .reduce((sum, o) => sum + o.shares * o.limitPrice, 0);
+    usePortfolioStore.getState().syncUserHoldings(cryptoNav, stocksNav);
+  }, [user?.id]);
 
   // Dynamically load user-specific command bar financial valuations
   useEffect(() => {

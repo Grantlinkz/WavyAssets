@@ -130,15 +130,16 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
       try {
         addTransaction({
           id: refId,
-          type: 'WITHDRAWAL',
-          asset: activeRail === 'bank' ? 'USD' : selectedCrypto,
-          amount: parsedAmount,
-          status: 'PENDING',
           timestamp: new Date().toISOString(),
-          enclave:
+          vertical: activeRail === 'bank' ? 'CASH' : 'CRYPTO',
+          type: 'WITHDRAWAL',
+          description:
             activeRail === 'bank'
               ? `${bankName} (Settlement Queue)`
-              : `Vault Cold Rail (${selectedProtocol})`,
+              : `Vault Cold Rail (${selectedCrypto} - ${selectedProtocol})`,
+          amountUsd: parsedAmount,
+          status: 'PENDING',
+          reference: refId,
         });
       } catch {
         // Continue gracefully

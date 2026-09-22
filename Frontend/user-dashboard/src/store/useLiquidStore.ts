@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import {
   WALLET_TRANSACTIONS_DATA,
-  INITIAL_DCA_SCHEDULES,
   type DcaScheduleItem,
   type WalletTransaction,
 } from '../lib/liquidAssetData';
@@ -18,12 +17,13 @@ export interface ActiveOrder {
 }
 
 const DCA_STORAGE_PREFIX = 'wavyassets_dca_schedules_';
+const ORDERS_STORAGE_PREFIX = 'wavyassets_active_orders_';
 
 function getStoredDca(userId?: string): DcaScheduleItem[] | null {
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       const raw = window.localStorage.getItem(`${DCA_STORAGE_PREFIX}${userId || 'default'}`);
-      if (raw) return JSON.parse(raw);
+      if (raw !== null) return JSON.parse(raw);
     } catch {
       // ignore
     }
@@ -37,6 +37,31 @@ function persistDca(schedules: DcaScheduleItem[], userId?: string): void {
       window.localStorage.setItem(
         `${DCA_STORAGE_PREFIX}${userId || 'default'}`,
         JSON.stringify(schedules)
+      );
+    } catch {
+      // ignore
+    }
+  }
+}
+
+function getStoredOrders(userId?: string): ActiveOrder[] | null {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const raw = window.localStorage.getItem(`${ORDERS_STORAGE_PREFIX}${userId || 'default'}`);
+      if (raw !== null) return JSON.parse(raw);
+    } catch {
+      // ignore
+    }
+  }
+  return null;
+}
+
+function persistOrders(orders: ActiveOrder[], userId?: string): void {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(
+        `${ORDERS_STORAGE_PREFIX}${userId || 'default'}`,
+        JSON.stringify(orders)
       );
     } catch {
       // ignore
@@ -67,8 +92,9 @@ interface LiquidState {
   setSelectedStock: (symbol: string) => void;
   togglePreMarket: () => void;
   toggleDrip: (symbol: string) => void;
-  addActiveOrder: (order: Omit<ActiveOrder, 'id'>) => void;
-  cancelActiveOrder: (id: string) => void;
+  loadUserOrders: (userId?: string) => void;
+  addActiveOrder: (order: Omit<ActiveOrder, 'id'>, userId?: string) => void;
+  cancelActiveOrder: (id: string, userId?: string) => void;
 
   // Wallet module state
   autoSweepEnabled: boolean;
@@ -95,12 +121,11 @@ export const useLiquidStore = create<LiquidState>((set) => ({
 
   loadUserDcaSchedules: (userId?: string) => {
     const stored = getStoredDca(userId);
-    if (stored && stored.length > 0) {
+    if (stored !== null) {
       set({ dcaSchedules: stored });
     } else {
-      // Default to initial schedules with $25,000 BTC active execution schedule
-      set({ dcaSchedules: INITIAL_DCA_SCHEDULES });
-      persistDca(INITIAL_DCA_SCHEDULES, userId);
+      // Default to empty array so users start with clean zero state unless they add a schedule
+      set({ dcaSchedules: [] });
     }
   },
 
@@ -161,21 +186,34 @@ export const useLiquidStore = create<LiquidState>((set) => ({
       },
     })),
 
-  addActiveOrder: (order) =>
-    set((state) => ({
-      activeOrders: [
+  loadUserOrders: (userId?: string) => {
+    const stored = getStoredOrders(userId);
+    if (stored !== null) {
+      set({ activeOrders: stored });
+    } else {
+      set({ activeOrders: [] });
+    }
+  },
+
+  addActiveOrder: (order, userId) =>
+    set((state) => {
+      const updated = [
         {
           ...order,
           id: `ord-${Math.floor(100 + Math.random() * 900)}`,
         },
         ...state.activeOrders,
-      ],
-    })),
+      ];
+      persistOrders(updated, userId);
+      return { activeOrders: updated };
+    }),
 
-  cancelActiveOrder: (id) =>
-    set((state) => ({
-      activeOrders: state.activeOrders.filter((order) => order.id !== id),
-    })),
+  cancelActiveOrder: (id, userId) =>
+    set((state) => {
+      const updated = state.activeOrders.filter((order) => order.id !== id);
+      persistOrders(updated, userId);
+      return { activeOrders: updated };
+    }),
 
   // Wallet
   autoSweepEnabled: true,

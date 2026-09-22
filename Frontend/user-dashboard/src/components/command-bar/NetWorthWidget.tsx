@@ -1,7 +1,7 @@
 import React from 'react';
 import { useDashboardStore, type TimeframeOption } from '../../store/useDashboardStore';
 import { usePortfolioStore } from '../../store/usePortfolioStore';
-import { formatMaskedCurrency, calculateUserTimeframePnL } from '../../lib/calculations';
+import { formatMaskedCurrency, calculateUserTimeframePnL, isSsrOrTestEnv } from '../../lib/calculations';
 
 const TIMEFRAMES: TimeframeOption[] = ['1D', '1W', '1M', '1Y', 'ALL'];
 
@@ -24,9 +24,12 @@ export const NetWorthWidget: React.FC<NetWorthWidgetProps> = ({
 
   const maskBalances = propMask !== undefined ? propMask : storeMask;
   const timeframe = propTimeframe !== undefined ? propTimeframe : storeTimeframe;
-  const netWorth = propNetWorth !== undefined ? propNetWorth : storeNetWorth;
+  const isSsr = isSsrOrTestEnv();
+  const currentNetWorth = isSsr ? usePortfolioStore.getState().netWorth : storeNetWorth;
+  const netWorth = propNetWorth !== undefined ? propNetWorth : currentNetWorth;
+  const currentReturns = isSsr ? usePortfolioStore.getState().returns : returns;
 
-  const pnl = calculateUserTimeframePnL(netWorth, timeframe, returns ?? undefined);
+  const pnl = calculateUserTimeframePnL(netWorth, timeframe, currentReturns ?? undefined);
 
   return (
     <div className="flex items-center gap-3 shrink-0" data-testid="net-worth-widget">
