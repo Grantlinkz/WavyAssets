@@ -112,7 +112,7 @@ describe('Alternative Asset Modules Integration Suite (Sprint 4)', () => {
 
       // Rental Distribution Blotter
       expect(html).toContain('Monthly Rental Distribution Tracker');
-      expect(html).toContain('March 2025 (Current)');
+      expect(html).toContain('(Current)');
       expect(html).toContain('CLEARED');
 
       // Tenant Credit Matrix & OTC Bulletin
@@ -150,7 +150,7 @@ describe('Alternative Asset Modules Integration Suite (Sprint 4)', () => {
 
       // Drive Booking Engine
       expect(html).toContain('Fleet Monetization Yield &amp; Member Drive-Day Engine');
-      expect(html).toContain('April 2025 Driving Calendar');
+      expect(html).toContain('Driving Calendar');
       expect(html).toContain('Reserve Concierge Drive Day');
 
       // Custody Ledger

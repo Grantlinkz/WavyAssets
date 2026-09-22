@@ -7,7 +7,9 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
-import { formatMaskedCurrency } from '../../../lib/calculations';
+import { usePortfolioStore } from '../../../store/usePortfolioStore';
+import { useLiquidStore } from '../../../store/useLiquidStore';
+import { formatMaskedCurrency, isSsrOrTestEnv } from '../../../lib/calculations';
 
 interface FiatRampWizardProps {
   maskBalances?: boolean;
@@ -16,6 +18,12 @@ interface FiatRampWizardProps {
 export const FiatRampWizard: React.FC<FiatRampWizardProps> = ({ maskBalances: propMask }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
+
+  const isSsr = isSsrOrTestEnv();
+  const rawAvailableCash = usePortfolioStore((s) => s.availableCash);
+  const availableCash = isSsr ? usePortfolioStore.getState().availableCash : rawAvailableCash;
+  const adjustAvailableCash = usePortfolioStore((s) => s.adjustAvailableCash);
+  const addTransaction = useLiquidStore((s) => s.addTransaction);
 
   const [activeTab, setActiveTab] = useState<'WIRE' | 'WEB3' | 'CARD'>('WIRE');
   const [wireDirection, setWireDirection] = useState<'DEPOSIT' | 'WITHDRAW'>('WITHDRAW');
@@ -30,20 +38,57 @@ export const FiatRampWizard: React.FC<FiatRampWizardProps> = ({ maskBalances: pr
 
   const handleInitiate = () => {
     const numAmount = parseFloat(amount.replace(/,/g, ''));
-    if (isNaN(numAmount) || numAmount <= 0 || numAmount > 1820450) {
-      setValidationErr('Please enter a valid amount up to available liquidity ($1,820,450.00).');
+    if (isNaN(numAmount) || numAmount <= 0) {
+      setValidationErr('Please enter a valid amount.');
+      setTimeout(() => setValidationErr(''), 3500);
+      return;
+    }
+    if (wireDirection === 'WITHDRAW' && numAmount > availableCash) {
+      setValidationErr(
+        `Withdrawal amount exceeds available liquid balance ($${availableCash.toLocaleString('en-US', { minimumFractionDigits: 2 })}).`
+      );
       setTimeout(() => setValidationErr(''), 3500);
       return;
     }
     setValidationErr('');
     setIsExecuting(true);
     setTimeout(() => {
+      if (wireDirection === 'DEPOSIT') {
+        adjustAvailableCash(numAmount);
+        addTransaction({
+          id: `tx-dep-${Date.now()}`,
+          timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
+          vertical: 'CASH',
+          type: 'DEPOSIT',
+          description: 'Incoming Bank Wire • Zurich Enclave',
+          amountUsd: numAmount,
+          status: 'CLEARED',
+          reference: `WY-${Math.floor(1000 + Math.random() * 9000)}-WIRE-IN`,
+        });
+        setSuccessMsg(
+          maskBalances
+            ? 'Deposit wire settlement cleared into vault.'
+            : `Wire deposit of $${numAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD cleared into vault.`
+        );
+      } else {
+        adjustAvailableCash(-numAmount);
+        addTransaction({
+          id: `tx-wth-${Date.now()}`,
+          timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
+          vertical: 'CASH',
+          type: 'WITHDRAWAL',
+          description: 'Outgoing Bank Wire • Treuhand Zurich AG',
+          amountUsd: numAmount,
+          status: 'CLEARED',
+          reference: `WY-${Math.floor(1000 + Math.random() * 9000)}-WIRE-OUT`,
+        });
+        setSuccessMsg(
+          maskBalances
+            ? 'Withdrawal wire settlement submitted to HSM Enclave.'
+            : `Wire withdrawal of $${numAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD cleared and disbursed.`
+        );
+      }
       setIsExecuting(false);
-      setSuccessMsg(
-        maskBalances
-          ? 'Wire settlement submitted to HSM Enclave.'
-          : `Wire settlement of $${amount} USD submitted to HSM Enclave.`
-      );
       setTimeout(() => setSuccessMsg(''), 4000);
     }, 700);
   };
@@ -205,7 +250,7 @@ export const FiatRampWizard: React.FC<FiatRampWizardProps> = ({ maskBalances: pr
               <span className="text-on-surface-variant">
                 Available Liquid:{' '}
                 <strong className="text-primary tabular-nums">
-                  {formatMaskedCurrency(1820450.0, maskBalances)}
+                  {formatMaskedCurrency(availableCash, maskBalances)}
                 </strong>
               </span>
             </div>
@@ -223,21 +268,28 @@ export const FiatRampWizard: React.FC<FiatRampWizardProps> = ({ maskBalances: pr
                 <button
                   type="button"
                   onClick={() => handleQuickAmount('50,000.00')}
-                  className="px-1.5 py-0.5 bg-surface-container text-outline hover:text-on-surface font-mono text-[10px] rounded-DEFAULT"
+                  className="px-1.5 py-0.5 bg-surface-container text-outline hover:text-on-surface font-mono text-[10px] rounded-DEFAULT cursor-pointer"
                 >
                   $50k
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickAmount('250,000.00')}
-                  className="px-1.5 py-0.5 bg-surface-container text-outline hover:text-on-surface font-mono text-[10px] rounded-DEFAULT"
+                  className="px-1.5 py-0.5 bg-surface-container text-outline hover:text-on-surface font-mono text-[10px] rounded-DEFAULT cursor-pointer"
                 >
                   $250k
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleQuickAmount('1,820,450.00')}
-                  className="px-1.5 py-0.5 bg-primary/20 text-primary font-mono text-[10px] rounded-DEFAULT font-bold"
+                  onClick={() =>
+                    handleQuickAmount(
+                      availableCash.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })
+                    )
+                  }
+                  className="px-1.5 py-0.5 bg-primary/20 text-primary font-mono text-[10px] rounded-DEFAULT font-bold cursor-pointer"
                 >
                   MAX
                 </button>

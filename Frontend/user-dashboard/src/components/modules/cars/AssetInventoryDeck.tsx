@@ -9,6 +9,9 @@ interface AssetInventoryDeckProps {
   maskBalances?: boolean;
 }
 
+const LUXURY_FALLBACK_VEHICLE = 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80';
+const LUXURY_FALLBACK_HOROLOGY = 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80';
+
 export const AssetInventoryDeck: React.FC<AssetInventoryDeckProps> = ({
   maskBalances: propMask,
 }) => {
@@ -135,7 +138,14 @@ export const AssetInventoryDeck: React.FC<AssetInventoryDeckProps> = ({
                 <img
                   src={asset.imageUrl}
                   alt={asset.title}
-                  className="w-full h-full object-cover object-center"
+                  loading="lazy"
+                  onError={(e) => {
+                    const fallback = asset.type === 'vehicle' ? LUXURY_FALLBACK_VEHICLE : LUXURY_FALLBACK_HOROLOGY;
+                    if (e.currentTarget.src !== fallback) {
+                      e.currentTarget.src = fallback;
+                    }
+                  }}
+                  className="w-full h-full object-cover object-center transition-opacity duration-300"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-surface-container via-transparent to-black/60"></div>
                 <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">

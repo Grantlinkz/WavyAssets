@@ -23,7 +23,10 @@ function getStoredDca(userId?: string): DcaScheduleItem[] | null {
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       const raw = window.localStorage.getItem(`${DCA_STORAGE_PREFIX}${userId || 'default'}`);
-      if (raw !== null) return JSON.parse(raw);
+      if (raw !== null) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed as DcaScheduleItem[];
+      }
     } catch {
       // ignore
     }
@@ -48,7 +51,10 @@ function getStoredOrders(userId?: string): ActiveOrder[] | null {
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       const raw = window.localStorage.getItem(`${ORDERS_STORAGE_PREFIX}${userId || 'default'}`);
-      if (raw !== null) return JSON.parse(raw);
+      if (raw !== null) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed as ActiveOrder[];
+      }
     } catch {
       // ignore
     }

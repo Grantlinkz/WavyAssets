@@ -1662,3 +1662,20 @@ export const WALLET_TRANSACTIONS_DATA: WalletTransaction[] = [
     reference: 'FEDWIRE-49120',
   },
 ];
+
+/**
+ * Calculates consolidated equities NAV using each asset's currentMark,
+ * matching StocksModule's valuation and excluding CANCELLED orders.
+ */
+export function calculateStocksEquitiesNav(
+  orders: { symbol: string; shares: number; limitPrice: number; status: string }[]
+): number {
+  return orders
+    .filter((o) => o.status !== 'CANCELLED')
+    .reduce((sum, o) => {
+      const mark =
+        STOCKS_HOLDINGS_DATA.find((s) => s.symbol === o.symbol)?.currentMark ?? o.limitPrice;
+      return sum + o.shares * mark;
+    }, 0);
+}
+

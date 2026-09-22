@@ -25,6 +25,7 @@ import { useAuthStore, type UserEntity } from './store/useAuthStore';
 import { usePortfolioStore } from './store/usePortfolioStore';
 import { useLiquidStore } from './store/useLiquidStore';
 import { refreshSessionToken, fetchCommandBarData, fetchUserProfile } from './lib/api';
+import { calculateStocksEquitiesNav } from './lib/liquidAssetData';
 import { Loader2 } from 'lucide-react';
 import type { AssetVertical } from './store/useDashboardStore';
 
@@ -161,9 +162,7 @@ export const App: React.FC<AppProps> = ({
     const cryptoNav = liquidState.dcaSchedules
       .filter((s) => s.active)
       .reduce((sum, s) => sum + s.amountUsd, 0);
-    const stocksNav = liquidState.activeOrders
-      .filter((o) => o.status !== 'CANCELLED')
-      .reduce((sum, o) => sum + o.shares * o.limitPrice, 0);
+    const stocksNav = calculateStocksEquitiesNav(liquidState.activeOrders);
     usePortfolioStore.getState().syncUserHoldings(cryptoNav, stocksNav);
   }, [user?.id]);
 

@@ -3,7 +3,7 @@ import { TrendingUp, BarChart3, Search, ChevronLeft, ChevronRight } from 'lucide
 import { OrderBookTable } from './OrderBookTable';
 import { PositionAnalytics } from './PositionAnalytics';
 import { ActiveOrdersHub } from './ActiveOrdersHub';
-import { STOCKS_HOLDINGS_DATA } from '../../../lib/liquidAssetData';
+import { STOCKS_HOLDINGS_DATA, calculateStocksEquitiesNav } from '../../../lib/liquidAssetData';
 import { useLiquidStore } from '../../../store/useLiquidStore';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { usePortfolioStore } from '../../../store/usePortfolioStore';
@@ -85,8 +85,8 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
   const heldStocks = useMemo(() => dynamicStocks.filter((s) => s.shares > 0), [dynamicStocks]);
 
   const totalEquitiesNav = useMemo(() => {
-    return heldStocks.reduce((sum, s) => sum + s.shares * s.currentMark, 0);
-  }, [heldStocks]);
+    return calculateStocksEquitiesNav(activeOrders);
+  }, [activeOrders]);
 
   // Synchronize equities allocation with portfolio store
   React.useEffect(() => {

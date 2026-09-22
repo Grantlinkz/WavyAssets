@@ -9,7 +9,8 @@ import {
   ArrowLeftRight,
 } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
-import { formatMaskedCurrency } from '../../../lib/calculations';
+import { usePortfolioStore } from '../../../store/usePortfolioStore';
+import { formatMaskedCurrency, isSsrOrTestEnv } from '../../../lib/calculations';
 
 interface LedgerSplitCardsProps {
   maskBalances?: boolean;
@@ -19,43 +20,48 @@ export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
 
-  const investedAllocations = [
-    {
-      name: 'Crypto & Validator Staking',
-      amount: 4890000.0,
-      pct: 37.6,
-      color: 'bg-primary',
-      dotColor: 'bg-primary',
-    },
-    {
-      name: 'Global Equities & Pre-IPO SPVs',
-      amount: 2960000.0,
-      pct: 22.8,
-      color: 'bg-secondary',
-      dotColor: 'bg-secondary',
-    },
-    {
-      name: 'Tokenized Real Estate SPVs (Zurich/London)',
-      amount: 2850000.0,
-      pct: 21.9,
-      color: 'bg-tertiary',
-      dotColor: 'bg-tertiary',
-    },
-    {
-      name: 'Private AI Quant Funds (Autonomous Enclaves)',
-      amount: 1450000.0,
-      pct: 11.2,
-      color: 'bg-outline',
-      dotColor: 'bg-outline',
-    },
-    {
-      name: 'Exotic Heritage Cars & Horology Vault',
-      amount: 850000.0,
-      pct: 6.5,
-      color: 'bg-primary-container',
-      dotColor: 'bg-primary-container',
-    },
-  ];
+  const isSsr = isSsrOrTestEnv();
+  const rawAvailableCash = usePortfolioStore((s) => s.availableCash);
+  const rawNetWorth = usePortfolioStore((s) => s.netWorth);
+  const rawAllocations = usePortfolioStore((s) => s.allocations);
+  const openModal = usePortfolioStore((s) => s.openModal);
+
+  const availableCash = isSsr ? usePortfolioStore.getState().availableCash : rawAvailableCash;
+  const netWorth = isSsr ? usePortfolioStore.getState().netWorth : rawNetWorth;
+  const storeAllocations = isSsr ? usePortfolioStore.getState().allocations : rawAllocations;
+
+  const investedCapital = Math.max(0, netWorth - availableCash);
+
+  const usdcBalance = availableCash * 0.6127;
+  const usdCashBalance = availableCash * 0.1518;
+  const chfCashBalance = availableCash * 0.1366;
+  const eurCashBalance = availableCash * 0.0989;
+
+  const investedAllocations = storeAllocations.map((alloc) => {
+    let colorClass = 'bg-primary';
+    let dotColorClass = 'bg-primary';
+    if (alloc.id === 'stocks') {
+      colorClass = 'bg-secondary';
+      dotColorClass = 'bg-secondary';
+    } else if (alloc.id === 'real-estate') {
+      colorClass = 'bg-tertiary';
+      dotColorClass = 'bg-tertiary';
+    } else if (alloc.id === 'ai-funds') {
+      colorClass = 'bg-outline';
+      dotColorClass = 'bg-outline';
+    } else if (alloc.id === 'cars') {
+      colorClass = 'bg-primary-container';
+      dotColorClass = 'bg-primary-container';
+    }
+
+    return {
+      name: alloc.name,
+      amount: alloc.actualValue,
+      pct: alloc.actualPct,
+      color: colorClass,
+      dotColor: dotColorClass,
+    };
+  });
 
   return (
     <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -81,7 +87,7 @@ export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances
 
           <div className="flex items-baseline gap-2 mb-4 pb-3 border-b border-border-hairline">
             <span className="text-2xl font-mono text-primary tabular-nums font-bold tracking-tight">
-              {formatMaskedCurrency(1820450.0, maskBalances)}
+              {formatMaskedCurrency(availableCash, maskBalances)}
             </span>
             <span className="text-[10px] font-mono text-outline uppercase tracking-wider">
               USD Equivalent
@@ -96,7 +102,7 @@ export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances
                 <span className="text-tertiary">99.9%</span>
               </div>
               <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
-                {formatMaskedCurrency(1115337.5, maskBalances)}
+                {formatMaskedCurrency(usdcBalance, maskBalances)}
               </div>
               <span className="text-[10px] font-sans text-outline">Native ERC-20</span>
             </div>
@@ -107,7 +113,7 @@ export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances
                 <span className="text-primary font-semibold">Fedwire</span>
               </div>
               <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
-                {formatMaskedCurrency(276400.0, maskBalances)}
+                {formatMaskedCurrency(usdCashBalance, maskBalances)}
               </div>
               <span className="text-[10px] font-sans text-outline">JPMorgan Segregated</span>
             </div>
@@ -118,10 +124,10 @@ export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances
                 <span className="text-tertiary font-semibold">SIC RTGS</span>
               </div>
               <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
-                {formatMaskedCurrency(248712.5, maskBalances)}
+                {formatMaskedCurrency(chfCashBalance, maskBalances)}
               </div>
               <span className="text-[10px] font-sans text-outline">
-                {maskBalances ? '•••••• CHF' : '220,650.00 CHF'}
+                {maskBalances ? '•••••• CHF' : `${Math.round(chfCashBalance * 0.887).toLocaleString()} CHF`}
               </span>
             </div>
 
@@ -131,10 +137,10 @@ export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances
                 <span className="text-outline">SEPA Inst</span>
               </div>
               <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
-                {maskBalances ? '••••••••' : '≈ $180,000.00'}
+                {formatMaskedCurrency(eurCashBalance, maskBalances)}
               </div>
               <span className="text-[10px] font-sans text-outline">
-                {maskBalances ? '•••••• EUR' : '€166,200.00 EUR'}
+                {maskBalances ? '•••••• EUR' : `€${Math.round(eurCashBalance * 0.923).toLocaleString()} EUR`}
               </span>
             </div>
           </div>
@@ -144,21 +150,24 @@ export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances
         <div className="flex flex-wrap items-center gap-2 pt-2">
           <button
             type="button"
-            className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-primary text-surface font-mono text-xs font-bold rounded-DEFAULT hover:bg-primary-hover transition-colors uppercase tracking-wider"
+            onClick={() => openModal('withdraw')}
+            className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-primary text-surface font-mono text-xs font-bold rounded-DEFAULT hover:bg-primary-hover transition-colors uppercase tracking-wider cursor-pointer"
           >
             <ArrowUpRight className="w-4 h-4" />
             <span>Withdraw to Bank</span>
           </button>
           <button
             type="button"
-            className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-surface-container border border-border-hairline text-on-surface hover:bg-surface-container-high font-mono text-xs rounded-DEFAULT transition-colors uppercase tracking-wider"
+            onClick={() => openModal('deposit')}
+            className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-surface-container border border-border-hairline text-on-surface hover:bg-surface-container-high font-mono text-xs rounded-DEFAULT transition-colors uppercase tracking-wider cursor-pointer"
           >
             <ArrowDownLeft className="w-4 h-4 text-tertiary" />
             <span>Deposit Capital</span>
           </button>
           <button
             type="button"
-            className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-surface-container border border-border-hairline text-on-surface hover:bg-surface-container-high font-mono text-xs rounded-DEFAULT transition-colors uppercase tracking-wider"
+            onClick={() => openModal('trade')}
+            className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-surface-container border border-border-hairline text-on-surface hover:bg-surface-container-high font-mono text-xs rounded-DEFAULT transition-colors uppercase tracking-wider cursor-pointer"
           >
             <ArrowLeftRight className="w-4 h-4 text-secondary" />
             <span>Internal Transfer</span>
@@ -171,7 +180,7 @@ export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances
         <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-0.5 bg-surface-container border border-border-hairline rounded-DEFAULT">
           <ShieldCheck className="w-3.5 h-3.5 text-tertiary" />
           <span className="text-[10px] font-mono text-tertiary uppercase font-medium tracking-wider">
-            All Vaults Bonded & Collateralized
+            All Vaults Bonded &amp; Collateralized
           </span>
         </div>
 
@@ -179,16 +188,16 @@ export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances
           <div className="flex items-center gap-2 mb-1">
             <Lock className="w-4 h-4 text-outline" />
             <span className="text-xs font-mono text-on-surface uppercase tracking-wider font-semibold">
-              Card B: Invested & Locked Capital
+              Card B: Invested &amp; Locked Capital
             </span>
           </div>
           <p className="text-xs font-sans text-outline max-w-xl mb-3">
-            Fiduciary capital locked in real estate SPVs, exotic vehicles, horology, equities, & validator staking.
+            Fiduciary capital locked in real estate SPVs, exotic vehicles, horology, equities, &amp; validator staking.
           </p>
 
           <div className="flex items-baseline gap-2 mb-4 pb-3 border-b border-border-hairline">
             <span className="text-2xl font-mono text-on-surface tabular-nums font-bold tracking-tight">
-              {formatMaskedCurrency(13000000.0, maskBalances)}
+              {formatMaskedCurrency(investedCapital, maskBalances)}
             </span>
             <span className="text-[10px] font-mono text-outline uppercase tracking-wider">
               Bonded Asset Valuation

@@ -10,7 +10,9 @@ import { FiatRampWizard } from './FiatRampWizard';
 import { CashSweepPot } from './CashSweepPot';
 import { TxHistoryTable } from './TxHistoryTable';
 import { useDashboardStore } from '../../../store/useDashboardStore';
-import { formatMaskedCurrency } from '../../../lib/calculations';
+import { usePortfolioStore } from '../../../store/usePortfolioStore';
+import { useAuthStore } from '../../../store/useAuthStore';
+import { formatMaskedCurrency, isSsrOrTestEnv } from '../../../lib/calculations';
 
 interface WalletModuleProps {
   maskBalances?: boolean;
@@ -19,6 +21,23 @@ interface WalletModuleProps {
 export const WalletModule: React.FC<WalletModuleProps> = ({ maskBalances: propMask }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
+
+  const isSsr = isSsrOrTestEnv();
+  const storeNetWorth = usePortfolioStore((s) => s.netWorth);
+  const storeAvailableCash = usePortfolioStore((s) => s.availableCash);
+  const storeUser = useAuthStore((s) => s.user);
+
+  const netWorth = isSsr ? usePortfolioStore.getState().netWorth : storeNetWorth;
+  const availableCash = isSsr ? usePortfolioStore.getState().availableCash : storeAvailableCash;
+  const user = isSsr ? useAuthStore.getState().user : storeUser;
+
+  const enclaveTierBadge = React.useMemo(() => {
+    if (user?.kycTier === 'TIER_3' || netWorth >= 10000000) return 'TIER 3 AUDITED ENCLAVE';
+    if (user?.kycTier === 'TIER_2' || netWorth >= 1000000) return 'TIER 2 VERIFIED ENCLAVE';
+    return 'TIER 1 STANDARD ENCLAVE';
+  }, [user?.kycTier, netWorth]);
+
+  const liquidRatioPct = netWorth > 0 ? Number(((availableCash / netWorth) * 100).toFixed(2)) : 0;
 
   return (
     <div
@@ -30,9 +49,9 @@ export const WalletModule: React.FC<WalletModuleProps> = ({ maskBalances: propMa
         <div className="flex flex-wrap items-center gap-2 text-on-surface-variant font-mono text-[11px] uppercase tracking-wider">
           <span className="text-outline">Portfolio</span>
           <span className="text-outline/40">/</span>
-          <span className="text-outline">Treasury & Cards</span>
+          <span className="text-outline">Treasury &amp; Cards</span>
           <span className="text-outline/40">/</span>
-          <span className="text-primary font-semibold">Wallets & Global Finance</span>
+          <span className="text-primary font-semibold">Wallets &amp; Global Finance</span>
           <span className="hidden md:inline text-outline/30 mx-1">|</span>
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-surface-container text-tertiary rounded-DEFAULT text-[10px]">
@@ -55,21 +74,21 @@ export const WalletModule: React.FC<WalletModuleProps> = ({ maskBalances: propMa
         <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-container text-on-surface hover:bg-surface-container-high rounded-DEFAULT font-mono text-[11px] uppercase tracking-wider transition-colors"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-container text-on-surface hover:bg-surface-container-high rounded-DEFAULT font-mono text-[11px] uppercase tracking-wider transition-colors cursor-pointer"
           >
             <FileText className="w-3.5 h-3.5 text-primary" />
             <span>Monthly Audit PDF</span>
           </button>
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-container text-on-surface hover:bg-surface-container-high rounded-DEFAULT font-mono text-[11px] uppercase tracking-wider transition-colors"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-container text-on-surface hover:bg-surface-container-high rounded-DEFAULT font-mono text-[11px] uppercase tracking-wider transition-colors cursor-pointer"
           >
             <CreditCard className="w-3.5 h-3.5 text-outline" />
             <span>Manage IBANs</span>
           </button>
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary text-surface font-semibold rounded-DEFAULT font-mono text-[11px] uppercase tracking-wider hover:bg-primary-hover transition-colors"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary text-surface font-semibold rounded-DEFAULT font-mono text-[11px] uppercase tracking-wider hover:bg-primary-hover transition-colors cursor-pointer"
           >
             <Sliders className="w-3.5 h-3.5" />
             <span>Settlement Limits</span>
@@ -86,12 +105,12 @@ export const WalletModule: React.FC<WalletModuleProps> = ({ maskBalances: propMa
                 Consolidated Platform Net Wealth
               </span>
               <span className="px-1.5 py-0.5 bg-primary/20 text-primary font-mono text-[10px] rounded-DEFAULT">
-                TIER 3 AUDITED ENCLAVE
+                {enclaveTierBadge}
               </span>
             </div>
             <div className="flex items-baseline gap-3">
               <span className="text-2xl lg:text-3xl font-mono text-on-surface tracking-tight tabular-nums font-bold">
-                {formatMaskedCurrency(14820450.0, maskBalances)}
+                {formatMaskedCurrency(netWorth, maskBalances)}
               </span>
               <span className="text-sm font-mono text-tertiary tabular-nums font-semibold flex items-center gap-1">
                 <TrendingUp className="w-4 h-4" />
@@ -115,7 +134,7 @@ export const WalletModule: React.FC<WalletModuleProps> = ({ maskBalances: propMa
                 Liquid Ratio
               </span>
               <span className="text-sm font-mono text-primary tabular-nums font-bold">
-                12.28%
+                {liquidRatioPct}%
               </span>
             </div>
             <div className="bg-surface-container-lowest px-3 py-2 rounded-DEFAULT border border-border-hairline">

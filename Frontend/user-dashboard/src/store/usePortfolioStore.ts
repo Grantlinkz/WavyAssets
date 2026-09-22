@@ -33,10 +33,25 @@ interface PortfolioState {
   resetToDefaults: () => void;
 }
 
+function recomputeAllocations(updated: VerticalAllocation[]): {
+  allocations: VerticalAllocation[];
+  netWorth: number;
+} {
+  const total = updated.reduce((acc, curr) => acc + curr.actualValue, 0);
+  const recomputed = updated.map((item) => ({
+    ...item,
+    actualPct: total > 0 ? Number(((item.actualValue / total) * 100).toFixed(1)) : 0,
+  }));
+  return {
+    allocations: recomputed,
+    netWorth: total,
+  };
+}
+
 export const usePortfolioStore = create<PortfolioState>((set) => ({
-  netWorth: 0,
-  availableCash: 0,
-  allocations: ZERO_ALLOCATIONS,
+  netWorth: TOTAL_Global_NET_WORTH,
+  availableCash: 1820450.00,
+  allocations: DEFAULT_ALLOCATIONS,
   returns: null,
   activeModal: null,
   activeDepositTab: 'wire',
@@ -66,15 +81,7 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
       const updated = state.allocations.map((item) =>
         item.id === id ? { ...item, actualValue: value } : item
       );
-      const total = updated.reduce((acc, curr) => acc + curr.actualValue, 0);
-      const recomputed = updated.map((item) => ({
-        ...item,
-        actualPct: total > 0 ? Number(((item.actualValue / total) * 100).toFixed(1)) : 0,
-      }));
-      return {
-        allocations: recomputed,
-        netWorth: total,
-      };
+      return recomputeAllocations(updated);
     });
   },
 
@@ -85,15 +92,7 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
         if (item.id === 'stocks') return { ...item, actualValue: stocksNav };
         return item;
       });
-      const total = updated.reduce((acc, curr) => acc + curr.actualValue, 0);
-      const recomputed = updated.map((item) => ({
-        ...item,
-        actualPct: total > 0 ? Number(((item.actualValue / total) * 100).toFixed(1)) : 0,
-      }));
-      return {
-        allocations: recomputed,
-        netWorth: total,
-      };
+      return recomputeAllocations(updated);
     });
   },
 
@@ -104,15 +103,7 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
         if (item.id === 'cars') return { ...item, actualValue: carsNav };
         return item;
       });
-      const total = updated.reduce((acc, curr) => acc + curr.actualValue, 0);
-      const recomputed = updated.map((item) => ({
-        ...item,
-        actualPct: total > 0 ? Number(((item.actualValue / total) * 100).toFixed(1)) : 0,
-      }));
-      return {
-        allocations: recomputed,
-        netWorth: total,
-      };
+      return recomputeAllocations(updated);
     });
   },
 

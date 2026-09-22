@@ -250,10 +250,12 @@ export const useAlternativeStore = create<AlternativeStoreState>((set, get) => (
       if (remainingTokens <= 0 && (!existing.leases || existing.leases.length === 0)) {
         delete updatedHoldings[propertyId];
       } else {
+        const basisPerToken = existing.tokens > 0 ? existing.totalInvested / existing.tokens : 0;
+        const soldBasis = basisPerToken * count;
         updatedHoldings[propertyId] = {
           ...existing,
           tokens: remainingTokens,
-          totalInvested: Math.max(0, existing.totalInvested - proceeds),
+          totalInvested: Math.max(0, existing.totalInvested - soldBasis),
         };
       }
 

@@ -45,16 +45,27 @@ export const RentalDistributionBlotter: React.FC<RentalDistributionBlotterProps>
       return { dynamicHistory: [], totalYtdCleared: 0 };
     }
 
-    const periods = [
-      { id: 'dist-current', period: 'March 2025 (Current)', hash: '0x49f1...881a' },
-      { id: 'dist-feb-25', period: 'February 2025', hash: '0x81b2...99ca' },
-      { id: 'dist-jan-25', period: 'January 2025', hash: '0x34aa...e018' },
-      { id: 'dist-dec-24', period: 'December 2024', hash: '0x72ef...15ad' },
-      { id: 'dist-nov-24', period: 'November 2024', hash: '0x11ab...6389' },
-      { id: 'dist-oct-24', period: 'October 2024', hash: '0x44dc...819e' },
+    const now = new Date();
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
     ];
 
-    const history = periods.map((p, idx) => {
+    const dynamicPeriods = Array.from({ length: 6 }).map((_, idx) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - idx, 1);
+      const mName = monthNames[d.getMonth()];
+      const yNum = d.getFullYear();
+      const isCurrent = idx === 0;
+      const periodLabel = isCurrent ? `${mName} ${yNum} (Current)` : `${mName} ${yNum}`;
+      const hashSuffix = ((1000 + idx * 739) % 10000).toString(16).padStart(4, '0');
+      return {
+        id: `dist-dyn-${idx}`,
+        period: periodLabel,
+        hash: `0x49f1...${hashSuffix}`,
+      };
+    });
+
+    const history = dynamicPeriods.map((p, idx) => {
       // Small realistic baseline variances
       const varianceFactor = 1 - (idx * 0.005);
       const actual = Number((totalMonthlyYield * varianceFactor).toFixed(2));
