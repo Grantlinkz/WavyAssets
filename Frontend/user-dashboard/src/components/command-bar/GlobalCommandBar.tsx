@@ -18,7 +18,7 @@ export const GlobalCommandBar: React.FC<GlobalCommandBarProps> = ({
   return (
     <div
       data-testid="global-command-bar"
-      className="h-12 min-h-[48px] bg-surface-container-low border-b border-border-hairline px-4 flex items-center justify-between gap-6 overflow-x-auto text-on-surface select-none z-30 sticky top-14"
+      className="min-h-[48px] h-12 bg-surface-container-low border-b border-border-hairline px-4 flex items-center justify-between gap-6 overflow-x-auto overflow-y-hidden text-on-surface select-none z-30 sticky top-14"
     >
       {/* Left Cell: Consolidated Net Worth & Dynamic Timeframe P&L */}
       <NetWorthWidget maskBalances={maskBalances} timeframe={timeframe} />

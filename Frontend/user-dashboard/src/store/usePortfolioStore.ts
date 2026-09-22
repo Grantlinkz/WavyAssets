@@ -28,6 +28,7 @@ interface PortfolioState {
   setReturns: (returns: Record<string, { dollarChange: number; percentageChange: number }>) => void;
   updateAllocation: (id: string, value: number) => void;
   syncUserHoldings: (cryptoNav: number, stocksNav: number) => void;
+  syncAlternativeHoldings: (realEstateNav: number, carsNav: number) => void;
   resetToZero: () => void;
   resetToDefaults: () => void;
 }
@@ -82,6 +83,25 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
       const updated = state.allocations.map((item) => {
         if (item.id === 'crypto') return { ...item, actualValue: cryptoNav };
         if (item.id === 'stocks') return { ...item, actualValue: stocksNav };
+        return item;
+      });
+      const total = updated.reduce((acc, curr) => acc + curr.actualValue, 0);
+      const recomputed = updated.map((item) => ({
+        ...item,
+        actualPct: total > 0 ? Number(((item.actualValue / total) * 100).toFixed(1)) : 0,
+      }));
+      return {
+        allocations: recomputed,
+        netWorth: total,
+      };
+    });
+  },
+
+  syncAlternativeHoldings: (realEstateNav, carsNav) => {
+    set((state) => {
+      const updated = state.allocations.map((item) => {
+        if (item.id === 'real-estate') return { ...item, actualValue: realEstateNav };
+        if (item.id === 'cars') return { ...item, actualValue: carsNav };
         return item;
       });
       const total = updated.reduce((acc, curr) => acc + curr.actualValue, 0);

@@ -9,6 +9,7 @@ import { CarsModule } from '../../src/components/modules/cars/CarsModule';
 import { usePortfolioStore } from '../../src/store/usePortfolioStore';
 import { useDashboardStore } from '../../src/store/useDashboardStore';
 import { useLiquidStore } from '../../src/store/useLiquidStore';
+import { useAlternativeStore } from '../../src/store/useAlternativeStore';
 
 describe('User Custom Requirements Verification Suite', () => {
   beforeEach(() => {
@@ -77,22 +78,50 @@ describe('User Custom Requirements Verification Suite', () => {
     });
 
     it('calculates RealEstateModule values dynamically from individual properties', () => {
-      const html = renderToString(<RealEstateModule maskBalances={false} />);
-      expect(html).toContain('TOTAL PROPERTY EQUITY');
-      expect(html).toContain('NET RENTAL YIELD');
-      expect(html).toContain('AVERAGE NET CAP RATE');
-      expect(html).toContain('PORTFOLIO OCCUPANCY');
-      expect(html).toContain('$2,850,000.00');
+      // 1. Initial zero state when no holdings
+      useAlternativeStore.setState({ userRealEstateHoldings: {} });
+      const emptyHtml = renderToString(<RealEstateModule maskBalances={false} />);
+      expect(emptyHtml).toContain('TOTAL PROPERTY EQUITY');
+      expect(emptyHtml).toContain('$0.00');
+
+      // 2. Populated holdings
+      useAlternativeStore.setState({
+        userRealEstateHoldings: {
+          're-1': { tokens: 2400, totalInvested: 1200000, leases: [] },
+          're-2': { tokens: 1500, totalInvested: 750000, leases: [] },
+          're-3': { tokens: 1100, totalInvested: 550000, leases: [] },
+          're-4': { tokens: 700, totalInvested: 350000, leases: [] },
+        },
+      });
+      const populatedHtml = renderToString(<RealEstateModule maskBalances={false} />);
+      expect(populatedHtml).toContain('TOTAL PROPERTY EQUITY');
+      expect(populatedHtml).toContain('NET RENTAL YIELD');
+      expect(populatedHtml).toContain('AVERAGE NET CAP RATE');
+      expect(populatedHtml).toContain('PORTFOLIO OCCUPANCY');
+      expect(populatedHtml).toContain('$2,850,000.00');
     });
 
     it('calculates CarsModule values dynamically from individual vaulted collection items', () => {
-      const html = renderToString(<CarsModule maskBalances={false} />);
-      expect(html).toContain('VAULTED VALUATION');
-      expect(html).toContain('$850,000.00');
-      expect(html).toContain('ACTIVE INSURED LIMIT');
-      expect(html).toContain('$1,200,000.00');
-      expect(html).toContain('1-YEAR INDEX GROWTH');
-      expect(html).toContain('PHYSICAL VAULT TELEMETRY');
+      // 1. Initial zero state when no holdings
+      useAlternativeStore.setState({ userVehicleHoldings: {} });
+      const emptyHtml = renderToString(<CarsModule maskBalances={false} />);
+      expect(emptyHtml).toContain('VAULTED VALUATION');
+      expect(emptyHtml).toContain('$0.00');
+
+      // 2. Populated holdings
+      useAlternativeStore.setState({
+        userVehicleHoldings: {
+          'car-1': { owned: true, purchaseType: 'full', totalInvested: 580000, leases: [] },
+          'watch-1': { owned: true, purchaseType: 'full', totalInvested: 270000, leases: [] },
+        },
+      });
+      const populatedHtml = renderToString(<CarsModule maskBalances={false} />);
+      expect(populatedHtml).toContain('VAULTED VALUATION');
+      expect(populatedHtml).toContain('$850,000.00');
+      expect(populatedHtml).toContain('ACTIVE INSURED LIMIT');
+      expect(populatedHtml).toContain('$1,200,000.00');
+      expect(populatedHtml).toContain('1-YEAR INDEX GROWTH');
+      expect(populatedHtml).toContain('PHYSICAL VAULT TELEMETRY');
     });
   });
 

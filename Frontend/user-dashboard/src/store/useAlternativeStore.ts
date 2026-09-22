@@ -1,11 +1,14 @@
 import { create } from 'zustand';
 import {
-  INITIAL_OTC_ORDERS,
   INITIAL_DRIVE_SLOTS,
   GPU_CLUSTER_TELEMETRY,
+  REAL_ESTATE_ASSETS,
+  EXOTIC_ASSETS,
   type SecondaryOtcOrder,
   type DriveBookingSlot,
 } from '../lib/alternativeAssetData';
+export { INITIAL_OTC_ORDERS } from '../lib/alternativeAssetData';
+import { usePortfolioStore } from './usePortfolioStore';
 
 export type RiskTierId = 'preservation' | 'balanced' | 'high-vol';
 export type RealEstateRegionFilter = 'ALL REGIONS' | 'SWITZERLAND' | 'UNITED KINGDOM' | 'GERMANY';
@@ -25,6 +28,44 @@ export interface VehicleHolding {
   fractionalPct?: number;
   totalInvested?: number;
   leases: Array<{ id: string; type: string; duration: string; cost: number; date: string }>;
+}
+
+export function calculateTotalRealEstateEquity(
+  holdings: Record<string, { tokens: number; totalInvested: number; leases: RealEstateLease[] }>
+): number {
+  let total = 0;
+  Object.entries(holdings).forEach(([propId, holding]) => {
+    const asset = REAL_ESTATE_ASSETS.find((a) => a.id === propId);
+    const tokenPrice = asset?.tokenPrice || 500;
+    const buyVal = (holding.tokens || 0) * tokenPrice;
+    const leaseVal = (holding.leases || []).reduce(
+      (sum, l) => sum + (l.monthlyRent * (l.termMonths || 1)),
+      0
+    );
+    total += buyVal + leaseVal;
+  });
+  return total;
+}
+
+export function calculateTotalCarsValuation(
+  holdings: Record<string, VehicleHolding>
+): number {
+  let total = 0;
+  Object.entries(holdings).forEach(([assetId, holding]) => {
+    const asset = EXOTIC_ASSETS.find((a) => a.id === assetId);
+    const fmv = asset?.fairMarketValue || 0;
+    let buyVal = 0;
+    if (holding.owned || (holding.totalInvested && holding.totalInvested > 0)) {
+      if (holding.purchaseType === 'fractional') {
+        buyVal = holding.totalInvested || (holding.fractionalPct ? (holding.fractionalPct / 100) * fmv : fmv);
+      } else {
+        buyVal = fmv;
+      }
+    }
+    const leaseVal = (holding.leases || []).reduce((sum, l) => sum + (l.cost || 0), 0);
+    total += buyVal + leaseVal;
+  });
+  return total;
 }
 
 interface AlternativeStoreState {
@@ -71,6 +112,7 @@ interface AlternativeStoreState {
   setOtcTab: (tab: OtcTabType) => void;
   executeOtcOrder: (orderId: string) => void;
   buyProperty: (propertyId: string, tokens: number, tokenPrice: number) => boolean;
+  sellProperty: (propertyId: string, tokensToSell: number, pricePerToken?: number) => boolean;
   leaseProperty: (propertyId: string, termMonths: number, monthlyRent: number, unitType?: string) => boolean;
 
   setSelectedLocation: (location: string) => void;
@@ -81,18 +123,15 @@ interface AlternativeStoreState {
     purchaseType?: 'full' | 'fractional',
     fractionalPct?: number
   ) => boolean;
+  sellVehicleAsset: (assetId: string) => boolean;
   leaseVehicleAsset: (assetId: string, type: string, duration: string, cost: number) => boolean;
+  syncToPortfolio: () => void;
 }
 
 export const INITIAL_USER_REAL_ESTATE_HOLDINGS: Record<
   string,
   { tokens: number; totalInvested: number; leases: RealEstateLease[] }
-> = {
-  're-1': { tokens: 2400, totalInvested: 1200000, leases: [] },
-  're-2': { tokens: 1500, totalInvested: 750000, leases: [] },
-  're-3': { tokens: 1100, totalInvested: 550000, leases: [] },
-  're-4': { tokens: 700, totalInvested: 350000, leases: [] },
-};
+> = {};
 
 export const useAlternativeStore = create<AlternativeStoreState>((set, get) => ({
   // AI Funds initial state
@@ -104,7 +143,7 @@ export const useAlternativeStore = create<AlternativeStoreState>((set, get) => (
 
   // Real Estate initial state
   selectedRegionFilter: 'ALL REGIONS',
-  otcOrders: INITIAL_OTC_ORDERS,
+  otcOrders: [],
   activeOtcTab: 'ALL',
   lastExecutedOrderId: null,
   userRealEstateHoldings: INITIAL_USER_REAL_ESTATE_HOLDINGS,
@@ -135,6 +174,12 @@ export const useAlternativeStore = create<AlternativeStoreState>((set, get) => (
     }
   },
 
+  syncToPortfolio: () => {
+    const reEquity = calculateTotalRealEstateEquity(get().userRealEstateHoldings);
+    const carVal = calculateTotalCarsValuation(get().userVehicleHoldings);
+    usePortfolioStore.getState().syncAlternativeHoldings(reEquity, carVal);
+  },
+
   // Real Estate Actions
   setRegionFilter: (region) => set({ selectedRegionFilter: region }),
 
@@ -154,15 +199,91 @@ export const useAlternativeStore = create<AlternativeStoreState>((set, get) => (
         totalInvested: 0,
         leases: [],
       };
-      return {
-        userRealEstateHoldings: {
-          ...state.userRealEstateHoldings,
-          [propertyId]: {
-            ...existing,
-            tokens: existing.tokens + tokens,
-            totalInvested: existing.totalInvested + tokens * tokenPrice,
-          },
+      const updatedHoldings = {
+        ...state.userRealEstateHoldings,
+        [propertyId]: {
+          ...existing,
+          tokens: existing.tokens + tokens,
+          totalInvested: existing.totalInvested + tokens * tokenPrice,
         },
+      };
+
+      const asset = REAL_ESTATE_ASSETS.find((a) => a.id === propertyId);
+      const updatedOtc = [
+        ...state.otcOrders.filter((o) => o.id !== `otc-user-${propertyId}`),
+        {
+          id: `otc-user-${propertyId}`,
+          type: 'OFFER' as const,
+          propertyName: asset?.name || 'Institutional SPV Asset',
+          tokenCount: existing.tokens + tokens,
+          pricePerToken: tokenPrice,
+          navPremiumDiscountPct: 0.0,
+          counterpartyEnclave: 'Primary Allocation (Fiduciary Cleared)',
+          totalUsd: (existing.tokens + tokens) * tokenPrice,
+        },
+      ];
+
+      const reEquity = calculateTotalRealEstateEquity(updatedHoldings);
+      const carVal = calculateTotalCarsValuation(state.userVehicleHoldings);
+      usePortfolioStore.getState().syncAlternativeHoldings(reEquity, carVal);
+
+      return {
+        userRealEstateHoldings: updatedHoldings,
+        otcOrders: updatedOtc,
+      };
+    });
+    return true;
+  },
+
+  sellProperty: (propertyId, tokensToSell, pricePerToken) => {
+    set((state) => {
+      const existing = state.userRealEstateHoldings[propertyId];
+      if (!existing || existing.tokens <= 0) return state;
+
+      const count = Math.min(existing.tokens, tokensToSell);
+      const remainingTokens = existing.tokens - count;
+      const asset = REAL_ESTATE_ASSETS.find((a) => a.id === propertyId);
+      const tokenPrice = pricePerToken || asset?.tokenPrice || 500;
+      const proceeds = count * tokenPrice;
+
+      const updatedHoldings = { ...state.userRealEstateHoldings };
+      if (remainingTokens <= 0 && (!existing.leases || existing.leases.length === 0)) {
+        delete updatedHoldings[propertyId];
+      } else {
+        updatedHoldings[propertyId] = {
+          ...existing,
+          tokens: remainingTokens,
+          totalInvested: Math.max(0, existing.totalInvested - proceeds),
+        };
+      }
+
+      const updatedOtc = state.otcOrders
+        .filter((o) => o.id !== `otc-user-${propertyId}`)
+        .concat(
+          remainingTokens > 0
+            ? [
+                {
+                  id: `otc-user-${propertyId}`,
+                  type: 'OFFER' as const,
+                  propertyName: asset?.name || 'Institutional SPV Asset',
+                  tokenCount: remainingTokens,
+                  pricePerToken: tokenPrice,
+                  navPremiumDiscountPct: 0.0,
+                  counterpartyEnclave: 'Primary Allocation (Fiduciary Cleared)',
+                  totalUsd: remainingTokens * tokenPrice,
+                },
+              ]
+            : []
+        );
+
+      const reEquity = calculateTotalRealEstateEquity(updatedHoldings);
+      const carVal = calculateTotalCarsValuation(state.userVehicleHoldings);
+      usePortfolioStore.getState().syncAlternativeHoldings(reEquity, carVal);
+      usePortfolioStore.getState().adjustAvailableCash(proceeds);
+
+      return {
+        userRealEstateHoldings: updatedHoldings,
+        otcOrders: updatedOtc,
       };
     });
     return true;
@@ -182,14 +303,20 @@ export const useAlternativeStore = create<AlternativeStoreState>((set, get) => (
         unitType,
         startDate: new Date().toISOString(),
       };
-      return {
-        userRealEstateHoldings: {
-          ...state.userRealEstateHoldings,
-          [propertyId]: {
-            ...existing,
-            leases: [...existing.leases, newLease],
-          },
+      const updatedHoldings = {
+        ...state.userRealEstateHoldings,
+        [propertyId]: {
+          ...existing,
+          leases: [...existing.leases, newLease],
         },
+      };
+
+      const reEquity = calculateTotalRealEstateEquity(updatedHoldings);
+      const carVal = calculateTotalCarsValuation(state.userVehicleHoldings);
+      usePortfolioStore.getState().syncAlternativeHoldings(reEquity, carVal);
+
+      return {
+        userRealEstateHoldings: updatedHoldings,
       };
     });
     return true;
@@ -228,17 +355,46 @@ export const useAlternativeStore = create<AlternativeStoreState>((set, get) => (
         owned: false,
         leases: [],
       };
-      return {
-        userVehicleHoldings: {
-          ...state.userVehicleHoldings,
-          [assetId]: {
-            ...existing,
-            owned: purchaseType === 'full',
-            purchaseType,
-            fractionalPct: purchaseType === 'fractional' ? fractionalPct : 100,
-            totalInvested: (existing.totalInvested || 0) + price,
-          },
+      const updatedHoldings = {
+        ...state.userVehicleHoldings,
+        [assetId]: {
+          ...existing,
+          owned: purchaseType === 'full',
+          purchaseType,
+          fractionalPct: purchaseType === 'fractional' ? fractionalPct : 100,
+          totalInvested: (existing.totalInvested || 0) + price,
         },
+      };
+
+      const reEquity = calculateTotalRealEstateEquity(state.userRealEstateHoldings);
+      const carVal = calculateTotalCarsValuation(updatedHoldings);
+      usePortfolioStore.getState().syncAlternativeHoldings(reEquity, carVal);
+
+      return {
+        userVehicleHoldings: updatedHoldings,
+      };
+    });
+    return true;
+  },
+
+  sellVehicleAsset: (assetId) => {
+    set((state) => {
+      const existing = state.userVehicleHoldings[assetId];
+      if (!existing) return state;
+
+      const asset = EXOTIC_ASSETS.find((a) => a.id === assetId);
+      const proceeds = existing.totalInvested || asset?.fairMarketValue || 0;
+
+      const updatedHoldings = { ...state.userVehicleHoldings };
+      delete updatedHoldings[assetId];
+
+      const reEquity = calculateTotalRealEstateEquity(state.userRealEstateHoldings);
+      const carVal = calculateTotalCarsValuation(updatedHoldings);
+      usePortfolioStore.getState().syncAlternativeHoldings(reEquity, carVal);
+      usePortfolioStore.getState().adjustAvailableCash(proceeds);
+
+      return {
+        userVehicleHoldings: updatedHoldings,
       };
     });
     return true;
@@ -254,14 +410,20 @@ export const useAlternativeStore = create<AlternativeStoreState>((set, get) => (
         cost,
         date: new Date().toISOString(),
       };
-      return {
-        userVehicleHoldings: {
-          ...state.userVehicleHoldings,
-          [assetId]: {
-            ...existing,
-            leases: [...existing.leases, newLease],
-          },
+      const updatedHoldings = {
+        ...state.userVehicleHoldings,
+        [assetId]: {
+          ...existing,
+          leases: [...existing.leases, newLease],
         },
+      };
+
+      const reEquity = calculateTotalRealEstateEquity(state.userRealEstateHoldings);
+      const carVal = calculateTotalCarsValuation(updatedHoldings);
+      usePortfolioStore.getState().syncAlternativeHoldings(reEquity, carVal);
+
+      return {
+        userVehicleHoldings: updatedHoldings,
       };
     });
     return true;

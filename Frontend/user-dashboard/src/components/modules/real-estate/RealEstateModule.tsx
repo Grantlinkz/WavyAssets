@@ -3,7 +3,6 @@ import { Shield, Archive, FileText } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useAlternativeStore } from '../../../store/useAlternativeStore';
 import { usePortfolioStore } from '../../../store/usePortfolioStore';
-import { TOTAL_Global_NET_WORTH } from '../../../lib/calculations';
 import { REAL_ESTATE_ASSETS } from '../../../lib/alternativeAssetData';
 import { PropertyDeck } from './PropertyDeck';
 import { RentalDistributionBlotter } from './RentalDistributionBlotter';
@@ -17,52 +16,109 @@ interface RealEstateModuleProps {
 export const RealEstateModule: React.FC<RealEstateModuleProps> = ({ maskBalances: propMask }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
-  const userHoldings = useAlternativeStore((s) => s.userRealEstateHoldings);
-  const netWorth = usePortfolioStore((s) => s.netWorth);
+  const storeHoldings = useAlternativeStore((s) => s.userRealEstateHoldings);
+  const userHoldings = Object.keys(storeHoldings).length > 0 ? storeHoldings : useAlternativeStore.getState().userRealEstateHoldings;
+  const storeNetWorth = usePortfolioStore((s) => s.netWorth);
+  const netWorth = storeNetWorth > 0 ? storeNetWorth : usePortfolioStore.getState().netWorth;
 
   const dynamicCards = useMemo(() => {
     let totalEquity = 0;
     let totalBasis = 0;
-    let weightedCapRateSum = 0;
+    let totalAnnualRentalYield = 0;
     let weightedWaltSum = 0;
     let weightedOccupancySum = 0;
     let heldSpvCount = 0;
 
     Object.entries(userHoldings).forEach(([propId, holding]) => {
-      if (holding.tokens <= 0 && (!holding.leases || holding.leases.length === 0)) return;
+      const hasTokens = (holding.tokens || 0) > 0;
+      const hasLeases = (holding.leases || []).length > 0;
+      if (!hasTokens && !hasLeases) return;
+
       const asset = REAL_ESTATE_ASSETS.find((a) => a.id === propId);
       if (!asset) return;
 
       heldSpvCount += 1;
-      const propEquity = holding.tokens * asset.tokenPrice;
-      const basis = holding.totalInvested > 0
-        ? holding.totalInvested
-        : propEquity / (1 + (asset.unrealizedUpliftPct || 0) / 100);
+      const buyEquity = (holding.tokens || 0) * asset.tokenPrice;
+      const leaseEquity = (holding.leases || []).reduce(
+        (sum, l) => sum + (l.monthlyRent * (l.termMonths || 1)),
+        0
+      );
+      const propEquity = buyEquity + leaseEquity;
+
+      const buyBasis = holding.totalInvested > 0 ? holding.totalInvested : buyEquity;
+      const propBasis = buyBasis + leaseEquity;
+
+      const buyAnnualYield = buyEquity * (asset.netRentalYieldApy / 100);
+      const leaseAnnualYield = (holding.leases || []).reduce(
+        (sum, l) => sum + (l.monthlyRent * 12),
+        0
+      );
+      const propAnnualYield = buyAnnualYield + leaseAnnualYield;
 
       totalEquity += propEquity;
-      totalBasis += basis;
-      weightedCapRateSum += asset.netRentalYieldApy * propEquity;
+      totalBasis += propBasis;
+      totalAnnualRentalYield += propAnnualYield;
       weightedWaltSum += asset.waltYears * propEquity;
       weightedOccupancySum += asset.occupancyPct * propEquity;
     });
 
-    const isBaseline = totalEquity === 2850000;
-    const effectiveNetWorth = netWorth > 0 ? netWorth : TOTAL_Global_NET_WORTH;
-    const consolidatedNavPct = effectiveNetWorth > 0 ? (totalEquity / effectiveNetWorth) * 100 : 19.2;
-    const upliftDollars = isBaseline ? 270000 : totalEquity - totalBasis;
-    const upliftPct = isBaseline ? 10.46 : totalBasis > 0 ? (upliftDollars / totalBasis) * 100 : 0;
-    const acquisitionBasis = isBaseline ? 2580000 : totalBasis;
+    if (totalEquity <= 0) {
+      return [
+        {
+          label: 'TOTAL PROPERTY EQUITY',
+          subLabel: '0.0% of Consolidated NAV',
+          value: '$0.00',
+          delta: '+$0.00 (+0.00%)',
+          deltaSub: 'UNREALIZED UPLIFT',
+          footerKey: 'Acquisition Basis',
+          footerVal: '$0.00',
+        },
+        {
+          label: 'NET RENTAL YIELD',
+          subLabel: 'T+0 Continuous Cash Flow',
+          value: '$0.00',
+          unit: '/ mo',
+          delta: '$0.00 / yr',
+          deltaSub: 'ANNUALIZED',
+          badge: '+0.0% vs Pro-Forma',
+          footerKey: 'Settlement Enclave',
+          footerVal: 'Auto-Swap USDC / CHF',
+        },
+        {
+          label: 'AVERAGE NET CAP RATE',
+          subLabel: 'Unlevered Weighted Yield',
+          value: '0.00%',
+          delta: '+0 bps',
+          deltaSub: 'SPREAD OVER PRIME CH (4.15%)',
+          extraMetric: '0.0 Yrs',
+          extraMetricLabel: 'WALT DURATION',
+          footerKey: 'Valuation Standard',
+          footerVal: 'Red Book RICS Qualified',
+        },
+        {
+          label: 'PORTFOLIO OCCUPANCY',
+          subLabel: '0 Prime Real Estate SPVs',
+          value: '0.0%',
+          delta: '0.0% Scheduled Turnover',
+          badge: '100% INSTITUTIONAL',
+          footerKey: 'Arrears / Defaults',
+          footerVal: '0.00% (Triple-Net NNN)',
+        },
+      ];
+    }
 
-    const weightedCapRate = totalEquity > 0
-      ? (isBaseline ? 7.20 : weightedCapRateSum / totalEquity)
-      : 0;
+    const effectiveNetWorth = netWorth > 0 ? netWorth : totalEquity;
+    const consolidatedNavPct = (totalEquity / effectiveNetWorth) * 100;
+    const upliftDollars = totalEquity - totalBasis;
+    const upliftPct = totalBasis > 0 ? (upliftDollars / totalBasis) * 100 : 0;
+    const acquisitionBasis = totalBasis;
 
-    const annualRentalYield = isBaseline ? 205200 : (totalEquity * (weightedCapRate / 100));
-    const monthlyRentalYield = annualRentalYield / 12;
+    const weightedCapRate = (totalAnnualRentalYield / totalEquity) * 100;
+    const monthlyRentalYield = totalAnnualRentalYield / 12;
 
     const spreadBps = Math.round((weightedCapRate - 4.15) * 100);
-    const weightedWalt = totalEquity > 0 ? (isBaseline ? 6.2 : weightedWaltSum / totalEquity) : 0;
-    const weightedOccupancy = totalEquity > 0 ? (isBaseline ? 98.4 : weightedOccupancySum / totalEquity) : 0;
+    const weightedWalt = weightedWaltSum / totalEquity;
+    const weightedOccupancy = weightedOccupancySum / totalEquity;
     const scheduledTurnover = Math.max(0, 100 - weightedOccupancy);
 
     const sign = upliftDollars >= 0 ? '+' : '-';
@@ -75,7 +131,7 @@ export const RealEstateModule: React.FC<RealEstateModuleProps> = ({ maskBalances
         subLabel: `${consolidatedNavPct.toFixed(1)}% of Consolidated NAV`,
         value: `$${totalEquity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         delta: `${sign}$${absUplift.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${sign}${absPct.toFixed(2)}%)`,
-        deltaSub: 'Unrealized Uplift',
+        deltaSub: 'UNREALIZED UPLIFT',
         footerKey: 'Acquisition Basis',
         footerVal: `$${acquisitionBasis.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       },
@@ -84,8 +140,8 @@ export const RealEstateModule: React.FC<RealEstateModuleProps> = ({ maskBalances
         subLabel: 'T+0 Continuous Cash Flow',
         value: `$${monthlyRentalYield.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         unit: '/ mo',
-        delta: `$${annualRentalYield.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / yr`,
-        deltaSub: 'Annualized',
+        delta: `$${totalAnnualRentalYield.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / yr`,
+        deltaSub: 'ANNUALIZED',
         badge: '+3.2% vs Pro-Forma',
         footerKey: 'Settlement Enclave',
         footerVal: 'Auto-Swap USDC / CHF',
@@ -95,9 +151,9 @@ export const RealEstateModule: React.FC<RealEstateModuleProps> = ({ maskBalances
         subLabel: 'Unlevered Weighted Yield',
         value: `${weightedCapRate.toFixed(2)}%`,
         delta: `${spreadBps >= 0 ? '+' : ''}${spreadBps} bps`,
-        deltaSub: 'Spread over Prime CH (4.15%)',
+        deltaSub: 'SPREAD OVER PRIME CH (4.15%)',
         extraMetric: `${weightedWalt.toFixed(1)} Yrs`,
-        extraMetricLabel: 'WALT Duration',
+        extraMetricLabel: 'WALT DURATION',
         footerKey: 'Valuation Standard',
         footerVal: 'Red Book RICS Qualified',
       },

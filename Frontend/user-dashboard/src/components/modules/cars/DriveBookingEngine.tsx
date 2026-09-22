@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Gauge, Info, CheckCircle2 } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useAlternativeStore } from '../../../store/useAlternativeStore';
+import { EXOTIC_ASSETS } from '../../../lib/alternativeAssetData';
 
 const LOCATIONS = [
   'Monaco GP Circuit',
@@ -19,12 +20,42 @@ export const DriveBookingEngine: React.FC<DriveBookingEngineProps> = ({
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
   const driveSlots = useAlternativeStore((s) => s.driveSlots);
+  const storeHoldings = useAlternativeStore((s) => s.userVehicleHoldings);
+  const userHoldings = Object.keys(storeHoldings).length > 0 ? storeHoldings : useAlternativeStore.getState().userVehicleHoldings;
   const selectedLocation = useAlternativeStore((s) => s.selectedLocation);
   const setSelectedLocation = useAlternativeStore((s) => s.setSelectedLocation);
   const remainingSessions = useAlternativeStore((s) => s.remainingDriveSessions);
   const reserveSlot = useAlternativeStore((s) => s.reserveDriveSlot);
 
   const [bookingMessage, setBookingMessage] = useState<string | null>(null);
+
+  const { totalValuation, activeAssetTitle } = useMemo(() => {
+    let total = 0;
+    let firstTitle = '';
+
+    Object.entries(userHoldings).forEach(([assetId, holding]) => {
+      const asset = EXOTIC_ASSETS.find((a) => a.id === assetId);
+      if (!asset) return;
+
+      let buyVal = 0;
+      if (holding.owned || (holding.totalInvested && holding.totalInvested > 0)) {
+        buyVal = holding.purchaseType === 'fractional'
+          ? holding.totalInvested || ((holding.fractionalPct || 100) / 100) * asset.fairMarketValue
+          : asset.fairMarketValue;
+        if (!firstTitle) firstTitle = asset.title;
+      }
+
+      const leaseVal = (holding.leases || []).reduce((sum, l) => sum + (l.cost || 0), 0);
+      if (leaseVal > 0 && !firstTitle) firstTitle = asset.title;
+
+      total += buyVal + leaseVal;
+    });
+
+    return { totalValuation: total, activeAssetTitle: firstTitle };
+  }, [userHoldings]);
+
+  const quarterlyYield = Math.round(totalValuation * 0.01);
+  const annualYield = quarterlyYield * 4;
 
   // Derive month and Monday-first leading cell count dynamically from driveSlots dateStr
   const firstDateParts = (driveSlots.length > 0 && driveSlots[0]?.dateStr
@@ -77,35 +108,41 @@ export const DriveBookingEngine: React.FC<DriveBookingEngineProps> = ({
         </p>
 
         {/* Revenue Readout Strip */}
-        <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2.5 p-2.5 bg-surface rounded border border-border-hairline">
-          <div>
-            <span className="text-[10px] font-mono uppercase tracking-wider text-outline block">
-              Quarterly Rental Clearance
-            </span>
-            <span className="text-sm font-mono text-tertiary tabular-nums font-bold block mt-0.5">
-              {maskBalances ? '••••••••' : '+$8,500.00 Net'}
-            </span>
-            <span className="text-[11px] text-outline font-mono">
-              {maskBalances ? '••••••••' : '$34,000.00 proj. annual yield'}
-            </span>
+        {totalValuation <= 0 ? (
+          <div className="mt-3 py-6 px-4 text-center text-xs font-mono text-outline bg-surface rounded border border-dashed border-border-hairline">
+            No vaulted fleet assets in active monetization protocol. Acquire or lease vehicles in Tier-1 Vaulted Tangible Assets to activate quarterly rental clearance and commercial placements.
           </div>
-          <div className="md:col-span-2">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-outline block">
-              Active Verified Production Placement
-            </span>
-            <div className="flex items-center justify-between mt-0.5">
-              <span className="text-xs text-on-surface font-medium">
-                Global Luxury Film Campaign (Geneva)
+        ) : (
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2.5 p-2.5 bg-surface rounded border border-border-hairline">
+            <div>
+              <span className="text-[10px] font-mono uppercase tracking-wider text-outline block">
+                Quarterly Rental Clearance
               </span>
-              <span className="text-[11px] text-tertiary font-mono px-1.5 py-0.5 bg-tertiary/10 rounded">
-                Cleared &amp; Insured
+              <span className="text-sm font-mono text-tertiary tabular-nums font-bold block mt-0.5">
+                {maskBalances ? '••••••••' : `+$${quarterlyYield.toLocaleString('en-US', { minimumFractionDigits: 2 })} Net`}
+              </span>
+              <span className="text-[11px] text-outline font-mono">
+                {maskBalances ? '••••••••' : `$${annualYield.toLocaleString('en-US', { minimumFractionDigits: 2 })} proj. annual yield`}
               </span>
             </div>
-            <span className="text-[11px] text-outline/80 font-mono block mt-0.5">
-              3 Static Filming Days • Enclosed Flatbed Logistics • $0 Depreciation Assessment
-            </span>
+            <div className="md:col-span-2">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-outline block">
+                Active Verified Production Placement
+              </span>
+              <div className="flex items-center justify-between mt-0.5">
+                <span className="text-xs text-on-surface font-medium">
+                  {activeAssetTitle ? `${activeAssetTitle} — Luxury Film Campaign (Geneva)` : 'Global Luxury Film Campaign (Geneva)'}
+                </span>
+                <span className="text-[11px] text-tertiary font-mono px-1.5 py-0.5 bg-tertiary/10 rounded">
+                  Cleared &amp; Insured
+                </span>
+              </div>
+              <span className="text-[11px] text-outline/80 font-mono block mt-0.5">
+                3 Static Filming Days • Enclosed Flatbed Logistics • $0 Depreciation Assessment
+              </span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Drive-Day Booking Sub-System */}
         <div className="mt-4">

@@ -29,6 +29,16 @@ describe('Alternative Asset Modules Integration Suite (Sprint 4)', () => {
       otcOrders: [...INITIAL_OTC_ORDERS],
       activeOtcTab: 'ALL',
       lastExecutedOrderId: null,
+      userRealEstateHoldings: {
+        're-1': { tokens: 2400, totalInvested: 1200000, leases: [] },
+        're-2': { tokens: 1500, totalInvested: 750000, leases: [] },
+        're-3': { tokens: 1100, totalInvested: 550000, leases: [] },
+        're-4': { tokens: 700, totalInvested: 350000, leases: [] },
+      },
+      userVehicleHoldings: {
+        'car-1': { owned: true, purchaseType: 'full', totalInvested: 580000, leases: [] },
+        'watch-1': { owned: true, purchaseType: 'full', totalInvested: 270000, leases: [] },
+      },
       driveSlots: [...INITIAL_DRIVE_SLOTS],
       selectedLocation: 'Monaco GP Circuit',
       remainingDriveSessions: 2,
@@ -92,7 +102,7 @@ describe('Alternative Asset Modules Integration Suite (Sprint 4)', () => {
       expect(html).toContain('TOTAL PROPERTY EQUITY');
       expect(html).toContain('$2,850,000.00');
       expect(html).toContain('AVERAGE NET CAP RATE');
-      expect(html).toContain('7.20%');
+      expect(html).toContain('7.07%');
 
       // SPV Properties
       expect(html).toContain('One Zurich Financial Center');
