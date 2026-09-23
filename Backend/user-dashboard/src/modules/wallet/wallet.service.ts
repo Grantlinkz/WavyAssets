@@ -293,7 +293,22 @@ export class WalletService {
       };
     }
 
-    // WITHDRAWAL Flow: Enforce strict 48-Hour Quarantine Time-Lock
+    // WITHDRAWAL Flow: Enforce strict KYC Tier Daily Withdrawal Limits & 48-Hour Quarantine Time-Lock
+    let dailyLimit = 10000;
+    if (user.kycTier === 'TIER_2') dailyLimit = 250000;
+    if (user.kycTier === 'TIER_3') dailyLimit = Infinity;
+
+    if (dto.amount > dailyLimit) {
+      const tierName =
+        user.kycTier === 'TIER_3' ? 'Level 3' : user.kycTier === 'TIER_2' ? 'Level 2' : 'Level 1';
+      throw new BadRequestException(
+        `You have gone beyond your Tier daily limit ($${dailyLimit.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })} USD for ${tierName}). Please upgrade your Tier.`
+      );
+    }
+
     if (!dto.destinationId) {
       throw new BadRequestException('Target destinationId is required for withdrawals');
     }

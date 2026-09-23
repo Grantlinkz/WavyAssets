@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { renderToString } from 'react-dom/server';
 import { DepositModal } from '../../src/components/modals/DepositModal';
 import { WithdrawModal, CRYPTO_NETWORKS_CONFIG } from '../../src/components/modals/WithdrawModal';
@@ -9,12 +9,27 @@ import { CarsModule } from '../../src/components/modules/cars/CarsModule';
 import { usePortfolioStore } from '../../src/store/usePortfolioStore';
 import { useDashboardStore } from '../../src/store/useDashboardStore';
 import { useLiquidStore } from '../../src/store/useLiquidStore';
-import { useAlternativeStore } from '../../src/store/useAlternativeStore';
+import { useAlternativeStore, INITIAL_USER_REAL_ESTATE_HOLDINGS } from '../../src/store/useAlternativeStore';
+import { useAuthStore } from '../../src/store/useAuthStore';
 
 describe('User Custom Requirements Verification Suite', () => {
   beforeEach(() => {
     usePortfolioStore.getState().resetToDefaults();
+    useAlternativeStore.setState({
+      userRealEstateHoldings: INITIAL_USER_REAL_ESTATE_HOLDINGS,
+      userVehicleHoldings: {},
+    });
     useDashboardStore.setState({ maskBalances: false });
+  });
+
+  afterEach(() => {
+    usePortfolioStore.getState().resetToDefaults();
+    useAlternativeStore.setState({
+      userRealEstateHoldings: INITIAL_USER_REAL_ESTATE_HOLDINGS,
+      userVehicleHoldings: {},
+    });
+    useDashboardStore.setState({ maskBalances: false });
+    useAuthStore.setState({ user: null });
   });
 
   describe('Requirement 1: Deposit -> Web3 Phantom Wallet', () => {
@@ -159,6 +174,113 @@ describe('User Custom Requirements Verification Suite', () => {
     it('verifies clicking an asset row updates targetDcaAsset in store', () => {
       useLiquidStore.getState().setTargetDcaAsset('SOL');
       expect(useLiquidStore.getState().targetDcaAsset).toBe('SOL');
+    });
+  });
+
+  describe('New Requirements: Layout Overlap, Settlement Terminal, Account Balance & KYC Limits', () => {
+    it('verifies LedgerSplitCards header badges do not use absolute positioning and avoid text overlap', async () => {
+      const { LedgerSplitCards } = await import('../../src/components/modules/wallet/LedgerSplitCards');
+      const html = renderToString(<LedgerSplitCards />);
+      expect(html).toContain('Card A: Available Liquid Balance');
+      expect(html).toContain('Unencumbered &amp; Instant Spendable');
+      expect(html).toContain('Card B: Invested &amp; Locked Capital');
+      expect(html).toContain('All Vaults Bonded &amp; Collateralized');
+      // Verify absolute top-2 right-2 is removed
+      expect(html).not.toContain('absolute top-2 right-2');
+    });
+
+    it('verifies NetWorthWidget displays ACCOUNT BALANCE instead of CONSOLIDATED NET ASSETS', async () => {
+      const { NetWorthWidget } = await import('../../src/components/command-bar/NetWorthWidget');
+      const html = renderToString(<NetWorthWidget />);
+      expect(html).toContain('ACCOUNT BALANCE');
+      expect(html).not.toContain('CONSOLIDATED NET ASSETS');
+    });
+
+    it('verifies FiatRampWizard Interactive Settlement Terminal has quick action triggers and interactive tabs', async () => {
+      const { FiatRampWizard } = await import('../../src/components/modules/wallet/FiatRampWizard');
+      const html = renderToString(<FiatRampWizard />);
+      expect(html).toContain('Interactive Settlement Terminal');
+      expect(html).toContain('Deposit Capital');
+      expect(html).toContain('Withdraw to Bank');
+      expect(html).toContain('Internal Transfer');
+      expect(html).toContain('Bank Wire (Fedwire / SIC / SWIFT)');
+      expect(html).toContain('Web3 MPC Wallet');
+      expect(html).toContain('Obsidian Card Sweep');
+    });
+
+    it('verifies KYC Tier daily withdrawal limits utility correctly flags amounts exceeding tier allowance', async () => {
+      const { checkKycWithdrawalLimit, KYC_TIER_DAILY_LIMITS } = await import('../../src/lib/kycLimits');
+      expect(KYC_TIER_DAILY_LIMITS.TIER_1).toBe(10000);
+      expect(KYC_TIER_DAILY_LIMITS.TIER_2).toBe(250000);
+      expect(KYC_TIER_DAILY_LIMITS.TIER_3).toBe(Infinity);
+
+      // Tier 1 Level 1 limit is $10,000
+      const tier1Allowed = checkKycWithdrawalLimit(5000, 'TIER_1');
+      expect(tier1Allowed.allowed).toBe(true);
+
+      const tier1Exceeded = checkKycWithdrawalLimit(100000, 'TIER_1');
+      expect(tier1Exceeded.allowed).toBe(false);
+      expect(tier1Exceeded.error).toContain('You have gone beyond your Tier daily limit ($10,000.00 USD for Level 1). Please upgrade your Tier.');
+
+      // Tier 2 Level 2 limit is $250,000
+      const tier2Allowed = checkKycWithdrawalLimit(200000, 'TIER_2');
+      expect(tier2Allowed.allowed).toBe(true);
+
+      const tier2Exceeded = checkKycWithdrawalLimit(500000, 'TIER_2');
+      expect(tier2Exceeded.allowed).toBe(false);
+      expect(tier2Exceeded.error).toContain('Level 2');
+
+      // Tier 3 Level 3 is unlimited
+      const tier3Unlimited = checkKycWithdrawalLimit(10000000, 'TIER_3');
+      expect(tier3Unlimited.allowed).toBe(true);
+    });
+
+    it('verifies WithdrawModal enforces KYC Tier daily limit check and renders alert for Tier 1 exceeding limit', async () => {
+      const { useAuthStore } = await import('../../src/store/useAuthStore');
+      useAuthStore.setState({
+        user: {
+          id: 'test-user-tier1',
+          email: 'user@test.com',
+          fullName: 'Test Investor',
+          tier: 'RETAIL',
+          isCorporate: false,
+          kycTier: 'TIER_1',
+        },
+      });
+
+      // Default bankAmount in WithdrawModal is 50,000, which exceeds Tier 1 limit of 10,000
+      const html = renderToString(<WithdrawModal isOpen={true} />);
+      expect(html).toContain('Tier Daily Limit Exceeded');
+      expect(html).toContain('You have gone beyond your Tier daily limit');
+      expect(html).toContain('Upgrade Tier');
+    });
+
+    it('verifies useAlternativeStore prevents buyProperty when cost exceeds availableCash', async () => {
+      usePortfolioStore.setState({ availableCash: 5000 });
+      // Property re-1 with 100 tokens at $500 = $50,000 which exceeds $5,000
+      const result = useAlternativeStore.getState().buyProperty('re-1', 100, 500);
+      expect(result).toBe(false);
+      expect(usePortfolioStore.getState().availableCash).toBe(5000);
+
+      // But succeeds when funds are sufficient
+      usePortfolioStore.setState({ availableCash: 100000 });
+      const successResult = useAlternativeStore.getState().buyProperty('re-1', 10, 500);
+      expect(successResult).toBe(true);
+      expect(usePortfolioStore.getState().availableCash).toBe(95000); // 100,000 - 5,000
+    });
+
+    it('verifies useAlternativeStore prevents buyVehicleAsset when price exceeds availableCash', async () => {
+      usePortfolioStore.setState({ availableCash: 10000 });
+      // Vehicle price $580,000 exceeds $10,000
+      const result = useAlternativeStore.getState().buyVehicleAsset('car-1', 580000);
+      expect(result).toBe(false);
+      expect(usePortfolioStore.getState().availableCash).toBe(10000);
+
+      // But succeeds when funds are sufficient
+      usePortfolioStore.setState({ availableCash: 700000 });
+      const successResult = useAlternativeStore.getState().buyVehicleAsset('car-1', 580000);
+      expect(successResult).toBe(true);
+      expect(usePortfolioStore.getState().availableCash).toBe(120000); // 700,000 - 580,000
     });
   });
 });

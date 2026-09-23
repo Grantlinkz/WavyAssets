@@ -66,20 +66,21 @@ export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances
   return (
     <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
       {/* CARD A: AVAILABLE LIQUID BALANCE (UNENCUMBERED CASH) */}
-      <div className="lg:col-span-6 bg-surface-container-lowest border-2 border-primary/60 rounded-DEFAULT p-4 flex flex-col justify-between relative shadow-lg">
-        <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 border border-primary/40 rounded-DEFAULT">
-          <Zap className="w-3.5 h-3.5 text-primary" />
-          <span className="text-[10px] font-mono text-primary uppercase font-bold tracking-wider">
-            Unencumbered & Instant Spendable
-          </span>
-        </div>
-
+      <div className="lg:col-span-6 bg-surface-container-lowest border-2 border-primary/60 rounded-DEFAULT p-4 flex flex-col justify-between shadow-lg">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Wallet className="w-4 h-4 text-primary" />
-            <span className="text-xs font-mono text-on-surface uppercase tracking-wider font-semibold">
-              Card A: Available Liquid Balance
-            </span>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              <Wallet className="w-4 h-4 text-primary shrink-0" />
+              <span className="text-xs font-mono text-on-surface uppercase tracking-wider font-semibold">
+                Card A: Available Liquid Balance
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 border border-primary/40 rounded-DEFAULT shrink-0">
+              <Zap className="w-3.5 h-3.5 text-primary" />
+              <span className="text-[10px] font-mono text-primary uppercase font-bold tracking-wider">
+                Unencumbered & Instant Spendable
+              </span>
+            </div>
           </div>
           <p className="text-xs font-sans text-outline max-w-xl mb-3">
             Liquid unencumbered cash & stablecoins ready for immediate withdrawal, OTC execution, or card funding.
@@ -176,20 +177,21 @@ export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances
       </div>
 
       {/* CARD B: INVESTED & LOCKED FIDUCIARY CAPITAL */}
-      <div className="lg:col-span-6 bg-surface-container-lowest border border-border-hairline rounded-DEFAULT p-4 flex flex-col justify-between relative">
-        <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-0.5 bg-surface-container border border-border-hairline rounded-DEFAULT">
-          <ShieldCheck className="w-3.5 h-3.5 text-tertiary" />
-          <span className="text-[10px] font-mono text-tertiary uppercase font-medium tracking-wider">
-            All Vaults Bonded &amp; Collateralized
-          </span>
-        </div>
-
+      <div className="lg:col-span-6 bg-surface-container-lowest border border-border-hairline rounded-DEFAULT p-4 flex flex-col justify-between">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Lock className="w-4 h-4 text-outline" />
-            <span className="text-xs font-mono text-on-surface uppercase tracking-wider font-semibold">
-              Card B: Invested &amp; Locked Capital
-            </span>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              <Lock className="w-4 h-4 text-outline shrink-0" />
+              <span className="text-xs font-mono text-on-surface uppercase tracking-wider font-semibold">
+                Card B: Invested &amp; Locked Capital
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-surface-container border border-border-hairline rounded-DEFAULT shrink-0">
+              <ShieldCheck className="w-3.5 h-3.5 text-tertiary" />
+              <span className="text-[10px] font-mono text-tertiary uppercase font-medium tracking-wider">
+                All Vaults Bonded &amp; Collateralized
+              </span>
+            </div>
           </div>
           <p className="text-xs font-sans text-outline max-w-xl mb-3">
             Fiduciary capital locked in real estate SPVs, exotic vehicles, horology, equities, &amp; validator staking.

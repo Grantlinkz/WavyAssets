@@ -35,7 +35,7 @@ export const NetWorthWidget: React.FC<NetWorthWidgetProps> = ({
     <div className="flex items-center gap-3 shrink-0" data-testid="net-worth-widget">
       <div className="flex flex-col">
         <span className="text-[10px] font-mono text-outline uppercase tracking-widest font-medium">
-          CONSOLIDATED NET ASSETS
+          ACCOUNT BALANCE
         </span>
         <div className="flex items-baseline gap-2">
           <span

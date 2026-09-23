@@ -5,10 +5,17 @@ import {
   Check,
   ArrowDownLeft,
   ArrowUpRight,
+  ArrowLeftRight,
+  Wallet,
+  ShieldCheck,
+  AlertTriangle,
+  Zap,
 } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { usePortfolioStore } from '../../../store/usePortfolioStore';
 import { useLiquidStore } from '../../../store/useLiquidStore';
+import { useAuthStore } from '../../../store/useAuthStore';
+import { checkKycWithdrawalLimit } from '../../../lib/kycLimits';
 import { formatMaskedCurrency, isSsrOrTestEnv } from '../../../lib/calculations';
 
 interface FiatRampWizardProps {
@@ -23,7 +30,10 @@ export const FiatRampWizard: React.FC<FiatRampWizardProps> = ({ maskBalances: pr
   const rawAvailableCash = usePortfolioStore((s) => s.availableCash);
   const availableCash = isSsr ? usePortfolioStore.getState().availableCash : rawAvailableCash;
   const adjustAvailableCash = usePortfolioStore((s) => s.adjustAvailableCash);
+  const openModal = usePortfolioStore((s) => s.openModal);
+  const setActiveDepositTab = usePortfolioStore((s) => s.setActiveDepositTab);
   const addTransaction = useLiquidStore((s) => s.addTransaction);
+  const user = useAuthStore((s) => s.user);
 
   const [activeTab, setActiveTab] = useState<'WIRE' | 'WEB3' | 'CARD'>('WIRE');
   const [wireDirection, setWireDirection] = useState<'DEPOSIT' | 'WITHDRAW'>('WITHDRAW');
@@ -31,6 +41,9 @@ export const FiatRampWizard: React.FC<FiatRampWizardProps> = ({ maskBalances: pr
   const [isExecuting, setIsExecuting] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [validationErr, setValidationErr] = useState('');
+  const [showKycUpgradeBtn, setShowKycUpgradeBtn] = useState(false);
+  const [web3Connected, setWeb3Connected] = useState(false);
+  const [cardSweepSuccess, setCardSweepSuccess] = useState('');
 
   const handleQuickAmount = (val: string) => {
     setAmount(val);
@@ -40,16 +53,37 @@ export const FiatRampWizard: React.FC<FiatRampWizardProps> = ({ maskBalances: pr
     const numAmount = parseFloat(amount.replace(/,/g, ''));
     if (isNaN(numAmount) || numAmount <= 0) {
       setValidationErr('Please enter a valid amount.');
+      setShowKycUpgradeBtn(false);
       setTimeout(() => setValidationErr(''), 3500);
       return;
     }
-    if (wireDirection === 'WITHDRAW' && numAmount > availableCash) {
-      setValidationErr(
-        `Withdrawal amount exceeds available liquid balance ($${availableCash.toLocaleString('en-US', { minimumFractionDigits: 2 })}).`
-      );
-      setTimeout(() => setValidationErr(''), 3500);
-      return;
+    if (wireDirection === 'WITHDRAW') {
+      const kycCheck = checkKycWithdrawalLimit(numAmount, user?.kycTier || 'TIER_1');
+      if (!kycCheck.allowed) {
+        setValidationErr(
+          kycCheck.error ||
+            `You have gone beyond your Tier daily limit ($${kycCheck.limit.toLocaleString('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })} USD). Please upgrade your Tier.`
+        );
+        setShowKycUpgradeBtn(true);
+        setTimeout(() => {
+          setValidationErr('');
+          setShowKycUpgradeBtn(false);
+        }, 7000);
+        return;
+      }
+      if (numAmount > availableCash) {
+        setValidationErr(
+          `Withdrawal amount exceeds available liquid balance ($${availableCash.toLocaleString('en-US', { minimumFractionDigits: 2 })}).`
+        );
+        setShowKycUpgradeBtn(false);
+        setTimeout(() => setValidationErr(''), 3500);
+        return;
+      }
     }
+    setShowKycUpgradeBtn(false);
     setValidationErr('');
     setIsExecuting(true);
     setTimeout(() => {
@@ -109,6 +143,40 @@ export const FiatRampWizard: React.FC<FiatRampWizardProps> = ({ maskBalances: pr
         </div>
       </div>
 
+      {/* Quick Action Triggers (Screenshot 3 Parity) */}
+      <div className="p-2.5 bg-surface-container-low/60 border-b border-border-hairline flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          data-testid="settlement-quick-deposit"
+          onClick={() => {
+            setActiveDepositTab(activeTab === 'WEB3' ? 'crypto' : activeTab === 'CARD' ? 'card' : 'wire');
+            openModal('deposit');
+          }}
+          className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-primary text-surface font-mono text-xs font-bold rounded-DEFAULT hover:bg-primary-hover transition-colors uppercase tracking-wider cursor-pointer"
+        >
+          <ArrowDownLeft className="w-3.5 h-3.5 text-surface" />
+          <span>Deposit Capital</span>
+        </button>
+        <button
+          type="button"
+          data-testid="settlement-quick-withdraw"
+          onClick={() => openModal('withdraw')}
+          className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-surface-container border border-border-hairline text-on-surface hover:bg-surface-container-high font-mono text-xs rounded-DEFAULT transition-colors uppercase tracking-wider cursor-pointer"
+        >
+          <ArrowUpRight className="w-3.5 h-3.5 text-secondary" />
+          <span>Withdraw to Bank</span>
+        </button>
+        <button
+          type="button"
+          data-testid="settlement-quick-transfer"
+          onClick={() => openModal('trade')}
+          className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-surface-container border border-border-hairline text-on-surface hover:bg-surface-container-high font-mono text-xs rounded-DEFAULT transition-colors uppercase tracking-wider cursor-pointer"
+        >
+          <ArrowLeftRight className="w-3.5 h-3.5 text-tertiary" />
+          <span>Internal Transfer</span>
+        </button>
+      </div>
+
       {/* Module Sub Tabs */}
       <div className="flex border-b border-border-hairline bg-surface-container-lowest">
         <button
@@ -149,7 +217,7 @@ export const FiatRampWizard: React.FC<FiatRampWizardProps> = ({ maskBalances: pr
       {activeTab === 'WEB3' && (
         <div className="p-6 flex-1 flex flex-col items-center justify-center gap-4 text-center my-auto">
           <div className="p-3.5 rounded-full bg-surface-container border border-primary/20 text-primary">
-            <Landmark className="w-8 h-8" />
+            <Wallet className="w-8 h-8 text-primary" />
           </div>
           <div className="max-w-md">
             <h3 className="font-serif text-sm font-semibold uppercase text-on-surface">
@@ -158,20 +226,53 @@ export const FiatRampWizard: React.FC<FiatRampWizardProps> = ({ maskBalances: pr
             <p className="text-xs text-outline mt-1 font-sans">
               Connect external institutional wallets (MetaMask Institutional, Fireblocks, Safe) to bridge digital assets directly into your Global MPC enclave.
             </p>
+            {web3Connected && (
+              <div className="mt-2.5 p-2 bg-tertiary/10 border border-tertiary/30 text-tertiary font-mono text-xs rounded flex items-center justify-center gap-1.5">
+                <Check className="w-3.5 h-3.5" />
+                <span>MPC Enclave Connected: 0x94A8...916B</span>
+              </div>
+            )}
           </div>
-          <button
-            type="button"
-            className="px-4 py-2 bg-primary text-surface font-mono text-xs font-bold uppercase rounded-DEFAULT hover:bg-primary-hover transition-colors"
-          >
-            Connect Web3 MPC Signer
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-2 w-full max-w-sm">
+            {!web3Connected ? (
+              <button
+                type="button"
+                onClick={() => setWeb3Connected(true)}
+                className="w-full px-4 py-2 bg-primary text-surface font-mono text-xs font-bold uppercase rounded-DEFAULT hover:bg-primary-hover transition-colors cursor-pointer"
+              >
+                Connect Web3 MPC Signer
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  data-testid="web3-deposit-btn"
+                  onClick={() => {
+                    setActiveDepositTab('crypto');
+                    openModal('deposit');
+                  }}
+                  className="flex-1 min-w-[130px] px-3 py-2 bg-primary text-surface font-mono text-xs font-bold uppercase rounded-DEFAULT hover:bg-primary-hover transition-colors cursor-pointer"
+                >
+                  Deposit Web3
+                </button>
+                <button
+                  type="button"
+                  data-testid="web3-withdraw-btn"
+                  onClick={() => openModal('withdraw')}
+                  className="flex-1 min-w-[130px] px-3 py-2 bg-surface-container border border-border-hairline text-on-surface font-mono text-xs font-bold uppercase rounded-DEFAULT hover:bg-surface-container-high transition-colors cursor-pointer"
+                >
+                  Withdraw Web3
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
 
       {activeTab === 'CARD' && (
         <div className="p-6 flex-1 flex flex-col items-center justify-center gap-4 text-center my-auto">
           <div className="p-3.5 rounded-full bg-surface-container border border-secondary/20 text-secondary">
-            <Landmark className="w-8 h-8" />
+            <Zap className="w-8 h-8 text-secondary" />
           </div>
           <div className="max-w-md">
             <h3 className="font-serif text-sm font-semibold uppercase text-on-surface">
@@ -180,13 +281,58 @@ export const FiatRampWizard: React.FC<FiatRampWizardProps> = ({ maskBalances: pr
             <p className="text-xs text-outline mt-1 font-sans">
               Instantly sweep available liquid treasury reserves to recharge your physical 42g Tungsten VIP Card with zero foreign exchange fees.
             </p>
+            {cardSweepSuccess && (
+              <div className="mt-2.5 p-2 bg-tertiary/10 border border-tertiary/30 text-tertiary font-mono text-xs rounded flex items-center justify-center gap-1.5">
+                <Check className="w-3.5 h-3.5" />
+                <span>{cardSweepSuccess}</span>
+              </div>
+            )}
           </div>
-          <button
-            type="button"
-            className="px-4 py-2 bg-secondary text-surface font-mono text-xs font-bold uppercase rounded-DEFAULT hover:bg-secondary/90 transition-colors"
-          >
-            Configure Card Sweep Allowance
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-2 w-full max-w-sm">
+            <button
+              type="button"
+              data-testid="card-deposit-btn"
+              onClick={() => {
+                setActiveDepositTab('card');
+                openModal('deposit');
+              }}
+              className="flex-1 min-w-[130px] px-4 py-2 bg-secondary text-surface font-mono text-xs font-bold uppercase rounded-DEFAULT hover:bg-secondary/90 transition-colors cursor-pointer"
+            >
+              Deposit to VIP Card
+            </button>
+            <button
+              type="button"
+              data-testid="card-sweep-btn"
+              onClick={() => {
+                const sweepAmount = Math.min(50000, availableCash);
+                if (sweepAmount <= 0) {
+                  setCardSweepSuccess('Insufficient liquid cash to sweep.');
+                  setTimeout(() => setCardSweepSuccess(''), 3000);
+                  return;
+                }
+                adjustAvailableCash(-sweepAmount);
+                addTransaction({
+                  id: `tx-swp-${Date.now()}`,
+                  timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
+                  vertical: 'CASH',
+                  type: 'SWEEP',
+                  description: 'Obsidian VIP Card Sweep • Real-time replenishment',
+                  amountUsd: sweepAmount,
+                  status: 'CLEARED',
+                  reference: `WY-${Math.floor(1000 + Math.random() * 9000)}-SWEEP`,
+                });
+                setCardSweepSuccess(
+                  maskBalances
+                    ? 'Card sweep cleared.'
+                    : `Successfully swept $${sweepAmount.toLocaleString()} USD to Obsidian Card.`
+                );
+                setTimeout(() => setCardSweepSuccess(''), 4000);
+              }}
+              className="flex-1 min-w-[130px] px-3 py-2 bg-surface-container border border-border-hairline text-on-surface font-mono text-xs font-bold uppercase rounded-DEFAULT hover:bg-surface-container-high transition-colors cursor-pointer"
+            >
+              Sweep $50k Reserve
+            </button>
+          </div>
         </div>
       )}
 
@@ -307,8 +453,18 @@ export const FiatRampWizard: React.FC<FiatRampWizardProps> = ({ maskBalances: pr
           </div>
 
           {validationErr && (
-            <div className="p-2 bg-error/10 border border-error/30 text-error font-mono text-[11px] rounded-DEFAULT">
-              {validationErr}
+            <div className="p-2.5 bg-error/10 border border-error/30 text-error font-mono text-[11px] rounded-DEFAULT flex items-center justify-between gap-2">
+              <span>{validationErr}</span>
+              {showKycUpgradeBtn && (
+                <button
+                  type="button"
+                  data-testid="terminal-upgrade-kyc-btn"
+                  onClick={() => openModal('kyc')}
+                  className="px-2 py-0.5 bg-error/20 hover:bg-error/30 text-error border border-error/40 font-mono text-[10px] font-bold rounded uppercase whitespace-nowrap cursor-pointer transition-colors"
+                >
+                  Upgrade Tier
+                </button>
+              )}
             </div>
           )}
 

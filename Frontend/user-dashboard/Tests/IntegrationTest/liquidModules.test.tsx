@@ -6,9 +6,11 @@ import { WalletModule } from '../../src/components/modules/wallet/WalletModule';
 import { App } from '../../src/App';
 import { useDashboardStore } from '../../src/store/useDashboardStore';
 import { useLiquidStore } from '../../src/store/useLiquidStore';
+import { usePortfolioStore } from '../../src/store/usePortfolioStore';
 
 describe('Liquid Asset Modules Integration Tests', () => {
   beforeEach(() => {
+    usePortfolioStore.getState().resetToDefaults();
     useDashboardStore.setState({
       theme: 'dark',
       activeVertical: 'crypto',

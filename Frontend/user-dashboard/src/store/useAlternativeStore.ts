@@ -193,6 +193,11 @@ export const useAlternativeStore = create<AlternativeStoreState>((set, get) => (
   },
 
   buyProperty: (propertyId, tokens, tokenPrice) => {
+    const totalCost = tokens * tokenPrice;
+    const currentCash = usePortfolioStore.getState().availableCash;
+    if (totalCost > currentCash) return false;
+    usePortfolioStore.getState().adjustAvailableCash(-totalCost);
+
     set((state) => {
       const existing = state.userRealEstateHoldings[propertyId] || {
         tokens: 0,
@@ -204,7 +209,7 @@ export const useAlternativeStore = create<AlternativeStoreState>((set, get) => (
         [propertyId]: {
           ...existing,
           tokens: existing.tokens + tokens,
-          totalInvested: existing.totalInvested + tokens * tokenPrice,
+          totalInvested: existing.totalInvested + totalCost,
         },
       };
 
@@ -352,6 +357,10 @@ export const useAlternativeStore = create<AlternativeStoreState>((set, get) => (
   },
 
   buyVehicleAsset: (assetId, price, purchaseType = 'full', fractionalPct = 100) => {
+    const currentCash = usePortfolioStore.getState().availableCash;
+    if (price > currentCash) return false;
+    usePortfolioStore.getState().adjustAvailableCash(-price);
+
     set((state) => {
       const existing = state.userVehicleHoldings[assetId] || {
         owned: false,

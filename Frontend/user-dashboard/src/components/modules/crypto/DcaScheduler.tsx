@@ -3,6 +3,7 @@ import { Calendar, Plus, Play, Pause, Check, Trash2 } from 'lucide-react';
 import { useLiquidStore } from '../../../store/useLiquidStore';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useAuthStore } from '../../../store/useAuthStore';
+import { usePortfolioStore } from '../../../store/usePortfolioStore';
 import { formatMaskedCurrency } from '../../../lib/calculations';
 import { CRYPTO_HOLDINGS_DATA } from '../../../lib/liquidAssetData';
 
@@ -22,12 +23,14 @@ export const DcaScheduler: React.FC<DcaSchedulerProps> = ({ maskBalances: propMa
   const user = useAuthStore((s) => s.user);
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
+  const availableCash = usePortfolioStore((s) => s.availableCash);
 
   const [asset, setAsset] = useState<string>(targetDcaAsset || 'BTC');
   const [frequency, setFrequency] = useState<'DAILY' | 'WEEKLY' | 'BI_WEEKLY' | 'MONTHLY'>('WEEKLY');
   const [amountUsd, setAmountUsd] = useState<number>(25000);
   const [sourceAccount] = useState<string>('USD Fedwire Treasury');
   const [justAdded, setJustAdded] = useState<boolean>(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (targetDcaAsset) {
@@ -45,6 +48,20 @@ export const DcaScheduler: React.FC<DcaSchedulerProps> = ({ maskBalances: propMa
     if (!Number.isFinite(amountUsd) || amountUsd <= 0) {
       return;
     }
+    if (amountUsd > availableCash) {
+      setErrorMsg(
+        `Insufficient funds: Your Account Balance ($${availableCash.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}) is less than the investment amount ($${amountUsd.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}).`
+      );
+      setTimeout(() => setErrorMsg(null), 4000);
+      return;
+    }
+    setErrorMsg(null);
     addDcaSchedule(
       {
         asset,
@@ -132,6 +149,15 @@ export const DcaScheduler: React.FC<DcaSchedulerProps> = ({ maskBalances: propMa
           </button>
         </div>
       </form>
+
+      {errorMsg && (
+        <div
+          data-testid="dca-insufficient-funds-error"
+          className="p-2.5 bg-error/10 border border-error/30 text-error font-mono text-xs rounded-DEFAULT"
+        >
+          {errorMsg}
+        </div>
+      )}
 
       {/* Active Schedules List */}
       <div className="space-y-2">

@@ -3,12 +3,14 @@ import { ListFilter, XCircle, CheckCircle2, Plus, ChevronDown, ChevronUp } from 
 import { useLiquidStore } from '../../../store/useLiquidStore';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useAuthStore } from '../../../store/useAuthStore';
+import { usePortfolioStore } from '../../../store/usePortfolioStore';
 import { STOCKS_HOLDINGS_DATA } from '../../../lib/liquidAssetData';
 
 export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBalances: propMask }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
   const user = useAuthStore((s) => s.user);
+  const availableCash = usePortfolioStore((s) => s.availableCash);
 
   const { activeOrders, addActiveOrder, cancelActiveOrder, selectedStock } = useLiquidStore();
   const [cancelledId, setCancelledId] = useState<string | null>(null);
@@ -21,6 +23,7 @@ export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBala
   const [limitPrice, setLimitPrice] = useState<number>(135.0);
   const [duration] = useState<string>('GTC (Good-Til-Cancelled)');
   const [justPlaced, setJustPlaced] = useState<boolean>(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Synchronize symbol with selectedStock whenever a user clicks any stock/SPV
   useEffect(() => {
@@ -47,6 +50,24 @@ export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBala
       return;
     }
 
+    if (type === 'BUY_LIMIT') {
+      const orderTotal = shares * limitPrice;
+      if (orderTotal > availableCash) {
+        setErrorMsg(
+          `Insufficient funds: Order total ($${orderTotal.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}) exceeds Account Balance ($${availableCash.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}).`
+        );
+        setTimeout(() => setErrorMsg(null), 4000);
+        return;
+      }
+    }
+
+    setErrorMsg(null);
     addActiveOrder(
       {
         symbol,
@@ -181,6 +202,15 @@ export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBala
             </button>
           </div>
         </form>
+      )}
+
+      {errorMsg && (
+        <div
+          data-testid="stocks-order-error-alert"
+          className="p-2.5 bg-error/10 border border-error/30 text-error font-mono text-xs rounded-DEFAULT"
+        >
+          {errorMsg}
+        </div>
       )}
 
       {/* Orders Table or Empty State */}

@@ -6,6 +6,8 @@ import { SecurityModule } from '../../src/components/modules/security/SecurityMo
 import { App } from '../../src/App';
 import { useDashboardStore } from '../../src/store/useDashboardStore';
 import { useGovernanceStore } from '../../src/store/useGovernanceStore';
+import { usePortfolioStore } from '../../src/store/usePortfolioStore';
+import { useAlternativeStore, INITIAL_USER_REAL_ESTATE_HOLDINGS } from '../../src/store/useAlternativeStore';
 import {
   INITIAL_CLIENT_SESSIONS,
   INITIAL_WHITELIST_DESTINATIONS,
@@ -13,6 +15,7 @@ import {
 
 describe('Governance & Global Modules Integration Suite (Sprint 5)', () => {
   beforeEach(() => {
+    usePortfolioStore.getState().resetToDefaults();
     useDashboardStore.setState({
       theme: 'dark',
       activeVertical: 'vip-cards',
