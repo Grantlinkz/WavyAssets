@@ -85,9 +85,10 @@ describe('Liquid Asset Modules Integration Tests', () => {
 
   describe('WalletModule SSR Rendering', () => {
     it('renders wallet module with dual ledger split, fiat ramp, and transaction ledger', () => {
+      usePortfolioStore.setState({ availableCash: 1820450.0, netWorth: 14820450.0 });
       const html = renderToString(<WalletModule maskBalances={false} />);
       expect(html).toContain('data-testid="wallet-module"');
-      expect(html).toContain('Card A: Available Liquid Balance');
+      expect(html).toContain('Card A: Account Balance');
       expect(html).toContain('Card B: Invested &amp; Locked Capital');
       expect(html).toContain('$1,820,450.00');
       expect(html).toContain('$13,000,000.00');

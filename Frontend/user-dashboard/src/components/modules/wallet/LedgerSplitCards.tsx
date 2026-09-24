@@ -65,14 +65,14 @@ export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances
 
   return (
     <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-      {/* CARD A: AVAILABLE LIQUID BALANCE (UNENCUMBERED CASH) */}
+      {/* CARD A: ACCOUNT BALANCE (UNENCUMBERED CASH) */}
       <div className="lg:col-span-6 bg-surface-container-lowest border-2 border-primary/60 rounded-DEFAULT p-4 flex flex-col justify-between shadow-lg">
         <div>
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2">
               <Wallet className="w-4 h-4 text-primary shrink-0" />
               <span className="text-xs font-mono text-on-surface uppercase tracking-wider font-semibold">
-                Card A: Available Liquid Balance
+                Card A: Account Balance
               </span>
             </div>
             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 border border-primary/40 rounded-DEFAULT shrink-0">
@@ -176,7 +176,7 @@ export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances
         </div>
       </div>
 
-      {/* CARD B: INVESTED & LOCKED FIDUCIARY CAPITAL */}
+      {/* CARD B: CONSOLIDATED PLATFORM NET WORTH */}
       <div className="lg:col-span-6 bg-surface-container-lowest border border-border-hairline rounded-DEFAULT p-4 flex flex-col justify-between">
         <div>
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">

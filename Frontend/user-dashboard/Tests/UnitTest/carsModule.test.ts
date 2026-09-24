@@ -37,7 +37,7 @@ describe('Exotic Vehicles & Horology Vault Module Unit Tests', () => {
     expect(porsche?.fairMarketValue).toBe(580000);
     expect(porsche?.acquisitionPrice).toBe(495000);
     expect(porsche?.unrealizedGain).toBe(85000);
-    expect(porsche?.conditionScore).toBe(99.4);
+    expect(porsche?.conditionScore).toBe(99.9);
     expect(porsche?.custodyEnclave).toBe('CH-FREEPORT-GEN-04B');
 
     const patek = EXOTIC_ASSETS.find((a) => a.id === 'watch-1');
@@ -45,7 +45,7 @@ describe('Exotic Vehicles & Horology Vault Module Unit Tests', () => {
     expect(patek?.acquisitionPrice).toBe(235000);
     expect(patek?.unrealizedGain).toBe(35000);
     expect(patek?.conditionScore).toBe(100.0);
-    expect(patek?.conditionLabel).toContain('Factory Blister');
+    expect(patek?.conditionLabel).toContain('Factory Sealed');
 
     // Aggregate valuation
     const totalVal = porsche!.fairMarketValue + patek!.fairMarketValue;

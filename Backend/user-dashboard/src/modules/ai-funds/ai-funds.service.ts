@@ -362,4 +362,113 @@ export class AiFundsService {
       timestamp: new Date().toISOString(),
     };
   }
+
+  /**
+   * Get user AI fund positions and holdings from database
+   */
+  async getPositions(userId: string) {
+    const position = await this.prisma.aiFundPosition.findFirst({
+      where: { userId },
+    });
+    return {
+      success: true,
+      position: position || {
+        strategyTier: 'balanced',
+        allocatedUsd: 0,
+        unrealizedAlpha: 0,
+        circuitBreaker: false,
+        claimedYield: 0,
+        pendingYield: 0,
+      },
+    };
+  }
+
+  /**
+   * Buy AI compute tokens: updates database position and debits available cash from ledger
+   */
+  async buyAiAsset(userId: string, dto: { assetId: string; tokens: number; tokenPrice: number }) {
+    const totalCost = dto.tokens * dto.tokenPrice;
+    const cashAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');
+    const currentBalance = Number(cashAccount.balance);
+
+    if (currentBalance < totalCost) {
+      throw new BadRequestException(
+        `Insufficient Account Balance ($${currentBalance}) to purchase ${dto.tokens} tokens ($${totalCost}).`
+      );
+    }
+
+    const investedAccount = await this.walletService.getOrCreateAccount(userId, 'INVESTED_CAPITAL', 'USD');
+    await this.walletService.recordLedgerTransaction({
+      type: 'TRADE',
+      description: `AI Fund Token Acquisition: ${dto.assetId} (${dto.tokens} @ $${dto.tokenPrice})`,
+      entries: [
+        { accountId: cashAccount.id, amount: -totalCost },
+        { accountId: investedAccount.id, amount: totalCost },
+      ],
+    });
+
+    let position = await this.prisma.aiFundPosition.findFirst({ where: { userId } });
+    if (!position) {
+      position = await this.prisma.aiFundPosition.create({
+        data: {
+          userId,
+          strategyTier: 'balanced',
+          allocatedUsd: totalCost,
+          unrealizedAlpha: 0,
+        },
+      });
+    } else {
+      position = await this.prisma.aiFundPosition.update({
+        where: { id: position.id },
+        data: {
+          allocatedUsd: position.allocatedUsd + totalCost,
+        },
+      });
+    }
+
+    this.dashboardService?.invalidateCache(userId);
+    return {
+      success: true,
+      position,
+      totalCost,
+    };
+  }
+
+  /**
+   * Sell AI compute tokens: updates database position and credits available cash in ledger
+   */
+  async sellAiAsset(userId: string, dto: { assetId: string; tokensToSell: number; pricePerToken?: number }) {
+    const resolvedPrice = dto.pricePerToken || 500;
+    const proceeds = dto.tokensToSell * resolvedPrice;
+
+    const cashAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');
+    const investedAccount = await this.walletService.getOrCreateAccount(userId, 'INVESTED_CAPITAL', 'USD');
+
+    await this.walletService.recordLedgerTransaction({
+      type: 'TRADE',
+      description: `AI Fund Token Liquidation: ${dto.assetId} (${dto.tokensToSell} @ $${resolvedPrice})`,
+      entries: [
+        { accountId: cashAccount.id, amount: proceeds },
+        { accountId: investedAccount.id, amount: -proceeds },
+      ],
+    });
+
+    let position = await this.prisma.aiFundPosition.findFirst({ where: { userId } });
+    if (position) {
+      position = await this.prisma.aiFundPosition.update({
+        where: { id: position.id },
+        data: {
+          allocatedUsd: Math.max(0, position.allocatedUsd - proceeds),
+        },
+      });
+    }
+
+    this.dashboardService?.invalidateCache(userId);
+    return {
+      success: true,
+      position,
+      proceeds,
+    };
+  }
 }
+

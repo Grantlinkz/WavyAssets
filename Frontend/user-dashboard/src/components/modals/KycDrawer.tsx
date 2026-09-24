@@ -54,20 +54,9 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
   const closeModal = propClose !== undefined ? propClose : storeClose;
 
   const userId = user?.id || 'guest';
-  const storageKey = `wavyassets_kyc_submissions_${userId}`;
 
   // Submissions state
-  const [submissions, setSubmissions] = useState<KycSubmissions>(() => {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      try {
-        const stored = window.localStorage.getItem(storageKey);
-        if (stored) return JSON.parse(stored);
-      } catch {
-        // Ignore
-      }
-    }
-    return {};
-  });
+  const [submissions, setSubmissions] = useState<KycSubmissions>({});
 
   // Active level tab
   const [activeTab, setActiveTab] = useState<'level1' | 'level2' | 'level3'>(
@@ -122,6 +111,27 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
           if (tier) {
             useAuthStore.getState().updateUserKycTier(tier as 'TIER_1' | 'TIER_2' | 'TIER_3');
           }
+          if (Array.isArray(data.documents)) {
+            const l2Doc = data.documents.find((d) => d.docType === 'PASSPORT' || d.docType === 'GOVERNMENT_ID');
+            const l3Doc = data.documents.find((d) => d.docType === 'UTILITY_BILL' || d.docType === 'BANK_STATEMENT');
+            setSubmissions({
+              level2: l2Doc
+                ? {
+                    fileName: 'Government_ID_Verified.pdf',
+                    submittedAt: new Date().toISOString(),
+                    status: l2Doc.isVerified ? 'APPROVED' : 'PENDING_APPROVAL',
+                  }
+                : undefined,
+              level3: l3Doc
+                ? {
+                    docCategory: 'UTILITY_BILL',
+                    fileName: 'Proof_Of_Address.pdf',
+                    submittedAt: new Date().toISOString(),
+                    status: l3Doc.isVerified ? 'APPROVED' : 'PENDING_APPROVAL',
+                  }
+                : undefined,
+            });
+          }
         }
       })
       .catch(() => {
@@ -133,33 +143,9 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
     };
   }, []);
 
-  // Save non-sensitive submission status to localStorage
+  // Update submission status in component state without localStorage
   const saveSubmissions = (updated: KycSubmissions) => {
     setSubmissions(updated);
-    if (typeof window !== 'undefined' && window.localStorage) {
-      try {
-        const sanitized = {
-          level2: updated.level2
-            ? {
-                fileName: updated.level2.fileName,
-                submittedAt: updated.level2.submittedAt,
-                status: updated.level2.status,
-              }
-            : undefined,
-          level3: updated.level3
-            ? {
-                docCategory: updated.level3.docCategory,
-                fileName: updated.level3.fileName,
-                submittedAt: updated.level3.submittedAt,
-                status: updated.level3.status,
-              }
-            : undefined,
-        };
-        window.localStorage.setItem(storageKey, JSON.stringify(sanitized));
-      } catch {
-        // Ignore
-      }
-    }
   };
 
   // Determine Level Statuses strictly from verified KYC documents:

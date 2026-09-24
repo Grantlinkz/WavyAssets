@@ -513,4 +513,38 @@ export class WalletService {
       },
     };
   }
+
+  /**
+   * Direct balance adjustment with double-entry conservation in database
+   */
+  async adjustBalance(userId: string, amount: number, description = 'Direct balance adjustment') {
+    const cashAccount = await this.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');
+    const systemAccount = await this.getOrCreateAccount(userId, 'FEE_RECEIVABLE', 'USD');
+
+    // Debit/Credit conservation
+    await this.recordLedgerTransaction({
+      type: amount >= 0 ? 'DEPOSIT' : 'WITHDRAWAL',
+      description,
+      entries: [
+        { accountId: cashAccount.id, amount },
+        { accountId: systemAccount.id, amount: -amount },
+      ],
+    });
+
+    const updated = await this.getBalances(userId);
+    const availableCashTotal = updated.availableCash.reduce((sum, a) => sum + a.usdEquivalent, 0);
+
+    this.dashboardService?.invalidateCache(userId);
+    this.portfolioGateway?.broadcastBalanceUpdated(userId, {
+      availableCash: availableCashTotal,
+      currency: 'USD',
+    });
+
+    return {
+      success: true,
+      availableCash: availableCashTotal,
+      totalUsd: updated.totalUsd,
+    };
+  }
 }
+

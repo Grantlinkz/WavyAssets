@@ -1,7 +1,6 @@
 import React from 'react';
 import { NetWorthWidget } from './NetWorthWidget';
 import { AllocationPreview } from './AllocationPreview';
-import { PrivacyToggle } from './PrivacyToggle';
 import { ActionRail } from './ActionRail';
 
 import type { TimeframeOption } from '../../store/useDashboardStore';
@@ -26,10 +25,8 @@ export const GlobalCommandBar: React.FC<GlobalCommandBarProps> = ({
       {/* Center Cell: 3D Radial Donut & Multi-Vertical Progress Ribbon */}
       <AllocationPreview />
 
-      {/* Right Cell: Privacy Toggle & Global Action Rail */}
+      {/* Right Cell: Global Action Rail */}
       <div className="flex items-center gap-2 shrink-0">
-        <PrivacyToggle maskBalances={maskBalances} />
-        <div className="h-4 w-px bg-border-hairline mx-1 hidden sm:block" />
         <ActionRail />
       </div>
     </div>

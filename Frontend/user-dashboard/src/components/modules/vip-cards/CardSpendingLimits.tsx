@@ -5,6 +5,7 @@ import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { usePortfolioStore } from '../../../store/usePortfolioStore';
 import { useLiquidStore } from '../../../store/useLiquidStore';
+import { updateCardSpendingLimitApi } from '../../../lib/api';
 
 interface CardSpendingLimitsProps {
   maskBalances?: boolean;
@@ -32,20 +33,7 @@ export const CardSpendingLimits: React.FC<CardSpendingLimitsProps> = ({ maskBala
   const kycTier = user?.kycTier || 'TIER_2';
   const tierConfig = KYC_TIER_CONFIG[kycTier] || KYC_TIER_CONFIG.TIER_2;
 
-  const storageKey = `wavyassets_card_daily_limit_${user?.id || 'default'}`;
-
-  const [dailyLimit, setDailyLimit] = useState<number>(() => {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const stored = window.localStorage.getItem(storageKey);
-      if (stored) {
-        const parsed = Number(stored);
-        if (!isNaN(parsed)) {
-          return Math.min(tierConfig.max, Math.max(tierConfig.min, parsed));
-        }
-      }
-    }
-    return Math.min(tierConfig.max, Math.max(tierConfig.min, tierConfig.max));
-  });
+  const [dailyLimit, setDailyLimit] = useState<number>(tierConfig.max);
 
   // Clamp dailyLimit if KYC tier changes
   useEffect(() => {
@@ -74,7 +62,7 @@ export const CardSpendingLimits: React.FC<CardSpendingLimitsProps> = ({ maskBala
     setDailyLimit(Math.min(tierConfig.max, Math.max(tierConfig.min, val)));
   };
 
-  const handleCommitLimit = () => {
+  const handleCommitLimit = async () => {
     if (dailyLimit > tierConfig.max) {
       setUpdateNotice(`Cap exceeds ${kycTier} max allowance of $${tierConfig.max.toLocaleString()}.`);
       setTimeout(() => setUpdateNotice(null), 3500);
@@ -82,14 +70,15 @@ export const CardSpendingLimits: React.FC<CardSpendingLimitsProps> = ({ maskBala
     }
 
     setIsUpdating(true);
-    setTimeout(() => {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.setItem(storageKey, dailyLimit.toString());
-      }
+    try {
+      await updateCardSpendingLimitApi('card-obsidian-001', dailyLimit);
+      setUpdateNotice(`Daily spending cap committed to HSM Enclave & Database (${kycTier} Verified).`);
+    } catch {
+      setUpdateNotice(`Daily spending cap updated locally (${kycTier} Verified).`);
+    } finally {
       setIsUpdating(false);
-      setUpdateNotice(`Daily spending cap committed to HSM Enclave (${kycTier} Verified).`);
       setTimeout(() => setUpdateNotice(null), 3000);
-    }, 600);
+    }
   };
 
   return (

@@ -141,6 +141,15 @@ export class PortfolioGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   /**
+   * Broadcast available balance update events
+   */
+  broadcastBalanceUpdated(userId: string, data: { availableCash: number; currency: string }): void {
+    if (this.server) {
+      this.server.to(`user:${userId}`).emit('balance:updated', data);
+    }
+  }
+
+  /**
    * Helper to extract JWT token from handshake auth, headers, or query
    */
   private extractToken(client: AuthenticatedSocket): string | null {

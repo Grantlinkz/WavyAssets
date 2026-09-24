@@ -5,13 +5,15 @@ import {
   TOTAL_Global_NET_WORTH,
   type VerticalAllocation,
 } from '../lib/calculations';
+import { adjustWalletBalanceApi } from '../lib/api';
 
 export type ModalType = 'deposit' | 'withdraw' | 'trade' | 'kyc';
 export type DepositRailTab = 'wire' | 'crypto' | 'card';
 
 interface PortfolioState {
-  netWorth: number;
-  availableCash: number;
+  netWorth: number; // Consolidated Platform Net Worth (invested assets)
+  availableCash: number; // Liquid Account Balance
+  accountBalance: number; // Liquid Account Balance
   allocations: VerticalAllocation[];
   returns: Record<string, { dollarChange: number; percentageChange: number }> | null;
   activeModal: ModalType | null;
@@ -23,12 +25,14 @@ interface PortfolioState {
   setActiveDepositTab: (tab: DepositRailTab) => void;
   setNetWorth: (value: number) => void;
   setAvailableCash: (value: number) => void;
+  setAccountBalance: (value: number) => void;
   adjustAvailableCash: (delta: number) => boolean;
+  adjustAccountBalance: (delta: number) => boolean;
   setAllocations: (allocations: VerticalAllocation[]) => void;
   setReturns: (returns: Record<string, { dollarChange: number; percentageChange: number }>) => void;
   updateAllocation: (id: string, value: number) => void;
   syncUserHoldings: (cryptoNav: number, stocksNav: number) => void;
-  syncAlternativeHoldings: (realEstateNav: number, carsNav: number) => void;
+  syncAlternativeHoldings: (realEstateNav: number, carsNav: number, aiFundsNav?: number) => void;
   resetToZero: () => void;
   resetToDefaults: () => void;
 }
@@ -50,7 +54,8 @@ function recomputeAllocations(updated: VerticalAllocation[]): {
 
 export const usePortfolioStore = create<PortfolioState>((set) => ({
   netWorth: TOTAL_Global_NET_WORTH,
-  availableCash: 1820450.00,
+  availableCash: 0,
+  accountBalance: 0,
   allocations: DEFAULT_ALLOCATIONS,
   returns: null,
   activeModal: null,
@@ -61,13 +66,31 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
   setActiveDepositTab: (tab) => set({ activeDepositTab: tab }),
 
   setNetWorth: (value) => set({ netWorth: value }),
-  setAvailableCash: (value) => set({ availableCash: value }),
+  setAvailableCash: (value) => set({ availableCash: value, accountBalance: value }),
+  setAccountBalance: (value) => set({ availableCash: value, accountBalance: value }),
   adjustAvailableCash: (delta) => {
     let success = false;
     set((state) => {
-      if (state.availableCash + delta >= 0) {
+      const current = state.accountBalance ?? state.availableCash;
+      if (current + delta >= 0) {
         success = true;
-        return { availableCash: state.availableCash + delta };
+        const updated = current + delta;
+        adjustWalletBalanceApi(delta, 'Liquid balance adjustment').catch(console.error);
+        return { availableCash: updated, accountBalance: updated };
+      }
+      return state;
+    });
+    return success;
+  },
+  adjustAccountBalance: (delta) => {
+    let success = false;
+    set((state) => {
+      const current = state.accountBalance ?? state.availableCash;
+      if (current + delta >= 0) {
+        success = true;
+        const updated = current + delta;
+        adjustWalletBalanceApi(delta, 'Liquid balance adjustment').catch(console.error);
+        return { availableCash: updated, accountBalance: updated };
       }
       return state;
     });
@@ -96,11 +119,12 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
     });
   },
 
-  syncAlternativeHoldings: (realEstateNav, carsNav) => {
+  syncAlternativeHoldings: (realEstateNav, carsNav, aiFundsNav) => {
     set((state) => {
       const updated = state.allocations.map((item) => {
         if (item.id === 'real-estate') return { ...item, actualValue: realEstateNav };
         if (item.id === 'cars') return { ...item, actualValue: carsNav };
+        if (aiFundsNav !== undefined && item.id === 'ai-funds') return { ...item, actualValue: aiFundsNav };
         return item;
       });
       return recomputeAllocations(updated);
@@ -111,6 +135,7 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
     set({
       netWorth: 0,
       availableCash: 0,
+      accountBalance: 0,
       allocations: ZERO_ALLOCATIONS,
       returns: null,
       activeModal: null,
@@ -120,7 +145,8 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
   resetToDefaults: () =>
     set({
       netWorth: TOTAL_Global_NET_WORTH,
-      availableCash: 1820450.00,
+      availableCash: 0,
+      accountBalance: 0,
       allocations: DEFAULT_ALLOCATIONS,
       returns: null,
       activeModal: null,

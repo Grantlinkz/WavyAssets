@@ -222,23 +222,19 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
 
         if (typeof window !== 'undefined') {
           const configuredDashboardUrl = import.meta.env.VITE_DASHBOARD_URL;
-          let destinationBase = 'http://localhost:5174/auth/callback';
+          let destinationBase = 'http://localhost:5174/';
 
           if (configuredDashboardUrl) {
-            destinationBase =
-              configuredDashboardUrl.endsWith('/auth/callback') ||
-              configuredDashboardUrl.endsWith('/auth/exchange')
-                ? configuredDashboardUrl
-                : `${configuredDashboardUrl.replace(/\/+$/, '')}/auth/callback`;
+            destinationBase = `${configuredDashboardUrl.replace(/\/+$/, '')}/`;
           } else if (targetDashboardUrl) {
             try {
               const parsed = new URL(targetDashboardUrl);
-              destinationBase = `${parsed.origin}/auth/callback`;
+              destinationBase = `${parsed.origin}/`;
             } catch {
               destinationBase = targetDashboardUrl;
             }
           } else if (window.location.port === '5173') {
-            destinationBase = `${window.location.protocol}//${window.location.hostname}:5174/auth/callback`;
+            destinationBase = `${window.location.protocol}//${window.location.hostname}:5174/`;
           }
 
           if (handoffTicket) {

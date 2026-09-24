@@ -7,8 +7,6 @@ import {
   ArrowUpRight,
   ArrowLeftRight,
   Wallet,
-  ShieldCheck,
-  AlertTriangle,
   Zap,
 } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
@@ -226,12 +224,6 @@ export const FiatRampWizard: React.FC<FiatRampWizardProps> = ({ maskBalances: pr
             <p className="text-xs text-outline mt-1 font-sans">
               Connect external institutional wallets (MetaMask Institutional, Fireblocks, Safe) to bridge digital assets directly into your Global MPC enclave.
             </p>
-            {web3Connected && (
-              <div className="mt-2.5 p-2 bg-tertiary/10 border border-tertiary/30 text-tertiary font-mono text-xs rounded flex items-center justify-center gap-1.5">
-                <Check className="w-3.5 h-3.5" />
-                <span>MPC Enclave Connected: 0x94A8...916B</span>
-              </div>
-            )}
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2 w-full max-w-sm">
             {!web3Connected ? (

@@ -47,32 +47,18 @@ describe('Alternative Asset Modules Integration Suite (Sprint 4)', () => {
   });
 
   describe('AI Systematic & Quantitative Funds SSR Rendering', () => {
-    it('renders AI funds module with 5-KPI ribbon, risk calibrator, and rationale ledger', () => {
+    it('renders AI funds module with 4-KPI ribbon, asset inventory, and distribution blotter', () => {
       const html = renderToString(<AiFundsModule />);
 
       expect(html).toContain('data-testid="ai-funds-module"');
       expect(html).toContain('AI Systematic &amp; Quantitative Strategies');
-      expect(html).toContain('Nexus-Quant v6.42');
-      expect(html).toContain('Capital Deployed');
-      expect(html).toContain('$1,450,000.00');
-      expect(html).toContain('2.84');
-      expect(html).toContain('3.12');
-      expect(html).toContain('-4.20%');
-
-      // Calibrator & Kill switch
-      expect(html).toContain('Dynamic Risk Posture &amp; Leverage Calibrator');
-      expect(html).toContain('Capital Preservation');
-      expect(html).toContain('Balanced Trend');
-      expect(html).toContain('High-Volatility Alpha');
-      expect(html).toContain('Fiduciary Kill Switch');
-      expect(html).toContain('ARMED • T+0');
-
-      // Rationale & GPU
-      expect(html).toContain('Execution Rationale &amp; Rebalance Ledger');
-      expect(html).toContain('Deribit ETH-PERP');
-      expect(html).toContain('Tokenized GPU Cluster');
-      expect(html).toContain('160x NVIDIA H100 SXM5 80GB');
-      expect(html).toContain('Claim to Vault');
+      expect(html).toContain('TOTAL AI COMPUTE EQUITY');
+      expect(html).toContain('NET STRATEGY YIELD');
+      expect(html).toContain('AVERAGE COMPUTE APY');
+      expect(html).toContain('CLUSTER UTILIZATION');
+      expect(html).toContain('Institutional Asset Inventory');
+      expect(html).toContain('Monthly Compute &amp; Arbitrage Distribution Tracker');
+      expect(html).toContain('Secondary OTC Compute Bulletin');
     });
 
     it('masks confidential figures when maskBalances is true', () => {
@@ -81,15 +67,6 @@ describe('Alternative Asset Modules Integration Suite (Sprint 4)', () => {
 
       expect(html).toContain('data-testid="ai-funds-module"');
       expect(html).toContain('••••••••');
-    });
-
-    it('renders state when circuit breaker is triggered', () => {
-      useAlternativeStore.setState({ isCircuitBreakerTriggered: true });
-      const html = renderToString(<AiFundsModule isCircuitBreakerTriggered={true} />);
-
-      expect(html).toContain('TRADING HALTED');
-      expect(html).toContain('POSITIONS FLATTENED TO USDC');
-      expect(html).toContain('Re-Arm Algorithmic Engine');
     });
   });
 
@@ -145,8 +122,8 @@ describe('Alternative Asset Modules Integration Suite (Sprint 4)', () => {
       expect(html).toContain('$1,200,000.00');
 
       // Curated Assets
-      expect(html).toContain('1997 Porsche 911 GT2 (993) Clubsport');
-      expect(html).toContain('Patek Philippe Grand Complications 5270P');
+      expect(html).toContain('2023 Porsche 911 GT3 RS (992)');
+      expect(html).toContain('2022 Patek Philippe Grand Complications 5270P');
 
       // Drive Booking Engine
       expect(html).toContain('Fleet Monetization Yield &amp; Member Drive-Day Engine');
@@ -155,9 +132,9 @@ describe('Alternative Asset Modules Integration Suite (Sprint 4)', () => {
 
       // Custody Ledger
       expect(html).toContain('Custody &amp; Underwriting');
-      expect(html).toContain('99.4');
+      expect(html).toContain('99.9');
       expect(html).toContain('100.0');
-      expect(html).toContain('Concours Gold Standard');
+      expect(html).toContain('Factory Delivery Mileage');
     });
 
     it('masks exotic asset valuations when maskBalances is true', () => {

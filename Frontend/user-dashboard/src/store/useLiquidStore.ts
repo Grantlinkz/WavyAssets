@@ -5,6 +5,15 @@ import {
   type WalletTransaction,
 } from '../lib/liquidAssetData';
 import { BASELINE_SPOT_PRICES } from '../lib/priceService';
+import {
+  fetchUserDcaSchedules,
+  createDcaScheduleApi,
+  toggleDcaScheduleApi,
+  deleteDcaScheduleApi,
+  fetchUserStockOrders,
+  submitStockOrder,
+  cancelStockOrderApi,
+} from '../lib/api';
 
 export interface ActiveOrder {
   id: string;
@@ -16,65 +25,6 @@ export interface ActiveOrder {
   expires: string;
 }
 
-const DCA_STORAGE_PREFIX = 'wavyassets_dca_schedules_';
-const ORDERS_STORAGE_PREFIX = 'wavyassets_active_orders_';
-
-function getStoredDca(userId?: string): DcaScheduleItem[] | null {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    try {
-      const raw = window.localStorage.getItem(`${DCA_STORAGE_PREFIX}${userId || 'default'}`);
-      if (raw !== null) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) return parsed as DcaScheduleItem[];
-      }
-    } catch {
-      // ignore
-    }
-  }
-  return null;
-}
-
-function persistDca(schedules: DcaScheduleItem[], userId?: string): void {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    try {
-      window.localStorage.setItem(
-        `${DCA_STORAGE_PREFIX}${userId || 'default'}`,
-        JSON.stringify(schedules)
-      );
-    } catch {
-      // ignore
-    }
-  }
-}
-
-function getStoredOrders(userId?: string): ActiveOrder[] | null {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    try {
-      const raw = window.localStorage.getItem(`${ORDERS_STORAGE_PREFIX}${userId || 'default'}`);
-      if (raw !== null) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) return parsed as ActiveOrder[];
-      }
-    } catch {
-      // ignore
-    }
-  }
-  return null;
-}
-
-function persistOrders(orders: ActiveOrder[], userId?: string): void {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    try {
-      window.localStorage.setItem(
-        `${ORDERS_STORAGE_PREFIX}${userId || 'default'}`,
-        JSON.stringify(orders)
-      );
-    } catch {
-      // ignore
-    }
-  }
-}
-
 interface LiquidState {
   // Crypto module state
   dcaSchedules: DcaScheduleItem[];
@@ -84,10 +34,10 @@ interface LiquidState {
   livePrices: Record<string, number>;
   setTargetDcaAsset: (asset: string) => void;
   setLivePrices: (prices: Record<string, number>) => void;
-  loadUserDcaSchedules: (userId?: string) => void;
-  toggleDcaSchedule: (id: string, userId?: string) => void;
-  addDcaSchedule: (schedule: Omit<DcaScheduleItem, 'id'>, userId?: string) => void;
-  deleteDcaSchedule: (id: string, userId?: string) => void;
+  loadUserDcaSchedules: (userId?: string) => Promise<void>;
+  toggleDcaSchedule: (id: string, userId?: string) => Promise<void>;
+  addDcaSchedule: (schedule: Omit<DcaScheduleItem, 'id'>, userId?: string) => Promise<void>;
+  deleteDcaSchedule: (id: string, userId?: string) => Promise<void>;
   triggerFastCompound: () => void;
 
   // Stocks module state
@@ -98,9 +48,9 @@ interface LiquidState {
   setSelectedStock: (symbol: string) => void;
   togglePreMarket: () => void;
   toggleDrip: (symbol: string) => void;
-  loadUserOrders: (userId?: string) => void;
-  addActiveOrder: (order: Omit<ActiveOrder, 'id'>, userId?: string) => void;
-  cancelActiveOrder: (id: string, userId?: string) => void;
+  loadUserOrders: (userId?: string) => Promise<void>;
+  addActiveOrder: (order: Omit<ActiveOrder, 'id'>, userId?: string) => Promise<void>;
+  cancelActiveOrder: (id: string, userId?: string) => Promise<void>;
 
   // Wallet module state
   autoSweepEnabled: boolean;
@@ -125,43 +75,73 @@ export const useLiquidStore = create<LiquidState>((set) => ({
   setLivePrices: (prices: Record<string, number>) =>
     set((state) => ({ livePrices: { ...state.livePrices, ...prices } })),
 
-  loadUserDcaSchedules: (userId?: string) => {
-    const stored = getStoredDca(userId);
-    if (stored !== null) {
-      set({ dcaSchedules: stored });
-    } else {
-      // Default to empty array so users start with clean zero state unless they add a schedule
-      set({ dcaSchedules: [] });
+  loadUserDcaSchedules: async () => {
+    try {
+      const data = await fetchUserDcaSchedules<any[]>([]);
+      if (Array.isArray(data)) {
+        const mapped: DcaScheduleItem[] = data.map((d) => ({
+          id: d.id,
+          asset: d.symbol || d.asset || 'BTC',
+          amountUsd: Number(d.amountUsd),
+          frequency: (d.frequency || 'DAILY') as DcaScheduleItem['frequency'],
+          sourceAccount: d.sourceAccount || 'USD Operating Balance',
+          active: Boolean(d.active),
+          nextExecution: d.nextExecution ? new Date(d.nextExecution).toLocaleString() : 'In 24h',
+        }));
+        set({ dcaSchedules: mapped });
+      }
+    } catch (err) {
+      console.error('Failed to load DCA schedules from DB', err);
     }
   },
 
-  toggleDcaSchedule: (id, userId) => {
-    set((state) => {
-      const updated = state.dcaSchedules.map((item) =>
+  toggleDcaSchedule: async (id) => {
+    set((state) => ({
+      dcaSchedules: state.dcaSchedules.map((item) =>
         item.id === id ? { ...item, active: !item.active } : item
-      );
-      persistDca(updated, userId);
-      return { dcaSchedules: updated };
-    });
+      ),
+    }));
+    try {
+      await toggleDcaScheduleApi(id);
+    } catch (err) {
+      console.error('Failed to toggle DCA schedule in DB', err);
+    }
   },
 
-  addDcaSchedule: (schedule, userId) => {
-    set((state) => {
-      const updated = [
-        ...state.dcaSchedules,
-        { ...schedule, id: `dca-${Date.now()}` },
-      ];
-      persistDca(updated, userId);
-      return { dcaSchedules: updated };
-    });
+  addDcaSchedule: async (schedule) => {
+    const tempId = `dca-${Date.now()}`;
+    const newSchedule: DcaScheduleItem = {
+      ...schedule,
+      id: tempId,
+    };
+    set((state) => ({
+      dcaSchedules: [...state.dcaSchedules, newSchedule],
+    }));
+    try {
+      const res: any = await createDcaScheduleApi({
+        symbol: schedule.asset,
+        amountUsd: schedule.amountUsd,
+        frequency: schedule.frequency,
+      });
+      if (res?.id) {
+        set((state) => ({
+          dcaSchedules: state.dcaSchedules.map((s) => (s.id === tempId ? { ...s, id: res.id } : s)),
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to create DCA schedule in DB', err);
+    }
   },
 
-  deleteDcaSchedule: (id, userId) => {
-    set((state) => {
-      const updated = state.dcaSchedules.filter((item) => item.id !== id);
-      persistDca(updated, userId);
-      return { dcaSchedules: updated };
-    });
+  deleteDcaSchedule: async (id) => {
+    set((state) => ({
+      dcaSchedules: state.dcaSchedules.filter((item) => item.id !== id),
+    }));
+    try {
+      await deleteDcaScheduleApi(id);
+    } catch (err) {
+      console.error('Failed to delete DCA schedule from DB', err);
+    }
   },
 
   triggerFastCompound: () => {
@@ -192,34 +172,64 @@ export const useLiquidStore = create<LiquidState>((set) => ({
       },
     })),
 
-  loadUserOrders: (userId?: string) => {
-    const stored = getStoredOrders(userId);
-    if (stored !== null) {
-      set({ activeOrders: stored });
-    } else {
-      set({ activeOrders: [] });
+  loadUserOrders: async () => {
+    try {
+      const data = await fetchUserStockOrders<any[]>([]);
+      if (Array.isArray(data)) {
+        const mapped: ActiveOrder[] = data.map((o) => ({
+          id: o.id,
+          symbol: o.symbol,
+          type: o.orderType === 'LIMIT' ? (o.side === 'BUY' ? 'BUY_LIMIT' : 'SELL_LIMIT') : 'BUY_LIMIT',
+          shares: Number(o.shares),
+          limitPrice: Number(o.limitPrice || 0),
+          status: o.status === 'FILLED' ? 'ROUTING' : (o.status || 'PENDING'),
+          expires: o.createdAt ? new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'DAY',
+        }));
+        set({ activeOrders: mapped });
+      }
+    } catch (err) {
+      console.error('Failed to load user stock orders from DB', err);
     }
   },
 
-  addActiveOrder: (order, userId) =>
-    set((state) => {
-      const updated = [
-        {
-          ...order,
-          id: `ord-${Math.floor(100 + Math.random() * 900)}`,
-        },
-        ...state.activeOrders,
-      ];
-      persistOrders(updated, userId);
-      return { activeOrders: updated };
-    }),
+  addActiveOrder: async (order) => {
+    const tempId = `ord-${Math.floor(100 + Math.random() * 900)}`;
+    const newOrder: ActiveOrder = {
+      ...order,
+      id: tempId,
+    };
+    set((state) => ({
+      activeOrders: [newOrder, ...state.activeOrders],
+    }));
+    try {
+      const side = order.type.startsWith('BUY') ? 'BUY' : 'SELL';
+      const res: any = await submitStockOrder({
+        symbol: order.symbol,
+        orderType: 'LIMIT',
+        side,
+        shares: order.shares,
+        limitPrice: order.limitPrice,
+      });
+      if (res?.id) {
+        set((state) => ({
+          activeOrders: state.activeOrders.map((o) => (o.id === tempId ? { ...o, id: res.id } : o)),
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to submit stock order to DB', err);
+    }
+  },
 
-  cancelActiveOrder: (id, userId) =>
-    set((state) => {
-      const updated = state.activeOrders.filter((order) => order.id !== id);
-      persistOrders(updated, userId);
-      return { activeOrders: updated };
-    }),
+  cancelActiveOrder: async (id) => {
+    set((state) => ({
+      activeOrders: state.activeOrders.filter((order) => order.id !== id),
+    }));
+    try {
+      await cancelStockOrderApi(id);
+    } catch (err) {
+      console.error('Failed to cancel stock order in DB', err);
+    }
+  },
 
   // Wallet
   autoSweepEnabled: true,

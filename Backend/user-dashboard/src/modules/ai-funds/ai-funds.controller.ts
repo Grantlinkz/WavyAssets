@@ -88,4 +88,34 @@ export class AiFundsController {
   ) {
     return this.aiFundsService.rebalance(user.id, dto);
   }
+
+  /**
+   * Get user AI fund position and strategy allocations from database
+   */
+  @Get('positions')
+  async getPositions(@CurrentUser() user: AuthenticatedUser) {
+    return this.aiFundsService.getPositions(user.id);
+  }
+
+  /**
+   * Acquire AI strategy/compute tokens with ledger debit
+   */
+  @Post('buy')
+  async buyAiAsset(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: { assetId: string; tokens: number; tokenPrice: number },
+  ) {
+    return this.aiFundsService.buyAiAsset(user.id, body);
+  }
+
+  /**
+   * Liquidate AI strategy/compute tokens with ledger credit
+   */
+  @Post('sell')
+  async sellAiAsset(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: { assetId: string; tokensToSell: number; pricePerToken?: number },
+  ) {
+    return this.aiFundsService.sellAiAsset(user.id, body);
+  }
 }

@@ -9,27 +9,36 @@ export interface NetWorthWidgetProps {
   maskBalances?: boolean;
   timeframe?: TimeframeOption;
   netWorth?: number;
+  accountBalance?: number;
 }
 
 export const NetWorthWidget: React.FC<NetWorthWidgetProps> = ({
   maskBalances: propMask,
   timeframe: propTimeframe,
   netWorth: propNetWorth,
+  accountBalance: propAccountBalance,
 }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const storeTimeframe = useDashboardStore((s) => s.timeframe);
   const setTimeframe = useDashboardStore((s) => s.setTimeframe);
-  const storeNetWorth = usePortfolioStore((s) => s.netWorth);
+  const storeAccountBalance = usePortfolioStore((s) => s.accountBalance ?? s.availableCash);
   const returns = usePortfolioStore((s) => s.returns);
 
   const maskBalances = propMask !== undefined ? propMask : storeMask;
   const timeframe = propTimeframe !== undefined ? propTimeframe : storeTimeframe;
   const isSsr = isSsrOrTestEnv();
-  const currentNetWorth = isSsr ? usePortfolioStore.getState().netWorth : storeNetWorth;
-  const netWorth = propNetWorth !== undefined ? propNetWorth : currentNetWorth;
+  const currentAccountBalance = isSsr
+    ? (usePortfolioStore.getState().accountBalance ?? usePortfolioStore.getState().availableCash)
+    : storeAccountBalance;
+  const displayBalance =
+    propAccountBalance !== undefined
+      ? propAccountBalance
+      : propNetWorth !== undefined
+      ? propNetWorth
+      : currentAccountBalance;
   const currentReturns = isSsr ? usePortfolioStore.getState().returns : returns;
 
-  const pnl = calculateUserTimeframePnL(netWorth, timeframe, currentReturns ?? undefined);
+  const pnl = calculateUserTimeframePnL(displayBalance, timeframe, currentReturns ?? undefined);
 
   return (
     <div className="flex items-center gap-3 shrink-0" data-testid="net-worth-widget">
@@ -42,7 +51,7 @@ export const NetWorthWidget: React.FC<NetWorthWidgetProps> = ({
             data-testid="net-worth-value"
             className="text-lg sm:text-xl font-bold font-mono tracking-tight tabular-nums text-on-surface"
           >
-            {formatMaskedCurrency(netWorth, maskBalances)}
+            {formatMaskedCurrency(displayBalance, maskBalances)}
           </span>
           <span
             data-testid="pnl-delta-indicator"

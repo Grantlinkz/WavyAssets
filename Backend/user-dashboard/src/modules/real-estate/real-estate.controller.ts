@@ -70,4 +70,26 @@ export class RealEstateController {
   ) {
     return this.realEstateService.getPresignedDocumentUrl(user.id, docId);
   }
+
+  /**
+   * Acquire fractional SPV property tokens with ledger debit
+   */
+  @Post('buy')
+  async buyProperty(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: { propertyId: string; tokens: number; tokenPrice: number },
+  ) {
+    return this.realEstateService.buyProperty(user.id, body);
+  }
+
+  /**
+   * Liquidate fractional SPV property tokens with ledger credit
+   */
+  @Post('sell')
+  async sellProperty(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: { propertyId: string; tokensToSell: number; pricePerToken?: number },
+  ) {
+    return this.realEstateService.sellProperty(user.id, body);
+  }
 }

@@ -48,9 +48,10 @@ export const DcaScheduler: React.FC<DcaSchedulerProps> = ({ maskBalances: propMa
     if (!Number.isFinite(amountUsd) || amountUsd <= 0) {
       return;
     }
-    if (amountUsd > availableCash) {
+    const currentCash = usePortfolioStore.getState().accountBalance ?? usePortfolioStore.getState().availableCash;
+    if (amountUsd > currentCash) {
       setErrorMsg(
-        `Insufficient funds: Your Account Balance ($${availableCash.toLocaleString('en-US', {
+        `Insufficient funds: Your Account Balance ($${currentCash.toLocaleString('en-US', {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         })}) is less than the investment amount ($${amountUsd.toLocaleString('en-US', {
@@ -61,6 +62,14 @@ export const DcaScheduler: React.FC<DcaSchedulerProps> = ({ maskBalances: propMa
       setTimeout(() => setErrorMsg(null), 4000);
       return;
     }
+
+    const deducted = usePortfolioStore.getState().adjustAvailableCash(-amountUsd);
+    if (!deducted) {
+      setErrorMsg('Transaction rejected: Insufficient Account Balance.');
+      setTimeout(() => setErrorMsg(null), 4000);
+      return;
+    }
+
     setErrorMsg(null);
     addDcaSchedule(
       {
@@ -75,6 +84,11 @@ export const DcaScheduler: React.FC<DcaSchedulerProps> = ({ maskBalances: propMa
     );
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 2000);
+  };
+
+  const handleDelete = (schedule: { id: string; amountUsd: number; asset: string }) => {
+    usePortfolioStore.getState().adjustAvailableCash(schedule.amountUsd);
+    deleteDcaSchedule(schedule.id, user?.id);
   };
 
   return (
@@ -219,7 +233,7 @@ export const DcaScheduler: React.FC<DcaSchedulerProps> = ({ maskBalances: propMa
                   <button
                     type="button"
                     data-testid={`delete-dca-${schedule.id}`}
-                    onClick={() => deleteDcaSchedule(schedule.id, user?.id)}
+                    onClick={() => handleDelete(schedule)}
                     className="p-1 hover:text-error text-outline hover:bg-error/10 rounded-DEFAULT transition-colors cursor-pointer"
                     title="Delete Schedule"
                     aria-label={`Delete ${schedule.asset} DCA schedule`}

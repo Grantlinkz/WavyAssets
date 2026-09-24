@@ -13,24 +13,29 @@ describe('GlobalCommandBar Integration Suite (Node 24 / SSR Parity)', () => {
     usePortfolioStore.getState().resetToDefaults();
   });
 
-  it('renders all 4 primary command bar sections', () => {
+  it('renders all primary command bar sections and confirms PrivacyToggle removal', () => {
     const html = renderToString(<GlobalCommandBar />);
 
     expect(html).toContain('data-testid="global-command-bar"');
     expect(html).toContain('data-testid="net-worth-widget"');
     expect(html).toContain('data-testid="allocation-preview"');
-    expect(html).toContain('data-testid="privacy-toggle-btn"');
+    expect(html).not.toContain('data-testid="privacy-toggle-btn"');
     expect(html).toContain('data-testid="action-rail"');
   });
 
-  it('displays default consolidated net worth ($14,820,450.00) and 1D PnL delta', () => {
-    const html = renderToString(<GlobalCommandBar />);
+  it('displays default zero Account Balance ($0.00) or dynamic funded balance and 1D PnL delta', () => {
+    const htmlDefault = renderToString(<GlobalCommandBar />);
+    expect(htmlDefault).toContain('$0.00');
 
-    expect(html).toContain('$14,820,450.00');
-    expect(html).toContain('+$184,210.40 (+1.26%)');
+    usePortfolioStore.setState({ accountBalance: 14820450.0 });
+    const htmlFunded = renderToString(<GlobalCommandBar />);
+    expect(htmlFunded).toContain('$14,820,450.00');
+    expect(htmlFunded).toContain('+$184,210.40 (+1.26%)');
   });
 
   it('dynamically switches timeframe chips and updates PnL delta', () => {
+    usePortfolioStore.setState({ accountBalance: 14820450.0 });
+
     // 1W
     let html = renderToString(<GlobalCommandBar timeframe="1W" />);
     expect(html).toContain('+$412,850.00 (+2.86%)');
@@ -48,17 +53,17 @@ describe('GlobalCommandBar Integration Suite (Node 24 / SSR Parity)', () => {
     expect(html).toContain('+$5,240,650.00 (+54.70%)');
   });
 
-  it('toggles balance masking when maskBalances is true', () => {
+  it('toggles balance masking when maskBalances prop is passed', () => {
+    usePortfolioStore.setState({ accountBalance: 14820450.0 });
+
     // Default unmasked
     let html = renderToString(<GlobalCommandBar maskBalances={false} />);
     expect(html).toContain('$14,820,450.00');
-    expect(html).toContain('Hide Balances');
 
     // Mask balances
     html = renderToString(<GlobalCommandBar maskBalances={true} />);
     expect(html).toContain('••••••••');
     expect(html).not.toContain('$14,820,450.00');
-    expect(html).toContain('Show Balances');
   });
 
   it('renders all 4 Action Rail buttons with institutional labels', () => {

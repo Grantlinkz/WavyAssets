@@ -10,7 +10,6 @@ export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBala
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
   const user = useAuthStore((s) => s.user);
-  const availableCash = usePortfolioStore((s) => s.availableCash);
 
   const { activeOrders, addActiveOrder, cancelActiveOrder, selectedStock } = useLiquidStore();
   const [cancelledId, setCancelledId] = useState<string | null>(null);
@@ -38,6 +37,11 @@ export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBala
   }, [selectedStock]);
 
   const handleCancel = (id: string) => {
+    const targetOrder = activeOrders.find((o) => o.id === id);
+    if (targetOrder && targetOrder.type === 'BUY_LIMIT') {
+      const orderTotal = targetOrder.shares * targetOrder.limitPrice;
+      usePortfolioStore.getState().adjustAvailableCash(orderTotal);
+    }
     cancelActiveOrder(id, user?.id);
     setCancelledId(id);
     setTimeout(() => setCancelledId(null), 2500);
@@ -52,16 +56,23 @@ export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBala
 
     if (type === 'BUY_LIMIT') {
       const orderTotal = shares * limitPrice;
-      if (orderTotal > availableCash) {
+      const currentCash = usePortfolioStore.getState().accountBalance ?? usePortfolioStore.getState().availableCash;
+      if (orderTotal > currentCash) {
         setErrorMsg(
           `Insufficient funds: Order total ($${orderTotal.toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
-          })}) exceeds Account Balance ($${availableCash.toLocaleString('en-US', {
+          })}) exceeds Account Balance ($${currentCash.toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}).`
         );
+        setTimeout(() => setErrorMsg(null), 4000);
+        return;
+      }
+      const deducted = usePortfolioStore.getState().adjustAvailableCash(-orderTotal);
+      if (!deducted) {
+        setErrorMsg('Order rejected: Insufficient Account Balance.');
         setTimeout(() => setErrorMsg(null), 4000);
         return;
       }

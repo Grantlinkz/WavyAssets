@@ -10,10 +10,13 @@ import {
   Wallet,
   ShieldCheck,
   KeyRound,
+  LogOut,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
 import { useDashboardStore, type AssetVertical } from '../../store/useDashboardStore';
+import { useAuthStore } from '../../store/useAuthStore';
+import { logoutUser } from '../../lib/api';
 import { cn } from '../../lib/utils';
 
 interface NavItem {
@@ -127,6 +130,27 @@ export const SidebarRail: React.FC<SidebarRailProps> = ({ isCollapsed, activeTab
             </button>
           );
         })}
+
+        {/* Sign Out Action after Security & Access Vault */}
+        <button
+          onClick={async () => {
+            await logoutUser();
+            useAuthStore.getState().logout();
+          }}
+          data-testid="nav-item-sign-out"
+          title={isSidebarCollapsed ? 'Sign Out' : undefined}
+          className={cn(
+            'group relative flex items-center w-full h-9 rounded-sm transition-all duration-150 cursor-pointer font-sans text-xs text-error/90 hover:bg-error/10 hover:text-error',
+            isSidebarCollapsed ? 'justify-center px-0' : 'px-2.5 space-x-3'
+          )}
+        >
+          <LogOut className="h-4 w-4 shrink-0 transition-colors text-error/80 group-hover:text-error" />
+          {!isSidebarCollapsed && (
+            <span className="truncate flex-1 text-left tracking-wide font-medium">
+              Sign Out
+            </span>
+          )}
+        </button>
       </nav>
 
       {/* Sidebar Footer / Collapse Toggle */}

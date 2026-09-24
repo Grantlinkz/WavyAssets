@@ -57,6 +57,57 @@ export interface GpuClusterTelemetry {
   pendingYieldUsdc: number; // 1842.10
 }
 
+
+export interface AiStrategyAsset {
+  id: string;
+  name: string;
+  category: 'GPU Clusters' | 'Robotics & AGVs' | 'Data Centers' | 'AI Chips & ASICs' | 'Infrastructure';
+  facility: string;
+  hardwareCode: string;
+  valuation: number;
+  unrealizedAlphaPct: number;
+  tokenCount: number;
+  tokenPrice: number;
+  clusterUtilizationPct: number;
+  netYieldApy: number;
+  leaseTermMonths: number;
+  hourlyRate: number;
+  specs: string;
+  slaStandard: string;
+  imageUrl: string;
+}
+
+export interface AiDistributionItem {
+  id: string;
+  period: string;
+  projected: number;
+  actual: number;
+  varianceDelta: number;
+  settlementHash: string;
+  status: 'CLEARED' | 'PENDING';
+}
+
+export interface AiTenantCreditItem {
+  id: string;
+  tenantName: string;
+  tier: string;
+  creditRating: string;
+  allocatedCapacity: string;
+  monthlyCommitment: number;
+  status: 'CURRENT' | 'ACTIVE';
+}
+
+export interface AiSecondaryOtcOrder {
+  id: string;
+  type: 'BID' | 'OFFER';
+  assetName: string;
+  tokenCount: number;
+  pricePerToken: number;
+  navPremiumDiscountPct: number;
+  counterpartyEnclave: string;
+  totalUsd: number;
+}
+
 export interface RealEstateAsset {
   id: string;
   name: string;
@@ -292,6 +343,939 @@ export const GPU_CLUSTER_TELEMETRY: GpuClusterTelemetry = {
 };
 
 // -------------------------------------------------------------------------
+
+// -------------------------------------------------------------------------
+// AI STRATEGY INVENTORY & TELEMETRY (50 ASSETS)
+// -------------------------------------------------------------------------
+
+export const AI_STRATEGY_ASSETS: AiStrategyAsset[] = [
+  {
+    "id": "ai-1",
+    "name": "NVIDIA H100 SXM5 80GB Octa-Chassis Cluster",
+    "category": "GPU Clusters",
+    "facility": "Valais Hydro Compute Pod #02, Switzerland",
+    "hardwareCode": "NV-H100-SXM5-80G",
+    "valuation": 3200000,
+    "unrealizedAlphaPct": 18.4,
+    "tokenCount": 6400,
+    "tokenPrice": 500,
+    "clusterUtilizationPct": 98.4,
+    "netYieldApy": 19.85,
+    "leaseTermMonths": 12,
+    "hourlyRate": 18.5,
+    "specs": "8x SXM5 H100 (3.2 Tbps InfiniBand NDR), 640GB HBM3 VRAM, 80 PFLOPS FP8 AI",
+    "slaStandard": "Tier-IV 99.999% SLA (Equinix Zurich Enclave)",
+    "imageUrl": "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-2",
+    "name": "NVIDIA H200 SuperPOD Tensor Core Matrix",
+    "category": "GPU Clusters",
+    "facility": "Reykjavik Geothermal AI Hub, Iceland",
+    "hardwareCode": "NV-H200-SP-141G",
+    "valuation": 4800000,
+    "unrealizedAlphaPct": 22.1,
+    "tokenCount": 8000,
+    "tokenPrice": 600,
+    "clusterUtilizationPct": 99.2,
+    "netYieldApy": 22.4,
+    "leaseTermMonths": 24,
+    "hourlyRate": 26.8,
+    "specs": "141GB HBM3e Memory per Node, 4.8 TB/s Bandwidth, Liquid Immersion Cooled",
+    "slaStandard": "100% Geothermal Green Tier-IV Redundant",
+    "imageUrl": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-3",
+    "name": "NVIDIA B200 Blackwell NVL72 Rack Unit",
+    "category": "GPU Clusters",
+    "facility": "Zurich Green Hyperscale Enclave, Switzerland",
+    "hardwareCode": "NV-B200-NVL72",
+    "valuation": 7500000,
+    "unrealizedAlphaPct": 26.5,
+    "tokenCount": 7500,
+    "tokenPrice": 1000,
+    "clusterUtilizationPct": 99.8,
+    "netYieldApy": 24.5,
+    "leaseTermMonths": 36,
+    "hourlyRate": 42,
+    "specs": "72x B200 GPUs Liquid-Cooled, 1.44 Exaflops FP4 AI, 13.5 TB HBM3e Memory",
+    "slaStandard": "Swiss Banking FINMA Compliant Dedicated Vault",
+    "imageUrl": "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-4",
+    "name": "NVIDIA Grace Hopper GH200 Unified Pod",
+    "category": "GPU Clusters",
+    "facility": "Munich HPC Science Cluster, Germany",
+    "hardwareCode": "NV-GH200-UNIFIED",
+    "valuation": 2900000,
+    "unrealizedAlphaPct": 16.8,
+    "tokenCount": 5800,
+    "tokenPrice": 500,
+    "clusterUtilizationPct": 96.5,
+    "netYieldApy": 18.2,
+    "leaseTermMonths": 18,
+    "hourlyRate": 16.2,
+    "specs": "Grace CPU 72-Core + H100 96GB, 900 GB/s NVLink-C2C Chip-to-Chip Interconnect",
+    "slaStandard": "ISO 27001 & TISAX High-Security Cleared",
+    "imageUrl": "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-5",
+    "name": "AMD Instinct MI300X 192GB Accelerator Bank",
+    "category": "GPU Clusters",
+    "facility": "Frankfurt Equinix FR2 AI Vault, Germany",
+    "hardwareCode": "AMD-MI300X-192G",
+    "valuation": 2600000,
+    "unrealizedAlphaPct": 15.2,
+    "tokenCount": 5200,
+    "tokenPrice": 500,
+    "clusterUtilizationPct": 95.8,
+    "netYieldApy": 17.6,
+    "leaseTermMonths": 12,
+    "hourlyRate": 14.8,
+    "specs": "8x MI300X OAM, 1.5TB HBM3 per Node, ROCm 6.0 Enterprise Open AI Stack",
+    "slaStandard": "Sub-10ms Direct European Financial FIX Gateway",
+    "imageUrl": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-6",
+    "name": "NVIDIA L40S Enterprise Generative AI Cluster",
+    "category": "GPU Clusters",
+    "facility": "London Slough LD4 Interconnect Hub, UK",
+    "hardwareCode": "NV-L40S-GENAI",
+    "valuation": 1850000,
+    "unrealizedAlphaPct": 14,
+    "tokenCount": 7400,
+    "tokenPrice": 250,
+    "clusterUtilizationPct": 94.2,
+    "netYieldApy": 16.5,
+    "leaseTermMonths": 12,
+    "hourlyRate": 11.2,
+    "specs": "32x L40S 48GB Ada Lovelace GPUs, Omniverse Multi-Modal Diffusion Acceleration",
+    "slaStandard": "FCA Dual-Signatory Audited Facility",
+    "imageUrl": "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-7",
+    "name": "NVIDIA A100 SXM4 80GB Fine-Tuning Swarm",
+    "category": "GPU Clusters",
+    "facility": "Geneva CERN Data Center Enclave, Switzerland",
+    "hardwareCode": "NV-A100-SXM4-80G",
+    "valuation": 2100000,
+    "unrealizedAlphaPct": 13.5,
+    "tokenCount": 4200,
+    "tokenPrice": 500,
+    "clusterUtilizationPct": 93.8,
+    "netYieldApy": 15.9,
+    "leaseTermMonths": 18,
+    "hourlyRate": 12.5,
+    "specs": "64x A100 80GB GPUs, NVLink 600 GB/s Mesh, ZK-Verified Distributed LoRA",
+    "slaStandard": "Swiss Academic Research Consortium Approved",
+    "imageUrl": "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-8",
+    "name": "Intel Gaudi 3 AI Multi-Node Accelerator Pod",
+    "category": "GPU Clusters",
+    "facility": "Stockholm EcoDataCenter, Sweden",
+    "hardwareCode": "INTC-GAUDI-3-POD",
+    "valuation": 2400000,
+    "unrealizedAlphaPct": 16,
+    "tokenCount": 4800,
+    "tokenPrice": 500,
+    "clusterUtilizationPct": 95,
+    "netYieldApy": 17.8,
+    "leaseTermMonths": 24,
+    "hourlyRate": 13.9,
+    "specs": "128GB HBM2e per Node, Integrated 24x 200Gbps RoCE v2 Ports per Gaudi 3",
+    "slaStandard": "100% Fossil-Free Nordic Green Energy Standard",
+    "imageUrl": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-9",
+    "name": "Cerebras CS-3 Wafer-Scale AI Engine #01",
+    "category": "GPU Clusters",
+    "facility": "Zurich Swisscom High-Density AI Hall, Switzerland",
+    "hardwareCode": "CEREBRAS-CS3-WSE",
+    "valuation": 6200000,
+    "unrealizedAlphaPct": 24.2,
+    "tokenCount": 6200,
+    "tokenPrice": 1000,
+    "clusterUtilizationPct": 98.9,
+    "netYieldApy": 23.1,
+    "leaseTermMonths": 36,
+    "hourlyRate": 35,
+    "specs": "4 Trillion Transistors, 900,000 AI Cores on Single Wafer, 44GB On-Chip SRAM",
+    "slaStandard": "Zero-Latency Ultra-Scale Neural Network Matrix",
+    "imageUrl": "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-10",
+    "name": "Tenstorrent Wormhole n300 Open Compute Array",
+    "category": "GPU Clusters",
+    "facility": "Austin Hyperscale Modular Vault, USA",
+    "hardwareCode": "TT-WORMHOLE-N300",
+    "valuation": 1750000,
+    "unrealizedAlphaPct": 14.8,
+    "tokenCount": 7000,
+    "tokenPrice": 250,
+    "clusterUtilizationPct": 92.4,
+    "netYieldApy": 16.8,
+    "leaseTermMonths": 12,
+    "hourlyRate": 10.5,
+    "specs": "RISC-V Tensix Architecture, 100GbE Switched Mesh on Board, Open Model Weights",
+    "slaStandard": "Open Compute Project (OCP) Compliant",
+    "imageUrl": "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-11",
+    "name": "Autonomous Warehouse AGV Swarm Fleet (120 Units)",
+    "category": "Robotics & AGVs",
+    "facility": "Rotterdam Euro-Port Robotic Logistics Terminal, Netherlands",
+    "hardwareCode": "ROBOT-AGV-SWARM-120",
+    "valuation": 3800000,
+    "unrealizedAlphaPct": 19.5,
+    "tokenCount": 7600,
+    "tokenPrice": 500,
+    "clusterUtilizationPct": 98.1,
+    "netYieldApy": 20.2,
+    "leaseTermMonths": 24,
+    "hourlyRate": 22,
+    "specs": "120x Omni-Directional LiDAR AGVs, Fleet AI Central Orchestrator, 24/7 Continuous Pallet Sort",
+    "slaStandard": "CE / TUV Rheinland Automated Transport Safety Standard",
+    "imageUrl": "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-12",
+    "name": "Boston Dynamics Spot Enterprise AI Inspection Unit",
+    "category": "Robotics & AGVs",
+    "facility": "Valais Hydro-Power Dam Sub-Station, Switzerland",
+    "hardwareCode": "BD-SPOT-ENT-AI",
+    "valuation": 950000,
+    "unrealizedAlphaPct": 15,
+    "tokenCount": 3800,
+    "tokenPrice": 250,
+    "clusterUtilizationPct": 94.6,
+    "netYieldApy": 18.4,
+    "leaseTermMonths": 12,
+    "hourlyRate": 8.5,
+    "specs": "Quadruped Agile Robot with 30x Optical Zoom, Thermal FLIR Cam & Acoustic Gas Leak AI Sensor",
+    "slaStandard": "ATEX Zone 2 Intrinsically Safe Certified",
+    "imageUrl": "https://images.unsplash.com/photo-1563770660941-20978e870e26?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-13",
+    "name": "Cybernetic Micro-Precision Surgical Robot Node",
+    "category": "Robotics & AGVs",
+    "facility": "Zurich University Hospital MedTech Incubator, Switzerland",
+    "hardwareCode": "SURG-AI-MICRON-06",
+    "valuation": 4200000,
+    "unrealizedAlphaPct": 21,
+    "tokenCount": 8400,
+    "tokenPrice": 500,
+    "clusterUtilizationPct": 97.4,
+    "netYieldApy": 21.5,
+    "leaseTermMonths": 36,
+    "hourlyRate": 28,
+    "specs": "Sub-Millimeter 7-DoF Haptic Arms, Neural Vision Stereo Endoscope, Real-Time Tremor Cancellation",
+    "slaStandard": "Swissmedic / FDA Class III Medical Device Cleared",
+    "imageUrl": "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-14",
+    "name": "Autonomous Security Patrol Droid Mesh (Geneva Freeport)",
+    "category": "Robotics & AGVs",
+    "facility": "Geneva FreePort Bonded Perimeter, Switzerland",
+    "hardwareCode": "SEC-DROID-MESH-GEN",
+    "valuation": 1400000,
+    "unrealizedAlphaPct": 14.2,
+    "tokenCount": 5600,
+    "tokenPrice": 250,
+    "clusterUtilizationPct": 99.5,
+    "netYieldApy": 17.1,
+    "leaseTermMonths": 12,
+    "hourlyRate": 9.8,
+    "specs": "8x Wheeled Autonomous Sentinel Units, 360° Night-Vision LiDAR, Facial Recognition Quorum",
+    "slaStandard": "Swiss Federal Bonded Freezone Security Level 5",
+    "imageUrl": "https://images.unsplash.com/photo-1563770660941-20978e870e26?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-15",
+    "name": "High-Throughput Robotic Chemistry Synthesis Cell",
+    "category": "Robotics & AGVs",
+    "facility": "Basel Roche BioTech Campus, Switzerland",
+    "hardwareCode": "BIO-SYNTH-ROBOT-08",
+    "valuation": 3100000,
+    "unrealizedAlphaPct": 18.9,
+    "tokenCount": 6200,
+    "tokenPrice": 500,
+    "clusterUtilizationPct": 96.8,
+    "netYieldApy": 19.4,
+    "leaseTermMonths": 24,
+    "hourlyRate": 21.5,
+    "specs": "Dual 6-Axis Stäubli Cleanroom Arms, Automated Liquid Chromatography, AI Molecule Optimization",
+    "slaStandard": "GMP Grade A / ISO 14644 Cleanroom Attested",
+    "imageUrl": "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-16",
+    "name": "Autonomous Solar Farm Panel Cleaning Bot Array",
+    "category": "Robotics & AGVs",
+    "facility": "Andalusia Megawatt Solar Field, Spain",
+    "hardwareCode": "SOLAR-CLEAN-ROBOT-50",
+    "valuation": 1200000,
+    "unrealizedAlphaPct": 13.8,
+    "tokenCount": 4800,
+    "tokenPrice": 250,
+    "clusterUtilizationPct": 95.2,
+    "netYieldApy": 16.9,
+    "leaseTermMonths": 12,
+    "hourlyRate": 8.2,
+    "specs": "50x Water-Free Microfiber Crawler Bots, Edge Solar Yield AI Diagnostic, Autonomous Docking",
+    "slaStandard": "IP68 Dust & Water Proof Heavy-Duty Industrial Standard",
+    "imageUrl": "https://images.unsplash.com/photo-1563770660941-20978e870e26?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-17",
+    "name": "Autonomous Sub-Terranean Utility Inspection Crawler",
+    "category": "Robotics & AGVs",
+    "facility": "Zurich Municipal Infrastructure Enclave, Switzerland",
+    "hardwareCode": "SUBTER-CRAWL-BOT-02",
+    "valuation": 850000,
+    "unrealizedAlphaPct": 12.5,
+    "tokenCount": 3400,
+    "tokenPrice": 250,
+    "clusterUtilizationPct": 93,
+    "netYieldApy": 15.8,
+    "leaseTermMonths": 12,
+    "hourlyRate": 6.8,
+    "specs": "Magnetic Pipe Track Crawler, Ultrasonic Wall Thickness Sonar, Structural Crack Prediction AI",
+    "slaStandard": "DIN 1986 European Underground Pipeline Compliance",
+    "imageUrl": "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-18",
+    "name": "Precision Semiconductor Die-Sort Robotic Gantry",
+    "category": "Robotics & AGVs",
+    "facility": "Dresden Silicon Saxony Fab 4, Germany",
+    "hardwareCode": "FAB-DIE-SORT-GANTRY",
+    "valuation": 2750000,
+    "unrealizedAlphaPct": 17.5,
+    "tokenCount": 5500,
+    "tokenPrice": 500,
+    "clusterUtilizationPct": 97.9,
+    "netYieldApy": 18.9,
+    "leaseTermMonths": 24,
+    "hourlyRate": 19.2,
+    "specs": "Sub-Micron Linear Motor Gantry, 40,000 Units/Hour Pick-and-Place, Machine Vision Yield Sorter",
+    "slaStandard": "SEMI S2 / S8 Environmental Health & Safety Standard",
+    "imageUrl": "https://images.unsplash.com/photo-1563770660941-20978e870e26?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-19",
+    "name": "Autonomous Heavy-Lift Port Container Crane System",
+    "category": "Robotics & AGVs",
+    "facility": "Antwerp Gateway Terminal #1700, Belgium",
+    "hardwareCode": "PORT-CRANE-AI-AUTO",
+    "valuation": 5200000,
+    "unrealizedAlphaPct": 20.4,
+    "tokenCount": 5200,
+    "tokenPrice": 1000,
+    "clusterUtilizationPct": 98.6,
+    "netYieldApy": 21,
+    "leaseTermMonths": 36,
+    "hourlyRate": 32,
+    "specs": "65-Ton Dual-Hoist Electric Straddle, AI Vessel Container Slot Stacking Optimization",
+    "slaStandard": "Lloyds Maritime Cargo Handling Machinery Classed",
+    "imageUrl": "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-20",
+    "name": "Autonomous High-Speed Last-Mile Delivery Drone Mesh",
+    "category": "Robotics & AGVs",
+    "facility": "Singapore Sentosa Urban Mobility Corridor, Singapore",
+    "hardwareCode": "DRONE-MESH-SG-DELIV",
+    "valuation": 2200000,
+    "unrealizedAlphaPct": 16.5,
+    "tokenCount": 4400,
+    "tokenPrice": 500,
+    "clusterUtilizationPct": 96,
+    "netYieldApy": 17.9,
+    "leaseTermMonths": 18,
+    "hourlyRate": 14.5,
+    "specs": "30x Octocopter Heavy-Lift Drones, Beyond-Visual-Line-of-Sight (BVLOS) 5G SA Mesh",
+    "slaStandard": "Civil Aviation Authority of Singapore (CAAS) Approved",
+    "imageUrl": "https://images.unsplash.com/photo-1563770660941-20978e870e26?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-21",
+    "name": "Nordic Hydro AI Hyper-Facility (Valais Phase I)",
+    "category": "Data Centers",
+    "facility": "Sion, Canton Valais, Switzerland",
+    "hardwareCode": "DC-VALAIS-HYDRO-I",
+    "valuation": 12500000,
+    "unrealizedAlphaPct": 25,
+    "tokenCount": 12500,
+    "tokenPrice": 1000,
+    "clusterUtilizationPct": 99.4,
+    "netYieldApy": 22.8,
+    "leaseTermMonths": 48,
+    "hourlyRate": 65,
+    "specs": "40 MW Direct Hydroelectric Feed, PUE 1.08 River Water Direct Cooling, 1,200 Server Racks",
+    "slaStandard": "Swiss Federal Critical Infrastructure Tier-IV Plus",
+    "imageUrl": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-22",
+    "name": "Iceland Geothermal Deep Compute Vault (Reykjavik)",
+    "category": "Data Centers",
+    "facility": "Reykjavik Geothermal Rift Zone, Iceland",
+    "hardwareCode": "DC-ICE-GEO-VAULT",
+    "valuation": 9800000,
+    "unrealizedAlphaPct": 23.4,
+    "tokenCount": 9800,
+    "tokenPrice": 1000,
+    "clusterUtilizationPct": 98.9,
+    "netYieldApy": 21.6,
+    "leaseTermMonths": 36,
+    "hourlyRate": 54,
+    "specs": "Zero-Carbon Geothermal Steam Turbines, Natural Sub-Zero Ambient Free Air Chilling",
+    "slaStandard": "100% Renewable EU Green Taxonomy Certified",
+    "imageUrl": "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-23",
+    "name": "Zurich Equinix Tier-IV Green AI Enclave (ZH4)",
+    "category": "Data Centers",
+    "facility": "Zurich-West Digital Exchange District, Switzerland",
+    "hardwareCode": "DC-ZH4-EQUINIX-T4",
+    "valuation": 8200000,
+    "unrealizedAlphaPct": 20.8,
+    "tokenCount": 8200,
+    "tokenPrice": 1000,
+    "clusterUtilizationPct": 99.1,
+    "netYieldApy": 20.4,
+    "leaseTermMonths": 24,
+    "hourlyRate": 48,
+    "specs": "Direct Sub-1ms SIX Swiss Exchange Cross-Connect, N+2 Power & Chill Resiliency",
+    "slaStandard": "Uptime Institute Tier IV Fault-Tolerant Facility",
+    "imageUrl": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-24",
+    "name": "Singapore Hyper-Scale Subsea Fiber Hub (Tuas)",
+    "category": "Data Centers",
+    "facility": "Tuas Mega-Hub Datacenter Park, Singapore",
+    "hardwareCode": "DC-TUAS-SUBSEA-SG",
+    "valuation": 14000000,
+    "unrealizedAlphaPct": 26.2,
+    "tokenCount": 14000,
+    "tokenPrice": 1000,
+    "clusterUtilizationPct": 99.7,
+    "netYieldApy": 23.5,
+    "leaseTermMonths": 48,
+    "hourlyRate": 72,
+    "specs": "Landing Station for 8 Trans-Pacific Subsea Fiber Cables, 60 MW Liquid Cooled AI Hall",
+    "slaStandard": "BCA-IMDA Green Mark Platinum Datacenter Standard",
+    "imageUrl": "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-25",
+    "name": "Frankfurt Main-Cube AI Sovereign Center (FR5)",
+    "category": "Data Centers",
+    "facility": "Frankfurt am Main Telecom Corridor, Germany",
+    "hardwareCode": "DC-FR5-MAIN-CUBE",
+    "valuation": 7400000,
+    "unrealizedAlphaPct": 19.5,
+    "tokenCount": 7400,
+    "tokenPrice": 1000,
+    "clusterUtilizationPct": 98.4,
+    "netYieldApy": 19.8,
+    "leaseTermMonths": 24,
+    "hourlyRate": 41.5,
+    "specs": "Direct Peering into DE-CIX (Largest Global Internet Exchange), 100% Biometric Quorum",
+    "slaStandard": "BSI C5 & GDPR Sovereign European Data Protection Compliant",
+    "imageUrl": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-26",
+    "name": "Tokyo High-Density Liquid-Cooled AI Vault (Otemachi)",
+    "category": "Data Centers",
+    "facility": "Tokyo Financial District, Otemachi, Japan",
+    "hardwareCode": "DC-TYO-OTEMACHI-AI",
+    "valuation": 8900000,
+    "unrealizedAlphaPct": 21.5,
+    "tokenCount": 8900,
+    "tokenPrice": 1000,
+    "clusterUtilizationPct": 98.8,
+    "netYieldApy": 21.2,
+    "leaseTermMonths": 36,
+    "hourlyRate": 49,
+    "specs": "Direct Sub-Millisecond JPX Tokyo Stock Exchange Link, Seismic Base-Isolated Building",
+    "slaStandard": "FISC Japanese Financial Information Security Class A",
+    "imageUrl": "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-27",
+    "name": "Stockholm Arctic Low-PUE AI Data Fortress",
+    "category": "Data Centers",
+    "facility": "Kista Science City, Stockholm, Sweden",
+    "hardwareCode": "DC-ARCTIC-FORTRESS",
+    "valuation": 6700000,
+    "unrealizedAlphaPct": 18.2,
+    "tokenCount": 6700,
+    "tokenPrice": 1000,
+    "clusterUtilizationPct": 97.6,
+    "netYieldApy": 19.1,
+    "leaseTermMonths": 24,
+    "hourlyRate": 38,
+    "specs": "Excess Heat Fed to Municipal District Heating Grid, PUE 1.05 Sustainable Compute",
+    "slaStandard": "Nordic Swan Ecolabel Certified Data Center",
+    "imageUrl": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-28",
+    "name": "Dublin Renewable AI Facility Enclave (Clondalkin)",
+    "category": "Data Centers",
+    "facility": "Clondalkin Tech Corridor, Dublin, Ireland",
+    "hardwareCode": "DC-DUB-RENEWABLE-AI",
+    "valuation": 6100000,
+    "unrealizedAlphaPct": 17.8,
+    "tokenCount": 6100,
+    "tokenPrice": 1000,
+    "clusterUtilizationPct": 96.9,
+    "netYieldApy": 18.7,
+    "leaseTermMonths": 18,
+    "hourlyRate": 34,
+    "specs": "Direct Offshore Wind Farm PPA, High-Density 45kW per Rack Immersion Infrastructure",
+    "slaStandard": "ISO 50001 Energy Management Standard",
+    "imageUrl": "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-29",
+    "name": "London Docklands AI Interconnect Fortress (Telehouse)",
+    "category": "Data Centers",
+    "facility": "London Docklands, East India Quay, UK",
+    "hardwareCode": "DC-LON-DOCKLANDS-TH",
+    "valuation": 7900000,
+    "unrealizedAlphaPct": 20,
+    "tokenCount": 7900,
+    "tokenPrice": 1000,
+    "clusterUtilizationPct": 99,
+    "netYieldApy": 20.5,
+    "leaseTermMonths": 24,
+    "hourlyRate": 44,
+    "specs": "Core Gateway for London Internet Exchange (LINX), Tier-IV Multi-Tenant Enclave",
+    "slaStandard": "UK CPNI Centre for the Protection of National Infrastructure",
+    "imageUrl": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-30",
+    "name": "Geneva CERN-Adjacent AI Science Data Vault",
+    "category": "Data Centers",
+    "facility": "Meyrin CERN Innovation Campus, Switzerland",
+    "hardwareCode": "DC-CERN-MEYRIN-VAULT",
+    "valuation": 5800000,
+    "unrealizedAlphaPct": 17.1,
+    "tokenCount": 5800,
+    "tokenPrice": 1000,
+    "clusterUtilizationPct": 97.2,
+    "netYieldApy": 18.2,
+    "leaseTermMonths": 18,
+    "hourlyRate": 31.5,
+    "specs": "Dedicated Terabit Fiber Link to Worldwide LHC Computing Grid (WLCG)",
+    "slaStandard": "Swiss Scientific Foundation Fiduciary Standard",
+    "imageUrl": "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-31",
+    "name": "Google Cloud TPU v5p Pod Slices (8,960 Chips)",
+    "category": "AI Chips & ASICs",
+    "facility": "GCP Saint-Ghislain Carbon-Free Pod, Belgium",
+    "hardwareCode": "TPU-V5P-POD-8960",
+    "valuation": 6500000,
+    "unrealizedAlphaPct": 23.8,
+    "tokenCount": 6500,
+    "tokenPrice": 1000,
+    "clusterUtilizationPct": 99.3,
+    "netYieldApy": 22,
+    "leaseTermMonths": 24,
+    "hourlyRate": 36,
+    "specs": "4x FLOPS per Chip vs v4, Optical Circuit Switch (OCS) Dynamic Topology, 4,800 Gbps ICI",
+    "slaStandard": "Google Cloud Institutional Alpha Enterprise SLA",
+    "imageUrl": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-32",
+    "name": "Groq LPU Ultra-Low-Latency Inference Rack (64 LPUs)",
+    "category": "AI Chips & ASICs",
+    "facility": "Zurich FIX Low-Latency Gateway Vault, Switzerland",
+    "hardwareCode": "GROQ-LPU-RACK-64",
+    "valuation": 1950000,
+    "unrealizedAlphaPct": 21.5,
+    "tokenCount": 3900,
+    "tokenPrice": 500,
+    "clusterUtilizationPct": 98.5,
+    "netYieldApy": 21.4,
+    "leaseTermMonths": 12,
+    "hourlyRate": 13.5,
+    "specs": "Deterministic Tensor Streaming Processor, 500 Tokens/sec Llama-3 70B Generation, Zero Jitter",
+    "slaStandard": "Sub-15ms Financial Derivative Order Pricing SLA",
+    "imageUrl": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-33",
+    "name": "SambaNova SN40L Reconfigurable Dataflow Node",
+    "category": "AI Chips & ASICs",
+    "facility": "London Mayfair FinTech AI Lab, UK",
+    "hardwareCode": "SAMBA-SN40L-RACK",
+    "valuation": 1600000,
+    "unrealizedAlphaPct": 17.2,
+    "tokenCount": 3200,
+    "tokenPrice": 500,
+    "clusterUtilizationPct": 95.4,
+    "netYieldApy": 18.6,
+    "leaseTermMonths": 12,
+    "hourlyRate": 11.8,
+    "specs": "3-Tier Memory System (64GB HBM, 1.5TB DDR5, SSD), True 5 Trillion Parameter Model Native Execution",
+    "slaStandard": "FCA High-Value Algorithmic Trading Certification",
+    "imageUrl": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-34",
+    "name": "Untether AI Boomerang At-the-Memory Inference Blade",
+    "category": "AI Chips & ASICs",
+    "facility": "Munich Automotive Autonomous Lab, Germany",
+    "hardwareCode": "UNTETHER-BOOM-AI",
+    "valuation": 1100000,
+    "unrealizedAlphaPct": 15,
+    "tokenCount": 4400,
+    "tokenPrice": 250,
+    "clusterUtilizationPct": 93.8,
+    "netYieldApy": 16.8,
+    "leaseTermMonths": 12,
+    "hourlyRate": 7.9,
+    "specs": "Spatial Near-Memory Compute, 2 PFLOPS FP8 per PCIe Card at 120W Ultra-Low Power Consumption",
+    "slaStandard": "ISO 26262 Automotive Safety Integrity Level ASIL-D",
+    "imageUrl": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-35",
+    "name": "Mythic Analog Matrix Processing Compute Blade",
+    "category": "AI Chips & ASICs",
+    "facility": "Cambridge Quantum Computing Incubator, UK",
+    "hardwareCode": "MYTHIC-ANALOG-AMP",
+    "valuation": 920000,
+    "unrealizedAlphaPct": 14.2,
+    "tokenCount": 3680,
+    "tokenPrice": 250,
+    "clusterUtilizationPct": 92.6,
+    "netYieldApy": 16.2,
+    "leaseTermMonths": 12,
+    "hourlyRate": 6.5,
+    "specs": "Flash Memory Analog Compute Arrays, 25 TOPS/Watt Zero Latency Visual Neural Processing",
+    "slaStandard": "Defense / Aerospace MIL-STD-810H Compliant",
+    "imageUrl": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-36",
+    "name": "D-Wave Advantage Quantum-Classical Hybrid Co-Processor",
+    "category": "AI Chips & ASICs",
+    "facility": "Geneva Quantum Information Vault, Switzerland",
+    "hardwareCode": "DWAVE-ADVANTAGE-QC",
+    "valuation": 4500000,
+    "unrealizedAlphaPct": 22.4,
+    "tokenCount": 4500,
+    "tokenPrice": 1000,
+    "clusterUtilizationPct": 97.8,
+    "netYieldApy": 22.5,
+    "leaseTermMonths": 24,
+    "hourlyRate": 31,
+    "specs": "5,000+ Qubits, 15-Way Pegasus Connectivity Graph, Superconducting Cryogenic 15 Millikelvin",
+    "slaStandard": "Swiss National Science Foundation Quantum Protocol",
+    "imageUrl": "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-37",
+    "name": "Lightmatter Envise Photonic Computing Electro-Optic Array",
+    "category": "AI Chips & ASICs",
+    "facility": "Stockholm Kista Photonics Enclave, Sweden",
+    "hardwareCode": "LIGHTMATTER-ENVISE",
+    "valuation": 3400000,
+    "unrealizedAlphaPct": 19.8,
+    "tokenCount": 6800,
+    "tokenPrice": 500,
+    "clusterUtilizationPct": 96.5,
+    "netYieldApy": 20.1,
+    "leaseTermMonths": 18,
+    "hourlyRate": 23.5,
+    "specs": "Mach-Zehnder Laser Interferometers, Compute with Light Speed at 1/10th Electrical Power",
+    "slaStandard": "Zero Carbon Opto-Electronic Benchmark",
+    "imageUrl": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-38",
+    "name": "Hailo-8 Deep Learning Processor High-Density Matrix",
+    "category": "AI Chips & ASICs",
+    "facility": "Paris Saclay AI Cluster, France",
+    "hardwareCode": "HAILO-8-MATRIX-64",
+    "valuation": 1350000,
+    "unrealizedAlphaPct": 15.6,
+    "tokenCount": 5400,
+    "tokenPrice": 250,
+    "clusterUtilizationPct": 94,
+    "netYieldApy": 17.2,
+    "leaseTermMonths": 12,
+    "hourlyRate": 9.2,
+    "specs": "Structure-Defined Neural Core Architecture, 1,664 TOPS Across Dense 64-Chip Blade",
+    "slaStandard": "ANSSI French Cyber Security Agency Cleared",
+    "imageUrl": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-39",
+    "name": "FuriosaAI Warboy Multi-Vision Transformer Card Rack",
+    "category": "AI Chips & ASICs",
+    "facility": "Tokyo Pangaea AI Accelerator Hall, Japan",
+    "hardwareCode": "FURIOSA-WARBOY-RACK",
+    "valuation": 1550000,
+    "unrealizedAlphaPct": 16.4,
+    "tokenCount": 6200,
+    "tokenPrice": 250,
+    "clusterUtilizationPct": 94.8,
+    "netYieldApy": 17.5,
+    "leaseTermMonths": 12,
+    "hourlyRate": 10.4,
+    "specs": "Optimized for Multi-Modal Vision Transformers & Diffusion, Sub-2ms 4K Video Upscaling",
+    "slaStandard": "Japanese METI Industrial Standards Verified",
+    "imageUrl": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-40",
+    "name": "Apple Silicon Neural Engine M3 Max Cluster Rack",
+    "category": "AI Chips & ASICs",
+    "facility": "Zurich Google-Adjacent Creative Hub, Switzerland",
+    "hardwareCode": "APPLE-M3MAX-RACK-32",
+    "valuation": 1250000,
+    "unrealizedAlphaPct": 14.9,
+    "tokenCount": 5000,
+    "tokenPrice": 250,
+    "clusterUtilizationPct": 93.5,
+    "netYieldApy": 16.5,
+    "leaseTermMonths": 12,
+    "hourlyRate": 8.8,
+    "specs": "32x M3 Max Units with 4TB Unified High-Speed Memory, 512 Neural Engine Acceleration Cores",
+    "slaStandard": "Enterprise iOS & macOS On-Device LLM Pre-Distribution",
+    "imageUrl": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-41",
+    "name": "Sovereign LLM InfiniBand Quantum-2 NDR Switch Fabric",
+    "category": "Infrastructure",
+    "facility": "Geneva Freeport Secured Interconnect #08, Switzerland",
+    "hardwareCode": "NET-IB-NDR-64P",
+    "valuation": 2800000,
+    "unrealizedAlphaPct": 18.2,
+    "tokenCount": 5600,
+    "tokenPrice": 500,
+    "clusterUtilizationPct": 99.4,
+    "netYieldApy": 19.5,
+    "leaseTermMonths": 24,
+    "hourlyRate": 18,
+    "specs": "64-Port Quantum-2 400Gbps InfiniBand Switching Fabric, Sub-100ns Latency Switch-to-Switch",
+    "slaStandard": "Swiss Banking FINMA Compliant Dedicated Network",
+    "imageUrl": "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-42",
+    "name": "Optically Switched AI Memory Pool Array (CXL 3.0)",
+    "category": "Infrastructure",
+    "facility": "Frankfurt Cyber-Bunker Vault, Germany",
+    "hardwareCode": "CXL-OPTICAL-POOL-3",
+    "valuation": 3100000,
+    "unrealizedAlphaPct": 19,
+    "tokenCount": 6200,
+    "tokenPrice": 500,
+    "clusterUtilizationPct": 98.2,
+    "netYieldApy": 19.8,
+    "leaseTermMonths": 24,
+    "hourlyRate": 20.5,
+    "specs": "64 TB Shared Disaggregated Optical CXL Memory Pool, Dynamic Cache-Coherent Memory Injection",
+    "slaStandard": "ISO 27001 Cryptographic Hardware Attested",
+    "imageUrl": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-43",
+    "name": "Autonomous Distributed RL Training Mesh Node",
+    "category": "Infrastructure",
+    "facility": "Zurich Swiss Federal Institute of Technology (ETH), Switzerland",
+    "hardwareCode": "ETH-RL-MESH-NODE-4",
+    "valuation": 2400000,
+    "unrealizedAlphaPct": 16.8,
+    "tokenCount": 4800,
+    "tokenPrice": 500,
+    "clusterUtilizationPct": 96.4,
+    "netYieldApy": 18.1,
+    "leaseTermMonths": 18,
+    "hourlyRate": 15.6,
+    "specs": "Distributed Multi-Agent Reinforcement Learning Cluster, Zero-Knowledge Checkpointing Protocol",
+    "slaStandard": "ETH Zurich Academic Research Excellence Seal",
+    "imageUrl": "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-44",
+    "name": "ZK-STARK Verifiable Inference Oracle Node",
+    "category": "Infrastructure",
+    "facility": "Zug Crypto Valley Secure Datacenter, Switzerland",
+    "hardwareCode": "ZK-STARK-ORACLE-01",
+    "valuation": 1900000,
+    "unrealizedAlphaPct": 20.5,
+    "tokenCount": 7600,
+    "tokenPrice": 250,
+    "clusterUtilizationPct": 97.5,
+    "netYieldApy": 21,
+    "leaseTermMonths": 12,
+    "hourlyRate": 12.8,
+    "specs": "Cryptographic Hardware Prover for On-Chain Execution of AI Output Proofs, Sub-Second STARK Verification",
+    "slaStandard": "Ethereum Mainnet & Swiss DLT Act Verified",
+    "imageUrl": "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-45",
+    "name": "Liquid Immersion Cooling CDU Array Tier-IV",
+    "category": "Infrastructure",
+    "facility": "Valais Hydro Hydrothermal Cooling Station, Switzerland",
+    "hardwareCode": "COOL-CDU-IMMERSION-4",
+    "valuation": 2100000,
+    "unrealizedAlphaPct": 15.4,
+    "tokenCount": 4200,
+    "tokenPrice": 500,
+    "clusterUtilizationPct": 99,
+    "netYieldApy": 17.5,
+    "leaseTermMonths": 24,
+    "hourlyRate": 14,
+    "specs": "Dielectric Fluoropolymer Two-Phase Immersion Coolant, Supports 150 kW/Rack Thermal Dissipation",
+    "slaStandard": "ASHRAE TC 9.9 Mission Critical Standard",
+    "imageUrl": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-46",
+    "name": "High-Throughput NVMe-oF AI Vector Storage Pod",
+    "category": "Infrastructure",
+    "facility": "Zurich Old Town Bank Enclave (Class IX Safe), Switzerland",
+    "hardwareCode": "NVME-OF-VECTOR-2PB",
+    "valuation": 2600000,
+    "unrealizedAlphaPct": 17.6,
+    "tokenCount": 5200,
+    "tokenPrice": 500,
+    "clusterUtilizationPct": 98,
+    "netYieldApy": 18.9,
+    "leaseTermMonths": 18,
+    "hourlyRate": 17.2,
+    "specs": "2.5 Petabyte Gen5 NVMe-over-Fabrics Storage, 120 GB/s Read Throughput for Billion-Scale Vector RAG",
+    "slaStandard": "FIPS 140-3 Cryptographic Storage Certification",
+    "imageUrl": "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-47",
+    "name": "Neuromorphic Event-Camera Vision Sensor Matrix",
+    "category": "Infrastructure",
+    "facility": "Munich Robotics Vision Testing Facility, Germany",
+    "hardwareCode": "NEURO-VISION-CAM-10",
+    "valuation": 1450000,
+    "unrealizedAlphaPct": 16,
+    "tokenCount": 5800,
+    "tokenPrice": 250,
+    "clusterUtilizationPct": 94.5,
+    "netYieldApy": 17.4,
+    "leaseTermMonths": 12,
+    "hourlyRate": 9.6,
+    "specs": "Microsecond Event-Based Asynchronous Pixels, 10,000 Frames/sec Equivalent Zero Motion Blur",
+    "slaStandard": "Fraunhofer Institute Certified Optics",
+    "imageUrl": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-48",
+    "name": "Decentralized GPU Zero-Knowledge Proof Node",
+    "category": "Infrastructure",
+    "facility": "London Shoreditch Cryptographic Enclave, UK",
+    "hardwareCode": "D-GPU-ZK-PROVER-08",
+    "valuation": 1750000,
+    "unrealizedAlphaPct": 18,
+    "tokenCount": 7000,
+    "tokenPrice": 250,
+    "clusterUtilizationPct": 96.2,
+    "netYieldApy": 19.2,
+    "leaseTermMonths": 12,
+    "hourlyRate": 11.5,
+    "specs": "Hardware-Accelerated MSM (Multi-Scalar Multiplication) & NTT for Fast ZK-SNARK Prover Networks",
+    "slaStandard": "Zero-Knowledge Proof Consortium Benchmark",
+    "imageUrl": "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-49",
+    "name": "Megawatt Clean Energy AI Microgrid Inverter Node",
+    "category": "Infrastructure",
+    "facility": "Valais Alpine Hydro Station, Switzerland",
+    "hardwareCode": "MICROGRID-AI-2MW",
+    "valuation": 2300000,
+    "unrealizedAlphaPct": 15.8,
+    "tokenCount": 4600,
+    "tokenPrice": 500,
+    "clusterUtilizationPct": 99.6,
+    "netYieldApy": 17.8,
+    "leaseTermMonths": 24,
+    "hourlyRate": 15,
+    "specs": "2.4 MW Solid-State Silicon Carbide Transformer, Sub-Cycle Autonomous Grid Islanding and Frequency Regulation",
+    "slaStandard": "Swissgrid Swiss Transmission Grid Compliance",
+    "imageUrl": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80"
+  },
+  {
+    "id": "ai-50",
+    "name": "Photonic Interconnect Terabit Switching Node",
+    "category": "Infrastructure",
+    "facility": "Geneva Internet Exchange (CIXP) Vault, Switzerland",
+    "hardwareCode": "PHOTONIC-SWITCH-8T",
+    "valuation": 3500000,
+    "unrealizedAlphaPct": 21,
+    "tokenCount": 7000,
+    "tokenPrice": 500,
+    "clusterUtilizationPct": 98.9,
+    "netYieldApy": 21.5,
+    "leaseTermMonths": 36,
+    "hourlyRate": 24,
+    "specs": "800 Gbps per Fiber Core, DWDM Silicon Photonics Co-Packaged Optics (CPO) Switching Core",
+    "slaStandard": "IEEE 802.3ck Terabit Optical Standard",
+    "imageUrl": "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=600&q=80"
+  }
+];
+
+export const AI_DISTRIBUTION_ITEMS: AiDistributionItem[] = [
+  { id: 'ai-dist-1', period: 'February 2025', projected: 18400, actual: 18450, varianceDelta: 50, settlementHash: '0x94fa...11c2', status: 'CLEARED' },
+  { id: 'ai-dist-2', period: 'January 2025', projected: 18200, actual: 18200, varianceDelta: 0, settlementHash: '0x88ea...90fb', status: 'CLEARED' },
+  { id: 'ai-dist-3', period: 'December 2024', projected: 17900, actual: 17920, varianceDelta: 20, settlementHash: '0x32cc...44ab', status: 'CLEARED' },
+  { id: 'ai-dist-4', period: 'November 2024', projected: 17500, actual: 17480, varianceDelta: -20, settlementHash: '0x71dd...88fe', status: 'CLEARED' },
+  { id: 'ai-dist-5', period: 'October 2024', projected: 17000, actual: 17050, varianceDelta: 50, settlementHash: '0x12ac...55e1', status: 'CLEARED' },
+  { id: 'ai-dist-6', period: 'March 2025 (Projected)', projected: 18600, actual: 0, varianceDelta: 0, settlementHash: 'Pending Clearing', status: 'PENDING' },
+];
+
+export const AI_TENANT_CREDIT_MATRIX: AiTenantCreditItem[] = [
+  { id: 'tenant-1', tenantName: 'OpenAI API Compute Enclave', tier: 'Enterprise Tier-1', creditRating: 'AAA', allocatedCapacity: '35% Cluster VRAM', monthlyCommitment: 84000, status: 'CURRENT' },
+  { id: 'tenant-2', tenantName: 'Anthropic Claude Model Hub', tier: 'Research Syndicate', creditRating: 'AAA', allocatedCapacity: '25% Cluster VRAM', monthlyCommitment: 62000, status: 'CURRENT' },
+  { id: 'tenant-3', tenantName: 'Mistral AI Sovereign Matrix', tier: 'European Core', creditRating: 'AA+', allocatedCapacity: '20% Cluster VRAM', monthlyCommitment: 49000, status: 'CURRENT' },
+  { id: 'tenant-4', tenantName: 'Swisscom Enterprise AI Labs', tier: 'Telco Tier-1', creditRating: 'AAA', allocatedCapacity: '12% Cluster VRAM', monthlyCommitment: 28500, status: 'CURRENT' },
+  { id: 'tenant-5', tenantName: 'Roche AI Molecular Discovery', tier: 'BioPharma Global', creditRating: 'AAA', allocatedCapacity: '8% Cluster VRAM', monthlyCommitment: 19800, status: 'CURRENT' },
+];
+
+export const AI_SECONDARY_OTC_ORDERS: AiSecondaryOtcOrder[] = [
+  { id: 'ai-otc-1', type: 'BID', assetName: 'NVIDIA H100 SXM5 80GB Cluster', tokenCount: 200, pricePerToken: 520, navPremiumDiscountPct: 4.0, counterpartyEnclave: 'Geneva Institutional Desk', totalUsd: 104000 },
+  { id: 'ai-otc-2', type: 'OFFER', assetName: 'NVIDIA B200 Blackwell NVL72 Rack', tokenCount: 150, pricePerToken: 1050, navPremiumDiscountPct: 5.0, counterpartyEnclave: 'Zurich Multi-Family Office', totalUsd: 157500 },
+  { id: 'ai-otc-3', type: 'BID', assetName: 'Nordic Hydro AI Hyper-Facility', tokenCount: 300, pricePerToken: 1020, navPremiumDiscountPct: 2.0, counterpartyEnclave: 'Frankfurt Liquidity Provider', totalUsd: 306000 },
+  { id: 'ai-otc-4', type: 'OFFER', assetName: 'Google Cloud TPU v5p Pod Slices', tokenCount: 250, pricePerToken: 990, navPremiumDiscountPct: -1.0, counterpartyEnclave: 'London Systematic Macro', totalUsd: 247500 },
+  { id: 'ai-otc-5', type: 'BID', assetName: 'Swarm Autonomous Guided Vehicle (AGV)', tokenCount: 400, pricePerToken: 510, navPremiumDiscountPct: 2.0, counterpartyEnclave: 'Singapore Sovereign SPV', totalUsd: 204000 },
+];
+
 // REAL ESTATE TELEMETRY
 // -------------------------------------------------------------------------
 
@@ -1334,30 +2318,30 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
   {
     "id": "car-1",
     "type": "vehicle",
-    "title": "1997 Porsche 911 GT2 (993) Clubsport",
-    "subtitle": "1 of 57 Street-Legal Homologation Specials • Air-Cooled 3.6L Twin-Turbo 430hp • Arctic Silver",
+    "title": "2023 Porsche 911 GT3 RS (992)",
+    "subtitle": "Active DRS Aerodynamics • 4.0L Naturally Aspirated Flat-6 518hp • Weissach Package • Ice Grey Metallic",
     "fairMarketValue": 580000,
     "acquisitionPrice": 495000,
     "unrealizedGain": 85000,
     "gainPct": 17.17,
     "indexTrend5YrPct": 61.1,
-    "indexBenchmark": "Hagerty Valuation Index",
+    "indexBenchmark": "Hagerty Modern Supercar Index",
     "vaultLocation": "Geneva Freeport Vault #4B",
     "custodyEnclave": "CH-FREEPORT-GEN-04B",
-    "conditionScore": 99.4,
-    "conditionLabel": "Concours Gold Standard",
+    "conditionScore": 99.9,
+    "conditionLabel": "Factory Delivery Mileage / Full PPF",
     "primaryAttributes": [
       {
         "label": "Chassis VIN",
-        "value": "WP0ZZZ99ZTS390412"
+        "value": "WP0AF2A97PS294810"
       },
       {
         "label": "Engine Code",
-        "value": "M64/60-61 Matching"
+        "value": "MA275 Factory Dyno"
       },
       {
         "label": "Certified Odo",
-        "value": "14,820 km"
+        "value": "480 km"
       }
     ],
     "climateTelemetry": "19.5°C / 48% RH (Geneva Enclave Auto)",
@@ -1368,7 +2352,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
   {
     "id": "watch-1",
     "type": "horology",
-    "title": "Patek Philippe Grand Complications 5270P",
+    "title": "2022 Patek Philippe Grand Complications 5270P",
     "subtitle": "Perpetual Calendar Chronograph in 950 Platinum with Emerald Green Sunburst Dial",
     "fairMarketValue": 270000,
     "acquisitionPrice": 235000,
@@ -1379,7 +2363,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
     "vaultLocation": "Zurich Old Town Bank Enclave (Class IX Safe)",
     "custodyEnclave": "CH-ZUR-VAULT-02",
     "conditionScore": 100,
-    "conditionLabel": "Factory Blister / Unworn Sealed",
+    "conditionLabel": "Factory Sealed Double Boxed",
     "primaryAttributes": [
       {
         "label": "Movement Serial",
@@ -1391,7 +2375,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       },
       {
         "label": "Registry Extract",
-        "value": "Confirmed Archive"
+        "value": "Confirmed Archive 2022"
       }
     ],
     "climateTelemetry": "20.0°C / 45% N2 Inerte Sealed",
@@ -1402,143 +2386,143 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
   {
     "id": "car-2",
     "type": "vehicle",
-    "title": "1961 Ferrari 250 GT California Spider SWB",
-    "subtitle": "Covered Headlights • Scaglietti Steel Coachwork • Tipo 168 Comp V12 • Rosso Corsa",
-    "fairMarketValue": 14500000,
-    "acquisitionPrice": 12800000,
-    "unrealizedGain": 1700000,
-    "gainPct": 13.28,
+    "title": "2022 Ferrari Daytona SP3 Icona Series",
+    "subtitle": "Naturally Aspirated 6.5L V12 829hp • Targa Carbon Monocoque • 1 of 599 Worldwide • Rosso Corsa",
+    "fairMarketValue": 4500000,
+    "acquisitionPrice": 3800000,
+    "unrealizedGain": 700000,
+    "gainPct": 18.42,
     "indexTrend5YrPct": 78.4,
-    "indexBenchmark": "Hagerty Historic Ferrari Index",
+    "indexBenchmark": "Ferrari Icona Series Index",
     "vaultLocation": "Geneva Freeport Sub-Vault #1A",
     "custodyEnclave": "CH-FREEPORT-GEN-01A",
-    "conditionScore": 99.8,
-    "conditionLabel": "Ferrari Classiche Certified Red Book",
+    "conditionScore": 100,
+    "conditionLabel": "Factory Delivery Condition Sealed",
     "primaryAttributes": [
       {
         "label": "Chassis Number",
-        "value": "2871 GT"
+        "value": "ZFF99SP300028710"
       },
       {
         "label": "Classiche Cert",
-        "value": "Factory Archive Verified"
+        "value": "Maranello Attestation"
       },
       {
-        "label": "Matching Numbers",
-        "value": "Engine & Gearbox #168"
+        "label": "Power Output",
+        "value": "829 hp @ 9,500 rpm"
       }
     ],
     "climateTelemetry": "19.8°C / 46% RH Controlled",
     "underwritingPolicy": "Lloyds Specie Blue Chip #LL-CH-91024",
-    "insuredValue": 16000000,
+    "insuredValue": 5200000,
     "imageUrl": "https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-3",
     "type": "vehicle",
-    "title": "1995 McLaren F1 Road Car (Chassis #029)",
-    "subtitle": "Gordon Murray Masterpiece • Central Driving Position • BMW S70/2 6.1L V12 627hp • Creighton Brown",
-    "fairMarketValue": 22000000,
-    "acquisitionPrice": 19500000,
-    "unrealizedGain": 2500000,
-    "gainPct": 12.82,
-    "indexTrend5YrPct": 92.6,
-    "indexBenchmark": "McLaren F1 Heritage Benchmark",
+    "title": "2021 McLaren Speedtail Hyper-GT",
+    "subtitle": "Central Driving Position • Twin-Turbo 4.0L V8 Hybrid 1,036hp • 250 mph Streamliner • 1 of 106",
+    "fairMarketValue": 3200000,
+    "acquisitionPrice": 2800000,
+    "unrealizedGain": 400000,
+    "gainPct": 14.29,
+    "indexTrend5YrPct": 52.6,
+    "indexBenchmark": "McLaren Ultimate Series Benchmark",
     "vaultLocation": "Zurich Vault Enclave #01",
     "custodyEnclave": "CH-ZUR-FREEPORT-01",
-    "conditionScore": 99.6,
-    "conditionLabel": "MSO Heritage Certified Provenance",
+    "conditionScore": 99.8,
+    "conditionLabel": "MSO Bespoke Certified Provenance",
     "primaryAttributes": [
       {
         "label": "Chassis Number",
-        "value": "F1-029"
+        "value": "Speedtail #072"
       },
       {
         "label": "Odometer",
-        "value": "3,840 km Documented"
+        "value": "620 km Documented"
       },
       {
-        "label": "Faceted Tool Roll",
-        "value": "Titanium Original Complete"
+        "label": "Body Spec",
+        "value": "Titanium Deposition Carbon"
       }
     ],
     "climateTelemetry": "20.1°C / 44% RH Nitrogen Buffer",
     "underwritingPolicy": "Lloyds Specie Global Hypercar #LL-CH-99411",
-    "insuredValue": 25000000,
-    "imageUrl": "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80"
+    "insuredValue": 3800000,
+    "imageUrl": "https://images.unsplash.com/photo-1621135802920-133df287f89c?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-2",
     "type": "horology",
-    "title": "Rolex Daytona \"Paul Newman\" Exotic Dial Ref. 6239",
-    "subtitle": "Valjoux 722 Chronograph • Three-Color White/Black/Red Dial • Stepped Sub-Dials • Steel Case",
-    "fairMarketValue": 1850000,
-    "acquisitionPrice": 1550000,
-    "unrealizedGain": 300000,
-    "gainPct": 19.35,
+    "title": "2023 Rolex Daytona \"Le Mans\" 100th Anniv Ref. 126529LN",
+    "subtitle": "18K White Gold • Black Cerachrom Bezel with Red \"100\" Marker • Calibre 4132 with 24H Counter",
+    "fairMarketValue": 285000,
+    "acquisitionPrice": 240000,
+    "unrealizedGain": 45000,
+    "gainPct": 18.75,
     "indexTrend5YrPct": 54.2,
-    "indexBenchmark": "Phillips Vintage Rolex Index",
+    "indexBenchmark": "Rolex High-Complication Index",
     "vaultLocation": "Geneva Freeport Watch Safe #12",
     "custodyEnclave": "CH-GEN-HORO-12",
-    "conditionScore": 98.9,
-    "conditionLabel": "Unpolished Bevels & Original Lume",
+    "conditionScore": 100,
+    "conditionLabel": "Unworn Double Sealed with Box & Papers",
     "primaryAttributes": [
       {
-        "label": "Serial Number",
-        "value": "2.005.xxx (1969)"
+        "label": "Reference",
+        "value": "126529LN 18K WG"
       },
       {
         "label": "Movement Caliber",
-        "value": "Valjoux 722 17J"
+        "value": "Calibre 4132 (24H)"
       },
       {
-        "label": "Bracelet Ref",
-        "value": "7205 Riveted C+I"
+        "label": "Dial Detail",
+        "value": "Reverse Panda Exotic Sub-Dials"
       }
     ],
     "climateTelemetry": "19.2°C / 40% RH Inert Vault",
     "underwritingPolicy": "Lloyds Horology Specie #LL-HORO-5512",
-    "insuredValue": 2200000,
-    "imageUrl": "https://images.unsplash.com/photo-1547996160-71dfa6358248?auto=format&fit=crop&w=800&q=80"
+    "insuredValue": 350000,
+    "imageUrl": "https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-4",
     "type": "vehicle",
-    "title": "1955 Mercedes-Benz 300 SL Gullwing Coupe",
-    "subtitle": "Direct Mechanical Fuel Injection • Rudge Knock-Off Wheels • Fitted Luggage • Silver Metallic / Red Leather",
-    "fairMarketValue": 2400000,
-    "acquisitionPrice": 2050000,
-    "unrealizedGain": 350000,
-    "gainPct": 17.07,
+    "title": "2023 Mercedes-AMG ONE Formula 1 Hypercar",
+    "subtitle": "F1-Derived 1.6L Turbo V6 with 4 Electric Motors 1,049hp • Carbon Monocoque • 1 of 275 Worldwide",
+    "fairMarketValue": 4200000,
+    "acquisitionPrice": 3600000,
+    "unrealizedGain": 600000,
+    "gainPct": 16.67,
     "indexTrend5YrPct": 48.9,
-    "indexBenchmark": "Hagerty German Collector Index",
+    "indexBenchmark": "Hagerty Hypercar Benchmark",
     "vaultLocation": "Geneva Freeport Vault #4B",
     "custodyEnclave": "CH-FREEPORT-GEN-04B",
-    "conditionScore": 99.1,
-    "conditionLabel": "Mercedes-Benz Classic Center Stuttgart Cert",
+    "conditionScore": 100,
+    "conditionLabel": "Affalterbach Handover Verification",
     "primaryAttributes": [
       {
         "label": "Chassis VIN",
-        "value": "198.040.5500642"
+        "value": "WMEONE992PA000142"
       },
       {
         "label": "Engine Code",
-        "value": "M198 Matching Numbers"
+        "value": "PU106C Hybrid F1"
       },
       {
-        "label": "Restoration",
-        "value": "Kienle Automobiltechnik Concours"
+        "label": "Aero System",
+        "value": "Hydraulic Active Aerodynamics"
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
     "underwritingPolicy": "Lloyds Historic Specie #LL-CH-88210",
-    "insuredValue": 2800000,
-    "imageUrl": "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80"
+    "insuredValue": 4900000,
+    "imageUrl": "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-3",
     "type": "horology",
-    "title": "Richard Mille RM 50-03 McLaren F1 Tourbillon",
+    "title": "2022 Richard Mille RM 50-03 McLaren F1 Tourbillon",
     "subtitle": "Split-Seconds Chronograph • Graph TPT Ultralight (40g) • 30-Piece Limited Series • Skeletonized",
     "fairMarketValue": 1250000,
     "acquisitionPrice": 1050000,
@@ -1572,46 +2556,46 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
   {
     "id": "car-5",
     "type": "vehicle",
-    "title": "1987 Ferrari F40 LM Competizione",
-    "subtitle": "Michelotto Factory Prepared • Twin-Turbo 2.9L Tipo F120B V8 720hp • GTC Spec Aerodynamics",
-    "fairMarketValue": 6200000,
-    "acquisitionPrice": 5400000,
-    "unrealizedGain": 800000,
-    "gainPct": 14.81,
+    "title": "2023 Ferrari SF90 XX Stradale",
+    "subtitle": "Twin-Turbo 4.0L V8 Hybrid 1,016hp • Fixed Carbon Rear Wing • 1 of 799 Built • Grigio NART",
+    "fairMarketValue": 1400000,
+    "acquisitionPrice": 1180000,
+    "unrealizedGain": 220000,
+    "gainPct": 18.64,
     "indexTrend5YrPct": 69.4,
-    "indexBenchmark": "Ferrari Supercar Index",
+    "indexBenchmark": "Ferrari XX Programme Index",
     "vaultLocation": "Geneva Freeport Sub-Vault #2",
     "custodyEnclave": "CH-FREEPORT-GEN-02",
-    "conditionScore": 99.3,
-    "conditionLabel": "Factory Michelotto Heritage Extract",
+    "conditionScore": 99.9,
+    "conditionLabel": "Factory Delivery Mileage",
     "primaryAttributes": [
       {
         "label": "Chassis VIN",
-        "value": "ZFFGJ34B000079890"
+        "value": "ZFF99XXS000298142"
       },
       {
-        "label": "Race Pedigree",
-        "value": "IMSA GTO / Le Mans Tested"
+        "label": "Engine Type",
+        "value": "F154FB Twin-Turbo V8"
       },
       {
-        "label": "Dyno Verified",
-        "value": "720 bhp @ 7,500 rpm"
+        "label": "Downforce",
+        "value": "530 kg @ 250 km/h"
       }
     ],
     "climateTelemetry": "19.4°C / 48% RH Auto",
-    "underwritingPolicy": "Lloyds Motorsport Heritage #LL-RACE-1987",
-    "insuredValue": 7000000,
+    "underwritingPolicy": "Lloyds Motorsport Heritage #LL-RACE-2023",
+    "insuredValue": 1700000,
     "imageUrl": "https://images.unsplash.com/photo-1592198084033-aade902d1aae?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-4",
     "type": "horology",
-    "title": "F.P. Journe Chronomètre Bleu Tantalum",
+    "title": "2021 F.P. Journe Chronomètre Bleu Tantalum",
     "subtitle": "Mirror-Polished Blue Chrome Dial • 39mm Tantalum Case • 18K Rose Gold Hand-Wound Movement",
-    "fairMarketValue": 98000,
-    "acquisitionPrice": 78000,
-    "unrealizedGain": 20000,
-    "gainPct": 25.64,
+    "fairMarketValue": 115000,
+    "acquisitionPrice": 92000,
+    "unrealizedGain": 23000,
+    "gainPct": 25,
     "indexTrend5YrPct": 112.4,
     "indexBenchmark": "F.P. Journe Independent Index",
     "vaultLocation": "Geneva Freeport Watch Safe #12",
@@ -1634,47 +2618,47 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
     ],
     "climateTelemetry": "19.2°C / 40% RH Inert Vault",
     "underwritingPolicy": "Lloyds Horology Specie #LL-HORO-5512",
-    "insuredValue": 125000,
+    "insuredValue": 145000,
     "imageUrl": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-6",
     "type": "vehicle",
-    "title": "2004 Porsche Carrera GT (Fayence Yellow)",
-    "subtitle": "Naturally Aspirated 5.7L V10 605hp • 6-Speed Manual with Beechwood Shifter • Carbon Monocoque",
-    "fairMarketValue": 1950000,
-    "acquisitionPrice": 1650000,
-    "unrealizedGain": 300000,
-    "gainPct": 18.18,
+    "title": "2024 Porsche 911 S/T 60th Anniversary",
+    "subtitle": "Naturally Aspirated 4.0L GT3 RS Engine 518hp • 6-Speed Manual • Magnesium Wheels • 1 of 1,963",
+    "fairMarketValue": 720000,
+    "acquisitionPrice": 590000,
+    "unrealizedGain": 130000,
+    "gainPct": 22.03,
     "indexTrend5YrPct": 82.5,
-    "indexBenchmark": "Hagerty Modern Classic Index",
+    "indexBenchmark": "Porsche Heritage Index",
     "vaultLocation": "Zurich Vault Enclave #01",
     "custodyEnclave": "CH-ZUR-FREEPORT-01",
-    "conditionScore": 99.7,
-    "conditionLabel": "Weissach Factory Major Service Cleared",
+    "conditionScore": 100,
+    "conditionLabel": "Factory Delivery Sealed",
     "primaryAttributes": [
       {
         "label": "Chassis VIN",
-        "value": "WP0ZZZ98Z4L001249"
+        "value": "WP0ZZZ99ZRS298412"
       },
       {
-        "label": "Odometer",
-        "value": "4,120 km Verified"
+        "label": "Curb Weight",
+        "value": "1,380 kg (Lightest 992)"
       },
       {
-        "label": "Clutch Wear",
-        "value": "3.1 mm (95% Life Remaining)"
+        "label": "Heritage Package",
+        "value": "Shoreblue Metallic / Cognac"
       }
     ],
     "climateTelemetry": "20.1°C / 44% RH Nitrogen Buffer",
-    "underwritingPolicy": "Lloyds Modern Collector #LL-PORSCHE-04",
-    "insuredValue": 2300000,
-    "imageUrl": "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80"
+    "underwritingPolicy": "Lloyds Modern Collector #LL-PORSCHE-24",
+    "insuredValue": 880000,
+    "imageUrl": "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-5",
     "type": "horology",
-    "title": "Audemars Piguet Royal Oak Concept Split-Seconds GMT",
+    "title": "2023 Audemars Piguet Royal Oak Concept Split-Seconds GMT",
     "subtitle": "Flyback Chronograph • Forged Carbon & Ceramic 43mm Case • Self-Winding Calibre 4407",
     "fairMarketValue": 245000,
     "acquisitionPrice": 210000,
@@ -1703,13 +2687,13 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
     "climateTelemetry": "20.0°C / 45% N2 Inerte Sealed",
     "underwritingPolicy": "Lloyds Horology Specie #LL-HORO-5512",
     "insuredValue": 300000,
-    "imageUrl": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80"
+    "imageUrl": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-7",
     "type": "vehicle",
     "title": "2021 Bugatti Chiron Pur Sport",
-    "subtitle": "1 of 60 Built • Quad-Turbo 8.0L W16 1,500hp • Fixed Rear Wing • Magnesum Wheels • Jaune Molsheim",
+    "subtitle": "1 of 60 Built • Quad-Turbo 8.0L W16 1,500hp • Fixed Rear Wing • Magnesium Wheels • Jaune Molsheim",
     "fairMarketValue": 4800000,
     "acquisitionPrice": 4200000,
     "unrealizedGain": 600000,
@@ -1731,7 +2715,7 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
       },
       {
         "label": "Factory Warranty",
-        "value": "Bugatti Passeport Tranquillité"
+        "value": "Bugatti Passeport Tranquillite"
       }
     ],
     "climateTelemetry": "19.5°C / 48% RH (Geneva Enclave Auto)",
@@ -1742,8 +2726,8 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
   {
     "id": "watch-6",
     "type": "horology",
-    "title": "A. Lange & Söhne Zeitwerk Minute Repeater in Platinum",
-    "subtitle": "Decimal Minute Repeater • Mechanical Digital Jumping Numerals Display • Glashütte In-House Calibre L043.5",
+    "title": "2022 A. Lange & Söhne Zeitwerk Minute Repeater in Platinum",
+    "subtitle": "Decimal Minute Repeater • Mechanical Digital Jumping Numerals Display • Glashütte Calibre L043.5",
     "fairMarketValue": 520000,
     "acquisitionPrice": 450000,
     "unrealizedGain": 70000,
@@ -1776,132 +2760,132 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
   {
     "id": "car-8",
     "type": "vehicle",
-    "title": "2015 Ferrari LaFerrari Aperta",
-    "subtitle": "HY-KERS 6.3L V12 Hybrid 963hp • Carbon Fiber Removable Roof • 1 of 210 Worldwide • Nero Daytona",
-    "fairMarketValue": 5900000,
-    "acquisitionPrice": 5100000,
-    "unrealizedGain": 800000,
-    "gainPct": 15.69,
-    "indexTrend5YrPct": 58.6,
-    "indexBenchmark": "Ferrari Aperta Collector Benchmark",
+    "title": "2024 Ferrari 499P Modificata",
+    "subtitle": "Le Mans Winner Track Hypercar • 3.0L Twin-Turbo V6 Hybrid 858hp • Corse Clienti Privileges",
+    "fairMarketValue": 5400000,
+    "acquisitionPrice": 4800000,
+    "unrealizedGain": 600000,
+    "gainPct": 12.5,
+    "indexTrend5YrPct": 68.6,
+    "indexBenchmark": "Ferrari Track Car Index",
     "vaultLocation": "Geneva Freeport Sub-Vault #1A",
     "custodyEnclave": "CH-FREEPORT-GEN-01A",
-    "conditionScore": 99.8,
-    "conditionLabel": "Maranello Classiche Attestation",
+    "conditionScore": 100,
+    "conditionLabel": "Maranello Corse Clienti Certified",
     "primaryAttributes": [
       {
         "label": "Chassis VIN",
-        "value": "ZFF80RPB000214890"
+        "value": "ZFF499PM000021489"
       },
       {
-        "label": "Delivery Odo",
-        "value": "980 km Delivery Mileage"
+        "label": "Drivetrain",
+        "value": "AWD Hybrid Electric Front Axle"
       },
       {
-        "label": "Battery Health",
-        "value": "HY-KERS Cell 99.2%"
+        "label": "FIA Homologation",
+        "value": "LMH Le Mans Prototype Spec"
       }
     ],
     "climateTelemetry": "19.8°C / 46% RH Controlled",
-    "underwritingPolicy": "Lloyds Specie Hypercar #LL-LAF-015",
-    "insuredValue": 6800000,
+    "underwritingPolicy": "Lloyds Specie Blue Chip #LL-CH-91024",
+    "insuredValue": 6200000,
     "imageUrl": "https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-7",
     "type": "horology",
-    "title": "Patek Philippe Nautilus Ref. 5711/1P 40th Anniversary",
-    "subtitle": "Solid 950 Platinum Case & Bracelet • Diamond Hour Markers • Embossed Commemorative Dial 1976-2016",
-    "fairMarketValue": 480000,
-    "acquisitionPrice": 410000,
-    "unrealizedGain": 70000,
-    "gainPct": 17.07,
-    "indexTrend5YrPct": 65,
+    "title": "2023 Patek Philippe Nautilus Ref. 5811/1G White Gold",
+    "subtitle": "41mm Solid White Gold Case • Sunburst Blue Dial with Black-Gradient Rim • Calibre 26-330 S C",
+    "fairMarketValue": 165000,
+    "acquisitionPrice": 138000,
+    "unrealizedGain": 27000,
+    "gainPct": 19.57,
+    "indexTrend5YrPct": 45.8,
     "indexBenchmark": "Patek Philippe Nautilus Index",
     "vaultLocation": "Zurich Old Town Bank Enclave (Class IX Safe)",
     "custodyEnclave": "CH-ZUR-VAULT-02",
-    "conditionScore": 99.9,
-    "conditionLabel": "Double Sealed Cork Box Complete",
+    "conditionScore": 100,
+    "conditionLabel": "Unworn Factory Double Sealed",
     "primaryAttributes": [
       {
-        "label": "Case Number",
-        "value": "5921840 / 950 Pt"
+        "label": "Reference",
+        "value": "5811/1G-001"
       },
       {
-        "label": "Dial Signature",
-        "value": "40 1976-2016 Embossed"
+        "label": "Movement Caliber",
+        "value": "26-330 S C Automatic"
       },
       {
-        "label": "Bezel Diamond",
-        "value": "Top Wesselton 6 o'clock"
+        "label": "Clasp Ref",
+        "value": "Patented Fold-Over Lock"
       }
     ],
     "climateTelemetry": "20.0°C / 45% N2 Inerte Sealed",
-    "underwritingPolicy": "Lloyds Horology Specie #LL-HORO-5512",
-    "insuredValue": 580000,
-    "imageUrl": "https://images.unsplash.com/photo-1547996160-71dfa6358248?auto=format&fit=crop&w=800&q=80"
+    "underwritingPolicy": "Lloyds Specie Syndicate 2003",
+    "insuredValue": 210000,
+    "imageUrl": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-9",
     "type": "vehicle",
-    "title": "1963 Aston Martin DB5 James Bond Vantage Spec",
-    "subtitle": "Tadek Marek 4.0L DOHC Inline-6 • Triple Weber Carburetors • 5-Speed ZF Manual • Silver Birch",
-    "fairMarketValue": 1400000,
-    "acquisitionPrice": 1180000,
-    "unrealizedGain": 220000,
-    "gainPct": 18.64,
-    "indexTrend5YrPct": 45.2,
-    "indexBenchmark": "Hagerty British Classic Index",
-    "vaultLocation": "Zurich Vault Enclave #01",
-    "custodyEnclave": "CH-ZUR-FREEPORT-01",
-    "conditionScore": 99.2,
-    "conditionLabel": "Aston Martin Works Heritage Restored",
+    "title": "2022 Aston Martin Valkyrie AMR Pro",
+    "subtitle": "Cosworth 6.5L Naturally Aspirated V12 1,000hp @ 11,000rpm • Extreme Downforce • 1 of 40 Built",
+    "fairMarketValue": 3900000,
+    "acquisitionPrice": 3400000,
+    "unrealizedGain": 500000,
+    "gainPct": 14.71,
+    "indexTrend5YrPct": 58.2,
+    "indexBenchmark": "Aston Martin Special Projects Index",
+    "vaultLocation": "Geneva Freeport Vault #4B",
+    "custodyEnclave": "CH-FREEPORT-GEN-04B",
+    "conditionScore": 100,
+    "conditionLabel": "Gaydon Special Operations Delivery",
     "primaryAttributes": [
       {
         "label": "Chassis VIN",
-        "value": "DB5/1489/R"
+        "value": "SCFVAMRPRO000018"
       },
       {
-        "label": "Engine",
-        "value": "400/1489 Vantage Spec"
+        "label": "Aerodynamics",
+        "value": "Ground Effect Venturi Tunnels"
       },
       {
-        "label": "Heritage Certificate",
-        "value": "Gaydon Archive Certified"
+        "label": "Top Speed",
+        "value": "362 km/h Track Limited"
       }
     ],
-    "climateTelemetry": "20.1°C / 44% RH Nitrogen Buffer",
-    "underwritingPolicy": "Lloyds British Heritage #LL-ASTON-63",
-    "insuredValue": 1700000,
-    "imageUrl": "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80"
+    "climateTelemetry": "19.5°C / 48% RH (Geneva Enclave Auto)",
+    "underwritingPolicy": "Lloyds Motorsport Heritage #LL-AMR-2022",
+    "insuredValue": 4600000,
+    "imageUrl": "https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-8",
     "type": "horology",
-    "title": "MB&F Legacy Machine Perpetual Palladium",
-    "subtitle": "Stephen McDonnell Revolutionary Perpetual Calendar Engine • 14mm Flying Balance Wheel • Palladium 950",
+    "title": "2022 MB&F Legacy Machine Perpetual Palladium",
+    "subtitle": "Stephen McDonnell Perpetual Calendar Engine • Palladium 44mm Case • Aquamarine Dial Plate • 1 of 25",
     "fairMarketValue": 195000,
-    "acquisitionPrice": 168000,
-    "unrealizedGain": 27000,
-    "gainPct": 16.07,
-    "indexTrend5YrPct": 52,
+    "acquisitionPrice": 165000,
+    "unrealizedGain": 30000,
+    "gainPct": 18.18,
+    "indexTrend5YrPct": 62.4,
     "indexBenchmark": "Independent Horology Index",
     "vaultLocation": "Geneva Freeport Watch Safe #12",
     "custodyEnclave": "CH-GEN-HORO-12",
     "conditionScore": 100,
-    "conditionLabel": "Factory New Sealed 25-Piece Series",
+    "conditionLabel": "Mint Complete Box & Papers",
     "primaryAttributes": [
       {
-        "label": "Series Number",
-        "value": "Piece No. 07 / 25"
+        "label": "Material",
+        "value": "950 Palladium"
       },
       {
-        "label": "Mechanical Processor",
-        "value": "Default 28-day baseline"
+        "label": "Complication",
+        "value": "Mechanical Processor Calendar"
       },
       {
-        "label": "Case Metal",
-        "value": "Palladium 950"
+        "label": "Production",
+        "value": "25 Pieces Limited"
       }
     ],
     "climateTelemetry": "19.2°C / 40% RH Inert Vault",
@@ -1912,1124 +2896,1124 @@ export const EXOTIC_ASSETS: ExoticAsset[] = [
   {
     "id": "car-10",
     "type": "vehicle",
-    "title": "1971 Lamborghini Miura P400SV",
-    "subtitle": "Split-Sump V12 385hp • Bertone Masterpiece • Ventilated Discs • Giallo Miura with Gold Sills",
-    "fairMarketValue": 3850000,
-    "acquisitionPrice": 3300000,
-    "unrealizedGain": 550000,
-    "gainPct": 16.67,
-    "indexTrend5YrPct": 71,
-    "indexBenchmark": "Hagerty Italian Exotic Index",
-    "vaultLocation": "Geneva Freeport Vault #4B",
-    "custodyEnclave": "CH-FREEPORT-GEN-04B",
-    "conditionScore": 99.5,
-    "conditionLabel": "Polo Storico Lamborghini Certified",
+    "title": "2023 Lamborghini Revuelto",
+    "subtitle": "Naturally Aspirated 6.5L V12 Plug-In Hybrid 1,001hp • Monofuselage Carbon Chassis • Arancio Apodis",
+    "fairMarketValue": 750000,
+    "acquisitionPrice": 620000,
+    "unrealizedGain": 130000,
+    "gainPct": 20.97,
+    "indexTrend5YrPct": 45,
+    "indexBenchmark": "Lamborghini V12 Flagship Index",
+    "vaultLocation": "Zurich Vault Enclave #01",
+    "custodyEnclave": "CH-ZUR-FREEPORT-01",
+    "conditionScore": 100,
+    "conditionLabel": "Sant'Agata Bolognese Factory Handover",
     "primaryAttributes": [
       {
         "label": "Chassis VIN",
-        "value": "4878"
+        "value": "ZA9R12V12PLA00412"
       },
       {
-        "label": "Engine Number",
-        "value": "30642 Split Sump"
+        "label": "Transmission",
+        "value": "8-Speed Dual-Clutch Transverse"
       },
       {
-        "label": "Production Record",
-        "value": "1 of 150 SV Built"
+        "label": "0-100 km/h",
+        "value": "2.5 Seconds"
       }
     ],
-    "climateTelemetry": "19.5°C / 48% RH (Geneva Enclave Auto)",
-    "underwritingPolicy": "Lloyds Classic Exotic #LL-LAMBO-71",
-    "insuredValue": 4400000,
-    "imageUrl": "https://images.unsplash.com/photo-1592198084033-aade902d1aae?auto=format&fit=crop&w=800&q=80"
+    "climateTelemetry": "20.1°C / 44% RH Nitrogen Buffer",
+    "underwritingPolicy": "Lloyds Modern Collector #LL-LAMBO-23",
+    "insuredValue": 920000,
+    "imageUrl": "https://images.unsplash.com/photo-1519245659620-e859806a8d3b?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-11",
     "type": "vehicle",
-    "title": "2010 Pagani Zonda Cinque Roadster",
-    "subtitle": "7.3L AMG V12 678hp • 1 of 5 Worldwide • Carbon-Titanium Carbo-Triax Tub",
-    "fairMarketValue": 11500000,
-    "acquisitionPrice": 9800000,
-    "unrealizedGain": 1700000,
-    "gainPct": 17.35,
-    "indexTrend5YrPct": 88.4,
-    "indexBenchmark": "Pagani Collector Index",
-    "vaultLocation": "Geneva Freeport Sub-Vault #1A",
-    "custodyEnclave": "CH-FREEPORT-GEN-01A",
-    "conditionScore": 99.9,
-    "conditionLabel": "Pagani Rinascimento Certified",
+    "title": "2024 Pagani Utopia",
+    "subtitle": "Mercedes-AMG 6.0L Twin-Turbo V12 852hp • 7-Speed Xtrac Manual Gate • Carbo-Titanium Monocoque",
+    "fairMarketValue": 3600000,
+    "acquisitionPrice": 3100000,
+    "unrealizedGain": 500000,
+    "gainPct": 16.13,
+    "indexTrend5YrPct": 64.2,
+    "indexBenchmark": "Pagani Atelier Benchmark",
+    "vaultLocation": "Geneva Freeport Sub-Vault #2",
+    "custodyEnclave": "CH-FREEPORT-GEN-02",
+    "conditionScore": 100,
+    "conditionLabel": "Horacio Pagani Signed Delivery",
     "primaryAttributes": [
       {
-        "label": "VIN",
-        "value": "ZA9ZONDA05"
+        "label": "Chassis VIN",
+        "value": "ZA9UTOPIA20240019"
       },
       {
-        "label": "Engine",
-        "value": "AMG M120 No. 05"
+        "label": "Gearbox",
+        "value": "Pure Mechanical Gated 7-Speed"
       },
       {
-        "label": "Odo",
-        "value": "1,240 km"
+        "label": "Dry Weight",
+        "value": "1,280 kg Carbon-Titanium"
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 13225000,
+    "underwritingPolicy": "Lloyds Specie Global Hypercar #LL-CH-99411",
+    "insuredValue": 4200000,
     "imageUrl": "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-9",
     "type": "horology",
-    "title": "Vacheron Constantin Overseas Tourbillon Skeleton",
-    "subtitle": "Titanium 42.5mm Case • Ultra-Thin Calibre 2160SQ • Geneva Seal Hallmark",
-    "fairMarketValue": 165000,
-    "acquisitionPrice": 142000,
-    "unrealizedGain": 23000,
-    "gainPct": 16.2,
-    "indexTrend5YrPct": 36.5,
-    "indexBenchmark": "Vacheron Constantin Index",
-    "vaultLocation": "Zurich Old Town Bank Enclave",
+    "title": "2022 Vacheron Constantin Overseas Tourbillon Skeleton",
+    "subtitle": "Grade 5 Titanium 42.5mm Case • Ultra-Thin Calibre 2160SQ Skeleton • 80h Power Reserve",
+    "fairMarketValue": 185000,
+    "acquisitionPrice": 155000,
+    "unrealizedGain": 30000,
+    "gainPct": 19.35,
+    "indexTrend5YrPct": 36.4,
+    "indexBenchmark": "Vacheron Constantin Haute Horlogerie Index",
+    "vaultLocation": "Zurich Old Town Bank Enclave (Class IX Safe)",
     "custodyEnclave": "CH-ZUR-VAULT-02",
     "conditionScore": 100,
-    "conditionLabel": "Poinçon de Genève Certified",
+    "conditionLabel": "Hallmark of Geneva Sealed Set",
     "primaryAttributes": [
       {
-        "label": "Movement No",
-        "value": "5410920"
+        "label": "Reference",
+        "value": "6000V/110T-B935"
       },
       {
-        "label": "Case",
-        "value": "Grade 5 Titanium"
+        "label": "Hallmark",
+        "value": "Poincon de Geneve Certified"
       },
       {
-        "label": "Bracelet",
-        "value": "3-Interchangeable System"
+        "label": "Interchangeable Straps",
+        "value": "Titanium / Rubber / Calfskin"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 189750,
+    "climateTelemetry": "20.0°C / 45% N2 Inerte Sealed",
+    "underwritingPolicy": "Lloyds Specie Syndicate 2003",
+    "insuredValue": 230000,
     "imageUrl": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-12",
     "type": "vehicle",
     "title": "2023 Koenigsegg Jesko Attack",
-    "subtitle": "5.0L Twin-Turbo V8 1,600hp on E85 • Light Speed Transmission (LST) 9-Speed",
-    "fairMarketValue": 4200000,
-    "acquisitionPrice": 3650000,
+    "subtitle": "5.0L Twin-Turbo Flat-Plane V8 1,600hp (E85) • 9-Speed Light Speed Transmission • 1,400kg Downforce",
+    "fairMarketValue": 3800000,
+    "acquisitionPrice": 3250000,
     "unrealizedGain": 550000,
-    "gainPct": 15.07,
-    "indexTrend5YrPct": 39.5,
-    "indexBenchmark": "Koenigsegg Benchmark",
-    "vaultLocation": "Zurich Vault Enclave #01",
-    "custodyEnclave": "CH-ZUR-FREEPORT-01",
-    "conditionScore": 99.9,
-    "conditionLabel": "Ängelholm Factory Certified",
+    "gainPct": 16.92,
+    "indexTrend5YrPct": 55,
+    "indexBenchmark": "Koenigsegg Angelholm Benchmark",
+    "vaultLocation": "Geneva Freeport Vault #4B",
+    "custodyEnclave": "CH-FREEPORT-GEN-04B",
+    "conditionScore": 100,
+    "conditionLabel": "Factory Handover Provenance",
     "primaryAttributes": [
       {
-        "label": "Chassis",
-        "value": "YT9JESKO04"
+        "label": "Chassis VIN",
+        "value": "YT9JESKO23000142"
       },
       {
-        "label": "Aero Downforce",
-        "value": "1,400 kg"
+        "label": "Transmission",
+        "value": "Koenigsegg LST 9-Speed"
       },
       {
-        "label": "Odo",
-        "value": "480 km"
+        "label": "Aero Spec",
+        "value": "High-Downforce Attack Wing"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 4830000,
+    "climateTelemetry": "19.5°C / 48% RH (Geneva Enclave Auto)",
+    "underwritingPolicy": "Lloyds Global Hypercar #LL-KOENIG-23",
+    "insuredValue": 4500000,
     "imageUrl": "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-10",
     "type": "horology",
-    "title": "Rolex Submariner \"MilSub\" Ref. 5517 Royal Navy",
-    "subtitle": "Fixed Spring Bars • Sword Hands • Fully Graduated 60-Min Bezel • MOD Dial",
-    "fairMarketValue": 240000,
-    "acquisitionPrice": 205000,
-    "unrealizedGain": 35000,
-    "gainPct": 17.07,
-    "indexTrend5YrPct": 49,
-    "indexBenchmark": "Military Watch Index",
+    "title": "2024 Rolex Submariner Date \"Kermit\" Ref. 126610LV",
+    "subtitle": "Oystersteel 41mm Case • Green Cerachrom Ceramic Bezel • Calibre 3235 with Chronergy Escapement",
+    "fairMarketValue": 16800,
+    "acquisitionPrice": 14200,
+    "unrealizedGain": 2600,
+    "gainPct": 18.31,
+    "indexTrend5YrPct": 28.5,
+    "indexBenchmark": "Rolex Professional Sports Index",
     "vaultLocation": "Geneva Freeport Watch Safe #12",
     "custodyEnclave": "CH-GEN-HORO-12",
-    "conditionScore": 98.4,
-    "conditionLabel": "MOD Provenance Verified Archive",
+    "conditionScore": 100,
+    "conditionLabel": "Unworn 2024 Card & Double Boxed",
     "primaryAttributes": [
       {
-        "label": "Serial",
-        "value": "3.92x.xxx (1974)"
+        "label": "Reference",
+        "value": "126610LV-0002"
       },
       {
-        "label": "Caseback",
-        "value": "0552/923-7697"
+        "label": "Water Resistance",
+        "value": "300m / 1,000 ft"
       },
       {
-        "label": "Lume",
-        "value": "Tritium Circle T Original"
+        "label": "Bezel",
+        "value": "Green Cerachrom Unidirectional"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 276000,
-    "imageUrl": "https://images.unsplash.com/photo-1547996160-71dfa6358248?auto=format&fit=crop&w=800&q=80"
+    "climateTelemetry": "19.2°C / 40% RH Inert Vault",
+    "underwritingPolicy": "Lloyds Horology Specie #LL-HORO-5512",
+    "insuredValue": 22000,
+    "imageUrl": "https://images.unsplash.com/photo-1533139502658-0198f920d8e8?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-13",
     "type": "vehicle",
-    "title": "1998 McLaren F1 GTR Longtail (Chassis #28R)",
-    "subtitle": "BMW Motorsport 6.0L V12 • FIA GT Championship Winner • Gulf / Davidoff Livery",
-    "fairMarketValue": 18500000,
-    "acquisitionPrice": 16200000,
-    "unrealizedGain": 2300000,
-    "gainPct": 14.2,
-    "indexTrend5YrPct": 75,
-    "indexBenchmark": "McLaren Racing Index",
-    "vaultLocation": "Geneva Freeport Sub-Vault #2",
-    "custodyEnclave": "CH-FREEPORT-GEN-02",
-    "conditionScore": 99.4,
-    "conditionLabel": "MSO Heritage Race Certification",
+    "title": "2022 Bugatti Bolide",
+    "subtitle": "Track-Only 8.0L Quad-Turbo W16 1,825hp • Extreme Aerodynamics • Weight-to-Power 0.67 kg/hp • 1 of 40",
+    "fairMarketValue": 4600000,
+    "acquisitionPrice": 4000000,
+    "unrealizedGain": 600000,
+    "gainPct": 15,
+    "indexTrend5YrPct": 52.4,
+    "indexBenchmark": "Bugatti Track Benchmark",
+    "vaultLocation": "Geneva Freeport Vault #4B",
+    "custodyEnclave": "CH-FREEPORT-GEN-04B",
+    "conditionScore": 100,
+    "conditionLabel": "Molsheim Track Program Delivery",
     "primaryAttributes": [
       {
-        "label": "Chassis",
-        "value": "28R FIA GT"
+        "label": "Chassis VIN",
+        "value": "VF9BOLIDE000040"
       },
       {
         "label": "Weight",
-        "value": "915 kg Dry"
+        "value": "1,450 kg Dry Weight"
       },
       {
-        "label": "Logbook",
-        "value": "FIA Historic Pass"
+        "label": "Downforce",
+        "value": "3,000 kg @ 320 km/h"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 21275000,
-    "imageUrl": "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80"
+    "climateTelemetry": "19.5°C / 48% RH (Geneva Enclave Auto)",
+    "underwritingPolicy": "Lloyds Global Hypercar #LL-BUGATTI-22",
+    "insuredValue": 5300000,
+    "imageUrl": "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-11",
     "type": "horology",
-    "title": "Cartier Crash London Dial 1991 Limited Series",
-    "subtitle": "Yellow Gold Asymmetrical Case • Mechanical Calibre 841 • London Hallmark",
-    "fairMarketValue": 285000,
-    "acquisitionPrice": 240000,
-    "unrealizedGain": 45000,
-    "gainPct": 18.75,
-    "indexTrend5YrPct": 84,
-    "indexBenchmark": "Cartier Vintage Index",
-    "vaultLocation": "Zurich Old Town Bank Enclave",
+    "title": "2021 Cartier Crash Radieuse Limited Edition",
+    "subtitle": "Asymmetrical 18K Yellow Gold Case • Concentric Faded Roman Numerals • Calibre 8970 MC",
+    "fairMarketValue": 175000,
+    "acquisitionPrice": 145000,
+    "unrealizedGain": 30000,
+    "gainPct": 20.69,
+    "indexTrend5YrPct": 88.4,
+    "indexBenchmark": "Cartier Shape Watch Index",
+    "vaultLocation": "Zurich Old Town Bank Enclave (Class IX Safe)",
     "custodyEnclave": "CH-ZUR-VAULT-02",
-    "conditionScore": 99.5,
-    "conditionLabel": "Cartier Heritage Extract",
+    "conditionScore": 99.8,
+    "conditionLabel": "Complete London Atelier Set",
     "primaryAttributes": [
       {
-        "label": "Hallmark",
-        "value": "London 1991"
+        "label": "Case Design",
+        "value": "Original Asymmetric Sculpture"
       },
       {
-        "label": "Deployant",
-        "value": "Original 18K Gold"
+        "label": "Movement",
+        "value": "Hand-Wound Calibre 8970 MC"
       },
       {
-        "label": "Dial",
-        "value": "Cartier Paris Signature"
+        "label": "Hallmarks",
+        "value": "Swiss & French Assay Marks"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 327750,
+    "climateTelemetry": "20.0°C / 45% N2 Inerte Sealed",
+    "underwritingPolicy": "Lloyds Horology Specie #LL-HORO-5512",
+    "insuredValue": 220000,
     "imageUrl": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-14",
     "type": "vehicle",
-    "title": "2019 Porsche 911 GT2 RS Weissach Package",
-    "subtitle": "3.8L Twin-Turbo Boxer-6 700hp • Carbon Magnesium Roof • Nürburgring Record Spec",
-    "fairMarketValue": 520000,
-    "acquisitionPrice": 445000,
-    "unrealizedGain": 75000,
-    "gainPct": 16.85,
-    "indexTrend5YrPct": 34,
-    "indexBenchmark": "Porsche GT Registry",
-    "vaultLocation": "Geneva Freeport Vault #4B",
-    "custodyEnclave": "CH-FREEPORT-GEN-04B",
-    "conditionScore": 99.8,
-    "conditionLabel": "Porsche Approved 111-Point Check",
+    "title": "2024 Porsche 911 Dakar (Roughroads Edition)",
+    "subtitle": "Twin-Turbo 3.0L Boxer-6 473hp • All-Terrain Lift Suspension (191mm clearance) • 1 of 2,500 Built",
+    "fairMarketValue": 340000,
+    "acquisitionPrice": 285000,
+    "unrealizedGain": 55000,
+    "gainPct": 19.3,
+    "indexTrend5YrPct": 48,
+    "indexBenchmark": "Porsche Heritage Rally Index",
+    "vaultLocation": "Zurich Vault Enclave #01",
+    "custodyEnclave": "CH-ZUR-FREEPORT-01",
+    "conditionScore": 100,
+    "conditionLabel": "Weissach Delivery Sealed",
     "primaryAttributes": [
       {
-        "label": "VIN",
-        "value": "WP0AF2A97KS189210"
+        "label": "Chassis VIN",
+        "value": "WP0AD2A98RS291048"
       },
       {
-        "label": "Weight",
-        "value": "Weissach Magnesium Pkg"
+        "label": "Tires",
+        "value": "Pirelli Scorpion All-Terrain Plus"
       },
       {
-        "label": "Odo",
-        "value": "2,150 km"
+        "label": "Livery",
+        "value": "Rallye Design Package 1984"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 598000,
-    "imageUrl": "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80"
+    "climateTelemetry": "20.1°C / 44% RH Nitrogen Buffer",
+    "underwritingPolicy": "Lloyds Modern Collector #LL-PORSCHE-24",
+    "insuredValue": 420000,
+    "imageUrl": "https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-12",
     "type": "horology",
-    "title": "Audemars Piguet Royal Oak Jumbo Extra-Thin 16202ST",
-    "subtitle": "50th Anniversary Rotor • Bleu Nuit Nuage 50 Dial • In-House Calibre 7121",
-    "fairMarketValue": 95000,
+    "title": "2022 Audemars Piguet Royal Oak Jumbo Extra-Thin 16202ST",
+    "subtitle": "50th Anniversary Edition • Bleue Nuit Petite Tapisserie Dial • Self-Winding Calibre 7121",
+    "fairMarketValue": 92000,
     "acquisitionPrice": 78000,
-    "unrealizedGain": 17000,
-    "gainPct": 21.79,
-    "indexTrend5YrPct": 41.5,
-    "indexBenchmark": "Royal Oak Blue Chip Index",
+    "unrealizedGain": 14000,
+    "gainPct": 17.95,
+    "indexTrend5YrPct": 38.6,
+    "indexBenchmark": "Royal Oak 50th Index",
     "vaultLocation": "Geneva Freeport Watch Safe #12",
     "custodyEnclave": "CH-GEN-HORO-12",
     "conditionScore": 100,
-    "conditionLabel": "Factory Sealed Le Brassus",
+    "conditionLabel": "50th Anniversary Rotor Engraved",
     "primaryAttributes": [
       {
-        "label": "Case",
-        "value": "50th Anniv Engraved"
+        "label": "Reference",
+        "value": "16202ST.OO.1240ST.01"
       },
       {
         "label": "Thickness",
-        "value": "8.1 mm"
+        "value": "8.1 mm Ultra-Thin"
       },
       {
-        "label": "Calibre",
-        "value": "7121 Extra-Thin"
+        "label": "Rotor Spec",
+        "value": "50 Years Gold Rotor"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 109250,
+    "climateTelemetry": "19.2°C / 40% RH Inert Vault",
+    "underwritingPolicy": "Lloyds Horology Specie #LL-HORO-5512",
+    "insuredValue": 120000,
     "imageUrl": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-15",
     "type": "vehicle",
-    "title": "1967 Ferrari 275 GTB/4 Scaglietti Berlinetta",
-    "subtitle": "Four-Cam 3.3L Colombo V12 300hp • Six Weber Carburetors • Grigio Argento",
-    "fairMarketValue": 3950000,
-    "acquisitionPrice": 3400000,
-    "unrealizedGain": 550000,
-    "gainPct": 16.18,
-    "indexTrend5YrPct": 62.4,
-    "indexBenchmark": "Ferrari 275 Index",
-    "vaultLocation": "Zurich Vault Enclave #01",
-    "custodyEnclave": "CH-ZUR-FREEPORT-01",
-    "conditionScore": 99.6,
-    "conditionLabel": "Ferrari Classiche Certified",
+    "title": "2023 Ferrari 296 GTB Assetto Fiorano",
+    "subtitle": "Twin-Turbo 120° V6 Hybrid 819hp • Multimatic Dampers • Carbon Fiber Wheels • Rosso Imola",
+    "fairMarketValue": 460000,
+    "acquisitionPrice": 390000,
+    "unrealizedGain": 70000,
+    "gainPct": 17.95,
+    "indexTrend5YrPct": 41.5,
+    "indexBenchmark": "Ferrari Mid-Rear Berlinetta Index",
+    "vaultLocation": "Geneva Freeport Sub-Vault #1A",
+    "custodyEnclave": "CH-FREEPORT-GEN-01A",
+    "conditionScore": 100,
+    "conditionLabel": "Assetto Fiorano Track Package Cleared",
     "primaryAttributes": [
       {
-        "label": "Chassis",
-        "value": "10451 GT"
+        "label": "Chassis VIN",
+        "value": "ZFF99GTB000298104"
       },
       {
-        "label": "Gearbox",
-        "value": "5-Speed Transaxle Matching"
+        "label": "Engine Type",
+        "value": "Tipo F163 120° V6 Hybrid"
       },
       {
-        "label": "Original Interior",
-        "value": "Nero Connolly"
+        "label": "Weight Reduction",
+        "value": "-15 kg Assetto Fiorano"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 4542500,
+    "climateTelemetry": "19.8°C / 46% RH Controlled",
+    "underwritingPolicy": "Lloyds Specie Blue Chip #LL-CH-91024",
+    "insuredValue": 560000,
     "imageUrl": "https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-13",
     "type": "horology",
-    "title": "Patek Philippe Aquanaut Chronograph Ref. 5968G",
-    "subtitle": "Midnight Blue Embossed Dial • 18K White Gold • Flyback Chrono Calibre CH 28-520",
+    "title": "2021 Patek Philippe Aquanaut Chronograph Ref. 5968G",
+    "subtitle": "Midnight Blue Embossed Dial • 42.2mm 18K White Gold Case • Flyback Chronograph Calibre CH 28-520 C",
     "fairMarketValue": 88000,
-    "acquisitionPrice": 74000,
-    "unrealizedGain": 14000,
-    "gainPct": 18.92,
-    "indexTrend5YrPct": 33,
-    "indexBenchmark": "Patek Aquanaut Index",
-    "vaultLocation": "Zurich Old Town Bank Enclave",
+    "acquisitionPrice": 72000,
+    "unrealizedGain": 16000,
+    "gainPct": 22.22,
+    "indexTrend5YrPct": 52.8,
+    "indexBenchmark": "Patek Philippe Aquanaut Index",
+    "vaultLocation": "Zurich Old Town Bank Enclave (Class IX Safe)",
     "custodyEnclave": "CH-ZUR-VAULT-02",
     "conditionScore": 100,
-    "conditionLabel": "Full Set Geneva Boutique",
+    "conditionLabel": "Factory Double Sealed with Both Straps",
     "primaryAttributes": [
       {
-        "label": "Case",
-        "value": "42.2 mm White Gold"
+        "label": "Reference",
+        "value": "5968G-001"
       },
       {
-        "label": "Calibre",
-        "value": "CH 28-520 C Auto"
+        "label": "Movement",
+        "value": "CH 28-520 C Automatic"
       },
       {
-        "label": "Straps",
-        "value": "Blue & Black Composite"
+        "label": "Water Resistance",
+        "value": "120 m Screw-Down Crown"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 101200,
-    "imageUrl": "https://images.unsplash.com/photo-1547996160-71dfa6358248?auto=format&fit=crop&w=800&q=80"
+    "climateTelemetry": "20.0°C / 45% N2 Inerte Sealed",
+    "underwritingPolicy": "Lloyds Specie Syndicate 2003",
+    "insuredValue": 110000,
+    "imageUrl": "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-16",
     "type": "vehicle",
-    "title": "2008 Alfa Romeo 8C Competizione",
-    "subtitle": "4.7L Ferrari-Built V8 450hp • Carbon Fiber Bodywork • 1 of 500 • Rosso 8C Competizione",
-    "fairMarketValue": 340000,
-    "acquisitionPrice": 285000,
-    "unrealizedGain": 55000,
+    "title": "2024 Mercedes-AMG GT Black Series P One Edition",
+    "subtitle": "Flat-Plane Crank 4.0L Twin-Turbo V8 720hp • Carbon Dual-Blade Rear Wing • Reserved for AMG ONE Owners",
+    "fairMarketValue": 680000,
+    "acquisitionPrice": 570000,
+    "unrealizedGain": 110000,
     "gainPct": 19.3,
-    "indexTrend5YrPct": 28.5,
-    "indexBenchmark": "Alfa Romeo Heritage Index",
+    "indexTrend5YrPct": 46.2,
+    "indexBenchmark": "Mercedes-AMG Black Series Index",
     "vaultLocation": "Geneva Freeport Vault #4B",
     "custodyEnclave": "CH-FREEPORT-GEN-04B",
-    "conditionScore": 99.5,
-    "conditionLabel": "Museo Storico Alfa Romeo Cert",
+    "conditionScore": 100,
+    "conditionLabel": "Delivery Mileage P One Spec",
     "primaryAttributes": [
       {
-        "label": "VIN",
-        "value": "ZAR920000*00000184"
+        "label": "Chassis VIN",
+        "value": "WDB1903821A00412"
       },
       {
-        "label": "Luggage",
-        "value": "Schedoni 8C Complete"
+        "label": "Engine Code",
+        "value": "M178 LS2 Flat-Plane"
       },
       {
-        "label": "Odo",
-        "value": "3,950 km"
+        "label": "Nürburgring Record",
+        "value": "6:43.616 Production Lap"
       }
     ],
     "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 391000,
-    "imageUrl": "https://images.unsplash.com/photo-1592198084033-aade902d1aae?auto=format&fit=crop&w=800&q=80"
+    "underwritingPolicy": "Lloyds Historic Specie #LL-CH-88210",
+    "insuredValue": 820000,
+    "imageUrl": "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-14",
     "type": "horology",
-    "title": "De Bethune DB28 Starry Varius Titanium",
-    "subtitle": "Titanium 3D Moon Phase • Mirror-Polished Starry Sky Dial • Floating Lugs Calibre DB2105",
+    "title": "2022 De Bethune DB28 Starry Varius Titanium",
+    "subtitle": "Custom Milky Way Star-Studded Titanium Dial with Gold Leaf Pins • Floating Lugs • Calibre DB2105",
     "fairMarketValue": 145000,
     "acquisitionPrice": 120000,
     "unrealizedGain": 25000,
     "gainPct": 20.83,
-    "indexTrend5YrPct": 46,
-    "indexBenchmark": "Independent Haute Horlogerie Index",
+    "indexTrend5YrPct": 76.5,
+    "indexBenchmark": "Independent High-Horology Benchmark",
     "vaultLocation": "Geneva Freeport Watch Safe #12",
     "custodyEnclave": "CH-GEN-HORO-12",
-    "conditionScore": 99.8,
-    "conditionLabel": "L'Auberson Manufacture Cert",
+    "conditionScore": 100,
+    "conditionLabel": "L'Auberson Manufacture Certificate",
     "primaryAttributes": [
       {
-        "label": "Balance",
-        "value": "Silicon/White Gold"
+        "label": "Dial Constellation",
+        "value": "Custom Latitude 46°N Sky"
       },
       {
-        "label": "Moon Phase",
-        "value": "1-day error in 1112 yrs"
+        "label": "Case Material",
+        "value": "Grade 5 Mirror Polished Titanium"
       },
       {
         "label": "Power Reserve",
-        "value": "6 Days Dual"
+        "value": "6 Days Self-Regulating Twin Barrel"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 166750,
+    "climateTelemetry": "19.2°C / 40% RH Inert Vault",
+    "underwritingPolicy": "Lloyds Horology Specie #LL-HORO-5512",
+    "insuredValue": 185000,
     "imageUrl": "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-17",
     "type": "vehicle",
-    "title": "1992 Jaguar XJ220 Le Mans Homologation",
-    "subtitle": "Twin-Turbo 3.5L V6 542hp • Group B Provenance • Spa Silver / Smoke Grey Leather",
-    "fairMarketValue": 620000,
-    "acquisitionPrice": 530000,
-    "unrealizedGain": 90000,
-    "gainPct": 16.98,
-    "indexTrend5YrPct": 42,
-    "indexBenchmark": "British Supercar Index",
-    "vaultLocation": "Zurich Vault Enclave #01",
-    "custodyEnclave": "CH-ZUR-FREEPORT-01",
-    "conditionScore": 99.1,
-    "conditionLabel": "Don Law Racing Specialist Rebuilt",
+    "title": "2023 Koenigsegg Gemera Early Reserve",
+    "subtitle": "Mega-GT 2,300hp Hot V8 Hybrid • 4-Seater Full Carbon Monocoque • Direct Drive AWD",
+    "fairMarketValue": 2800000,
+    "acquisitionPrice": 2400000,
+    "unrealizedGain": 400000,
+    "gainPct": 16.67,
+    "indexTrend5YrPct": 56.4,
+    "indexBenchmark": "Koenigsegg Mega-GT Benchmark",
+    "vaultLocation": "Geneva Freeport Vault #4B",
+    "custodyEnclave": "CH-FREEPORT-GEN-04B",
+    "conditionScore": 100,
+    "conditionLabel": "Factory Allocation Slot Confirmed",
     "primaryAttributes": [
       {
-        "label": "Chassis",
-        "value": "SA9AB12D3NA220642"
+        "label": "Chassis Allocation",
+        "value": "Gemera Chassis #018"
       },
       {
-        "label": "Fuel Cell",
-        "value": "FIA FT3 Renewed 2024"
+        "label": "Drivetrain",
+        "value": "HV8 5.0L Twin-Turbo + Dark Matter"
       },
       {
-        "label": "Odo",
-        "value": "4,890 km"
+        "label": "Total Torque",
+        "value": "2,750 Nm Combined"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 713000,
-    "imageUrl": "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80"
+    "climateTelemetry": "19.5°C / 48% RH (Geneva Enclave Auto)",
+    "underwritingPolicy": "Lloyds Global Hypercar #LL-KOENIG-23",
+    "insuredValue": 3300000,
+    "imageUrl": "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-15",
     "type": "horology",
-    "title": "Richard Mille RM 11-03 Jean Todt Chronograph",
-    "subtitle": "Blue & White Quartz TPT • Flyback Chronograph • Carbon Skeletonized Calibre RMAC3",
-    "fairMarketValue": 420000,
-    "acquisitionPrice": 360000,
-    "unrealizedGain": 60000,
-    "gainPct": 16.67,
-    "indexTrend5YrPct": 31.5,
-    "indexBenchmark": "Richard Mille TPT Index",
-    "vaultLocation": "Zurich Old Town Bank Enclave",
+    "title": "2020 Richard Mille RM 11-03 Jean Todt Chronograph",
+    "subtitle": "Blue Quartz TPT Flyback Chronograph • Skeletonized Automatic Movement • 150-Piece Limited Series",
+    "fairMarketValue": 490000,
+    "acquisitionPrice": 410000,
+    "unrealizedGain": 80000,
+    "gainPct": 19.51,
+    "indexTrend5YrPct": 48,
+    "indexBenchmark": "Richard Mille Limited Series Index",
+    "vaultLocation": "Zurich Old Town Bank Enclave (Class IX Safe)",
     "custodyEnclave": "CH-ZUR-VAULT-02",
     "conditionScore": 99.7,
-    "conditionLabel": "Jean Todt 150-Piece Limited Cert",
+    "conditionLabel": "Complete Box, Papers & Winding Box",
     "primaryAttributes": [
       {
-        "label": "Case",
-        "value": "Quartz TPT 50x44.5 mm"
+        "label": "Case Material",
+        "value": "Blue & White Quartz TPT"
       },
       {
-        "label": "Rotor",
-        "value": "Variable Geometry Titanium"
+        "label": "Calibre",
+        "value": "RMAC3 Titanium Flyback"
       },
       {
-        "label": "Warranty",
-        "value": "RM Service Warranty"
+        "label": "Series",
+        "value": "No. 42 / 150"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 483000,
+    "climateTelemetry": "20.0°C / 45% N2 Inerte Sealed",
+    "underwritingPolicy": "Lloyds Horology Specie #LL-HORO-5512",
+    "insuredValue": 600000,
     "imageUrl": "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-18",
     "type": "vehicle",
-    "title": "2016 Aston Martin Vulcan AMR Pro",
-    "subtitle": "Track-Only 7.0L Naturally Aspirated V12 820hp • Carbon Tub • 1 of 24 Worldwide",
-    "fairMarketValue": 2900000,
-    "acquisitionPrice": 2500000,
-    "unrealizedGain": 400000,
-    "gainPct": 16,
-    "indexTrend5YrPct": 36,
-    "indexBenchmark": "Aston Martin Track Supercars",
-    "vaultLocation": "Geneva Freeport Sub-Vault #2",
-    "custodyEnclave": "CH-FREEPORT-GEN-02",
-    "conditionScore": 99.8,
-    "conditionLabel": "Aston Martin Racing Factory Pass",
+    "title": "2023 McLaren Solus GT",
+    "subtitle": "Single-Seat Track Weapon • 5.2L Naturally Aspirated V10 829hp @ 10,000rpm • 1 of 25 Worldwide",
+    "fairMarketValue": 3800000,
+    "acquisitionPrice": 3300000,
+    "unrealizedGain": 500000,
+    "gainPct": 15.15,
+    "indexTrend5YrPct": 49.5,
+    "indexBenchmark": "McLaren Motorsport Series Index",
+    "vaultLocation": "Zurich Vault Enclave #01",
+    "custodyEnclave": "CH-ZUR-FREEPORT-01",
+    "conditionScore": 100,
+    "conditionLabel": "MSO Factory Handover Complete",
     "primaryAttributes": [
       {
-        "label": "Chassis",
-        "value": "AMR-VULCAN-018"
+        "label": "Chassis Number",
+        "value": "Solus GT #07 of 25"
       },
       {
-        "label": "Aero",
-        "value": "AMR Pro High-Downforce"
+        "label": "Aerodynamic Downforce",
+        "value": "1,200 kg at max speed"
       },
       {
-        "label": "Hours",
-        "value": "14.5 Engine Operating Hrs"
+        "label": "Weight",
+        "value": "Sub-1,000 kg Dry"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 3335000,
-    "imageUrl": "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=800&q=80"
+    "climateTelemetry": "20.1°C / 44% RH Nitrogen Buffer",
+    "underwritingPolicy": "Lloyds Motorsport Heritage #LL-MCLAREN-23",
+    "insuredValue": 4500000,
+    "imageUrl": "https://images.unsplash.com/photo-1621135802920-133df287f89c?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-16",
     "type": "horology",
-    "title": "Rolex GMT-Master \"Bakelite\" Ref. 6542",
-    "subtitle": "Bakelite Radium Bezel • Gilt Dial • Calibre 1030 • No Crown Guards (1956)",
-    "fairMarketValue": 320000,
-    "acquisitionPrice": 275000,
-    "unrealizedGain": 45000,
-    "gainPct": 16.36,
-    "indexTrend5YrPct": 44,
-    "indexBenchmark": "Vintage Rolex Sports Index",
+    "title": "2023 Rolex GMT-Master II \"Pepsi\" Meteorite Dial Ref. 126719BLRO",
+    "subtitle": "18K White Gold • Gibeon Meteorite Dial • Cerachrom Red/Blue Ceramic Bezel • Calibre 3285",
+    "fairMarketValue": 68000,
+    "acquisitionPrice": 56000,
+    "unrealizedGain": 12000,
+    "gainPct": 21.43,
+    "indexTrend5YrPct": 35.8,
+    "indexBenchmark": "Rolex Meteorite Collection Index",
     "vaultLocation": "Geneva Freeport Watch Safe #12",
     "custodyEnclave": "CH-GEN-HORO-12",
-    "conditionScore": 98.7,
-    "conditionLabel": "Original Bakelite Geigercounter Tested",
+    "conditionScore": 100,
+    "conditionLabel": "Unworn 2023 Card & Tags Attached",
     "primaryAttributes": [
       {
-        "label": "Serial",
-        "value": "189.xxx (1956)"
+        "label": "Reference",
+        "value": "126719BLRO-0002"
       },
       {
-        "label": "Bezel",
-        "value": "Original Bakelite Intact"
+        "label": "Dial Material",
+        "value": "Iron-Nickel Gibeon Meteorite"
       },
       {
-        "label": "Dial",
-        "value": "OCC Swiss-Only Gilt"
+        "label": "Case Metal",
+        "value": "18K White Gold Monobloc"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 368000,
-    "imageUrl": "https://images.unsplash.com/photo-1547996160-71dfa6358248?auto=format&fit=crop&w=800&q=80"
+    "climateTelemetry": "19.2°C / 40% RH Inert Vault",
+    "underwritingPolicy": "Lloyds Horology Specie #LL-HORO-5512",
+    "insuredValue": 85000,
+    "imageUrl": "https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-19",
     "type": "vehicle",
-    "title": "1973 Porsche 911 Carrera 2.7 RS Lightweight (M471)",
-    "subtitle": "Mechanical Fuel Injected 2.7L Flat-6 210hp • Thin-Gauge Steel Body • Grand Prix White/Blue",
-    "fairMarketValue": 1650000,
-    "acquisitionPrice": 1400000,
-    "unrealizedGain": 250000,
-    "gainPct": 17.86,
-    "indexTrend5YrPct": 55,
-    "indexBenchmark": "Hagerty Carrera RS Index",
-    "vaultLocation": "Geneva Freeport Vault #4B",
-    "custodyEnclave": "CH-FREEPORT-GEN-04B",
-    "conditionScore": 99.4,
-    "conditionLabel": "Porsche Classic Certificate of Authenticity",
+    "title": "2023 Porsche 718 Cayman GT4 RS",
+    "subtitle": "Mid-Mounted 4.0L Naturally Aspirated Flat-6 493hp • Carbon Induction Airbox in Quarter Windows",
+    "fairMarketValue": 295000,
+    "acquisitionPrice": 245000,
+    "unrealizedGain": 50000,
+    "gainPct": 20.41,
+    "indexTrend5YrPct": 44.5,
+    "indexBenchmark": "Porsche Motorsport RS Benchmark",
+    "vaultLocation": "Zurich Vault Enclave #01",
+    "custodyEnclave": "CH-ZUR-FREEPORT-01",
+    "conditionScore": 100,
+    "conditionLabel": "Weissach Package / Ceramic Composite Brakes",
     "primaryAttributes": [
       {
-        "label": "Chassis",
-        "value": "911 360 0891"
+        "label": "Chassis VIN",
+        "value": "WP0AC2A87PS289140"
       },
       {
-        "label": "Code",
-        "value": "M471 Factory Lightweight"
+        "label": "Exhaust",
+        "value": "Titanium Tailpipes Weissach"
       },
       {
-        "label": "Original Ducktail",
-        "value": "Verified Magnesium"
+        "label": "Rev Limit",
+        "value": "9,000 rpm"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 1897500,
+    "climateTelemetry": "20.1°C / 44% RH Nitrogen Buffer",
+    "underwritingPolicy": "Lloyds Modern Collector #LL-PORSCHE-23",
+    "insuredValue": 360000,
     "imageUrl": "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-17",
     "type": "horology",
-    "title": "Patek Philippe Celestial Ref. 6102P Platinum",
-    "subtitle": "Sky Moon Astronomical Display • Celestial Northern Hemisphere Chart • Calibre 240 LU CL C",
-    "fairMarketValue": 390000,
-    "acquisitionPrice": 335000,
-    "unrealizedGain": 55000,
-    "gainPct": 16.42,
-    "indexTrend5YrPct": 38,
-    "indexBenchmark": "Patek Grand Complications Index",
-    "vaultLocation": "Zurich Old Town Bank Enclave",
+    "title": "2021 Patek Philippe Celestial Ref. 6102P Platinum",
+    "subtitle": "Sky Moon Celestial Chart of Geneva Night Sky • Sapphire Crystal Discs • Self-Winding Calibre 240 LU CL C",
+    "fairMarketValue": 385000,
+    "acquisitionPrice": 325000,
+    "unrealizedGain": 60000,
+    "gainPct": 18.46,
+    "indexTrend5YrPct": 42,
+    "indexBenchmark": "Patek Philippe Grand Complications Index",
+    "vaultLocation": "Zurich Old Town Bank Enclave (Class IX Safe)",
     "custodyEnclave": "CH-ZUR-VAULT-02",
     "conditionScore": 100,
-    "conditionLabel": "Geneva Salon Sealed Package",
+    "conditionLabel": "Museum Mint Condition Sealed",
     "primaryAttributes": [
       {
-        "label": "Movement",
-        "value": "Micro-Rotor 22K Gold"
+        "label": "Reference",
+        "value": "6102P-001"
       },
       {
-        "label": "Case",
-        "value": "44mm 950 Platinum"
+        "label": "Display",
+        "value": "Geneva Meridian Celestial Motion"
       },
       {
-        "label": "Sapphire Discs",
-        "value": "3 Metallized Crystals"
+        "label": "Case Metal",
+        "value": "950 Platinum with Inset Diamond"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 448500,
+    "climateTelemetry": "20.0°C / 45% N2 Inerte Sealed",
+    "underwritingPolicy": "Lloyds Specie Syndicate 2003",
+    "insuredValue": 480000,
     "imageUrl": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-20",
     "type": "vehicle",
-    "title": "2011 Ferrari 599 GTO",
-    "subtitle": "6.0L V12 661hp • 1 of 599 • F1 SuperFast 60ms Gearbox • Corsa Red with Matte Silver Roof",
-    "fairMarketValue": 980000,
-    "acquisitionPrice": 840000,
-    "unrealizedGain": 140000,
-    "gainPct": 16.67,
-    "indexTrend5YrPct": 39.5,
-    "indexBenchmark": "Ferrari Modern Classic V12 Index",
-    "vaultLocation": "Zurich Vault Enclave #01",
-    "custodyEnclave": "CH-ZUR-FREEPORT-01",
-    "conditionScore": 99.7,
-    "conditionLabel": "Classiche Certified Red Book",
+    "title": "2022 Ferrari 812 Competizione",
+    "subtitle": "Naturally Aspirated 6.5L V12 819hp @ 9,500rpm • Aluminum Rear Screen with Vortex Generators • 1 of 999",
+    "fairMarketValue": 1850000,
+    "acquisitionPrice": 1550000,
+    "unrealizedGain": 300000,
+    "gainPct": 19.35,
+    "indexTrend5YrPct": 54,
+    "indexBenchmark": "Ferrari V12 Special Series Index",
+    "vaultLocation": "Geneva Freeport Sub-Vault #1A",
+    "custodyEnclave": "CH-FREEPORT-GEN-01A",
+    "conditionScore": 100,
+    "conditionLabel": "Tailor Made Atelier Certified",
     "primaryAttributes": [
       {
-        "label": "Chassis",
-        "value": "ZFF70RJB000174120"
+        "label": "Chassis VIN",
+        "value": "ZFF90CPB000291404"
       },
       {
-        "label": "Odo",
-        "value": "2,400 km Documented"
+        "label": "Steering",
+        "value": "Independent 4-Wheel Steering"
       },
       {
-        "label": "Carbon Pack",
-        "value": "Full Engine & Aero"
+        "label": "Carbon Wheels",
+        "value": "Full Carbon Composite Rims"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 1127000,
+    "climateTelemetry": "19.8°C / 46% RH Controlled",
+    "underwritingPolicy": "Lloyds Specie Blue Chip #LL-CH-91024",
+    "insuredValue": 2200000,
     "imageUrl": "https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-18",
     "type": "horology",
-    "title": "Audemars Piguet Royal Oak Tourbillon Extra-Thin Purple",
-    "subtitle": "Plum Tapisserie Dial • 18K White Gold • Baguette Diamond Bezel (32 Diamonds 3.04ct)",
-    "fairMarketValue": 295000,
-    "acquisitionPrice": 250000,
-    "unrealizedGain": 45000,
-    "gainPct": 18,
-    "indexTrend5YrPct": 42,
-    "indexBenchmark": "Audemars Piguet Gemset Index",
+    "title": "2023 Audemars Piguet Royal Oak Flying Tourbillon Openworked",
+    "subtitle": "18K Pink Gold 41mm Case • Openworked Calibre 2972 • Double Micro-Blasted Bridges",
+    "fairMarketValue": 310000,
+    "acquisitionPrice": 260000,
+    "unrealizedGain": 50000,
+    "gainPct": 19.23,
+    "indexTrend5YrPct": 41,
+    "indexBenchmark": "Audemars Piguet High Complication Index",
     "vaultLocation": "Geneva Freeport Watch Safe #12",
     "custodyEnclave": "CH-GEN-HORO-12",
-    "conditionScore": 99.9,
-    "conditionLabel": "Full Factory Diamonds Certified",
+    "conditionScore": 100,
+    "conditionLabel": "Factory Sealed Le Brassus Guarantee",
     "primaryAttributes": [
       {
-        "label": "Case",
-        "value": "41mm White Gold"
+        "label": "Reference",
+        "value": "26735OR.OO.1320OR.01"
       },
       {
-        "label": "Thickness",
-        "value": "9.0 mm Extra-Thin"
+        "label": "Tourbillon",
+        "value": "Flying Tourbillon 1 Minute"
       },
       {
-        "label": "Calibre",
-        "value": "2924 Hand-Wound Tourbillon"
+        "label": "Finishing",
+        "value": "Haute Horlogerie Hand-Polished Angles"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 339250,
+    "climateTelemetry": "19.2°C / 40% RH Inert Vault",
+    "underwritingPolicy": "Lloyds Horology Specie #LL-HORO-5512",
+    "insuredValue": 380000,
     "imageUrl": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-21",
     "type": "vehicle",
-    "title": "1965 Shelby Cobra 427 S/C (Semi-Competition)",
-    "subtitle": "Ford 427ci Side-Oiler V8 485hp • Halibrand Knock-Off Wheels • Guardsman Blue / White Stripes",
-    "fairMarketValue": 2800000,
-    "acquisitionPrice": 2400000,
-    "unrealizedGain": 400000,
-    "gainPct": 16.67,
-    "indexTrend5YrPct": 60,
-    "indexBenchmark": "Shelby American Registry Index",
-    "vaultLocation": "Geneva Freeport Sub-Vault #1A",
-    "custodyEnclave": "CH-FREEPORT-GEN-01A",
-    "conditionScore": 99.3,
-    "conditionLabel": "SAAC Registry Documented Original",
+    "title": "2024 Mercedes-Maybach S 680 Haute Voiture",
+    "subtitle": "Handcrafted 6.0L Twin-Turbo V12 621hp • Two-Tone Nautical Blue / Rose Gold • Boucle Fabric Interior",
+    "fairMarketValue": 420000,
+    "acquisitionPrice": 350000,
+    "unrealizedGain": 70000,
+    "gainPct": 20,
+    "indexTrend5YrPct": 35,
+    "indexBenchmark": "Maybach Bespoke Luxury Index",
+    "vaultLocation": "Zurich Vault Enclave #01",
+    "custodyEnclave": "CH-ZUR-FREEPORT-01",
+    "conditionScore": 100,
+    "conditionLabel": "Limited 1 of 150 Collector Edition",
     "primaryAttributes": [
       {
-        "label": "Chassis",
-        "value": "CSX 3042 S/C"
+        "label": "Chassis VIN",
+        "value": "WDD2231761A002914"
       },
       {
-        "label": "Carburetors",
-        "value": "Dual Holley 4-Barrel"
+        "label": "Luggage Set",
+        "value": "Matched Haute Voiture Weekender"
       },
       {
-        "label": "Exhaust",
-        "value": "Side-Pipe Ceramic Coated"
+        "label": "Audio",
+        "value": "Burmester 4D High-End Surround"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 3220000,
-    "imageUrl": "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80"
+    "climateTelemetry": "20.1°C / 44% RH Nitrogen Buffer",
+    "underwritingPolicy": "Lloyds Historic Specie #LL-CH-88210",
+    "insuredValue": 510000,
+    "imageUrl": "https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-19",
     "type": "horology",
-    "title": "Greubel Forsey Double Tourbillon 30° Technique",
-    "subtitle": "Patented Bi-Axial Inclined Tourbillon • Openworked Architecture • 120h Power Reserve Platinum",
-    "fairMarketValue": 310000,
-    "acquisitionPrice": 265000,
-    "unrealizedGain": 45000,
-    "gainPct": 16.98,
-    "indexTrend5YrPct": 35,
-    "indexBenchmark": "Ultra-High End Independent Index",
-    "vaultLocation": "Zurich Old Town Bank Enclave",
+    "title": "2022 Greubel Forsey Double Tourbillon 30° Technique",
+    "subtitle": "Patented 30° Inclined Bi-Axial Tourbillon • Grade 5 Titanium 47.5mm Case • 120h Chronometric Power",
+    "fairMarketValue": 360000,
+    "acquisitionPrice": 300000,
+    "unrealizedGain": 60000,
+    "gainPct": 20,
+    "indexTrend5YrPct": 45.2,
+    "indexBenchmark": "Greubel Forsey Invention Index",
+    "vaultLocation": "Zurich Old Town Bank Enclave (Class IX Safe)",
     "custodyEnclave": "CH-ZUR-VAULT-02",
     "conditionScore": 100,
-    "conditionLabel": "La Chaux-de-Fonds Archive Extract",
+    "conditionLabel": "La Chaux-de-Fonds Archive Attested",
     "primaryAttributes": [
       {
-        "label": "Tourbillon",
-        "value": "30° Inclined Cage (60s/4m)"
+        "label": "Invention 1",
+        "value": "Double Tourbillon 30°"
       },
       {
-        "label": "Case",
-        "value": "47.5mm Platinum 950"
+        "label": "Power Reserve",
+        "value": "120 Hours Quadruple Barrel"
       },
       {
-        "label": "Power",
-        "value": "4 Co-Axial Fast-Rotating Barrels"
+        "label": "Finishing Level",
+        "value": "Black-Polished Steel Bridges"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 356500,
+    "climateTelemetry": "20.0°C / 45% N2 Inerte Sealed",
+    "underwritingPolicy": "Lloyds Horology Specie #LL-HORO-5512",
+    "insuredValue": 440000,
     "imageUrl": "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-22",
     "type": "vehicle",
-    "title": "2005 Ford GT Heritage Edition (Gulf Livery)",
-    "subtitle": "Supercharged 5.4L DOHC V8 550hp • Ricardo 6-Speed Manual • Heritage Paint Code",
-    "fairMarketValue": 640000,
-    "acquisitionPrice": 545000,
-    "unrealizedGain": 95000,
-    "gainPct": 17.43,
-    "indexTrend5YrPct": 44,
-    "indexBenchmark": "American Modern Collectibles",
+    "title": "2022 Ford GT Carbon Edition",
+    "subtitle": "Twin-Turbo 3.5L EcoBoost V6 660hp • Carbon Wheels & Exposed Weave Stripe • Akrapovic Titanium Exhaust",
+    "fairMarketValue": 1250000,
+    "acquisitionPrice": 1050000,
+    "unrealizedGain": 200000,
+    "gainPct": 19.05,
+    "indexTrend5YrPct": 51,
+    "indexBenchmark": "Ford Performance Supercar Index",
     "vaultLocation": "Geneva Freeport Vault #4B",
     "custodyEnclave": "CH-FREEPORT-GEN-04B",
-    "conditionScore": 99.8,
-    "conditionLabel": "Ford GT Registry Documented",
+    "conditionScore": 100,
+    "conditionLabel": "Multimatic Factory Fresh",
     "primaryAttributes": [
       {
-        "label": "VIN",
-        "value": "1FAFP90S95Y401824"
+        "label": "Chassis VIN",
+        "value": "2FMGTA879N0000412"
       },
       {
-        "label": "Options",
-        "value": "4-Option BB Wheels & McIntosh"
+        "label": "Odometer",
+        "value": "310 km Delivery Only"
       },
       {
-        "label": "Odo",
-        "value": "1,180 Miles"
+        "label": "Active Aero",
+        "value": "Hydraulic Wing & Gurney Flap"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 736000,
+    "climateTelemetry": "19.5°C / 48% RH (Geneva Enclave Auto)",
+    "underwritingPolicy": "Lloyds Specie Global Hypercar #LL-CH-99411",
+    "insuredValue": 1500000,
     "imageUrl": "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-20",
     "type": "horology",
-    "title": "Rolex Day-Date 40 \"Olive Dial\" 60th Anniv Ref. 228235",
-    "subtitle": "Everose Gold 18K • Fluted Bezel • President Bracelet • Calibre 3255 Chronometer",
-    "fairMarketValue": 58000,
-    "acquisitionPrice": 49000,
-    "unrealizedGain": 9000,
-    "gainPct": 18.37,
-    "indexTrend5YrPct": 28,
-    "indexBenchmark": "Rolex Classic Index",
+    "title": "2023 Rolex Day-Date 40 \"Puzzle Dial\" Platinum Ref. 128236",
+    "subtitle": "Champleve Enamel Jigsaw Dial • 10 Baguette-Cut Sapphire Markers • Emojis Daily Date Wheel",
+    "fairMarketValue": 240000,
+    "acquisitionPrice": 195000,
+    "unrealizedGain": 45000,
+    "gainPct": 23.08,
+    "indexTrend5YrPct": 62,
+    "indexBenchmark": "Rolex Rare Handcrafts Index",
     "vaultLocation": "Geneva Freeport Watch Safe #12",
     "custodyEnclave": "CH-GEN-HORO-12",
     "conditionScore": 100,
-    "conditionLabel": "Green Tag Superlative Chronometer",
+    "conditionLabel": "VIP Allocation Double Sealed",
     "primaryAttributes": [
       {
-        "label": "Dial",
-        "value": "Sunburst Olive Green Roman"
+        "label": "Reference",
+        "value": "128236-0014 Platinum"
       },
       {
-        "label": "Precision",
-        "value": "-2/+2 sec/day Superlative"
+        "label": "Dial Technique",
+        "value": "Champleve Grand Feu Enamel"
       },
       {
-        "label": "Bracelet",
-        "value": "Ceramic Inserts in Links"
+        "label": "Date Disc",
+        "value": "31 Customized Emoji Icons"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 66700,
-    "imageUrl": "https://images.unsplash.com/photo-1547996160-71dfa6358248?auto=format&fit=crop&w=800&q=80"
+    "climateTelemetry": "19.2°C / 40% RH Inert Vault",
+    "underwritingPolicy": "Lloyds Horology Specie #LL-HORO-5512",
+    "insuredValue": 295000,
+    "imageUrl": "https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-23",
     "type": "vehicle",
-    "title": "1989 Porsche 911 Speedster (G-Series)",
-    "subtitle": "Air-Cooled 3.2L Flat-6 • Turbo-Look Widebody • G50 5-Speed Manual • Guards Red",
-    "fairMarketValue": 295000,
-    "acquisitionPrice": 250000,
-    "unrealizedGain": 45000,
-    "gainPct": 18,
-    "indexTrend5YrPct": 48,
-    "indexBenchmark": "Porsche Air-Cooled Index",
-    "vaultLocation": "Zurich Vault Enclave #01",
-    "custodyEnclave": "CH-ZUR-FREEPORT-01",
-    "conditionScore": 99.3,
-    "conditionLabel": "Porsche Classic Zuffenhausen Verified",
+    "title": "2024 Lamborghini Countach LPI 800-4",
+    "subtitle": "Naturally Aspirated 6.5L V12 Hybrid 803hp with Supercapacitor • Retro Wedge Carbon Body • 1 of 112",
+    "fairMarketValue": 2900000,
+    "acquisitionPrice": 2450000,
+    "unrealizedGain": 450000,
+    "gainPct": 18.37,
+    "indexTrend5YrPct": 58,
+    "indexBenchmark": "Lamborghini Few-Off Collector Index",
+    "vaultLocation": "Geneva Freeport Sub-Vault #2",
+    "custodyEnclave": "CH-FREEPORT-GEN-02",
+    "conditionScore": 100,
+    "conditionLabel": "Few-Off Series Handover Documented",
     "primaryAttributes": [
       {
-        "label": "VIN",
-        "value": "WP0ZZZ91ZKS151890"
+        "label": "Chassis VIN",
+        "value": "ZA9C8004PA000088"
       },
       {
-        "label": "Production",
-        "value": "1 of 823 US/Euro Wide"
+        "label": "Hybrid System",
+        "value": "48V Electric Motor & Supercapacitor"
       },
       {
-        "label": "Odo",
-        "value": "8,420 km"
+        "label": "Production Number",
+        "value": "No. 88 / 112"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 339250,
-    "imageUrl": "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80"
+    "climateTelemetry": "19.4°C / 48% RH Auto",
+    "underwritingPolicy": "Lloyds Global Hypercar #LL-LAMBO-24",
+    "insuredValue": 3450000,
+    "imageUrl": "https://images.unsplash.com/photo-1541348263662-e0c8de4259ba?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-21",
     "type": "horology",
-    "title": "F.P. Journe Tourbillon Souverain Vertical Tantalum",
-    "subtitle": "Vertical Tourbillon Revolving Every 30 Seconds • Constant-Force Remontoir d'Egalité",
-    "fairMarketValue": 490000,
-    "acquisitionPrice": 420000,
+    "title": "2022 F.P. Journe Tourbillon Souverain Vertical Tantalum",
+    "subtitle": "Vertical Tourbillon Revolving Every 30 Seconds • Constant-Force Remontoir d'Egalite • Deadbeat Seconds",
+    "fairMarketValue": 380000,
+    "acquisitionPrice": 310000,
     "unrealizedGain": 70000,
-    "gainPct": 16.67,
-    "indexTrend5YrPct": 58,
-    "indexBenchmark": "F.P. Journe High Complications",
-    "vaultLocation": "Zurich Old Town Bank Enclave",
-    "custodyEnclave": "CH-ZUR-VAULT-02",
+    "gainPct": 22.58,
+    "indexTrend5YrPct": 72,
+    "indexBenchmark": "F.P. Journe Invenit et Fecit Benchmark",
+    "vaultLocation": "Geneva Freeport Watch Safe #12",
+    "custodyEnclave": "CH-GEN-HORO-12",
     "conditionScore": 100,
-    "conditionLabel": "Invenit et Fecit Certificate",
+    "conditionLabel": "Manufacturer Vault Delivery Unworn",
     "primaryAttributes": [
       {
-        "label": "Tourbillon",
-        "value": "Vertical 30s Cage"
-      },
-      {
-        "label": "Remontoir",
-        "value": "1-second Dead-Beat Seconds"
-      },
-      {
         "label": "Movement",
-        "value": "18K Rose Gold Hand-Beveled"
+        "value": "Calibre 1519 18K Rose Gold"
+      },
+      {
+        "label": "Complication",
+        "value": "Vertical Tourbillon & Remontoir"
+      },
+      {
+        "label": "Case Metal",
+        "value": "Tantalum 42mm"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 563500,
+    "climateTelemetry": "19.2°C / 40% RH Inert Vault",
+    "underwritingPolicy": "Lloyds Horology Specie #LL-HORO-5512",
+    "insuredValue": 460000,
     "imageUrl": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-24",
     "type": "vehicle",
-    "title": "2018 Ferrari 488 Pista Piloti Ferrari",
-    "subtitle": "Tailor Made Spec for Ferrari Challenge Drivers • 3.9L Twin-Turbo V8 710hp • Argento Nürburgring",
-    "fairMarketValue": 580000,
-    "acquisitionPrice": 495000,
-    "unrealizedGain": 85000,
-    "gainPct": 17.17,
-    "indexTrend5YrPct": 36.5,
-    "indexBenchmark": "Ferrari Track Special Index",
-    "vaultLocation": "Geneva Freeport Vault #4B",
-    "custodyEnclave": "CH-FREEPORT-GEN-04B",
-    "conditionScore": 99.8,
-    "conditionLabel": "Ferrari Atelier & Piloti Provenance",
+    "title": "2023 Ferrari SP-8 Special Projects One-Off",
+    "subtitle": "Bespoke Roadster Based on F8 Spider 710hp • Unique Unpainted Carbon Fiber Nose • Commissioned One-Off",
+    "fairMarketValue": 4900000,
+    "acquisitionPrice": 4200000,
+    "unrealizedGain": 700000,
+    "gainPct": 16.67,
+    "indexTrend5YrPct": 75,
+    "indexBenchmark": "Ferrari Special Projects One-Off Index",
+    "vaultLocation": "Geneva Freeport Sub-Vault #1A",
+    "custodyEnclave": "CH-FREEPORT-GEN-01A",
+    "conditionScore": 100,
+    "conditionLabel": "One-Off Maranello Special Projects Certificate",
     "primaryAttributes": [
       {
-        "label": "VIN",
-        "value": "ZFF88HLA000238410"
+        "label": "Chassis VIN",
+        "value": "ZFFSP8ONEOFF2023"
       },
       {
-        "label": "Livery",
-        "value": "WEC World Championship Tricolore"
+        "label": "Design Atelier",
+        "value": "Flavio Manzoni Centro Stile Ferrari"
       },
       {
-        "label": "Odo",
-        "value": "1,840 km"
+        "label": "Roof Concept",
+        "value": "Pure Windscreen-Less Roadster"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 667000,
+    "climateTelemetry": "19.8°C / 46% RH Controlled",
+    "underwritingPolicy": "Lloyds Specie Blue Chip #LL-CH-91024",
+    "insuredValue": 5800000,
     "imageUrl": "https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-22",
     "type": "horology",
-    "title": "Patek Philippe World Time Chronograph Ref. 5930P",
-    "subtitle": "Platinum 39.5mm Case • Emerald Green Guilloché Dial • 24 Time Zones with Day/Night",
-    "fairMarketValue": 115000,
-    "acquisitionPrice": 98000,
-    "unrealizedGain": 17000,
-    "gainPct": 17.35,
-    "indexTrend5YrPct": 29,
-    "indexBenchmark": "Patek World Time Index",
-    "vaultLocation": "Geneva Freeport Watch Safe #12",
-    "custodyEnclave": "CH-GEN-HORO-12",
+    "title": "2022 Patek Philippe World Time Chronograph Ref. 5930P",
+    "subtitle": "Green Guilloche Dial in 950 Platinum • 24 Timezones & Instant Chronograph Flyback Calibre CH 28-520 HU",
+    "fairMarketValue": 125000,
+    "acquisitionPrice": 105000,
+    "unrealizedGain": 20000,
+    "gainPct": 19.05,
+    "indexTrend5YrPct": 34,
+    "indexBenchmark": "Patek Philippe Complications Index",
+    "vaultLocation": "Zurich Old Town Bank Enclave (Class IX Safe)",
+    "custodyEnclave": "CH-ZUR-VAULT-02",
     "conditionScore": 100,
-    "conditionLabel": "Complete Official Certificate",
+    "conditionLabel": "Double Factory Sealed Package",
     "primaryAttributes": [
       {
-        "label": "Calibre",
-        "value": "CH 28-520 HU Automatic"
+        "label": "Reference",
+        "value": "5930P-001"
       },
       {
-        "label": "Guilloché",
-        "value": "Circular Hand-Crafted"
+        "label": "City Ring",
+        "value": "World Time 24 Global Hubs"
       },
       {
-        "label": "Diamond",
-        "value": "Top Wesselton at 6 o'clock"
+        "label": "Platinum Marker",
+        "value": "Top Wesselton Diamond at 6 O'clock"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 132250,
+    "climateTelemetry": "20.0°C / 45% N2 Inerte Sealed",
+    "underwritingPolicy": "Lloyds Specie Syndicate 2003",
+    "insuredValue": 155000,
     "imageUrl": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-25",
     "type": "vehicle",
-    "title": "2006 Mercedes-Benz SLR McLaren 722 Edition",
-    "subtitle": "Supercharged 5.4L M155 V8 641hp • Tribute to Stirling Moss 1955 Mille Miglia Victory",
-    "fairMarketValue": 790000,
-    "acquisitionPrice": 680000,
-    "unrealizedGain": 110000,
-    "gainPct": 16.18,
-    "indexTrend5YrPct": 38,
-    "indexBenchmark": "SLR McLaren Heritage Benchmark",
-    "vaultLocation": "Zurich Vault Enclave #01",
-    "custodyEnclave": "CH-ZUR-FREEPORT-01",
-    "conditionScore": 99.6,
-    "conditionLabel": "McLaren Special Operations Heritage Insp",
+    "title": "2024 Bugatti Tourbillon Pre-Series",
+    "subtitle": "All-New Naturally Aspirated 8.3L V16 with Cosworth + 3 Electric Motors 1,800hp • Swiss Watchmaker Dial Cluster",
+    "fairMarketValue": 4600000,
+    "acquisitionPrice": 4100000,
+    "unrealizedGain": 500000,
+    "gainPct": 12.2,
+    "indexTrend5YrPct": 50,
+    "indexBenchmark": "Bugatti Next-Gen Hypercar Index",
+    "vaultLocation": "Geneva Freeport Vault #4B",
+    "custodyEnclave": "CH-FREEPORT-GEN-04B",
+    "conditionScore": 100,
+    "conditionLabel": "Molsheim Allocation Priority #007",
     "primaryAttributes": [
       {
-        "label": "Chassis",
-        "value": "WDD1993761M001489"
+        "label": "Chassis Slot",
+        "value": "Tourbillon Priority 007 / 250"
       },
       {
-        "label": "Carbon Fiber Aero",
-        "value": "722 Front Splitter"
+        "label": "Instrument Cluster",
+        "value": "Titanium Skeletal Watch-Grade Instruments"
       },
       {
-        "label": "Odo",
-        "value": "3,420 km"
+        "label": "Top Speed",
+        "value": "445 km/h"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 908500,
-    "imageUrl": "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80"
+    "climateTelemetry": "19.5°C / 48% RH (Geneva Enclave Auto)",
+    "underwritingPolicy": "Lloyds Global Hypercar #LL-BUGATTI-24",
+    "insuredValue": 5400000,
+    "imageUrl": "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-23",
     "type": "horology",
-    "title": "Kari Voutilainen Vingt-8 Hand-Crafted Enamel",
-    "subtitle": "In-House Free-Sprung Balance • Direct Impulse Escapement • Grand Feu Enamel Dial",
-    "fairMarketValue": 185000,
-    "acquisitionPrice": 155000,
-    "unrealizedGain": 30000,
-    "gainPct": 19.35,
-    "indexTrend5YrPct": 62,
-    "indexBenchmark": "Voutilainen Artisan Benchmark",
-    "vaultLocation": "Zurich Old Town Bank Enclave",
-    "custodyEnclave": "CH-ZUR-VAULT-02",
+    "title": "2022 Kari Voutilainen Vingt-8 Hand-Crafted Enamel",
+    "subtitle": "Direct Impulse Escapement with Two Wheels • Engine-Turned Grand Feu Enamel Dial • 1 of 8 Unique",
+    "fairMarketValue": 195000,
+    "acquisitionPrice": 160000,
+    "unrealizedGain": 35000,
+    "gainPct": 21.88,
+    "indexTrend5YrPct": 68,
+    "indexBenchmark": "Independent Master Watchmaker Index",
+    "vaultLocation": "Geneva Freeport Watch Safe #12",
+    "custodyEnclave": "CH-GEN-HORO-12",
     "conditionScore": 100,
-    "conditionLabel": "Môtiers Workshop Signed Extract",
+    "conditionLabel": "Môtiers Workshop Signed Attestation",
     "primaryAttributes": [
       {
         "label": "Escapement",
-        "value": "Dual Escape Wheel Direct"
+        "value": "Dual Balance-Spring Direct Impulse"
       },
       {
-        "label": "Dial",
-        "value": "Grand Feu Enamel Hand-Turned"
+        "label": "Dial Craft",
+        "value": "Hand Guilloche & Grand Feu Enamel"
       },
       {
-        "label": "Balance",
-        "value": "In-House Grossmann Hairspring"
+        "label": "Case Metal",
+        "value": "18K White Gold 39mm"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 212750,
+    "climateTelemetry": "19.2°C / 40% RH Inert Vault",
+    "underwritingPolicy": "Lloyds Horology Specie #LL-HORO-5512",
+    "insuredValue": 240000,
     "imageUrl": "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "car-26",
     "type": "vehicle",
-    "title": "1994 Bugatti EB110 Super Sport (SS)",
-    "subtitle": "Quad-Turbo 3.5L 60-Valve V12 603hp • AWD • Carbon Monocoque by Aérospatiale",
-    "fairMarketValue": 3200000,
-    "acquisitionPrice": 2750000,
-    "unrealizedGain": 450000,
-    "gainPct": 16.36,
-    "indexTrend5YrPct": 68,
-    "indexBenchmark": "Bugatti Campogalliano Index",
-    "vaultLocation": "Geneva Freeport Sub-Vault #1A",
-    "custodyEnclave": "CH-FREEPORT-GEN-01A",
-    "conditionScore": 99.4,
-    "conditionLabel": "Bugatti Campogalliano Register Authenticated",
+    "title": "2023 Aston Martin DBS 770 Ultimate",
+    "subtitle": "5.2L Twin-Turbo V12 759hp • Solid Mounted Steering Column • Carbon Ceramic Brakes • 1 of 300 Coupes",
+    "fairMarketValue": 480000,
+    "acquisitionPrice": 400000,
+    "unrealizedGain": 80000,
+    "gainPct": 20,
+    "indexTrend5YrPct": 42,
+    "indexBenchmark": "Aston Martin V12 Final Edition Benchmark",
+    "vaultLocation": "Zurich Vault Enclave #01",
+    "custodyEnclave": "CH-ZUR-FREEPORT-01",
+    "conditionScore": 100,
+    "conditionLabel": "Gaydon Delivery Specimen",
     "primaryAttributes": [
       {
-        "label": "Chassis",
-        "value": "ZA9AB02E0RCD39018"
+        "label": "Chassis VIN",
+        "value": "SCFEV770ULT202319"
       },
       {
-        "label": "Production",
-        "value": "1 of 30 Super Sport"
+        "label": "Torque",
+        "value": "900 Nm @ 1,800 rpm"
       },
       {
-        "label": "Odo",
-        "value": "5,600 km"
+        "label": "Carbon Styling",
+        "value": "Full Twill Carbon Aerodynamic Package"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 3680000,
-    "imageUrl": "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=800&q=80"
+    "climateTelemetry": "20.1°C / 44% RH Nitrogen Buffer",
+    "underwritingPolicy": "Lloyds Motorsport Heritage #LL-AMR-2023",
+    "insuredValue": 580000,
+    "imageUrl": "https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?auto=format&fit=crop&w=800&q=80"
   },
   {
     "id": "watch-24",
     "type": "horology",
-    "title": "Rolex Cosmograph Daytona \"Rainbow\" Ref. 116595RBOW",
-    "subtitle": "18K Everose Gold • 36 Baguette Rainbow Sapphires • 56 Diamonds on Lugs • Gold Crystal Dials",
-    "fairMarketValue": 450000,
-    "acquisitionPrice": 380000,
-    "unrealizedGain": 70000,
-    "gainPct": 18.42,
-    "indexTrend5YrPct": 54,
-    "indexBenchmark": "Rolex Gemset Super-Collectible",
+    "title": "2022 Rolex Daytona \"Eye of the Tiger\" Ref. 116588TBR",
+    "subtitle": "18K Yellow Gold • Diamond-Paved Tiger Stripe Dial • 36 Trapeze-Cut Diamonds on Bezel • Oysterflex",
+    "fairMarketValue": 260000,
+    "acquisitionPrice": 215000,
+    "unrealizedGain": 45000,
+    "gainPct": 20.93,
+    "indexTrend5YrPct": 56,
+    "indexBenchmark": "Rolex Gem-Set Daytona Index",
     "vaultLocation": "Geneva Freeport Watch Safe #12",
     "custodyEnclave": "CH-GEN-HORO-12",
-    "conditionScore": 99.9,
-    "conditionLabel": "Full Factory Gemset Guarantee",
+    "conditionScore": 100,
+    "conditionLabel": "Unworn 2022 Card Double Boxed",
     "primaryAttributes": [
       {
-        "label": "Gemstones",
-        "value": "36 Baguette Cut Sapphires"
+        "label": "Reference",
+        "value": "116588TBR-0001"
       },
       {
-        "label": "Pave",
-        "value": "56 Brilliant Cut Diamonds"
+        "label": "Gem-Set",
+        "value": "36 Trapeze Diamonds Bezel"
       },
       {
-        "label": "Sub-Dials",
-        "value": "Pink Gold Crystallized"
+        "label": "Strap Ref",
+        "value": "High-Performance Oysterflex"
       }
     ],
-    "climateTelemetry": "19.5°C / 45% RH Auto Sensor",
-    "underwritingPolicy": "Lloyds Specie Global #LL-SPECIE-2025",
-    "insuredValue": 517500,
-    "imageUrl": "https://images.unsplash.com/photo-1547996160-71dfa6358248?auto=format&fit=crop&w=800&q=80"
+    "climateTelemetry": "19.2°C / 40% RH Inert Vault",
+    "underwritingPolicy": "Lloyds Horology Specie #LL-HORO-5512",
+    "insuredValue": 320000,
+    "imageUrl": "https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?auto=format&fit=crop&w=800&q=80"
   }
 ];
 

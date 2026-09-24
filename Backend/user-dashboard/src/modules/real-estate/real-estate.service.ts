@@ -482,4 +482,103 @@ export class RealEstateService {
     const expected = createHmac('sha256', this.HMAC_SECRET).update(payload).digest('hex');
     return expected === signature;
   }
+
+  /**
+   * Buy fractional real estate property tokens and debit ledger
+   */
+  async buyProperty(userId: string, dto: { propertyId: string; tokens: number; tokenPrice: number }) {
+    const totalCost = dto.tokens * dto.tokenPrice;
+    const cashAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');
+    const currentBalance = Number(cashAccount.balance);
+
+    if (currentBalance < totalCost) {
+      throw new BadRequestException(
+        `Insufficient Account Balance ($${currentBalance}) to purchase ${dto.tokens} property tokens ($${totalCost}).`
+      );
+    }
+
+    const investedAccount = await this.walletService.getOrCreateAccount(userId, 'INVESTED_CAPITAL', 'USD');
+    await this.walletService.recordLedgerTransaction({
+      type: 'TRADE',
+      description: `Real Estate Fractional Share Acquisition: ${dto.propertyId} (${dto.tokens} tokens @ $${dto.tokenPrice})`,
+      entries: [
+        { accountId: cashAccount.id, amount: -totalCost },
+        { accountId: investedAccount.id, amount: totalCost },
+      ],
+    });
+
+    let share = await this.prisma.realEstateShare.findFirst({
+      where: { userId, propertyId: dto.propertyId },
+    });
+
+    if (!share) {
+      share = await this.prisma.realEstateShare.create({
+        data: {
+          userId,
+          propertyId: dto.propertyId,
+          tokenCount: dto.tokens,
+        },
+      });
+    } else {
+      share = await this.prisma.realEstateShare.update({
+        where: { id: share.id },
+        data: {
+          tokenCount: share.tokenCount + dto.tokens,
+        },
+      });
+    }
+
+    this.dashboardService?.invalidateCache(userId);
+    return {
+      success: true,
+      share,
+      totalCost,
+    };
+  }
+
+  /**
+   * Sell fractional real estate property tokens and credit ledger
+   */
+  async sellProperty(userId: string, dto: { propertyId: string; tokensToSell: number; pricePerToken?: number }) {
+    const share = await this.prisma.realEstateShare.findFirst({
+      where: { userId, propertyId: dto.propertyId },
+    });
+
+    if (!share || share.tokenCount < dto.tokensToSell) {
+      throw new BadRequestException('Insufficient property shares to sell.');
+    }
+
+    const resolvedPrice = dto.pricePerToken || 500;
+    const proceeds = dto.tokensToSell * resolvedPrice;
+
+    const cashAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');
+    const investedAccount = await this.walletService.getOrCreateAccount(userId, 'INVESTED_CAPITAL', 'USD');
+
+    await this.walletService.recordLedgerTransaction({
+      type: 'TRADE',
+      description: `Real Estate Fractional Share Liquidation: ${dto.propertyId} (${dto.tokensToSell} tokens @ $${resolvedPrice})`,
+      entries: [
+        { accountId: cashAccount.id, amount: proceeds },
+        { accountId: investedAccount.id, amount: -proceeds },
+      ],
+    });
+
+    const remaining = share.tokenCount - dto.tokensToSell;
+    if (remaining <= 0) {
+      await this.prisma.realEstateShare.delete({ where: { id: share.id } });
+    } else {
+      await this.prisma.realEstateShare.update({
+        where: { id: share.id },
+        data: { tokenCount: remaining },
+      });
+    }
+
+    this.dashboardService?.invalidateCache(userId);
+    return {
+      success: true,
+      remainingTokens: Math.max(0, remaining),
+      proceeds,
+    };
+  }
 }
+

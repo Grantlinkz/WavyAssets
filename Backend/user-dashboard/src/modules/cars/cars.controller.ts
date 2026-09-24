@@ -66,4 +66,26 @@ export class CarsController {
   async getVehicleProvenance(@Param('carId') carId: string) {
     return this.carsService.getVehicleProvenance(carId);
   }
+
+  /**
+   * Acquire vehicle asset or fractional share with ledger debit
+   */
+  @Post('buy')
+  async buyVehicle(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: { assetId: string; price: number; purchaseType?: string; fractionalPct?: number },
+  ) {
+    return this.carsService.buyVehicle(user.id, body);
+  }
+
+  /**
+   * Liquidate vehicle share with ledger credit
+   */
+  @Post('sell')
+  async sellVehicle(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: { assetId: string; proceeds: number },
+  ) {
+    return this.carsService.sellVehicle(user.id, body);
+  }
 }

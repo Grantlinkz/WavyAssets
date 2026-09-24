@@ -181,7 +181,7 @@ describe('User Custom Requirements Verification Suite', () => {
     it('verifies LedgerSplitCards header badges do not use absolute positioning and avoid text overlap', async () => {
       const { LedgerSplitCards } = await import('../../src/components/modules/wallet/LedgerSplitCards');
       const html = renderToString(<LedgerSplitCards />);
-      expect(html).toContain('Card A: Available Liquid Balance');
+      expect(html).toContain('Card A: Account Balance');
       expect(html).toContain('Unencumbered &amp; Instant Spendable');
       expect(html).toContain('Card B: Invested &amp; Locked Capital');
       expect(html).toContain('All Vaults Bonded &amp; Collateralized');
@@ -196,7 +196,7 @@ describe('User Custom Requirements Verification Suite', () => {
       expect(html).not.toContain('CONSOLIDATED NET ASSETS');
     });
 
-    it('verifies FiatRampWizard Interactive Settlement Terminal has quick action triggers and interactive tabs', async () => {
+    it('verifies FiatRampWizard Interactive Settlement Terminal has quick action triggers and removed MPC rectangle', async () => {
       const { FiatRampWizard } = await import('../../src/components/modules/wallet/FiatRampWizard');
       const html = renderToString(<FiatRampWizard />);
       expect(html).toContain('Interactive Settlement Terminal');
@@ -206,6 +206,7 @@ describe('User Custom Requirements Verification Suite', () => {
       expect(html).toContain('Bank Wire (Fedwire / SIC / SWIFT)');
       expect(html).toContain('Web3 MPC Wallet');
       expect(html).toContain('Obsidian Card Sweep');
+      expect(html).not.toContain('MPC Enclave Connected: 0x94A8...916B');
     });
 
     it('verifies KYC Tier daily withdrawal limits utility correctly flags amounts exceeding tier allowance', async () => {
@@ -256,32 +257,132 @@ describe('User Custom Requirements Verification Suite', () => {
     });
 
     it('verifies useAlternativeStore prevents buyProperty when cost exceeds availableCash', async () => {
-      usePortfolioStore.setState({ availableCash: 5000 });
+      usePortfolioStore.setState({ availableCash: 5000, accountBalance: 5000 });
       // Property re-1 with 100 tokens at $500 = $50,000 which exceeds $5,000
       const result = useAlternativeStore.getState().buyProperty('re-1', 100, 500);
       expect(result).toBe(false);
       expect(usePortfolioStore.getState().availableCash).toBe(5000);
 
       // But succeeds when funds are sufficient
-      usePortfolioStore.setState({ availableCash: 100000 });
+      usePortfolioStore.setState({ availableCash: 100000, accountBalance: 100000 });
       const successResult = useAlternativeStore.getState().buyProperty('re-1', 10, 500);
       expect(successResult).toBe(true);
       expect(usePortfolioStore.getState().availableCash).toBe(95000); // 100,000 - 5,000
+      expect(usePortfolioStore.getState().accountBalance).toBe(95000);
     });
 
     it('verifies useAlternativeStore prevents buyVehicleAsset when price exceeds availableCash', async () => {
-      usePortfolioStore.setState({ availableCash: 10000 });
+      usePortfolioStore.setState({ availableCash: 10000, accountBalance: 10000 });
       // Vehicle price $580,000 exceeds $10,000
       const result = useAlternativeStore.getState().buyVehicleAsset('car-1', 580000);
       expect(result).toBe(false);
       expect(usePortfolioStore.getState().availableCash).toBe(10000);
 
       // But succeeds when funds are sufficient
-      usePortfolioStore.setState({ availableCash: 700000 });
+      usePortfolioStore.setState({ availableCash: 700000, accountBalance: 700000 });
       const successResult = useAlternativeStore.getState().buyVehicleAsset('car-1', 580000);
       expect(successResult).toBe(true);
       expect(usePortfolioStore.getState().availableCash).toBe(120000); // 700,000 - 580,000
+      expect(usePortfolioStore.getState().accountBalance).toBe(120000);
+    });
+  });
+
+  describe('Sprint Requirements: Account Balance vs Consolidated Net Worth, AI Strategies 50 Assets, Exotic 2020+ Audit, Actual Sessions', () => {
+    it('verifies purchases across all verticals deduct from accountBalance while holdings reflect only in consolidatedNetWorth', () => {
+      const startingCash = 2000000;
+      usePortfolioStore.setState({ availableCash: startingCash, accountBalance: startingCash });
+
+      // Consolidated net worth starts at sum of vertical assets, excluding cash
+      const initialNetWorth = usePortfolioStore.getState().netWorth;
+      expect(initialNetWorth).toBeGreaterThanOrEqual(0);
+
+      // Buy AI asset: 10 tokens at $500 = $5,000
+      const buyOk = useAlternativeStore.getState().buyAiAsset('ai-1', 10, 500);
+      expect(buyOk).toBe(true);
+
+      // accountBalance must decrease by $5,000
+      expect(usePortfolioStore.getState().accountBalance).toBe(startingCash - 5000);
+      expect(usePortfolioStore.getState().availableCash).toBe(startingCash - 5000);
+
+      // Liquid accountBalance must NOT increase from asset purchase
+      expect(usePortfolioStore.getState().accountBalance).not.toBeGreaterThan(startingCash - 5000);
+
+      // Consolidated net worth must reflect the AI asset NAV
+      const currentNetWorth = usePortfolioStore.getState().netWorth;
+      expect(currentNetWorth).toBeGreaterThan(0);
+    });
+
+    it('verifies AI Systematic & Quantitative Strategies module mirrors RealEstateModule in all aspects', async () => {
+      const { AiFundsModule } = await import('../../src/components/modules/ai-funds/AiFundsModule');
+      const { AI_STRATEGY_ASSETS } = await import('../../src/lib/alternativeAssetData');
+
+      expect(AI_STRATEGY_ASSETS).toHaveLength(50);
+
+      // Check representation across GPU, robots, data centers, AI chips, infrastructure
+      const categories = AI_STRATEGY_ASSETS.map((a) => a.category);
+      expect(categories).toContain('GPU Clusters');
+      expect(categories).toContain('Robotics & AGVs');
+      expect(categories).toContain('Data Centers');
+      expect(categories).toContain('AI Chips & ASICs');
+      expect(categories).toContain('Infrastructure');
+
+      // Zero-state render
+      useAlternativeStore.setState({ userAiHoldings: {} });
+      const emptyHtml = renderToString(<AiFundsModule maskBalances={false} />);
+      expect(emptyHtml).toContain('TOTAL AI COMPUTE EQUITY');
+      expect(emptyHtml).toContain('NET STRATEGY YIELD');
+      expect(emptyHtml).toContain('AVERAGE COMPUTE APY');
+      expect(emptyHtml).toContain('CLUSTER UTILIZATION');
+      expect(emptyHtml).toContain('Institutional Asset Inventory');
+      expect(emptyHtml).toContain('Monthly Compute &amp; Arbitrage Distribution Tracker');
+      expect(emptyHtml).toContain('Counterparty Credit Health &amp; Compute Solvency Index');
+      expect(emptyHtml).toContain('Secondary OTC Compute Bulletin');
+    });
+
+    it('verifies all 50 items in Exotic Vehicles & Horology are strictly 2020 and above with zero mismatched images', async () => {
+      const { EXOTIC_ASSETS } = await import('../../src/lib/alternativeAssetData');
+      expect(EXOTIC_ASSETS).toHaveLength(50);
+
+      EXOTIC_ASSETS.forEach((asset) => {
+        const yearMatch = asset.title.match(/^(19\d\d|20\d\d)/);
+        expect(yearMatch, `Item ${asset.title} should start with a valid 4-digit model year`).not.toBeNull();
+        const year = parseInt(yearMatch![1], 10);
+        expect(year).toBeGreaterThanOrEqual(2020);
+
+        // Verify no makeup kit or mismatched images
+        expect(asset.imageUrl).not.toContain('photo-1547996160-71dfa6358248'); // old makeup kit
+        expect(asset.imageUrl).not.toContain('photo-1563720223185-11003d516935'); // old range rover
+      });
+
+      // Specific checks for Rolex Daytona and Mercedes-Benz
+      const rolex = EXOTIC_ASSETS.find((a) => a.id === 'watch-2');
+      expect(rolex?.title).toContain('2023 Rolex Daytona');
+      expect(rolex?.imageUrl).toContain('photo-1587836374828-4dbafa94cf0e');
+
+      const mercedes = EXOTIC_ASSETS.find((a) => a.id === 'car-4');
+      expect(mercedes?.title).toContain('2023 Mercedes-AMG ONE');
+      expect(mercedes?.imageUrl).toContain('photo-1618843479313-40f8afb4b4d8');
+    });
+
+    it('verifies actual client device detection and session tracking in ActiveSessionsBlotter', async () => {
+      const { getActualClientDevice, getInitialActualSessions } = await import('../../src/lib/clientDevice');
+      const { ActiveSessionsBlotter } = await import('../../src/components/modules/security/ActiveSessionsBlotter');
+
+      const actualDevice = getActualClientDevice();
+      expect(actualDevice.clientBadge).toBe('CURRENT CLIENT DEVICE');
+      expect(actualDevice.isCurrent).toBe(true);
+      expect(actualDevice.deviceName).toBeDefined();
+
+      const initialSessions = getInitialActualSessions();
+      expect(initialSessions.length).toBeGreaterThanOrEqual(1);
+      expect(initialSessions[0].isCurrent).toBe(true);
+
+      const html = renderToString(<ActiveSessionsBlotter />);
+      expect(html).toContain('Authorized Client Sessions &amp; Perimeter');
+      expect(html).toContain('Zero-Trust Geo-Fencing Active');
+      expect(html).not.toContain('Dedicated FIX Trading Terminal — Linux');
     });
   });
 });
+
 

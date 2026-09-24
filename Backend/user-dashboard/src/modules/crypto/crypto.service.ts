@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger, Optional, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger, Optional, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreateDcaScheduleDto,
@@ -8,6 +8,7 @@ import {
 } from './dto/crypto.dto';
 import { DashboardService } from '../dashboard/dashboard.service';
 import { PortfolioGateway } from '../websocket/portfolio.gateway';
+import { WalletService } from '../wallet/wallet.service';
 
 @Injectable()
 export class CryptoService {
@@ -26,6 +27,7 @@ export class CryptoService {
     private readonly prisma: PrismaService,
     @Optional() @Inject(DashboardService) private readonly dashboardService?: DashboardService,
     @Optional() @Inject(PortfolioGateway) private readonly portfolioGateway?: PortfolioGateway,
+    @Optional() @Inject(forwardRef(() => WalletService)) private readonly walletService?: WalletService,
   ) {}
 
   /**
@@ -132,7 +134,27 @@ export class CryptoService {
   }
 
   /**
-   * Creates a recurring DCA purchase schedule
+   * Fetches user's configured DCA schedules from database
+   */
+  async getDcaSchedules(userId: string) {
+    const schedules = await this.prisma.dcaSchedule.findMany({
+      where: { userId },
+      orderBy: { nextRunAt: 'asc' },
+    });
+
+    return schedules.map((s) => ({
+      id: s.id,
+      symbol: s.symbol,
+      amountUsd: s.amountUsd,
+      frequency: s.frequency,
+      isActive: s.isActive,
+      nextRunAt: s.nextRunAt.toISOString(),
+      lastRunAt: s.lastRunAt ? s.lastRunAt.toISOString() : undefined,
+    }));
+  }
+
+  /**
+   * Creates a recurring DCA purchase schedule and debits available cash from ledger
    */
   async createDcaSchedule(userId: string, dto: CreateDcaScheduleDto) {
     const user = await this.prisma.user.findUnique({
@@ -140,6 +162,26 @@ export class CryptoService {
     });
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    if (this.walletService) {
+      const cashAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');
+      const currentBalance = Number(cashAccount.balance);
+      if (currentBalance < dto.amountUsd) {
+        throw new BadRequestException(
+          `Insufficient Account Balance ($${currentBalance}) to schedule $${dto.amountUsd} DCA buy.`
+        );
+      }
+
+      const investedAccount = await this.walletService.getOrCreateAccount(userId, 'INVESTED_CAPITAL', 'USD');
+      await this.walletService.recordLedgerTransaction({
+        type: 'TRADE',
+        description: `DCA Recurring Buy Reservation: ${dto.symbol} ($${dto.amountUsd} / ${dto.frequency})`,
+        entries: [
+          { accountId: cashAccount.id, amount: -dto.amountUsd },
+          { accountId: investedAccount.id, amount: dto.amountUsd },
+        ],
+      });
     }
 
     const now = new Date();
@@ -205,6 +247,42 @@ export class CryptoService {
       symbol: updated.symbol,
       isActive: updated.isActive,
       message: `DCA schedule successfully ${updated.isActive ? 'activated' : 'paused'}`,
+    };
+  }
+
+  /**
+   * Deletes a DCA schedule and refunds unexecuted reservation to available cash
+   */
+  async deleteDcaSchedule(userId: string, id: string) {
+    const existing = await this.prisma.dcaSchedule.findUnique({
+      where: { id },
+    });
+
+    if (!existing || existing.userId !== userId) {
+      throw new NotFoundException(`DCA Schedule with ID ${id} not found`);
+    }
+
+    if (this.walletService) {
+      const cashAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');
+      const investedAccount = await this.walletService.getOrCreateAccount(userId, 'INVESTED_CAPITAL', 'USD');
+      await this.walletService.recordLedgerTransaction({
+        type: 'TRADE',
+        description: `DCA Schedule Cancellation Refund: ${existing.symbol} (+$${existing.amountUsd})`,
+        entries: [
+          { accountId: cashAccount.id, amount: existing.amountUsd },
+          { accountId: investedAccount.id, amount: -existing.amountUsd },
+        ],
+      });
+    }
+
+    await this.prisma.dcaSchedule.delete({
+      where: { id },
+    });
+
+    return {
+      success: true,
+      id,
+      message: 'DCA schedule deleted and funds refunded to Account Balance',
     };
   }
 
