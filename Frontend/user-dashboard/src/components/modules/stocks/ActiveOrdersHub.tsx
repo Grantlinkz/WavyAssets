@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ListFilter, XCircle, CheckCircle2, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLiquidStore } from '../../../store/useLiquidStore';
 import { useDashboardStore } from '../../../store/useDashboardStore';
+import { useAuthStore } from '../../../store/useAuthStore';
+import { usePortfolioStore } from '../../../store/usePortfolioStore';
 import { STOCKS_HOLDINGS_DATA } from '../../../lib/liquidAssetData';
 
 export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBalances: propMask }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
+  const user = useAuthStore((s) => s.user);
 
   const { activeOrders, addActiveOrder, cancelActiveOrder, selectedStock } = useLiquidStore();
   const [cancelledId, setCancelledId] = useState<string | null>(null);
@@ -19,11 +22,33 @@ export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBala
   const [limitPrice, setLimitPrice] = useState<number>(135.0);
   const [duration] = useState<string>('GTC (Good-Til-Cancelled)');
   const [justPlaced, setJustPlaced] = useState<boolean>(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleCancel = (id: string) => {
-    cancelActiveOrder(id);
-    setCancelledId(id);
-    setTimeout(() => setCancelledId(null), 2500);
+  // Synchronize symbol with selectedStock whenever a user clicks any stock/SPV
+  useEffect(() => {
+    if (selectedStock) {
+      setSymbol(selectedStock);
+      setShowOrderForm(true);
+      const stock = STOCKS_HOLDINGS_DATA.find((s) => s.symbol === selectedStock);
+      if (stock) {
+        setLimitPrice(stock.currentMark);
+      }
+    }
+  }, [selectedStock]);
+
+  const handleCancel = async (id: string) => {
+    const targetOrder = activeOrders.find((o) => o.id === id);
+    try {
+      await cancelActiveOrder(id, user?.id);
+      if (targetOrder && targetOrder.type === 'BUY_LIMIT') {
+        const orderTotal = targetOrder.shares * targetOrder.limitPrice;
+        usePortfolioStore.getState().adjustAvailableCash(orderTotal);
+      }
+      setCancelledId(id);
+      setTimeout(() => setCancelledId(null), 2500);
+    } catch {
+      console.error('Failed to cancel active order');
+    }
   };
 
   const handlePlaceOrder = (e: React.FormEvent) => {
@@ -33,14 +58,42 @@ export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBala
       return;
     }
 
-    addActiveOrder({
-      symbol,
-      type,
-      shares,
-      limitPrice,
-      status: 'PENDING',
-      expires: duration,
-    });
+    if (type === 'BUY_LIMIT') {
+      const orderTotal = shares * limitPrice;
+      const currentCash = usePortfolioStore.getState().accountBalance ?? usePortfolioStore.getState().availableCash;
+      if (orderTotal > currentCash) {
+        setErrorMsg(
+          `Insufficient funds: Order total ($${orderTotal.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}) exceeds Account Balance ($${currentCash.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}).`
+        );
+        setTimeout(() => setErrorMsg(null), 4000);
+        return;
+      }
+      const deducted = usePortfolioStore.getState().adjustAvailableCash(-orderTotal);
+      if (!deducted) {
+        setErrorMsg('Order rejected: Insufficient Account Balance.');
+        setTimeout(() => setErrorMsg(null), 4000);
+        return;
+      }
+    }
+
+    setErrorMsg(null);
+    addActiveOrder(
+      {
+        symbol,
+        type,
+        shares,
+        limitPrice,
+        status: 'PENDING',
+        expires: duration,
+      },
+      user?.id
+    );
 
     setJustPlaced(true);
     setTimeout(() => {
@@ -96,12 +149,18 @@ export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBala
             <select
               data-testid="order-symbol-select"
               value={symbol}
-              onChange={(e) => setSymbol(e.target.value)}
+              onChange={(e) => {
+                setSymbol(e.target.value);
+                const stock = STOCKS_HOLDINGS_DATA.find((s) => s.symbol === e.target.value);
+                if (stock) {
+                  setLimitPrice(stock.currentMark);
+                }
+              }}
               className="w-full bg-surface-container border border-border-hairline rounded px-2 py-1.5 font-bold text-on-surface focus:outline-none"
             >
-              {STOCKS_HOLDINGS_DATA.slice(0, 10).map((s) => (
+              {STOCKS_HOLDINGS_DATA.map((s) => (
                 <option key={s.symbol} value={s.symbol}>
-                  {s.symbol} ({s.isPreIpo ? 'SPV' : 'DMA'})
+                  {s.symbol} — {s.name} ({s.isPreIpo ? 'SPV' : 'DMA'})
                 </option>
               ))}
             </select>
@@ -158,6 +217,15 @@ export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBala
             </button>
           </div>
         </form>
+      )}
+
+      {errorMsg && (
+        <div
+          data-testid="stocks-order-error-alert"
+          className="p-2.5 bg-error/10 border border-error/30 text-error font-mono text-xs rounded-DEFAULT"
+        >
+          {errorMsg}
+        </div>
       )}
 
       {/* Orders Table or Empty State */}

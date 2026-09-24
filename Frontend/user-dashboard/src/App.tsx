@@ -23,7 +23,10 @@ import { KycDrawer } from './components/modals/KycDrawer';
 import { InstitutionalGate } from './components/auth/InstitutionalGate';
 import { useAuthStore, type UserEntity } from './store/useAuthStore';
 import { usePortfolioStore } from './store/usePortfolioStore';
+import { useLiquidStore } from './store/useLiquidStore';
+import { useAlternativeStore } from './store/useAlternativeStore';
 import { refreshSessionToken, fetchCommandBarData, fetchUserProfile } from './lib/api';
+import { calculateStocksEquitiesNav } from './lib/liquidAssetData';
 import { Loader2 } from 'lucide-react';
 import type { AssetVertical } from './store/useDashboardStore';
 
@@ -44,10 +47,6 @@ export const App: React.FC<AppProps> = ({
 
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const user = useAuthStore((s) => s.user);
-
-  const landingUrl = typeof window !== 'undefined'
-    ? (import.meta.env.VITE_LANDING_URL || `${window.location.protocol}//${window.location.hostname}:5173`)
-    : 'http://localhost:5173';
 
   // Synchronize theme class with document element
   useEffect(() => {
@@ -72,10 +71,6 @@ export const App: React.FC<AppProps> = ({
   const isTest = Boolean(import.meta.env?.MODE === 'test');
   const shouldEnforceGate = requireAuth || (!isTest && !bypassAuth);
 
-  // Client-side session restoration attempt (only in real browser when unauthenticated)
-  const [sessionVerified, setSessionVerified] = useState<boolean>(() => {
-    return isTest || typeof window === 'undefined' || Boolean(bypassAuth) || isAuthCallbackRoute;
-  });
   const [isCheckingSession, setIsCheckingSession] = useState<boolean>(() => {
     return typeof window !== 'undefined' && !isTest && !isAuthCallbackRoute && !bypassAuth;
   });
@@ -96,7 +91,6 @@ export const App: React.FC<AppProps> = ({
             if (isMounted && userProfile && typeof userProfile === 'object' && 'id' in userProfile) {
               useAuthStore.setState({ user: userProfile as unknown as UserEntity, isAuthenticated: true });
               setIsCheckingSession(false);
-              setSessionVerified(true);
               return;
             }
           } catch {
@@ -106,14 +100,12 @@ export const App: React.FC<AppProps> = ({
         if (isMounted) {
           useAuthStore.setState({ isAuthenticated: false, user: null });
           setIsCheckingSession(false);
-          setSessionVerified(true);
         }
       })
       .catch(() => {
         if (isMounted) {
           useAuthStore.setState({ isAuthenticated: false, user: null });
           setIsCheckingSession(false);
-          setSessionVerified(true);
         }
       });
 
@@ -122,33 +114,34 @@ export const App: React.FC<AppProps> = ({
     };
   }, [isAuthCallbackRoute, bypassAuth, isTest]);
 
-  // Navigate to landing signin only after session verification completes and confirms unauthenticated
+  // Load user-scoped execution schedules, active limit orders, and alternative holdings on mount or user change
   useEffect(() => {
-    if (
-      typeof window === 'undefined' ||
-      isTest ||
-      !sessionVerified ||
-      isCheckingSession ||
-      isAuthCallbackRoute ||
-      bypassAuth
-    ) {
-      return;
-    }
+    let isCancelled = false;
 
-    if (shouldEnforceGate && (!isAuthenticated || !user)) {
-      window.location.href = `${landingUrl}/?auth=signin`;
-    }
-  }, [
-    sessionVerified,
-    isCheckingSession,
-    shouldEnforceGate,
-    isAuthenticated,
-    user,
-    isAuthCallbackRoute,
-    bypassAuth,
-    isTest,
-    landingUrl,
-  ]);
+    const loadData = async () => {
+      await Promise.all([
+        useLiquidStore.getState().loadUserDcaSchedules(user?.id),
+        useLiquidStore.getState().loadUserOrders(user?.id),
+        useAlternativeStore.getState().loadUserAlternativeHoldings(),
+      ]);
+
+      if (isCancelled) return;
+
+      // Initial sync of liquid holdings into portfolio store with refreshed state
+      const liquidState = useLiquidStore.getState();
+      const cryptoNav = liquidState.dcaSchedules
+        .filter((s) => s.active)
+        .reduce((sum, s) => sum + s.amountUsd, 0);
+      const stocksNav = calculateStocksEquitiesNav(liquidState.activeOrders);
+      usePortfolioStore.getState().syncUserHoldings(cryptoNav, stocksNav);
+    };
+
+    loadData().catch(console.error);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [user?.id]);
 
   // Dynamically load user-specific command bar financial valuations
   useEffect(() => {
@@ -163,6 +156,11 @@ export const App: React.FC<AppProps> = ({
         if (data && typeof data === 'object') {
           if (typeof data.consolidatedNetWorth === 'number') {
             usePortfolioStore.getState().setNetWorth(data.consolidatedNetWorth);
+          }
+          if (typeof data.accountBalance === 'number') {
+            usePortfolioStore.getState().setAccountBalance(data.accountBalance);
+          } else if (typeof data.availableCash === 'number') {
+            usePortfolioStore.getState().setAvailableCash(data.availableCash);
           }
           if (data.returns && typeof data.returns === 'object') {
             usePortfolioStore.getState().setReturns(data.returns as Record<string, { dollarChange: number; percentageChange: number }>);

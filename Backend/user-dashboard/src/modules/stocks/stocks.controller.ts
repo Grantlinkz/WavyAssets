@@ -40,6 +40,14 @@ export class StocksController {
   }
 
   /**
+   * Active and historical stock orders for user from database
+   */
+  @Get('orders')
+  async getOrders(@CurrentUser() user: AuthenticatedUser) {
+    return this.stocksService.getOrders(user.id);
+  }
+
+  /**
    * Order placement engine (MARKET, LIMIT, STOP_LOSS)
    */
   @Post('orders')

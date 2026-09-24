@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { type RealEstateAsset } from '../../../lib/alternativeAssetData';
 import { useAlternativeStore } from '../../../store/useAlternativeStore';
+import { usePortfolioStore } from '../../../store/usePortfolioStore';
 
 interface RealEstateActionModalProps {
   property: RealEstateAsset | null;
@@ -37,6 +38,7 @@ export const RealEstateActionModal: React.FC<RealEstateActionModalProps> = ({
   const [activeMode, setActiveMode] = useState<'buy' | 'rent'>(initialMode);
   const buyProperty = useAlternativeStore((s) => s.buyProperty);
   const leaseProperty = useAlternativeStore((s) => s.leaseProperty);
+  const availableCash = usePortfolioStore((s) => s.availableCash);
 
   // Buy state
   const [buyType, setBuyType] = useState<'tokens' | 'full'>('tokens');
@@ -61,11 +63,13 @@ export const RealEstateActionModal: React.FC<RealEstateActionModalProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [receiptTx, setReceiptTx] = useState('');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     setActiveMode(initialMode);
     setIsSuccess(false);
     setIsProcessing(false);
+    setErrorMsg(null);
   }, [initialMode, isOpen, property]);
 
   // Query Free OpenStreetMap Nominatim API for real-world cadastral geodata
@@ -147,14 +151,45 @@ export const RealEstateActionModal: React.FC<RealEstateActionModalProps> = ({
   const securityDeposit = effectiveMonthlyRent * 2;
 
   const handleExecute = () => {
+    const requiredAmount =
+      activeMode === 'buy' ? totalBuyCost : effectiveMonthlyRent + securityDeposit;
+
+    if (requiredAmount > availableCash) {
+      setErrorMsg(
+        `Insufficient funds: Your Account Balance ($${availableCash.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}) is less than the required amount ($${requiredAmount.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}).`
+      );
+      setTimeout(() => setErrorMsg(null), 4000);
+      return;
+    }
+
+    setErrorMsg(null);
     setIsProcessing(true);
     setTimeout(() => {
+      let success = false;
       if (activeMode === 'buy') {
         const tokensAcquired =
           buyType === 'full' ? property.tokenCount : tokenQty;
-        buyProperty(property.id, tokensAcquired, tokenPrice);
+        success = buyProperty(property.id, tokensAcquired, tokenPrice);
+        if (!success) {
+          setIsProcessing(false);
+          setErrorMsg('Failed to acquire real estate tokens: Insufficient account funds.');
+          setTimeout(() => setErrorMsg(null), 4000);
+          return;
+        }
       } else {
-        leaseProperty(property.id, leaseTerm, effectiveMonthlyRent, unitType);
+        success = leaseProperty(property.id, leaseTerm, effectiveMonthlyRent, unitType, securityDeposit);
+        if (!success) {
+          setIsProcessing(false);
+          setErrorMsg('Failed to execute real estate lease: Insufficient account funds.');
+          setTimeout(() => setErrorMsg(null), 4000);
+          return;
+        }
       }
       const randomTx = `0x${Array.from({ length: 16 }, () =>
         Math.floor(Math.random() * 16).toString(16)
@@ -425,6 +460,16 @@ export const RealEstateActionModal: React.FC<RealEstateActionModalProps> = ({
                 </div>
               </div>
 
+              {errorMsg && (
+                <div
+                  data-testid="real-estate-error-alert"
+                  className="p-2.5 bg-error/10 border border-error/30 text-error font-mono text-xs rounded-DEFAULT flex items-center gap-2"
+                >
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
+
               <Button
                 variant="default"
                 disabled={isProcessing}
@@ -513,6 +558,16 @@ export const RealEstateActionModal: React.FC<RealEstateActionModalProps> = ({
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>Triple-Net SLA included. Digital access keys issued upon signature.</span>
               </div>
+
+              {errorMsg && (
+                <div
+                  data-testid="real-estate-rent-error-alert"
+                  className="p-2.5 bg-error/10 border border-error/30 text-error font-mono text-xs rounded-DEFAULT flex items-center gap-2"
+                >
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
 
               <Button
                 variant="default"

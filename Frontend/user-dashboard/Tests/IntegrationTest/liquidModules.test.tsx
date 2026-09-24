@@ -5,14 +5,18 @@ import { StocksModule } from '../../src/components/modules/stocks/StocksModule';
 import { WalletModule } from '../../src/components/modules/wallet/WalletModule';
 import { App } from '../../src/App';
 import { useDashboardStore } from '../../src/store/useDashboardStore';
+import { useLiquidStore } from '../../src/store/useLiquidStore';
+import { usePortfolioStore } from '../../src/store/usePortfolioStore';
 
 describe('Liquid Asset Modules Integration Tests', () => {
   beforeEach(() => {
+    usePortfolioStore.getState().resetToDefaults();
     useDashboardStore.setState({
       theme: 'dark',
       activeVertical: 'crypto',
       maskBalances: false,
     });
+    useLiquidStore.setState({ activeOrders: [] });
   });
 
   describe('CryptoModule SSR Rendering', () => {
@@ -26,7 +30,8 @@ describe('Liquid Asset Modules Integration Tests', () => {
       expect(html).toContain('Global MPC Cold');
       expect(html).toContain('ETH VALIDATOR NODE 04');
       expect(html).toContain('Automated Dollar-Cost Averaging (DCA) Scheduler');
-      expect(html).toContain('$6,928,237.50');
+      expect(html).toContain('CRYPTO NET ASSET VALUE');
+      expect(html).toContain('TOTAL STAKED CAPITAL');
     });
 
     it('respects privacy toggle and masks financial numbers when maskBalances is true', () => {
@@ -48,7 +53,26 @@ describe('Liquid Asset Modules Integration Tests', () => {
       expect(html).toContain('138.82');
       expect(html).toContain('138.85');
       expect(html).toContain('0.94'); // Beta
-      expect(html).toContain('$3,248,420.00');
+      expect(html).toContain('$0.00');
+    });
+
+    it('reflects user active orders in stocks NAV and shares', () => {
+      useLiquidStore.setState({
+        activeOrders: [
+          {
+            id: 'ord-test-nvda',
+            symbol: 'NVDA',
+            type: 'BUY_LIMIT',
+            shares: 25000,
+            limitPrice: 138.85,
+            status: 'PENDING',
+            expires: 'GTC',
+          },
+        ],
+      });
+      const html = renderToString(<StocksModule maskBalances={false} />);
+      expect(html).toContain('25,000 SHRS');
+      expect(html).toContain('$3,471,250.00');
     });
 
     it('renders pre-IPO assets and respects privacy masking', () => {
@@ -61,9 +85,10 @@ describe('Liquid Asset Modules Integration Tests', () => {
 
   describe('WalletModule SSR Rendering', () => {
     it('renders wallet module with dual ledger split, fiat ramp, and transaction ledger', () => {
+      usePortfolioStore.setState({ availableCash: 1820450.0, netWorth: 14820450.0 });
       const html = renderToString(<WalletModule maskBalances={false} />);
       expect(html).toContain('data-testid="wallet-module"');
-      expect(html).toContain('Card A: Available Liquid Balance');
+      expect(html).toContain('Card A: Account Balance');
       expect(html).toContain('Card B: Invested &amp; Locked Capital');
       expect(html).toContain('$1,820,450.00');
       expect(html).toContain('$13,000,000.00');

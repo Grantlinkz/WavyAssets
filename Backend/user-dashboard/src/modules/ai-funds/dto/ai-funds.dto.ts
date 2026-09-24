@@ -35,6 +35,34 @@ export class SimulateRebalanceDto {
   amountUsd?: number;
 }
 
+export class BuyAiAssetDto {
+  @IsString()
+  assetId!: string;
+
+  @IsNumber()
+  @Min(1)
+  tokens!: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0.01)
+  tokenPrice?: number;
+}
+
+export class SellAiAssetDto {
+  @IsString()
+  assetId!: string;
+
+  @IsNumber()
+  @Min(1)
+  tokensToSell!: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0.01)
+  pricePerToken?: number;
+}
+
 export interface QuantMetricsResponse {
   sharpeRatio: number;
   sortinoRatio: number;

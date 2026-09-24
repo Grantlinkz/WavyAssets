@@ -267,4 +267,89 @@ describe('WalletService — Double-Entry Ledger & Financial Invariants', () => {
       expect(res.amountBought).toBeGreaterThan(0);
     });
   });
+
+  describe('initiateFiatRamp KYC Tier Daily Withdrawal Limits', () => {
+    it('rejects withdrawal exceeding Tier 1 daily limit ($10,000) with descriptive error', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: testUserId,
+        kycTier: 'TIER_1',
+      });
+
+      await expect(
+        walletService.initiateFiatRamp(testUserId, {
+          direction: 'WITHDRAWAL',
+          amount: 25000,
+          currency: 'USD',
+        })
+      ).rejects.toThrow(
+        'You have gone beyond your Tier daily limit ($10,000.00 USD for Level 1). Please upgrade your Tier.'
+      );
+    });
+
+    it('allows withdrawal within Tier 1 daily limit ($10,000)', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: testUserId,
+        kycTier: 'TIER_1',
+      });
+      mockPrisma.whitelistDestination.findUnique.mockResolvedValue({
+        id: 'dest-01',
+        userId: testUserId,
+        status: 'ACTIVE',
+        signersCompleted: 2,
+        signersRequired: 2,
+        destinationLabel: 'JPM Chase NYC',
+        quarantineUntil: new Date(Date.now() - 100000),
+      });
+      mockPrisma.ledgerAccount.findUnique.mockResolvedValue({
+        id: 'acc-cash',
+        accountType: 'AVAILABLE_CASH',
+        currency: 'USD',
+        balance: '50000',
+      });
+
+      const res = await walletService.initiateFiatRamp(testUserId, {
+        direction: 'WITHDRAWAL',
+        amount: 8000,
+        currency: 'USD',
+        destinationId: 'dest-01',
+      });
+
+      expect(res.status).toBe('SETTLED');
+      expect(res.amount).toBe(8000);
+      expect(res.direction).toBe('WITHDRAWAL');
+    });
+
+    it('allows large withdrawals for Tier 3 (unlimited limit)', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: testUserId,
+        kycTier: 'TIER_3',
+      });
+      mockPrisma.whitelistDestination.findUnique.mockResolvedValue({
+        id: 'dest-01',
+        userId: testUserId,
+        status: 'ACTIVE',
+        signersCompleted: 2,
+        signersRequired: 2,
+        destinationLabel: 'JPM Chase NYC',
+        quarantineUntil: new Date(Date.now() - 100000),
+      });
+      mockPrisma.ledgerAccount.findUnique.mockResolvedValue({
+        id: 'acc-cash',
+        accountType: 'AVAILABLE_CASH',
+        currency: 'USD',
+        balance: '20000000',
+      });
+
+      const res = await walletService.initiateFiatRamp(testUserId, {
+        direction: 'WITHDRAWAL',
+        amount: 1500000,
+        currency: 'USD',
+        destinationId: 'dest-01',
+      });
+
+      expect(res.status).toBe('SETTLED');
+      expect(res.amount).toBe(1500000);
+    });
+  });
 });
+

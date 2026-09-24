@@ -6,8 +6,9 @@ import { StakingTelemetry } from './StakingTelemetry';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useLiquidStore } from '../../../store/useLiquidStore';
 import { usePortfolioStore } from '../../../store/usePortfolioStore';
-import { formatMaskedCurrency, TOTAL_Global_NET_WORTH } from '../../../lib/calculations';
+import { formatMaskedCurrency, isSsrOrTestEnv } from '../../../lib/calculations';
 import { CRYPTO_HOLDINGS_DATA } from '../../../lib/liquidAssetData';
+import { calculateLiveHoldingMetrics } from '../../../lib/priceService';
 
 interface CryptoModuleProps {
   maskBalances?: boolean;
@@ -16,15 +17,53 @@ interface CryptoModuleProps {
 export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMask }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
-  const unclaimedRewards = useLiquidStore((s) => s.unclaimedRewards);
-  const netWorth = usePortfolioStore((s) => s.netWorth);
+  const storeNetWorth = usePortfolioStore((s) => s.netWorth);
+  const storeDcaSchedules = useLiquidStore((s) => s.dcaSchedules);
+  const livePrices = useLiquidStore((s) => s.livePrices);
 
-  // Dynamically compute accurate real values directly from user's active holdings (balance > 0)
-  const heldCrypto = useMemo(() => CRYPTO_HOLDINGS_DATA.filter((h) => h.balance > 0), []);
+  const isSsr = isSsrOrTestEnv();
+  const dcaSchedules = isSsr ? useLiquidStore.getState().dcaSchedules : storeDcaSchedules;
+  const netWorth = isSsr ? usePortfolioStore.getState().netWorth : storeNetWorth;
+
+  const activeScheduleMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    const effectiveSchedules = dcaSchedules.filter((s) => s.active);
+
+    effectiveSchedules.forEach((s) => {
+      map[s.asset] = (map[s.asset] || 0) + s.amountUsd;
+    });
+    return map;
+  }, [dcaSchedules]);
+
+  // Dynamically compute accurate real values directly from user's Active Execution Schedule
+  const heldCrypto = useMemo(() => {
+    return CRYPTO_HOLDINGS_DATA.map((item) => {
+      const balanceUsd = activeScheduleMap[item.symbol] || 0;
+      const metrics = calculateLiveHoldingMetrics(
+        item.symbol,
+        balanceUsd,
+        livePrices[item.symbol]
+      );
+      return {
+        ...item,
+        balance: metrics.units,
+        balanceUsd,
+        spotPrice: metrics.spotPrice,
+        entryPrice: metrics.entryMark,
+        unrealizedPnl: metrics.unrealizedPnl,
+        pnlPct: metrics.pnlPct,
+      };
+    }).filter((h) => h.balanceUsd > 0);
+  }, [activeScheduleMap, livePrices]);
 
   const totalCryptoNav = useMemo(() => {
-    return heldCrypto.reduce((sum, h) => sum + h.balance * h.spotPrice, 0);
+    return heldCrypto.reduce((sum, h) => sum + h.balanceUsd, 0);
   }, [heldCrypto]);
+
+  // Synchronize crypto allocation with portfolio store
+  React.useEffect(() => {
+    usePortfolioStore.getState().updateAllocation('crypto', totalCryptoNav);
+  }, [totalCryptoNav]);
 
   const totalUnrealizedPnl = useMemo(() => {
     return heldCrypto.reduce((sum, h) => sum + h.unrealizedPnl, 0);
@@ -41,7 +80,7 @@ export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMa
   }, [heldCrypto]);
 
   const totalStakedCapital = useMemo(() => {
-    return stakedHoldings.reduce((sum, h) => sum + h.balance * h.spotPrice, 0);
+    return stakedHoldings.reduce((sum, h) => sum + h.balanceUsd, 0);
   }, [stakedHoldings]);
 
   const stakedPctOfCrypto = totalCryptoNav > 0 ? (totalStakedCapital / totalCryptoNav) * 100 : 0;
@@ -49,15 +88,23 @@ export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMa
   const blendedApy = useMemo(() => {
     if (totalStakedCapital === 0) return 0;
     const weightedSum = stakedHoldings.reduce(
-      (sum, h) => sum + h.balance * h.spotPrice * (h.stakingApy || 0),
+      (sum, h) => sum + h.balanceUsd * (h.stakingApy || 0),
       0
     );
     return weightedSum / totalStakedCapital;
   }, [stakedHoldings, totalStakedCapital]);
 
-  const dailyRunRate = (totalStakedCapital * (blendedApy / 100)) / 365;
-  const effectiveNetWorth = netWorth > 0 ? netWorth : TOTAL_Global_NET_WORTH;
+  const dailyRunRate = totalStakedCapital > 0 ? (totalStakedCapital * (blendedApy / 100)) / 365 : 0;
+  const effectiveNetWorth = netWorth > 0 ? netWorth : totalCryptoNav;
   const cryptoPortfolioPct = effectiveNetWorth > 0 ? (totalCryptoNav / effectiveNetWorth) * 100 : 0;
+
+  const dynamicUnclaimedRewards = useMemo(() => {
+    if (totalCryptoNav === 0) return 0.0;
+    if (totalStakedCapital > 0 && blendedApy > 0) {
+      return Number(((totalStakedCapital * (blendedApy / 100) * 30) / 365).toFixed(2));
+    }
+    return Number(((totalCryptoNav * 0.0473 * 20) / 365).toFixed(2));
+  }, [totalStakedCapital, blendedApy, totalCryptoNav]);
 
   return (
     <div
@@ -149,7 +196,7 @@ export const CryptoModule: React.FC<CryptoModuleProps> = ({ maskBalances: propMa
               </span>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-xl font-mono font-bold text-tertiary tabular-nums">
-                  {formatMaskedCurrency(unclaimedRewards, maskBalances)}
+                  {formatMaskedCurrency(dynamicUnclaimedRewards, maskBalances)}
                 </span>
               </div>
             </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useDashboardStore, type TimeframeOption } from '../../store/useDashboardStore';
 import { usePortfolioStore } from '../../store/usePortfolioStore';
-import { formatMaskedCurrency, calculateUserTimeframePnL } from '../../lib/calculations';
+import { formatMaskedCurrency, calculateUserTimeframePnL, isSsrOrTestEnv } from '../../lib/calculations';
 
 const TIMEFRAMES: TimeframeOption[] = ['1D', '1W', '1M', '1Y', 'ALL'];
 
@@ -9,40 +9,56 @@ export interface NetWorthWidgetProps {
   maskBalances?: boolean;
   timeframe?: TimeframeOption;
   netWorth?: number;
+  accountBalance?: number;
 }
 
 export const NetWorthWidget: React.FC<NetWorthWidgetProps> = ({
   maskBalances: propMask,
   timeframe: propTimeframe,
   netWorth: propNetWorth,
+  accountBalance: propAccountBalance,
 }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const storeTimeframe = useDashboardStore((s) => s.timeframe);
   const setTimeframe = useDashboardStore((s) => s.setTimeframe);
-  const storeNetWorth = usePortfolioStore((s) => s.netWorth);
+  const storeAccountBalance = usePortfolioStore((s) => s.accountBalance ?? s.availableCash);
   const returns = usePortfolioStore((s) => s.returns);
 
   const maskBalances = propMask !== undefined ? propMask : storeMask;
   const timeframe = propTimeframe !== undefined ? propTimeframe : storeTimeframe;
-  const netWorth = propNetWorth !== undefined ? propNetWorth : storeNetWorth;
-
-  const pnl = calculateUserTimeframePnL(netWorth, timeframe, returns ?? undefined);
+  const isSsr = isSsrOrTestEnv();
+  const currentAccountBalance = isSsr
+    ? (usePortfolioStore.getState().accountBalance ?? usePortfolioStore.getState().availableCash)
+    : storeAccountBalance;
+  const displayBalance =
+    propAccountBalance !== undefined
+      ? propAccountBalance
+      : propNetWorth !== undefined
+      ? propNetWorth
+      : currentAccountBalance;
+  const rawNetWorth = usePortfolioStore((s) => s.netWorth);
+  const currentNetWorth = isSsr ? usePortfolioStore.getState().netWorth : rawNetWorth;
+  const currentReturns = isSsr ? usePortfolioStore.getState().returns : returns;
+  const pnlBase = propNetWorth !== undefined ? propNetWorth : currentNetWorth;
+  const pnl = calculateUserTimeframePnL(pnlBase, timeframe, currentReturns ?? undefined);
 
   return (
     <div className="flex items-center gap-3 shrink-0" data-testid="net-worth-widget">
       <div className="flex flex-col">
         <span className="text-[10px] font-mono text-outline uppercase tracking-widest font-medium">
-          CONSOLIDATED NET ASSETS
+          ACCOUNT BALANCE
         </span>
         <div className="flex items-baseline gap-2">
           <span
             data-testid="net-worth-value"
             className="text-lg sm:text-xl font-bold font-mono tracking-tight tabular-nums text-on-surface"
           >
-            {formatMaskedCurrency(netWorth, maskBalances)}
+            {formatMaskedCurrency(displayBalance, maskBalances)}
           </span>
           <span
             data-testid="pnl-delta-indicator"
+            aria-label="Portfolio P&L"
+            title="Portfolio P&L"
             className={`text-xs font-mono font-medium tabular-nums ${
               pnl.isPositive ? 'text-tertiary' : 'text-error'
             }`}

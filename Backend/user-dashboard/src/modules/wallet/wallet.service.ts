@@ -293,7 +293,21 @@ export class WalletService {
       };
     }
 
-    // WITHDRAWAL Flow: Enforce strict 48-Hour Quarantine Time-Lock
+    let dailyLimit = 10000;
+    if (user.kycTier === 'TIER_2') dailyLimit = 250000;
+    if (user.kycTier === 'TIER_3') dailyLimit = Infinity;
+
+    if (dto.amount > dailyLimit) {
+      const tierName =
+        user.kycTier === 'TIER_3' ? 'Level 3' : user.kycTier === 'TIER_2' ? 'Level 2' : 'Level 1';
+      throw new BadRequestException(
+        `You have gone beyond your Tier daily limit ($${dailyLimit.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })} USD for ${tierName}). Please upgrade your Tier.`,
+      );
+    }
+
     if (!dto.destinationId) {
       throw new BadRequestException('Target destinationId is required for withdrawals');
     }
@@ -333,13 +347,60 @@ export class WalletService {
       dto.currency,
     );
 
-    const tx = await this.recordLedgerTransaction({
-      type: 'WITHDRAWAL',
-      description: `Outbound wire transfer of ${dto.amount} ${dto.currency} to ${destination.destinationLabel}`,
-      entries: [
-        { accountId: cashAccount.id, amount: -dto.amount },
-        { accountId: clearingAccount.id, amount: dto.amount },
-      ],
+    // WITHDRAWAL Flow: Enforce cumulative KYC Tier Daily Limits inside atomic transaction
+    const startOfToday = new Date();
+    startOfToday.setUTCHours(0, 0, 0, 0);
+
+    const tx = await this.prisma.$transaction(async (prismaTx) => {
+      // Find all AVAILABLE_CASH accounts for user
+      const cashAccounts = await prismaTx.ledgerAccount.findMany({
+        where: { userId, accountType: 'AVAILABLE_CASH' },
+      });
+      const cashAccountIds = (cashAccounts || []).map((a) => a.id);
+      if (cashAccountIds.length === 0 && cashAccount?.id) {
+        cashAccountIds.push(cashAccount.id);
+      }
+
+      // Sum settled or pending WITHDRAWAL entries on user's AVAILABLE_CASH accounts for today
+      const todaysWithdrawals = await prismaTx.ledgerEntry.findMany({
+        where: {
+          accountId: { in: cashAccountIds },
+          amount: { lt: 0 },
+          transaction: {
+            type: 'WITHDRAWAL',
+            status: { in: ['SETTLED', 'PENDING'] },
+            createdAt: { gte: startOfToday },
+          },
+        },
+      });
+
+      const withdrawnToday = todaysWithdrawals.reduce(
+        (sum, entry) => sum + Math.abs(Number(entry.amount)),
+        0,
+      );
+
+      if (withdrawnToday + dto.amount > dailyLimit) {
+        const tierName =
+          user.kycTier === 'TIER_3' ? 'Level 3' : user.kycTier === 'TIER_2' ? 'Level 2' : 'Level 1';
+        throw new BadRequestException(
+          `You have gone beyond your Tier daily limit ($${dailyLimit.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })} USD for ${tierName}). Please upgrade your Tier.`,
+        );
+      }
+
+      return this.recordLedgerTransaction(
+        {
+          type: 'WITHDRAWAL',
+          description: `Outbound wire transfer of ${dto.amount} ${dto.currency} to ${destination.destinationLabel}`,
+          entries: [
+            { accountId: cashAccount.id, amount: -dto.amount },
+            { accountId: clearingAccount.id, amount: dto.amount },
+          ],
+        },
+        prismaTx,
+      );
     });
 
     this.dashboardService?.invalidateCache(userId);
@@ -498,4 +559,38 @@ export class WalletService {
       },
     };
   }
+
+  /**
+   * Direct balance adjustment with double-entry conservation in database
+   */
+  async adjustBalance(userId: string, amount: number, description = 'Direct balance adjustment') {
+    const cashAccount = await this.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');
+    const systemAccount = await this.getOrCreateAccount(userId, 'FEE_RECEIVABLE', 'USD');
+
+    // Debit/Credit conservation
+    await this.recordLedgerTransaction({
+      type: amount >= 0 ? 'DEPOSIT' : 'WITHDRAWAL',
+      description,
+      entries: [
+        { accountId: cashAccount.id, amount },
+        { accountId: systemAccount.id, amount: -amount },
+      ],
+    });
+
+    const updated = await this.getBalances(userId);
+    const availableCashTotal = updated.availableCash.reduce((sum, a) => sum + a.usdEquivalent, 0);
+
+    this.dashboardService?.invalidateCache(userId);
+    this.portfolioGateway?.broadcastBalanceUpdated(userId, {
+      availableCash: availableCashTotal,
+      currency: 'USD',
+    });
+
+    return {
+      success: true,
+      availableCash: availableCashTotal,
+      totalUsd: updated.totalUsd,
+    };
+  }
 }
+

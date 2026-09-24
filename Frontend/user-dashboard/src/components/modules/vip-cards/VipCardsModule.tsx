@@ -10,9 +10,10 @@ import { CardSpendingLimits } from './CardSpendingLimits';
 import { BiometricRevealModal } from './BiometricRevealModal';
 import { GlobalConciergeModal } from './GlobalConciergeModal';
 import { VIP_CARD_TIERS, VIP_CARD_PRIVILEGES } from '../../../lib/governanceAssetData';
-import { formatMaskedCurrency } from '../../../lib/calculations';
+import { formatMaskedCurrency, isSsrOrTestEnv } from '../../../lib/calculations';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useGovernanceStore } from '../../../store/useGovernanceStore';
+import { usePortfolioStore } from '../../../store/usePortfolioStore';
 
 interface VipCardsModuleProps {
   maskBalances?: boolean;
@@ -22,10 +23,12 @@ export const VipCardsModule: React.FC<VipCardsModuleProps> = ({ maskBalances: pr
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
   const { openConciergeModal } = useGovernanceStore();
+  const isSsr = isSsrOrTestEnv();
+  const storeNetWorth = usePortfolioStore((s) => s.netWorth);
+  const netWorth = isSsr ? usePortfolioStore.getState().netWorth : storeNetWorth;
 
-  const netWorth = 14820450.0;
   const nextTierAum = 25000000.0;
-  const progressPct = 59.3;
+  const progressPct = nextTierAum > 0 ? Math.min(100, Number(((netWorth / nextTierAum) * 100).toFixed(1))) : 0;
 
   return (
     <div
@@ -73,9 +76,9 @@ export const VipCardsModule: React.FC<VipCardsModuleProps> = ({ maskBalances: pr
             </span>
           </div>
           <div className="text-[11px] text-outline">
-            <span>{formatMaskedCurrency(netWorth, maskBalances)} / {formatMaskedCurrency(nextTierAum, false)}: </span>
+            <span>{`${formatMaskedCurrency(netWorth, maskBalances)} / ${formatMaskedCurrency(nextTierAum, false)}: `}</span>
             <strong className="text-secondary tabular-nums font-bold">
-              {progressPct}% Completed
+              {`${progressPct}% Completed`}
             </strong>
           </div>
         </div>

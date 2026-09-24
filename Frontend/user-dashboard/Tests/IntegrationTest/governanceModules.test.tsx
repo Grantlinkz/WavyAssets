@@ -6,6 +6,7 @@ import { SecurityModule } from '../../src/components/modules/security/SecurityMo
 import { App } from '../../src/App';
 import { useDashboardStore } from '../../src/store/useDashboardStore';
 import { useGovernanceStore } from '../../src/store/useGovernanceStore';
+import { usePortfolioStore } from '../../src/store/usePortfolioStore';
 import {
   INITIAL_CLIENT_SESSIONS,
   INITIAL_WHITELIST_DESTINATIONS,
@@ -13,6 +14,7 @@ import {
 
 describe('Governance & Global Modules Integration Suite (Sprint 5)', () => {
   beforeEach(() => {
+    usePortfolioStore.getState().resetToDefaults();
     useDashboardStore.setState({
       theme: 'dark',
       activeVertical: 'vip-cards',
@@ -103,8 +105,8 @@ describe('Governance & Global Modules Integration Suite (Sprint 5)', () => {
       expect(html).toContain('Argon2id + FIDO2');
       expect(html).toContain('48H COLD LOCK');
       expect(html).toContain('Primary YubiKey 5C NFC');
-      expect(html).toContain('CURRENT SESSION');
-      expect(html).toContain('Zurich, Switzerland');
+      expect(html).toContain('Current Session');
+      expect(html).toContain('CURRENT CLIENT DEVICE');
       expect(html).toContain('Emergency Lockdown');
     });
 

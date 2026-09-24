@@ -37,6 +37,7 @@ export class WalletController {
     return this.walletService.initiateFiatRamp(user.id, dto);
   }
 
+
   /**
    * Paginated Transaction Ledger
    */

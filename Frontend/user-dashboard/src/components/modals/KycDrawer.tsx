@@ -54,20 +54,9 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
   const closeModal = propClose !== undefined ? propClose : storeClose;
 
   const userId = user?.id || 'guest';
-  const storageKey = `wavyassets_kyc_submissions_${userId}`;
 
   // Submissions state
-  const [submissions, setSubmissions] = useState<KycSubmissions>(() => {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      try {
-        const stored = window.localStorage.getItem(storageKey);
-        if (stored) return JSON.parse(stored);
-      } catch {
-        // Ignore
-      }
-    }
-    return {};
-  });
+  const [submissions, setSubmissions] = useState<KycSubmissions>({});
 
   // Active level tab
   const [activeTab, setActiveTab] = useState<'level1' | 'level2' | 'level3'>(
@@ -122,6 +111,29 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
           if (tier) {
             useAuthStore.getState().updateUserKycTier(tier as 'TIER_1' | 'TIER_2' | 'TIER_3');
           }
+          if (Array.isArray(data.documents)) {
+            const l2Doc = data.documents.find((d) => d.docType === 'PASSPORT' || d.docType === 'GOVERNMENT_ID');
+            const l3Doc = data.documents.find((d) => d.docType === 'UTILITY_BILL' || d.docType === 'BANK_STATEMENT');
+            const l2Timestamp = l2Doc?.createdAt || l2Doc?.submittedAt;
+            const l3Timestamp = l3Doc?.createdAt || l3Doc?.submittedAt;
+            setSubmissions({
+              level2: l2Doc
+                ? {
+                    fileName: l2Doc.fileName || 'Government_ID_Verified.pdf',
+                    submittedAt: l2Timestamp ? new Date(l2Timestamp).toISOString() : undefined,
+                    status: l2Doc.isVerified ? 'APPROVED' : 'PENDING_APPROVAL',
+                  }
+                : undefined,
+              level3: l3Doc
+                ? {
+                    docCategory: l3Doc.docType === 'BANK_STATEMENT' ? 'BANK_STATEMENT' : 'UTILITY_BILL',
+                    fileName: l3Doc.fileName || (l3Doc.docType === 'BANK_STATEMENT' ? 'Bank_Statement_Verified.pdf' : 'Proof_Of_Address.pdf'),
+                    submittedAt: l3Timestamp ? new Date(l3Timestamp).toISOString() : undefined,
+                    status: l3Doc.isVerified ? 'APPROVED' : 'PENDING_APPROVAL',
+                  }
+                : undefined,
+            });
+          }
         }
       })
       .catch(() => {
@@ -133,33 +145,9 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
     };
   }, []);
 
-  // Save non-sensitive submission status to localStorage
+  // Update submission status in component state without localStorage
   const saveSubmissions = (updated: KycSubmissions) => {
     setSubmissions(updated);
-    if (typeof window !== 'undefined' && window.localStorage) {
-      try {
-        const sanitized = {
-          level2: updated.level2
-            ? {
-                fileName: updated.level2.fileName,
-                submittedAt: updated.level2.submittedAt,
-                status: updated.level2.status,
-              }
-            : undefined,
-          level3: updated.level3
-            ? {
-                docCategory: updated.level3.docCategory,
-                fileName: updated.level3.fileName,
-                submittedAt: updated.level3.submittedAt,
-                status: updated.level3.status,
-              }
-            : undefined,
-        };
-        window.localStorage.setItem(storageKey, JSON.stringify(sanitized));
-      } catch {
-        // Ignore
-      }
-    }
   };
 
   // Determine Level Statuses strictly from verified KYC documents:
@@ -522,9 +510,11 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
                     Your Government ID document ({submissions.level2?.fileName}) has been securely submitted.
                     Verification is manually reviewed by the administrative compliance guild. You will receive immediate notification once approved.
                   </p>
-                  <div className="pt-2 text-[11px] text-outline border-t border-border-hairline space-y-1">
-                    <div>Submitted: <span className="text-on-surface">{new Date(submissions.level2?.submittedAt || '').toLocaleString()}</span></div>
-                  </div>
+                  {submissions.level2?.submittedAt && (
+                    <div className="pt-2 text-[11px] text-outline border-t border-border-hairline space-y-1">
+                      <div>Submitted: <span className="text-on-surface">{new Date(submissions.level2.submittedAt).toLocaleString()}</span></div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <form onSubmit={handleLevel2Submit} className="space-y-3">
@@ -676,9 +666,11 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
                     Your {submissions.level3?.docCategory === 'UTILITY_BILL' ? 'Utility Bill' : 'Bank Statement'} ({submissions.level3?.fileName}) has been securely submitted.
                     The admin panel is reviewing the address match and issue date (&lt;3 months old).
                   </p>
-                  <div className="pt-2 text-[11px] text-outline border-t border-border-hairline space-y-1">
-                    <div>Submitted: <span className="text-on-surface">{new Date(submissions.level3?.submittedAt || '').toLocaleString()}</span></div>
-                  </div>
+                  {submissions.level3?.submittedAt && (
+                    <div className="pt-2 text-[11px] text-outline border-t border-border-hairline space-y-1">
+                      <div>Submitted: <span className="text-on-surface">{new Date(submissions.level3.submittedAt).toLocaleString()}</span></div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <form onSubmit={handleLevel3Submit} className="space-y-3">

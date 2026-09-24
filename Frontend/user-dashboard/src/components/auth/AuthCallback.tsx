@@ -67,8 +67,7 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
       .then(() => {
         setTicketStatus('success');
         if (typeof window !== 'undefined' && window.history.replaceState) {
-          const cleanUrl = window.location.pathname;
-          window.history.replaceState({}, document.title, cleanUrl);
+          window.history.replaceState({}, document.title, '/');
         }
         if (onComplete) {
           setTimeout(onComplete, 800);

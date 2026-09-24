@@ -1,8 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Shield, ExternalLink, Search, ChevronLeft, ChevronRight } from 'lucide-react';
-import { CRYPTO_HOLDINGS_DATA, type CryptoHolding, type CustodyBadge } from '../../../lib/liquidAssetData';
+import {
+  CRYPTO_HOLDINGS_DATA,
+  type CustodyBadge,
+} from '../../../lib/liquidAssetData';
 import { formatMaskedCurrency } from '../../../lib/calculations';
 import { useDashboardStore } from '../../../store/useDashboardStore';
+import { useLiquidStore } from '../../../store/useLiquidStore';
+import { fetchLiveCryptoPrices, calculateLiveHoldingMetrics } from '../../../lib/priceService';
 
 const getBadgeStyles = (type: CustodyBadge) => {
   switch (type) {
@@ -20,22 +25,65 @@ const getBadgeStyles = (type: CustodyBadge) => {
 export const HoldingsTable: React.FC<{ maskBalances?: boolean }> = ({ maskBalances: propMask }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
+  const {
+    dcaSchedules,
+    targetDcaAsset,
+    setTargetDcaAsset,
+    livePrices,
+    setLivePrices,
+  } = useLiquidStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
 
+  useEffect(() => {
+    fetchLiveCryptoPrices().then((prices) => {
+      setLivePrices(prices);
+    });
+  }, [setLivePrices]);
+
+  const activeScheduleMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    const effectiveSchedules = dcaSchedules.filter((s) => s.active);
+
+    effectiveSchedules.forEach((s) => {
+      map[s.asset] = (map[s.asset] || 0) + s.amountUsd;
+    });
+    return map;
+  }, [dcaSchedules]);
+
+  const liveHoldings = useMemo(() => {
+    return CRYPTO_HOLDINGS_DATA.map((item) => {
+      const balanceUsd = activeScheduleMap[item.symbol] || 0;
+      const metrics = calculateLiveHoldingMetrics(
+        item.symbol,
+        balanceUsd,
+        livePrices[item.symbol]
+      );
+      return {
+        ...item,
+        balance: metrics.units,
+        balanceUsd,
+        spotPrice: metrics.spotPrice,
+        entryPrice: metrics.entryMark,
+        unrealizedPnl: metrics.unrealizedPnl,
+        pnlPct: metrics.pnlPct,
+      };
+    });
+  }, [activeScheduleMap, livePrices]);
+
   const filteredHoldings = useMemo(() => {
-    if (!searchQuery.trim()) return CRYPTO_HOLDINGS_DATA;
+    if (!searchQuery.trim()) return liveHoldings;
     const q = searchQuery.toLowerCase().trim();
-    return CRYPTO_HOLDINGS_DATA.filter(
+    return liveHoldings.filter(
       (item) =>
         item.symbol.toLowerCase().includes(q) ||
         item.name.toLowerCase().includes(q) ||
         item.enclave.toLowerCase().includes(q) ||
         item.custodyLabel.toLowerCase().includes(q)
     );
-  }, [searchQuery]);
+  }, [searchQuery, liveHoldings]);
 
   const totalPages = Math.max(1, Math.ceil(filteredHoldings.length / PAGE_SIZE));
   const safeCurrentPage = Math.min(currentPage, totalPages);
@@ -110,23 +158,42 @@ export const HoldingsTable: React.FC<{ maskBalances?: boolean }> = ({ maskBalanc
                 </td>
               </tr>
             ) : (
-              paginatedHoldings.map((item: CryptoHolding) => {
-                const notional = item.balance * item.spotPrice;
+              paginatedHoldings.map((item) => {
                 return (
                   <tr
                     key={item.symbol}
-                    className="hover:bg-surface-container/60 transition-colors"
+                    className={`hover:bg-surface-container/60 transition-colors ${
+                      targetDcaAsset === item.symbol ? 'bg-primary/5' : ''
+                    }`}
                     data-testid={`crypto-holding-row-${item.symbol}`}
                   >
-                    <td className="py-3 px-4 whitespace-nowrap">
+                    <td
+                      className="py-3 px-4 whitespace-nowrap cursor-pointer group"
+                      data-testid={`crypto-asset-contract-cell-${item.symbol}`}
+                      onClick={() => {
+                        setTargetDcaAsset(item.symbol);
+                        const dcaElem = document.querySelector('[data-testid="dca-scheduler"]');
+                        if (dcaElem) {
+                          dcaElem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
+                      }}
+                      title={`Click to target ${item.name} in DCA Scheduler`}
+                    >
                       <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            targetDcaAsset === item.symbol ? 'bg-primary scale-125' : 'bg-primary'
+                          } group-hover:scale-125 transition-transform`}
+                        />
                         <div>
-                          <span className="font-bold text-on-surface font-mono tracking-tight block">
+                          <span className="font-bold text-on-surface font-mono tracking-tight block group-hover:text-primary transition-colors">
                             {item.name}
                           </span>
-                          <span className="text-[10px] text-outline font-mono">
-                            {item.enclave}
+                          <span className="text-[10px] text-outline font-mono flex items-center gap-1">
+                            <span>{item.enclave}</span>
+                            <span className="text-primary/70 text-[9px] font-sans opacity-0 group-hover:opacity-100 transition-opacity">
+                              • Target in DCA
+                            </span>
                           </span>
                         </div>
                       </div>
@@ -144,9 +211,20 @@ export const HoldingsTable: React.FC<{ maskBalances?: boolean }> = ({ maskBalanc
                     </td>
 
                     <td className="py-3 px-3 text-right font-mono tabular-nums text-on-surface font-medium whitespace-nowrap">
-                      <div>{maskBalances ? '••••••••' : `${item.balance.toLocaleString()} ${item.unit}`}</div>
+                      <div>
+                        {maskBalances
+                          ? '••••••••'
+                          : item.balanceUsd > 0
+                            ? item.balance < 1
+                              ? `${item.balance.toFixed(4)} ${item.unit}`
+                              : `${item.balance.toLocaleString('en-US', {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 4,
+                                })} ${item.unit}`
+                            : `0 ${item.unit}`}
+                      </div>
                       <div className="text-[10px] text-outline">
-                        {formatMaskedCurrency(notional, maskBalances)}
+                        {formatMaskedCurrency(item.balanceUsd, maskBalances)}
                       </div>
                     </td>
 
@@ -161,7 +239,7 @@ export const HoldingsTable: React.FC<{ maskBalances?: boolean }> = ({ maskBalanc
                     <td className="py-3 px-3 text-right font-mono tabular-nums font-semibold whitespace-nowrap text-tertiary">
                       {maskBalances
                         ? '••••••••'
-                        : item.balance > 0
+                        : item.balanceUsd > 0
                           ? `+${formatMaskedCurrency(item.unrealizedPnl, false)}`
                           : '$0.00'}
                     </td>
@@ -169,7 +247,7 @@ export const HoldingsTable: React.FC<{ maskBalances?: boolean }> = ({ maskBalanc
                     <td className="py-3 px-3 text-right font-mono tabular-nums font-medium whitespace-nowrap text-tertiary">
                       {maskBalances
                         ? '••••'
-                        : item.balance > 0
+                        : item.balanceUsd > 0
                           ? `+${item.pnlPct.toFixed(2)}%`
                           : '—'}
                     </td>

@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { type ExoticAsset } from '../../../lib/alternativeAssetData';
 import { useAlternativeStore } from '../../../store/useAlternativeStore';
+import { usePortfolioStore } from '../../../store/usePortfolioStore';
 
 interface VehicleActionModalProps {
   asset: ExoticAsset | null;
@@ -39,6 +40,7 @@ export const VehicleActionModal: React.FC<VehicleActionModalProps> = ({
   const [activeMode, setActiveMode] = useState<'buy' | 'rent'>(initialMode);
   const buyVehicleAsset = useAlternativeStore((s) => s.buyVehicleAsset);
   const leaseVehicleAsset = useAlternativeStore((s) => s.leaseVehicleAsset);
+  const availableCash = usePortfolioStore((s) => s.availableCash);
 
   // Buy state
   const [buyType, setBuyType] = useState<'full' | 'fractional'>('fractional');
@@ -66,12 +68,14 @@ export const VehicleActionModal: React.FC<VehicleActionModalProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [receiptTx, setReceiptTx] = useState('');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     setActiveMode(initialMode);
     setLeaseOption(asset?.type === 'vehicle' ? 'weekend' : 'gala');
     setIsSuccess(false);
     setIsProcessing(false);
+    setErrorMsg(null);
   }, [initialMode, isOpen, asset]);
 
   // Connect to Free Public NHTSA Vehicle API for VIN validation
@@ -154,15 +158,40 @@ export const VehicleActionModal: React.FC<VehicleActionModalProps> = ({
   const insuranceEscrowDeposit = Math.round(effectiveRentCost * 0.5);
 
   const handleExecute = () => {
+    const requiredAmount =
+      activeMode === 'buy' ? totalBuyCost : effectiveRentCost + insuranceEscrowDeposit;
+
+    if (requiredAmount > availableCash) {
+      setErrorMsg(
+        `Insufficient funds: Your Account Balance ($${availableCash.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}) is less than the required amount ($${requiredAmount.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}).`
+      );
+      setTimeout(() => setErrorMsg(null), 4000);
+      return;
+    }
+
+    setErrorMsg(null);
     setIsProcessing(true);
     setTimeout(() => {
+      let success = false;
       if (activeMode === 'buy') {
-        buyVehicleAsset(
+        success = buyVehicleAsset(
           asset.id,
           totalBuyCost,
           buyType,
           buyType === 'fractional' ? syndicatePct : 100
         );
+        if (!success) {
+          setIsProcessing(false);
+          setErrorMsg('Failed to acquire vehicle asset: Insufficient account funds.');
+          setTimeout(() => setErrorMsg(null), 4000);
+          return;
+        }
       } else {
         const durationLabel =
           leaseOption === 'monthly' || leaseOption === 'month'
@@ -172,12 +201,19 @@ export const VehicleActionModal: React.FC<VehicleActionModalProps> = ({
             : isVehicle
             ? 'Weekend'
             : 'Gala Event';
-        leaseVehicleAsset(
+        success = leaseVehicleAsset(
           asset.id,
           leaseOption,
           durationLabel,
-          effectiveRentCost
+          effectiveRentCost,
+          insuranceEscrowDeposit
         );
+        if (!success) {
+          setIsProcessing(false);
+          setErrorMsg('Failed to complete vehicle lease: Insufficient account funds.');
+          setTimeout(() => setErrorMsg(null), 4000);
+          return;
+        }
       }
       const randomTx = `0x${Array.from({ length: 16 }, () =>
         Math.floor(Math.random() * 16).toString(16)
@@ -441,6 +477,16 @@ export const VehicleActionModal: React.FC<VehicleActionModalProps> = ({
                 </div>
               </div>
 
+              {errorMsg && (
+                <div
+                  data-testid="vehicle-error-alert"
+                  className="p-2.5 bg-error/10 border border-error/30 text-error font-mono text-xs rounded-DEFAULT flex items-center gap-2"
+                >
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
+
               <Button
                 variant="default"
                 disabled={isProcessing}
@@ -590,6 +636,16 @@ export const VehicleActionModal: React.FC<VehicleActionModalProps> = ({
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>Enclave concierge will deliver sealed custody kit to selected venue.</span>
               </div>
+
+              {errorMsg && (
+                <div
+                  data-testid="vehicle-rent-error-alert"
+                  className="p-2.5 bg-error/10 border border-error/30 text-error font-mono text-xs rounded-DEFAULT flex items-center gap-2"
+                >
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
 
               <Button
                 variant="default"

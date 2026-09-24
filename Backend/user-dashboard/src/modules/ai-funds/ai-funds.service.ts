@@ -362,4 +362,143 @@ export class AiFundsService {
       timestamp: new Date().toISOString(),
     };
   }
+
+  /**
+   * Get user AI fund positions and holdings from database
+   */
+  async getPositions(userId: string) {
+    const position = await this.prisma.aiFundPosition.findFirst({
+      where: { userId },
+    });
+    const positions =
+      position && position.allocatedUsd > 0
+        ? [
+            {
+              strategyId: 'ai-1',
+              strategyTier: position.strategyTier,
+              tokens: Math.floor(position.allocatedUsd / 500),
+              totalInvested: position.allocatedUsd,
+            },
+          ]
+        : [];
+
+    return {
+      success: true,
+      position: position || {
+        strategyTier: 'balanced',
+        allocatedUsd: 0,
+        unrealizedAlpha: 0,
+        circuitBreaker: false,
+        claimedYield: 0,
+        pendingYield: 0,
+      },
+      positions,
+    };
+  }
+
+  /**
+   * Buy AI compute tokens: updates database position and debits available cash from ledger
+   */
+  async buyAiAsset(userId: string, dto: { assetId: string; tokens: number; tokenPrice?: number }) {
+    if (!dto.tokens || dto.tokens <= 0) {
+      throw new BadRequestException('Tokens to acquire must be positive.');
+    }
+    const tokenPrice = dto.tokenPrice || 500;
+    const totalCost = dto.tokens * tokenPrice;
+    const cashAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');
+    const currentBalance = Number(cashAccount.balance);
+
+    if (currentBalance < totalCost) {
+      throw new BadRequestException(
+        `Insufficient Account Balance ($${currentBalance}) to purchase ${dto.tokens} tokens ($${totalCost}).`
+      );
+    }
+
+    const investedAccount = await this.walletService.getOrCreateAccount(userId, 'INVESTED_CAPITAL', 'USD');
+    await this.walletService.recordLedgerTransaction({
+      type: 'TRADE',
+      description: `AI Fund Token Acquisition: ${dto.assetId} (${dto.tokens} @ $${tokenPrice})`,
+      entries: [
+        { accountId: cashAccount.id, amount: -totalCost },
+        { accountId: investedAccount.id, amount: totalCost },
+      ],
+    });
+
+    let position = await this.prisma.aiFundPosition.findFirst({ where: { userId } });
+    if (!position) {
+      position = await this.prisma.aiFundPosition.create({
+        data: {
+          userId,
+          strategyTier: 'balanced',
+          allocatedUsd: totalCost,
+          unrealizedAlpha: 0,
+        },
+      });
+    } else {
+      position = await this.prisma.aiFundPosition.update({
+        where: { id: position.id },
+        data: {
+          allocatedUsd: position.allocatedUsd + totalCost,
+        },
+      });
+    }
+
+    this.dashboardService?.invalidateCache(userId);
+    return {
+      success: true,
+      position,
+      totalCost,
+    };
+  }
+
+  /**
+   * Sell AI compute tokens: updates database position and credits available cash in ledger
+   */
+  async sellAiAsset(userId: string, dto: { assetId: string; tokensToSell: number; pricePerToken?: number }) {
+    if (!dto.tokensToSell || dto.tokensToSell <= 0) {
+      throw new BadRequestException('Tokens to sell must be positive.');
+    }
+
+    const resolvedPrice = 500; // Server-side asset pricing
+    const position = await this.prisma.aiFundPosition.findFirst({ where: { userId } });
+    const userTokens = position ? Math.floor(position.allocatedUsd / resolvedPrice) : 0;
+
+    if (userTokens < dto.tokensToSell) {
+      throw new BadRequestException(
+        `Insufficient AI tokens held (${userTokens}) to sell requested quantity (${dto.tokensToSell}).`
+      );
+    }
+
+    const proceeds = dto.tokensToSell * resolvedPrice;
+
+    const cashAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');
+    const investedAccount = await this.walletService.getOrCreateAccount(userId, 'INVESTED_CAPITAL', 'USD');
+
+    await this.walletService.recordLedgerTransaction({
+      type: 'TRADE',
+      description: `AI Fund Token Liquidation: ${dto.assetId} (${dto.tokensToSell} @ $${resolvedPrice})`,
+      entries: [
+        { accountId: cashAccount.id, amount: proceeds },
+        { accountId: investedAccount.id, amount: -proceeds },
+      ],
+    });
+
+    let updatedPosition = position;
+    if (position) {
+      updatedPosition = await this.prisma.aiFundPosition.update({
+        where: { id: position.id },
+        data: {
+          allocatedUsd: Math.max(0, position.allocatedUsd - proceeds),
+        },
+      });
+    }
+
+    this.dashboardService?.invalidateCache(userId);
+    return {
+      success: true,
+      position: updatedPosition,
+      proceeds,
+    };
+  }
 }
+

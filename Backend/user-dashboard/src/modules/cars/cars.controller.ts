@@ -9,7 +9,7 @@ import {
 import { CarsService } from './cars.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
-import { CreateDriveBookingDto } from './dto/cars.dto';
+import { CreateDriveBookingDto, BuyVehicleDto, SellVehicleDto } from './dto/cars.dto';
 
 @Controller('api/v1/cars')
 @UseGuards(JwtAuthGuard)
@@ -65,5 +65,27 @@ export class CarsController {
   @Get(':carId/provenance')
   async getVehicleProvenance(@Param('carId') carId: string) {
     return this.carsService.getVehicleProvenance(carId);
+  }
+
+  /**
+   * Acquire vehicle asset or fractional share with ledger debit
+   */
+  @Post('buy')
+  async buyVehicle(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: BuyVehicleDto,
+  ) {
+    return this.carsService.buyVehicle(user.id, dto);
+  }
+
+  /**
+   * Liquidate vehicle share with ledger credit
+   */
+  @Post('sell')
+  async sellVehicle(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: SellVehicleDto,
+  ) {
+    return this.carsService.sellVehicle(user.id, dto);
   }
 }

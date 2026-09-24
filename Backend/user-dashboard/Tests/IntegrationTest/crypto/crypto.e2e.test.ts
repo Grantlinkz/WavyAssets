@@ -136,6 +136,13 @@ describe('E2E Integration — Crypto Holdings, Gas Preview & DCA API', () => {
   describe('POST /api/v1/crypto/dca-schedules', () => {
     it('creates an automated DCA recurring buy schedule', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(testUser);
+      mockPrisma.ledgerAccount.findUnique.mockResolvedValue({
+        id: 'acc-cash-1',
+        userId: testUser.id,
+        accountType: 'AVAILABLE_CASH',
+        currency: 'USD',
+        balance: 50000.0,
+      });
       mockPrisma.dcaSchedule.create.mockResolvedValue({
         id: 'dca-sch-1',
         userId: testUser.id,

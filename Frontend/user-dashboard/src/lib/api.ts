@@ -64,19 +64,25 @@ async function requestApi<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  const baseUrl =
+    typeof window !== 'undefined' && window.location?.origin && window.location.origin.startsWith('http')
+      ? window.location.origin
+      : 'http://localhost:5174';
+  const url = endpoint.startsWith('http') ? endpoint : `${baseUrl}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+
   let res: Response;
   try {
-    res = await fetch(endpoint, {
+    res = await fetch(url, {
       ...options,
       headers,
       credentials: 'include', // Include HttpOnly refresh cookies
     });
-  } catch (networkError) {
+  } catch (err) {
     if (fallbackData !== undefined) {
       // Graceful offline fallback ONLY on transport-level fetch failures
       return fallbackData;
     }
-    throw networkError;
+    throw err;
   }
 
   if (!res.ok) {
@@ -232,8 +238,39 @@ export async function fetchCryptoHoldings<T = unknown>(fallback?: T): Promise<T>
   return requestApi<T>('/api/v1/crypto/holdings', { method: 'GET' }, fallback);
 }
 
+export async function fetchUserDcaSchedules<T = unknown>(fallback?: T): Promise<T> {
+  return requestApi<T>('/api/v1/crypto/dca-schedules', { method: 'GET' }, fallback);
+}
+
+export async function createDcaScheduleApi(payload: {
+  symbol: string;
+  amountUsd: number;
+  frequency: string;
+}): Promise<unknown> {
+  return requestApi<unknown>('/api/v1/crypto/dca-schedules', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function toggleDcaScheduleApi(id: string): Promise<unknown> {
+  return requestApi<unknown>(`/api/v1/crypto/dca-schedules/${id}/toggle`, {
+    method: 'PATCH',
+  });
+}
+
+export async function deleteDcaScheduleApi(id: string): Promise<unknown> {
+  return requestApi<unknown>(`/api/v1/crypto/dca-schedules/${id}`, {
+    method: 'DELETE',
+  });
+}
+
 export async function fetchStockPositions<T = unknown>(fallback?: T): Promise<T> {
   return requestApi<T>('/api/v1/stocks/positions', { method: 'GET' }, fallback);
+}
+
+export async function fetchUserStockOrders<T = unknown>(fallback?: T): Promise<T> {
+  return requestApi<T>('/api/v1/stocks/orders', { method: 'GET' }, fallback);
 }
 
 export async function fetchStockOrderBook<T = unknown>(
@@ -256,8 +293,28 @@ export async function submitStockOrder(payload: {
   });
 }
 
+export async function cancelStockOrderApi(id: string): Promise<unknown> {
+  return requestApi<unknown>(`/api/v1/stocks/orders/${id}`, {
+    method: 'DELETE',
+  });
+}
+
 export async function fetchWalletBalances<T = unknown>(fallback?: T): Promise<T> {
   return requestApi<T>('/api/v1/wallet/balances', { method: 'GET' }, fallback);
+}
+
+export async function adjustWalletBalanceApi(
+  payloadOrAmount: number | { amount: number; description?: string },
+  maybeDescription?: string,
+): Promise<unknown> {
+  const payload =
+    typeof payloadOrAmount === 'number'
+      ? { amount: payloadOrAmount, description: maybeDescription }
+      : payloadOrAmount;
+  return requestApi<unknown>('/api/v1/wallet/adjust-balance', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function submitWithdrawal(payload: {
@@ -284,6 +341,32 @@ export async function fetchAiFundsTelemetry<T = unknown>(fallback?: T): Promise<
   return requestApi<T>('/api/v1/ai-funds/metrics', { method: 'GET' }, fallback);
 }
 
+export async function fetchAiFundPositions<T = unknown>(fallback?: T): Promise<T> {
+  return requestApi<T>('/api/v1/ai-funds/positions', { method: 'GET' }, fallback);
+}
+
+export async function buyAiAssetApi(payload: {
+  assetId: string;
+  tokens: number;
+  tokenPrice: number;
+}): Promise<unknown> {
+  return requestApi<unknown>('/api/v1/ai-funds/buy', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function sellAiAssetApi(payload: {
+  assetId: string;
+  tokensToSell: number;
+  pricePerToken?: number;
+}): Promise<unknown> {
+  return requestApi<unknown>('/api/v1/ai-funds/sell', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function toggleAiCircuitBreaker(active: boolean, reason?: string): Promise<unknown> {
   return requestApi<unknown>('/api/v1/ai-funds/circuit-breaker', {
     method: 'POST',
@@ -295,8 +378,59 @@ export async function fetchRealEstateProperties<T = unknown>(fallback?: T): Prom
   return requestApi<T>('/api/v1/real-estate/properties', { method: 'GET' }, fallback);
 }
 
+export async function buyPropertyApi(payload: {
+  propertyId: string;
+  tokens: number;
+  tokenPrice: number;
+}): Promise<unknown> {
+  return requestApi<unknown>('/api/v1/real-estate/buy', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function sellPropertyApi(payload: {
+  propertyId: string;
+  tokensToSell: number;
+  pricePerToken?: number;
+}): Promise<unknown> {
+  return requestApi<unknown>('/api/v1/real-estate/sell', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function fetchCarsVaultInventory<T = unknown>(fallback?: T): Promise<T> {
   return requestApi<T>('/api/v1/cars/inventory', { method: 'GET' }, fallback);
+}
+
+export async function buyVehicleAssetApi(payload: {
+  assetId: string;
+  price: number;
+  purchaseType?: string;
+  fractionalPct?: number;
+}): Promise<unknown> {
+  return requestApi<unknown>('/api/v1/cars/buy', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function sellVehicleAssetApi(payload: {
+  assetId: string;
+  proceeds: number;
+}): Promise<unknown> {
+  return requestApi<unknown>('/api/v1/cars/sell', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateCardSpendingLimitApi(dailySpendLimit: number): Promise<unknown> {
+  return requestApi<unknown>('/api/v1/vip-cards/controls', {
+    method: 'PATCH',
+    body: JSON.stringify({ dailySpendLimit }),
+  });
 }
 
 // ----------------------------------------------------------------------

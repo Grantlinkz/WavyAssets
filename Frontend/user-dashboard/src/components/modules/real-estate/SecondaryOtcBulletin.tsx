@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowLeftRight, CheckCircle2 } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useAlternativeStore, type OtcTabType } from '../../../store/useAlternativeStore';
+import { REAL_ESTATE_ASSETS } from '../../../lib/alternativeAssetData';
 
 interface SecondaryOtcBulletinProps {
   maskBalances?: boolean;
@@ -12,19 +13,55 @@ export const SecondaryOtcBulletin: React.FC<SecondaryOtcBulletinProps> = ({
 }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
-  const otcOrders = useAlternativeStore((s) => s.otcOrders);
+  const storeOtcOrders = useAlternativeStore((s) => s.otcOrders);
+  const otcOrders = storeOtcOrders.length > 0 ? storeOtcOrders : useAlternativeStore.getState().otcOrders;
+  const storeHoldings = useAlternativeStore((s) => s.userRealEstateHoldings);
+  const userHoldings = Object.keys(storeHoldings).length > 0 ? storeHoldings : useAlternativeStore.getState().userRealEstateHoldings;
   const activeTab = useAlternativeStore((s) => s.activeOtcTab);
   const setOtcTab = useAlternativeStore((s) => s.setOtcTab);
   const executeOtcOrder = useAlternativeStore((s) => s.executeOtcOrder);
+  const sellProperty = useAlternativeStore((s) => s.sellProperty);
 
   const [notification, setNotification] = useState<string | null>(null);
 
-  const filteredOrders = otcOrders.filter((order) => {
+  // Combine store orders and user-held token positions
+  const userHeldOrders = Object.entries(userHoldings)
+    .filter(([, h]) => (h.tokens || 0) > 0)
+    .map(([propId, h]) => {
+      const asset = REAL_ESTATE_ASSETS.find((a) => a.id === propId);
+      const tokenPrice = asset?.tokenPrice || 500;
+      return {
+        id: `holding-${propId}`,
+        propertyId: propId,
+        type: 'OFFER' as const,
+        propertyName: asset?.name || 'Institutional SPV Asset',
+        tokenCount: h.tokens,
+        pricePerToken: tokenPrice,
+        navPremiumDiscountPct: 0.0,
+        counterpartyEnclave: 'Your Direct Title Holding',
+        totalUsd: h.tokens * tokenPrice,
+        isUserHolding: true,
+      };
+    });
+
+  // Merge user holdings (with Sell action) and counterparty OTC orders
+  const combinedOrders = [
+    ...userHeldOrders,
+    ...otcOrders.filter((o) => !userHeldOrders.some((u) => u.id === o.id)),
+  ];
+
+  const filteredOrders = combinedOrders.filter((order) => {
     if (activeTab === 'ALL') return true;
     if (activeTab === 'BIDS') return order.type === 'BID';
     if (activeTab === 'OFFERS') return order.type === 'OFFER';
     return true;
   });
+
+  const handleSell = (propertyId: string, tokens: number, name: string, tokenPrice: number) => {
+    sellProperty(propertyId, tokens, tokenPrice);
+    setNotification(`Successfully liquidated ${tokens} tokens of ${name} for $${(tokens * tokenPrice).toLocaleString('en-US', { minimumFractionDigits: 2 })}.`);
+    setTimeout(() => setNotification(null), 4000);
+  };
 
   const handleOrderAction = (orderId: string, type: 'BID' | 'OFFER', tokens: number, name: string) => {
     executeOtcOrder(orderId);
@@ -68,10 +105,10 @@ export const SecondaryOtcBulletin: React.FC<SecondaryOtcBulletinProps> = ({
           const isSelected = activeTab === tab;
           const count =
             tab === 'ALL'
-              ? otcOrders.length
+              ? combinedOrders.length
               : tab === 'BIDS'
-              ? otcOrders.filter((o) => o.type === 'BID').length
-              : otcOrders.filter((o) => o.type === 'OFFER').length;
+              ? combinedOrders.filter((o) => o.type === 'BID').length
+              : combinedOrders.filter((o) => o.type === 'OFFER').length;
 
           return (
             <button
@@ -93,12 +130,15 @@ export const SecondaryOtcBulletin: React.FC<SecondaryOtcBulletinProps> = ({
       {/* Live Bids & Offers Roster */}
       <div className="flex flex-col gap-2">
         {filteredOrders.length === 0 ? (
-          <div className="p-4 text-center text-xs font-mono text-outline">
-            No active orders found for selected tab.
+          <div className="py-8 px-4 text-center text-xs font-mono text-outline bg-surface-container/50 rounded border border-dashed border-border-hairline">
+            No active secondary OTC listings. Acquire SPV property shares in the Institutional Asset Inventory to access secondary market liquidity and list sell orders.
           </div>
         ) : (
           filteredOrders.map((order) => {
             const isOffer = order.type === 'OFFER';
+            const isUserHolding = 'isUserHolding' in order && Boolean(order.isUserHolding);
+            const propId = 'propertyId' in order ? String(order.propertyId) : '';
+
             return (
               <div
                 key={order.id}
@@ -108,12 +148,14 @@ export const SecondaryOtcBulletin: React.FC<SecondaryOtcBulletinProps> = ({
                   <div>
                     <span
                       className={`px-1 py-0.5 text-[9px] font-mono uppercase font-bold rounded ${
-                        isOffer
+                        isUserHolding
+                          ? 'bg-primary/20 text-primary border border-primary/40'
+                          : isOffer
                           ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
                           : 'bg-tertiary/15 text-tertiary border border-tertiary/30'
                       }`}
                     >
-                      {isOffer ? 'ASK OFFER' : 'BUY BID'}
+                      {isUserHolding ? 'YOUR POSITION' : isOffer ? 'ASK OFFER' : 'BUY BID'}
                     </span>
                     <div className="font-sans text-xs font-semibold text-on-surface mt-1">
                       {order.tokenCount} Tokens • {order.propertyName}
@@ -147,24 +189,41 @@ export const SecondaryOtcBulletin: React.FC<SecondaryOtcBulletinProps> = ({
                           minimumFractionDigits: 2,
                         })}`}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleOrderAction(
-                        order.id,
-                        order.type,
-                        order.tokenCount,
-                        order.propertyName
-                      )
-                    }
-                    className={`px-2.5 py-1 font-mono text-xs font-semibold rounded uppercase tracking-wider transition-colors cursor-pointer ${
-                      isOffer
-                        ? 'bg-primary text-on-primary hover:bg-primary-container'
-                        : 'bg-surface-container-high border border-border-hairline hover:border-outline text-on-surface'
-                    }`}
-                  >
-                    {isOffer ? 'EXECUTE BUY' : 'FILL BID'}
-                  </button>
+                  {isUserHolding ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleSell(
+                          propId,
+                          order.tokenCount,
+                          order.propertyName,
+                          order.pricePerToken
+                        )
+                      }
+                      className="px-3 py-1 font-mono text-xs font-bold rounded uppercase tracking-wider transition-colors cursor-pointer bg-error/20 hover:bg-error text-error hover:text-white border border-error/30"
+                    >
+                      SELL
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleOrderAction(
+                          order.id,
+                          order.type,
+                          order.tokenCount,
+                          order.propertyName
+                        )
+                      }
+                      className={`px-2.5 py-1 font-mono text-xs font-semibold rounded uppercase tracking-wider transition-colors cursor-pointer ${
+                        isOffer
+                          ? 'bg-primary text-on-primary hover:bg-primary-container'
+                          : 'bg-surface-container-high border border-border-hairline hover:border-outline text-on-surface'
+                      }`}
+                    >
+                      {isOffer ? 'EXECUTE BUY' : 'FILL BID'}
+                    </button>
+                  )}
                 </div>
               </div>
             );

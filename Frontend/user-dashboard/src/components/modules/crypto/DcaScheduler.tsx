@@ -1,39 +1,96 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, Plus, Play, Pause, Check, Trash2 } from 'lucide-react';
 import { useLiquidStore } from '../../../store/useLiquidStore';
 import { useDashboardStore } from '../../../store/useDashboardStore';
+import { useAuthStore } from '../../../store/useAuthStore';
+import { usePortfolioStore } from '../../../store/usePortfolioStore';
 import { formatMaskedCurrency } from '../../../lib/calculations';
+import { CRYPTO_HOLDINGS_DATA } from '../../../lib/liquidAssetData';
 
 export interface DcaSchedulerProps {
   maskBalances?: boolean;
 }
 
 export const DcaScheduler: React.FC<DcaSchedulerProps> = ({ maskBalances: propMask }) => {
-  const { dcaSchedules, toggleDcaSchedule, addDcaSchedule, deleteDcaSchedule } = useLiquidStore();
+  const {
+    dcaSchedules,
+    targetDcaAsset,
+    setTargetDcaAsset,
+    toggleDcaSchedule,
+    addDcaSchedule,
+    deleteDcaSchedule,
+  } = useLiquidStore();
+  const user = useAuthStore((s) => s.user);
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
 
-  const [asset, setAsset] = useState<string>('BTC');
+  const [asset, setAsset] = useState<string>(targetDcaAsset || 'BTC');
   const [frequency, setFrequency] = useState<'DAILY' | 'WEEKLY' | 'BI_WEEKLY' | 'MONTHLY'>('WEEKLY');
   const [amountUsd, setAmountUsd] = useState<number>(25000);
   const [sourceAccount] = useState<string>('USD Fedwire Treasury');
   const [justAdded, setJustAdded] = useState<boolean>(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleCreate = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (targetDcaAsset) {
+      setAsset(targetDcaAsset);
+    }
+  }, [targetDcaAsset]);
+
+  const handleAssetChange = (newAsset: string) => {
+    setAsset(newAsset);
+    setTargetDcaAsset(newAsset);
+  };
+
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!Number.isFinite(amountUsd) || amountUsd <= 0) {
       return;
     }
-    addDcaSchedule({
-      asset,
-      frequency,
-      amountUsd,
-      sourceAccount,
-      nextExecution: 'Scheduled next cycle',
-      active: true,
-    });
-    setJustAdded(true);
-    setTimeout(() => setJustAdded(false), 2000);
+    const currentCash = usePortfolioStore.getState().accountBalance ?? usePortfolioStore.getState().availableCash;
+    if (amountUsd > currentCash) {
+      setErrorMsg(
+        `Insufficient funds: Your Account Balance ($${currentCash.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}) is less than the investment amount ($${amountUsd.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}).`
+      );
+      setTimeout(() => setErrorMsg(null), 4000);
+      return;
+    }
+
+    try {
+      await addDcaSchedule(
+        {
+          asset,
+          frequency,
+          amountUsd,
+          sourceAccount,
+          nextExecution: 'Scheduled next cycle',
+          active: true,
+        },
+        user?.id
+      );
+      usePortfolioStore.getState().adjustAvailableCash(-amountUsd);
+      setErrorMsg(null);
+      setJustAdded(true);
+      setTimeout(() => setJustAdded(false), 2000);
+    } catch {
+      setErrorMsg('Failed to create DCA schedule.');
+      setTimeout(() => setErrorMsg(null), 3000);
+    }
+  };
+
+  const handleDelete = async (schedule: { id: string; amountUsd: number; asset: string }) => {
+    try {
+      await deleteDcaSchedule(schedule.id, user?.id);
+      usePortfolioStore.getState().adjustAvailableCash(schedule.amountUsd);
+    } catch {
+      console.error('Failed to delete DCA schedule');
+    }
   };
 
   return (
@@ -58,13 +115,14 @@ export const DcaScheduler: React.FC<DcaSchedulerProps> = ({ maskBalances: propMa
           <select
             data-testid="dca-asset-select"
             value={asset}
-            onChange={(e) => setAsset(e.target.value)}
+            onChange={(e) => handleAssetChange(e.target.value)}
             className="w-full bg-surface-container border border-border-hairline rounded-DEFAULT px-2 py-1.5 text-xs font-mono font-bold text-on-surface focus:outline-none"
           >
-            <option value="BTC">Bitcoin (BTC)</option>
-            <option value="ETH">Ethereum (ETH)</option>
-            <option value="SOL">Solana (SOL)</option>
-            <option value="AVAX">Avalanche (AVAX)</option>
+            {CRYPTO_HOLDINGS_DATA.map((item) => (
+              <option key={item.symbol} value={item.symbol}>
+                {item.symbol} ({item.name})
+              </option>
+            ))}
           </select>
         </div>
 
@@ -108,6 +166,15 @@ export const DcaScheduler: React.FC<DcaSchedulerProps> = ({ maskBalances: propMa
         </div>
       </form>
 
+      {errorMsg && (
+        <div
+          data-testid="dca-insufficient-funds-error"
+          className="p-2.5 bg-error/10 border border-error/30 text-error font-mono text-xs rounded-DEFAULT"
+        >
+          {errorMsg}
+        </div>
+      )}
+
       {/* Active Schedules List */}
       <div className="space-y-2">
         <span className="text-[10px] font-mono text-outline uppercase tracking-wider block">
@@ -146,7 +213,7 @@ export const DcaScheduler: React.FC<DcaSchedulerProps> = ({ maskBalances: propMa
                   <button
                     type="button"
                     data-testid={`toggle-dca-${schedule.id}`}
-                    onClick={() => toggleDcaSchedule(schedule.id)}
+                    onClick={() => toggleDcaSchedule(schedule.id, user?.id)}
                     className={`px-2 py-0.5 rounded-DEFAULT text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer ${
                       schedule.active
                         ? 'bg-tertiary/15 text-tertiary border border-tertiary/30'
@@ -168,7 +235,7 @@ export const DcaScheduler: React.FC<DcaSchedulerProps> = ({ maskBalances: propMa
                   <button
                     type="button"
                     data-testid={`delete-dca-${schedule.id}`}
-                    onClick={() => deleteDcaSchedule(schedule.id)}
+                    onClick={() => handleDelete(schedule)}
                     className="p-1 hover:text-error text-outline hover:bg-error/10 rounded-DEFAULT transition-colors cursor-pointer"
                     title="Delete Schedule"
                     aria-label={`Delete ${schedule.asset} DCA schedule`}

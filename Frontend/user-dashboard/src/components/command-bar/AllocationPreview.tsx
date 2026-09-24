@@ -1,9 +1,12 @@
 import React from 'react';
 import { AllocationDonut3D } from '../3d/AllocationDonut3D';
 import { usePortfolioStore } from '../../store/usePortfolioStore';
+import { isSsrOrTestEnv } from '../../lib/calculations';
 
 export const AllocationPreview: React.FC = () => {
-  const allocations = usePortfolioStore((s) => s.allocations);
+  const storeAllocations = usePortfolioStore((s) => s.allocations);
+  const isSsr = isSsrOrTestEnv();
+  const allocations = isSsr ? usePortfolioStore.getState().allocations : storeAllocations;
 
   return (
     <div

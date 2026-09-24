@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Shield,
   ArrowUpRight,
@@ -9,9 +9,15 @@ import {
   DollarSign,
   Layers,
   Lock,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { usePortfolioStore } from '../../../store/usePortfolioStore';
+import { useLiquidStore } from '../../../store/useLiquidStore';
+import { useAlternativeStore } from '../../../store/useAlternativeStore';
+import { REAL_ESTATE_ASSETS, EXOTIC_ASSETS } from '../../../lib/alternativeAssetData';
 import { formatMaskedCurrency } from '../../../lib/calculations';
 import { Button } from '../../ui/button';
 
@@ -85,44 +91,119 @@ export const OverviewModule: React.FC = () => {
     { symbol: 'HAGERTY-250', price: '382.4 pts', change: '+18.40%', isUp: true },
   ];
 
-  const executionBlotter = [
-    {
-      asset: 'BTC-USD COLD',
-      side: 'BUY',
-      size: '42.50 BTC',
-      price: '$89,420.00',
-      venue: 'Geneva OTC Bunker',
-      status: 'CLEARED',
-      time: '14:22:10 UTC',
-    },
-    {
-      asset: 'NVDA DMA BLOCK',
-      side: 'BUY',
-      size: '4,200 SHRS',
-      price: '$138.85',
-      venue: 'DTCC / Euroclear CH',
-      status: 'CLEARED',
-      time: '13:45:00 UTC',
-    },
-    {
-      asset: 'ETH STAKING (LIDO)',
-      side: 'STAKE',
-      size: '380.00 ETH',
-      price: '$3,410.50',
-      venue: 'Zurich Node 04',
-      status: 'BONDED',
-      time: '11:18:22 UTC',
-    },
-    {
-      asset: 'ZURICH TECH TOWER',
-      side: 'BUY SPV',
-      size: '12,500 TKNS',
-      price: '$100.00',
-      venue: 'DLT Land Registry',
-      status: 'ATTESTED',
-      time: '09:05:40 UTC',
-    },
-  ];
+  const transactions = useLiquidStore((s) => s.transactions);
+  const userRealEstateHoldings = useAlternativeStore((s) => s.userRealEstateHoldings);
+  const userVehicleHoldings = useAlternativeStore((s) => s.userVehicleHoldings);
+
+  const [blotterPage, setBlotterPage] = useState(1);
+  const [blotterSortOrder, setBlotterSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [blotterSortField, setBlotterSortField] = useState<'time' | 'price'>('time');
+  const BLOTTER_PAGE_SIZE = 4;
+
+  const dynamicBlotter = useMemo(() => {
+    const list: Array<{
+      id: string;
+      asset: string;
+      side: string;
+      size: string;
+      price: string;
+      numericPrice: number;
+      venue: string;
+      status: string;
+      time: string;
+    }> = [];
+
+    // Map real liquid transactions
+    transactions.forEach((tx) => {
+      let venue = 'Geneva OTC Bunker';
+      if (tx.vertical === 'STOCKS') venue = 'DTCC / Euroclear CH';
+      else if (tx.vertical === 'REAL_ESTATE') venue = 'DLT Land Registry';
+      else if ((tx.vertical as string) === 'CARS') venue = 'Geneva Freeport Vault';
+      else if (tx.vertical === 'CASH') venue = 'Zurich Enclave SIC';
+
+      list.push({
+        id: tx.id,
+        asset: tx.description,
+        side: tx.type,
+        size: formatMaskedCurrency(tx.amountUsd, maskBalances),
+        price: formatMaskedCurrency(tx.amountUsd, maskBalances),
+        numericPrice: tx.amountUsd,
+        venue,
+        status: tx.status,
+        time: tx.timestamp,
+      });
+    });
+
+    // Active real estate holdings
+    Object.entries(userRealEstateHoldings).forEach(([propId, holding]) => {
+      const asset = REAL_ESTATE_ASSETS.find((a) => a.id === propId);
+      if (asset && holding.tokens > 0) {
+        list.push({
+          id: `re-holding-${propId}`,
+          asset: asset.name.toUpperCase(),
+          side: 'BUY SPV',
+          size: `${holding.tokens.toLocaleString()} TKNS`,
+          price: formatMaskedCurrency(asset.tokenPrice, maskBalances),
+          numericPrice: holding.tokens * asset.tokenPrice,
+          venue: 'DLT Land Registry',
+          status: 'CLEARED',
+          time: 'Active Position',
+        });
+      }
+    });
+
+    // Active exotic vehicles / horology holdings
+    Object.entries(userVehicleHoldings).forEach(([assetId, holding]) => {
+      const asset = EXOTIC_ASSETS.find((a) => a.id === assetId);
+      if (asset && (holding.owned || (holding.totalInvested && holding.totalInvested > 0))) {
+        list.push({
+          id: `car-holding-${assetId}`,
+          asset: asset.title.toUpperCase(),
+          side: holding.purchaseType === 'fractional' ? 'FRACTIONAL' : 'FULL ASSET',
+          size: '1 UNIT',
+          price: formatMaskedCurrency(holding.totalInvested || asset.fairMarketValue, maskBalances),
+          numericPrice: holding.totalInvested || asset.fairMarketValue,
+          venue: asset.custodyEnclave || 'Geneva Freeport Vault',
+          status: 'BONDED',
+          time: 'Active Vaulted',
+        });
+      }
+    });
+
+    // Sort entries
+    return [...list].sort((a, b) => {
+      if (blotterSortField === 'price') {
+        return blotterSortOrder === 'asc'
+          ? a.numericPrice - b.numericPrice
+          : b.numericPrice - a.numericPrice;
+      }
+      const cmp = a.time.localeCompare(b.time);
+      return blotterSortOrder === 'asc' ? cmp : -cmp;
+    });
+  }, [transactions, userRealEstateHoldings, userVehicleHoldings, blotterSortField, blotterSortOrder, maskBalances]);
+
+  const totalBlotterPages = Math.max(1, Math.ceil(dynamicBlotter.length / BLOTTER_PAGE_SIZE));
+  const safeBlotterPage = Math.min(blotterPage, totalBlotterPages);
+  const paginatedBlotter = dynamicBlotter.slice(
+    (safeBlotterPage - 1) * BLOTTER_PAGE_SIZE,
+    safeBlotterPage * BLOTTER_PAGE_SIZE
+  );
+
+  const toggleSort = () => {
+    if (blotterSortField === 'time') {
+      if (blotterSortOrder === 'desc') setBlotterSortOrder('asc');
+      else {
+        setBlotterSortField('price');
+        setBlotterSortOrder('desc');
+      }
+    } else {
+      if (blotterSortOrder === 'desc') setBlotterSortOrder('asc');
+      else {
+        setBlotterSortField('time');
+        setBlotterSortOrder('desc');
+      }
+    }
+  };
 
   const verticalAllocations = storeAllocations.map((alloc) => ({
     name: alloc.name,
@@ -432,11 +513,26 @@ export const OverviewModule: React.FC = () => {
 
             {/* Institutional Execution Blotter */}
             <div className="space-y-2 pt-2 border-t border-border-hairline">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-[10px] font-mono text-outline uppercase tracking-wider">
-                  Recent Venue Fills &amp; Position Depth
+                  Recent Venue Fills &amp; Position Depth ({dynamicBlotter.length} Total)
                 </span>
-                <span className="text-[10px] font-mono text-tertiary">Direct DMA / Dark Pool</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    data-testid="blotter-sort-btn"
+                    onClick={toggleSort}
+                    className="flex items-center gap-1 px-2 py-0.5 bg-surface-container hover:bg-surface-container-high border border-border-hairline rounded text-[10px] font-mono text-on-surface transition-colors cursor-pointer"
+                    title={`Sorted by ${blotterSortField} (${blotterSortOrder.toUpperCase()})`}
+                  >
+                    <ArrowUpDown className="w-3 h-3 text-primary" />
+                    <span>
+                      {blotterSortField === 'time' ? 'Time' : 'Price'}{' '}
+                      ({blotterSortOrder === 'asc' ? '↑' : '↓'})
+                    </span>
+                  </button>
+                  <span className="text-[10px] font-mono text-tertiary">Direct DMA / Dark Pool</span>
+                </div>
               </div>
 
               <div className="overflow-x-auto">
@@ -452,13 +548,13 @@ export const OverviewModule: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border-hairline/60">
-                    {executionBlotter.map((order, idx) => (
-                      <tr key={idx} className="hover:bg-surface-container transition-colors">
+                    {paginatedBlotter.map((order) => (
+                      <tr key={order.id} className="hover:bg-surface-container transition-colors">
                         <td className="py-2 text-on-surface font-medium">{order.asset}</td>
                         <td className="py-2">
                           <span
                             className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
-                              order.side.includes('BUY')
+                              order.side.includes('BUY') || order.side.includes('DEPOSIT')
                                 ? 'bg-tertiary/10 text-tertiary'
                                 : 'bg-primary/10 text-primary'
                             }`}
@@ -481,6 +577,37 @@ export const OverviewModule: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+
+              {/* Blotter Pagination Controls */}
+              {totalBlotterPages > 1 && (
+                <div className="flex items-center justify-between pt-1 font-mono text-xs text-outline border-t border-border-hairline/40">
+                  <span data-testid="blotter-page-info" className="text-[10px]">
+                    Page {safeBlotterPage} of {totalBlotterPages}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      data-testid="blotter-prev-btn"
+                      disabled={safeBlotterPage <= 1}
+                      onClick={() => setBlotterPage(Math.max(1, safeBlotterPage - 1))}
+                      className="p-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-hairline disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      title="Previous Page"
+                    >
+                      <ChevronLeft className="w-3 h-3" />
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="blotter-next-btn"
+                      disabled={safeBlotterPage >= totalBlotterPages}
+                      onClick={() => setBlotterPage(Math.min(totalBlotterPages, safeBlotterPage + 1))}
+                      className="p-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-hairline disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      title="Next Page"
+                    >
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Action Bar inside Order Execution */}

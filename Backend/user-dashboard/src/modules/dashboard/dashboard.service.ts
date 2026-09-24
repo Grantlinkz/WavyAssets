@@ -199,6 +199,8 @@ export class DashboardService {
     const response: CommandBarResponse = {
       consolidatedNetWorth,
       currency: 'USD',
+      accountBalance: Number(walletValue.toFixed(2)),
+      availableCash: Number(walletValue.toFixed(2)),
       returns,
       allocationMatrix,
       kycStatus,

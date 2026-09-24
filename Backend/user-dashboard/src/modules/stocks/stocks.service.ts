@@ -535,4 +535,28 @@ export class StocksService {
       },
     ];
   }
+
+  /**
+   * Returns user active and pending orders from database
+   */
+  async getOrders(userId: string) {
+    const orders = await this.prisma.stockOrder.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return orders.map((o) => ({
+      id: o.id,
+      symbol: o.symbol,
+      orderType: o.orderType,
+      type: o.orderType === 'LIMIT' ? (o.side === 'BUY' ? 'BUY_LIMIT' : 'SELL_LIMIT') : o.orderType,
+      side: o.side,
+      shares: o.shares,
+      limitPrice: o.limitPrice || this.STOCKS_DATA[o.symbol]?.price || 100.0,
+      status: o.status,
+      createdAt: o.createdAt.toISOString(),
+      expires: 'Day Order (NYSE DMA)',
+    }));
+  }
 }
+

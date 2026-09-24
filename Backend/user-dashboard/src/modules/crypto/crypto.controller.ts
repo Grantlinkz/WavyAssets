@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -41,6 +42,14 @@ export class CryptoController {
   }
 
   /**
+   * Get all active and paused DCA schedules for user
+   */
+  @Get('dca-schedules')
+  async getDcaSchedules(@CurrentUser() user: AuthenticatedUser) {
+    return this.cryptoService.getDcaSchedules(user.id);
+  }
+
+  /**
    * Create automated DCA recurring buy schedule
    */
   @Post('dca-schedules')
@@ -60,6 +69,17 @@ export class CryptoController {
     @Param('id') id: string,
   ) {
     return this.cryptoService.toggleDcaSchedule(user.id, id);
+  }
+
+  /**
+   * Delete DCA schedule and refund unexecuted reservation to available cash
+   */
+  @Delete('dca-schedules/:id')
+  async deleteDcaSchedule(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    return this.cryptoService.deleteDcaSchedule(user.id, id);
   }
 
   /**

@@ -3,13 +3,11 @@ import {
   ArrowUpRight,
   ShieldAlert,
   KeyRound,
-  CheckCircle2,
   X,
   Landmark,
   Wallet,
   Clock,
-  AlertCircle,
-  FileCheck,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   Dialog,
@@ -20,6 +18,8 @@ import {
 import { usePortfolioStore } from '../../store/usePortfolioStore';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { useLiquidStore } from '../../store/useLiquidStore';
+import { useAuthStore } from '../../store/useAuthStore';
+import { checkKycWithdrawalLimit } from '../../lib/kycLimits';
 import { formatMaskedCurrency } from '../../lib/calculations';
 
 export interface WithdrawModalProps {
@@ -43,10 +43,12 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
 }) => {
   const storeModal = usePortfolioStore((s) => s.activeModal);
   const storeClose = usePortfolioStore((s) => s.closeModal);
+  const openModal = usePortfolioStore((s) => s.openModal);
   const availableCash = usePortfolioStore((s) => s.availableCash);
   const adjustAvailableCash = usePortfolioStore((s) => s.adjustAvailableCash);
   const maskBalances = useDashboardStore((s) => s.maskBalances);
   const addTransaction = useLiquidStore((s) => s.addTransaction);
+  const user = useAuthStore((s) => s.user);
 
   const isOpen = propIsOpen !== undefined ? propIsOpen : storeModal === 'withdraw';
   const closeModal = propClose !== undefined ? propClose : storeClose;
@@ -88,8 +90,12 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
   // Active form validation
   const currentAmountStr = activeRail === 'bank' ? bankAmount : cryptoAmount;
   const parsedAmount = parseFloat(currentAmountStr || '0');
+  const kycCheck = checkKycWithdrawalLimit(parsedAmount, user?.kycTier || 'TIER_1');
   const isValidAmount =
-    Number.isFinite(parsedAmount) && parsedAmount > 0 && parsedAmount <= availableCash;
+    Number.isFinite(parsedAmount) &&
+    parsedAmount > 0 &&
+    parsedAmount <= availableCash &&
+    kycCheck.allowed;
 
   const handleSelectCrypto = (asset: SupportedCryptoAsset) => {
     setSelectedCrypto(asset);
@@ -98,7 +104,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
   };
 
   const handleAuthorize = () => {
-    if (!isValidAmount) return;
+    if (!isValidAmount || !kycCheck.allowed) return;
     setIsVerifying(true);
 
     setTimeout(() => {
@@ -133,15 +139,16 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
       try {
         addTransaction({
           id: refId,
-          type: 'WITHDRAWAL',
-          asset: activeRail === 'bank' ? 'USD' : selectedCrypto,
-          amount: parsedAmount,
-          status: 'PENDING',
           timestamp: new Date().toISOString(),
-          enclave:
+          vertical: activeRail === 'bank' ? 'CASH' : 'CRYPTO',
+          type: 'WITHDRAWAL',
+          description:
             activeRail === 'bank'
               ? `${bankName} (Settlement Queue)`
-              : `Vault Cold Rail (${selectedProtocol})`,
+              : `Vault Cold Rail (${selectedCrypto} - ${selectedProtocol})`,
+          amountUsd: parsedAmount,
+          status: 'PENDING',
+          reference: refId,
         });
       } catch {
         // Continue gracefully
@@ -213,6 +220,37 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
               </p>
             </div>
           </div>
+
+          {/* KYC Tier Daily Limit Exceeded Notice */}
+          {parsedAmount > 0 && !kycCheck.allowed && (
+            <div
+              data-testid="kyc-limit-banner"
+              className="p-3 bg-error/15 border border-error/40 rounded-DEFAULT flex items-start justify-between gap-2"
+            >
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-error shrink-0 mt-0.5" />
+                <div>
+                  <span className="text-xs font-mono font-bold text-error uppercase tracking-wider block">
+                    Tier Daily Limit Exceeded
+                  </span>
+                  <p className="text-[11px] text-on-surface-variant font-sans mt-0.5">
+                    {kycCheck.error || 'You have gone beyond your Tier daily limit. Please upgrade your Tier.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                data-testid="upgrade-kyc-tier-btn"
+                onClick={() => {
+                  closeModal();
+                  openModal('kyc');
+                }}
+                className="px-2.5 py-1 bg-error/20 hover:bg-error/30 text-error border border-error/40 font-mono text-[11px] font-bold rounded uppercase whitespace-nowrap cursor-pointer transition-colors"
+              >
+                Upgrade Tier
+              </button>
+            </div>
+          )}
 
           {/* Pending Admin Approval Screen */}
           {pendingWithdrawal ? (
@@ -347,31 +385,6 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                 </button>
               </div>
 
-              {/* Destination Whitelist Selector (Provides test & institutional whitelist address parity) */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-mono text-outline uppercase tracking-wider">
-                  Pre-Approved Whitelist Destination
-                </label>
-                <select
-                  data-testid="withdraw-destination-select"
-                  onChange={(e) => {
-                    if (e.target.value === 'cold-01') {
-                      setWithdrawalAddress('0x39aB22cDE82914Afb7104bC67D289A294c71eE22');
-                    } else if (e.target.value === 'ubs-ch') {
-                      setAccountNumber('CH88 0024 0000 1234 5678 9');
-                      setBankName('UBS Switzerland AG');
-                    }
-                  }}
-                  className="w-full bg-surface-container-lowest border border-border-hairline rounded-DEFAULT px-3 py-2 text-xs font-mono text-on-surface focus:outline-none focus:border-primary"
-                >
-                  <option value="cold-01">
-                    Cold Storage Vault #1 (Zurich Treuhand - 0x39aB...22cD) [48h Verified]
-                  </option>
-                  <option value="ubs-ch">
-                    UBS Switzerland Corporate Operating (CH88 0024...9912) [Permanent]
-                  </option>
-                </select>
-              </div>
 
               {/* Section 1: Bank Withdrawal */}
               {activeRail === 'bank' && (

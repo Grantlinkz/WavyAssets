@@ -10,10 +10,13 @@ import {
   Wallet,
   ShieldCheck,
   KeyRound,
+  LogOut,
   X,
 } from 'lucide-react';
 import { BrandLogo } from '../common/BrandLogo';
 import { useDashboardStore, type AssetVertical } from '../../store/useDashboardStore';
+import { useAuthStore } from '../../store/useAuthStore';
+import { logoutUser } from '../../lib/api';
 import { cn } from '../../lib/utils';
 
 const MOBILE_NAV_ITEMS: { id: AssetVertical; label: string; badge?: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -102,6 +105,23 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({ isOpen }) => {
               </button>
             );
           })}
+
+          {/* Sign Out Action after Security & Access Vault */}
+          <button
+            onClick={async () => {
+              setMobileMenuOpen(false);
+              try {
+                await logoutUser();
+              } finally {
+                useAuthStore.getState().logout();
+              }
+            }}
+            data-testid="mobile-nav-item-sign-out"
+            className="flex items-center space-x-3 w-full px-3 py-2 rounded-sm text-xs font-medium text-error/90 hover:bg-error/10 hover:text-error transition-colors text-left cursor-pointer"
+          >
+            <LogOut className="h-4 w-4 text-error" />
+            <span>Sign Out</span>
+          </button>
         </nav>
       </div>
     </div>

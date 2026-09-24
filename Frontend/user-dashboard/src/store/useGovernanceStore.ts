@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import {
-  INITIAL_CLIENT_SESSIONS,
   INITIAL_WHITELIST_DESTINATIONS,
   type ClientSession,
   type WhitelistedDestination,
 } from '../lib/governanceAssetData';
+import { getInitialActualSessions, saveActualSessions } from '../lib/clientDevice';
 
 export interface AddDestinationPayload {
   assetRail: string;
@@ -114,16 +114,20 @@ export const useGovernanceStore = create<GovernanceState>((set, get) => ({
     })),
 
   // Security Command Initial State
-  sessions: INITIAL_CLIENT_SESSIONS,
+  sessions: getInitialActualSessions(),
   terminateSession: (sessionId) =>
-    set((state) => ({
-      sessions: state.sessions.filter((s) => s.id !== sessionId),
-    })),
+    set((state) => {
+      const updated = state.sessions.filter((s) => s.id !== sessionId);
+      saveActualSessions(updated);
+      return { sessions: updated };
+    }),
 
   revokeAllOtherSessions: () =>
-    set((state) => ({
-      sessions: state.sessions.filter((s) => s.isCurrent),
-    })),
+    set((state) => {
+      const updated = state.sessions.filter((s) => s.isCurrent);
+      saveActualSessions(updated);
+      return { sessions: updated };
+    }),
 
   destinations: INITIAL_WHITELIST_DESTINATIONS,
   blacklistedAddresses: [],

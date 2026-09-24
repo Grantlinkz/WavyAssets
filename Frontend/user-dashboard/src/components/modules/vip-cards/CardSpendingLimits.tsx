@@ -1,31 +1,84 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { CreditCard, Sliders, ShieldCheck } from 'lucide-react';
-import { formatMaskedCurrency } from '../../../lib/calculations';
+import { formatMaskedCurrency, isSsrOrTestEnv } from '../../../lib/calculations';
 import { useDashboardStore } from '../../../store/useDashboardStore';
+import { useAuthStore } from '../../../store/useAuthStore';
+import { usePortfolioStore } from '../../../store/usePortfolioStore';
+import { useLiquidStore } from '../../../store/useLiquidStore';
+import { updateCardSpendingLimitApi } from '../../../lib/api';
 
 interface CardSpendingLimitsProps {
   maskBalances?: boolean;
 }
 
+const KYC_TIER_CONFIG = {
+  TIER_1: { min: 1000, max: 10000, step: 1000, label: 'Tier 1 (Basic)' },
+  TIER_2: { min: 10000, max: 250000, step: 10000, label: 'Tier 2 (Gov ID Verified)' },
+  TIER_3: { min: 50000, max: 2000000, step: 50000, label: 'Tier 3 (Proof of Address / Utility)' },
+} as const;
+
 export const CardSpendingLimits: React.FC<CardSpendingLimitsProps> = ({ maskBalances: propMask }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
 
-  const [dailyLimit, setDailyLimit] = useState<number>(500000);
+  const isSsr = isSsrOrTestEnv();
+  const storeUser = useAuthStore((s) => s.user);
+  const storeAvailableCash = usePortfolioStore((s) => s.availableCash);
+  const storeTransactions = useLiquidStore((s) => s.transactions);
+
+  const user = isSsr ? useAuthStore.getState().user : storeUser;
+  const availableCash = isSsr ? usePortfolioStore.getState().availableCash : storeAvailableCash;
+  const transactions = isSsr ? useLiquidStore.getState().transactions : storeTransactions;
+
+  const kycTier = user?.kycTier || 'TIER_2';
+  const tierConfig = KYC_TIER_CONFIG[kycTier] || KYC_TIER_CONFIG.TIER_2;
+
+  const [dailyLimit, setDailyLimit] = useState<number>(tierConfig.max);
+
+  // Clamp dailyLimit if KYC tier changes
+  useEffect(() => {
+    setDailyLimit((prev) => {
+      if (prev > tierConfig.max) return tierConfig.max;
+      if (prev < tierConfig.min) return tierConfig.min;
+      return prev;
+    });
+  }, [tierConfig.max, tierConfig.min]);
+
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [updateNotice, setUpdateNotice] = useState<string | null>(null);
 
+  const availableToday = Math.min(dailyLimit, Math.max(0, availableCash));
+
+  const thirtyDayBillingTotal = useMemo(() => {
+    const cardTxs = transactions.filter(
+      (tx) => tx.type === 'SWEEP' || tx.vertical === 'CASH' || tx.description.toLowerCase().includes('card')
+    );
+    const total = cardTxs.reduce((sum, tx) => sum + (tx.amountUsd || 0), 0);
+    return total > 0 ? total : 0;
+  }, [transactions]);
+
   const handleLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDailyLimit(Number(e.target.value));
+    const val = Number(e.target.value);
+    setDailyLimit(Math.min(tierConfig.max, Math.max(tierConfig.min, val)));
   };
 
-  const handleCommitLimit = () => {
+  const handleCommitLimit = async () => {
+    if (dailyLimit > tierConfig.max) {
+      setUpdateNotice(`Cap exceeds ${kycTier} max allowance of $${tierConfig.max.toLocaleString()}.`);
+      setTimeout(() => setUpdateNotice(null), 3500);
+      return;
+    }
+
     setIsUpdating(true);
-    setTimeout(() => {
+    try {
+      await updateCardSpendingLimitApi(dailyLimit);
+      setUpdateNotice(`Daily spending cap committed to HSM Enclave & Database (${kycTier} Verified).`);
+    } catch {
+      setUpdateNotice('Failed to update spending cap on server. Please try again.');
+    } finally {
       setIsUpdating(false);
-      setUpdateNotice('Daily spending cap committed to HSM Enclave.');
       setTimeout(() => setUpdateNotice(null), 3000);
-    }, 600);
+    }
   };
 
   return (
@@ -38,12 +91,17 @@ export const CardSpendingLimits: React.FC<CardSpendingLimitsProps> = ({ maskBala
         <div className="flex items-center gap-2">
           <CreditCard className="w-4 h-4 text-primary" />
           <h2 className="font-serif text-sm font-semibold uppercase tracking-wide text-on-surface">
-            Card Spending Caps & Liquidity Reserve Rails
+            Card Spending Caps &amp; Liquidity Reserve Rails
           </h2>
         </div>
-        <span className="text-[10px] font-mono text-tertiary bg-tertiary/10 border border-tertiary/30 px-2 py-0.5 rounded-DEFAULT">
-          COLLATERALIZED 1:1
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-mono text-primary bg-primary/10 border border-primary/30 px-2 py-0.5 rounded-DEFAULT uppercase font-semibold">
+            {tierConfig.label}
+          </span>
+          <span className="text-[10px] font-mono text-tertiary bg-tertiary/10 border border-tertiary/30 px-2 py-0.5 rounded-DEFAULT">
+            COLLATERALIZED 1:1
+          </span>
+        </div>
       </div>
 
       {/* 3 Metric Cards */}
@@ -66,7 +124,7 @@ export const CardSpendingLimits: React.FC<CardSpendingLimitsProps> = ({ maskBala
             Available Today
           </span>
           <div className="font-mono text-sm sm:text-base font-bold text-primary tabular-nums mt-1 truncate">
-            {formatMaskedCurrency(428650.0, maskBalances)}
+            {formatMaskedCurrency(availableToday, maskBalances)}
           </div>
           <span className="font-mono text-[10px] text-outline mt-1 truncate">
             Settled Real-Time DvP
@@ -78,7 +136,7 @@ export const CardSpendingLimits: React.FC<CardSpendingLimitsProps> = ({ maskBala
             30-Day Billing Total
           </span>
           <div className="font-mono text-sm sm:text-base font-bold text-on-surface tabular-nums mt-1 truncate">
-            {formatMaskedCurrency(142390.0, maskBalances)}
+            {formatMaskedCurrency(thirtyDayBillingTotal, maskBalances)}
           </div>
           <span className="font-mono text-[10px] text-tertiary mt-1 truncate">
             Geneva Vault: 0.00% Risk
@@ -91,18 +149,18 @@ export const CardSpendingLimits: React.FC<CardSpendingLimitsProps> = ({ maskBala
         <div className="flex items-center justify-between font-mono text-xs">
           <div className="flex items-center gap-1.5 text-on-surface font-semibold">
             <Sliders className="w-3.5 h-3.5 text-secondary" />
-            <span>Adjust Active Daily Allowance</span>
+            <span>Adjust Active Daily Allowance ({kycTier})</span>
           </div>
           <span className="text-secondary font-bold tabular-nums">
-            {formatMaskedCurrency(dailyLimit, maskBalances)} / Day
+            {`${formatMaskedCurrency(dailyLimit, maskBalances)} / Day`}
           </span>
         </div>
 
         <input
           type="range"
-          min="50000"
-          max="2000000"
-          step="50000"
+          min={tierConfig.min}
+          max={tierConfig.max}
+          step={tierConfig.step}
           data-testid="daily-limit-slider"
           value={dailyLimit}
           onChange={handleLimitChange}
@@ -110,9 +168,10 @@ export const CardSpendingLimits: React.FC<CardSpendingLimitsProps> = ({ maskBala
         />
 
         <div className="flex items-center justify-between text-[10px] font-mono text-outline">
-          <span>Min: $50,000</span>
-          <span>Baseline: $500,000</span>
-          <span>Max: $2,000,000</span>
+          <span>{`Min: ${formatMaskedCurrency(tierConfig.min, false)}`}</span>
+          <span>{`Baseline: $500,000.00`}</span>
+          <span className="text-primary font-semibold">{`KYC Max: ${formatMaskedCurrency(tierConfig.max, false)}`}</span>
+          <span>Approved Ceiling</span>
         </div>
 
         <div className="flex items-center justify-between pt-1">

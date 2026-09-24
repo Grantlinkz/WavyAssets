@@ -29,9 +29,12 @@ export interface KycStatusSummary {
 export interface CommandBarResponse {
   consolidatedNetWorth: number;
   currency: string;
+  accountBalance?: number;
+  availableCash?: number;
   returns: ReturnsSummary;
   allocationMatrix: AllocationMatrixItem[];
   kycStatus: KycStatusSummary;
   privacyMaskActive: boolean;
   lastUpdated: string;
 }
+

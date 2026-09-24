@@ -15,6 +15,8 @@ import {
   SetRiskTierDto,
   ToggleCircuitBreakerDto,
   SimulateRebalanceDto,
+  BuyAiAssetDto,
+  SellAiAssetDto,
 } from './dto/ai-funds.dto';
 
 @Controller('api/v1/ai-funds')
@@ -87,5 +89,35 @@ export class AiFundsController {
     @Body() dto: SimulateRebalanceDto,
   ) {
     return this.aiFundsService.rebalance(user.id, dto);
+  }
+
+  /**
+   * Get user AI fund position and strategy allocations from database
+   */
+  @Get('positions')
+  async getPositions(@CurrentUser() user: AuthenticatedUser) {
+    return this.aiFundsService.getPositions(user.id);
+  }
+
+  /**
+   * Acquire AI strategy/compute tokens with ledger debit
+   */
+  @Post('buy')
+  async buyAiAsset(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: BuyAiAssetDto,
+  ) {
+    return this.aiFundsService.buyAiAsset(user.id, dto);
+  }
+
+  /**
+   * Liquidate AI strategy/compute tokens with ledger credit
+   */
+  @Post('sell')
+  async sellAiAsset(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: SellAiAssetDto,
+  ) {
+    return this.aiFundsService.sellAiAsset(user.id, dto);
   }
 }

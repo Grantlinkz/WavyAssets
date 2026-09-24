@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Landmark,
   Copy,
@@ -150,15 +150,82 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   interface EthereumProvider {
     isMetaMask?: boolean;
     isTrust?: boolean;
+    isTrustWallet?: boolean;
     isPhantom?: boolean;
+    isBraveWallet?: boolean;
+    isCoinbaseWallet?: boolean;
+    providers?: EthereumProvider[];
     request: (args: { method: string; params?: unknown[] }) => Promise<string[] | string>;
   }
+
+  interface EIP6963ProviderDetail {
+    info: {
+      uuid: string;
+      name: string;
+      icon: string;
+      rdns: string;
+    };
+    provider: EthereumProvider;
+  }
+
+  const eipMetaMaskProviderRef = useRef<EthereumProvider | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleAnnounce = (event: Event) => {
+      const customEvent = event as CustomEvent<EIP6963ProviderDetail>;
+      const detail = customEvent.detail;
+      if (!detail?.info || !detail?.provider) return;
+      if (
+        detail.info.rdns === 'io.metamask' ||
+        detail.info.name?.toLowerCase().includes('metamask')
+      ) {
+        eipMetaMaskProviderRef.current = detail.provider;
+      }
+    };
+    window.addEventListener('eip6963:announceProvider', handleAnnounce);
+    window.dispatchEvent(new Event('eip6963:requestProvider'));
+    return () => {
+      window.removeEventListener('eip6963:announceProvider', handleAnnounce);
+    };
+  }, []);
 
   const isTestEnv =
     (typeof globalThis !== 'undefined' &&
       (globalThis as unknown as { process?: { env?: { NODE_ENV?: string } } }).process?.env
         ?.NODE_ENV === 'test') ||
     Boolean(import.meta.env?.MODE === 'test');
+
+  const getGenuineMetaMaskProvider = (win: Window & {
+    ethereum?: EthereumProvider;
+    trustwallet?: EthereumProvider;
+    phantom?: { ethereum?: EthereumProvider; solana?: { isPhantom?: boolean; connect?: () => Promise<{ publicKey: { toString: () => string } }> } };
+    solana?: { isPhantom?: boolean; connect?: () => Promise<{ publicKey: { toString: () => string } }> };
+  }): EthereumProvider | null => {
+    if (eipMetaMaskProviderRef.current) {
+      return eipMetaMaskProviderRef.current;
+    }
+    if (Array.isArray(win.ethereum?.providers)) {
+      const genuine = win.ethereum.providers.find(
+        (p) =>
+          p.isMetaMask &&
+          !p.isTrust &&
+          !p.isTrustWallet &&
+          !p.isPhantom &&
+          !p.isBraveWallet &&
+          !p.isCoinbaseWallet
+      );
+      if (genuine) return genuine;
+    }
+    if (
+      win.ethereum?.isMetaMask &&
+      !win.ethereum?.isTrust &&
+      !win.ethereum?.isTrustWallet
+    ) {
+      return win.ethereum;
+    }
+    return null;
+  };
 
   const handleConnectWallet = async (name: string) => {
     setWalletNotFoundPrompt(null);
@@ -181,8 +248,8 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         solana?: { isPhantom?: boolean; connect?: () => Promise<{ publicKey: { toString: () => string } }> };
       };
       if (name === 'MetaMask') {
-        const hasMetaMask = Boolean(win.ethereum?.isMetaMask);
-        if (!hasMetaMask) {
+        const metaMaskProvider = getGenuineMetaMaskProvider(win);
+        if (!metaMaskProvider) {
           setIsConnecting(false);
           setWalletNotFoundPrompt({
             name: 'MetaMask',
@@ -192,8 +259,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
           return;
         }
         try {
-          if (!win.ethereum) throw new Error('MetaMask not detected');
-          const accounts = await win.ethereum.request({ method: 'eth_requestAccounts' });
+          const accounts = (await metaMaskProvider.request({ method: 'eth_requestAccounts' })) as string[];
           setIsConnecting(false);
           if (accounts && accounts.length > 0) {
             setConnectedWallet(accounts[0]);

@@ -9,156 +9,185 @@ import {
   ArrowLeftRight,
 } from 'lucide-react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
-import { formatMaskedCurrency } from '../../../lib/calculations';
+import { usePortfolioStore } from '../../../store/usePortfolioStore';
+import { formatMaskedCurrency, isSsrOrTestEnv } from '../../../lib/calculations';
 
 interface LedgerSplitCardsProps {
   maskBalances?: boolean;
+  perCurrencyBalances?: {
+    usdc?: number;
+    usd?: number;
+    chf?: number;
+    eur?: number;
+  };
 }
 
-export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances: propMask }) => {
+export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({
+  maskBalances: propMask,
+  perCurrencyBalances,
+}) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
 
-  const investedAllocations = [
-    {
-      name: 'Crypto & Validator Staking',
-      amount: 4890000.0,
-      pct: 37.6,
-      color: 'bg-primary',
-      dotColor: 'bg-primary',
-    },
-    {
-      name: 'Global Equities & Pre-IPO SPVs',
-      amount: 2960000.0,
-      pct: 22.8,
-      color: 'bg-secondary',
-      dotColor: 'bg-secondary',
-    },
-    {
-      name: 'Tokenized Real Estate SPVs (Zurich/London)',
-      amount: 2850000.0,
-      pct: 21.9,
-      color: 'bg-tertiary',
-      dotColor: 'bg-tertiary',
-    },
-    {
-      name: 'Private AI Quant Funds (Autonomous Enclaves)',
-      amount: 1450000.0,
-      pct: 11.2,
-      color: 'bg-outline',
-      dotColor: 'bg-outline',
-    },
-    {
-      name: 'Exotic Heritage Cars & Horology Vault',
-      amount: 850000.0,
-      pct: 6.5,
-      color: 'bg-primary-container',
-      dotColor: 'bg-primary-container',
-    },
-  ];
+  const isSsr = isSsrOrTestEnv();
+  const rawAvailableCash = usePortfolioStore((s) => s.availableCash);
+  const rawNetWorth = usePortfolioStore((s) => s.netWorth);
+  const rawAllocations = usePortfolioStore((s) => s.allocations);
+  const openModal = usePortfolioStore((s) => s.openModal);
+
+  const availableCash = isSsr ? usePortfolioStore.getState().availableCash : rawAvailableCash;
+  const netWorth = isSsr ? usePortfolioStore.getState().netWorth : rawNetWorth;
+  const storeAllocations = isSsr ? usePortfolioStore.getState().allocations : rawAllocations;
+
+  const investedCapital = Math.max(0, netWorth - availableCash);
+
+  const hasPerCurrency = Boolean(
+    perCurrencyBalances &&
+      (perCurrencyBalances.usdc !== undefined ||
+        perCurrencyBalances.usd !== undefined ||
+        perCurrencyBalances.chf !== undefined ||
+        perCurrencyBalances.eur !== undefined)
+  );
+
+  const usdcBalance = perCurrencyBalances?.usdc ?? 0;
+  const usdCashBalance = perCurrencyBalances?.usd ?? 0;
+  const chfCashBalance = perCurrencyBalances?.chf ?? 0;
+  const eurCashBalance = perCurrencyBalances?.eur ?? 0;
+
+  const investedAllocations = storeAllocations.map((alloc) => {
+    let colorClass = 'bg-primary';
+    let dotColorClass = 'bg-primary';
+    if (alloc.id === 'stocks') {
+      colorClass = 'bg-secondary';
+      dotColorClass = 'bg-secondary';
+    } else if (alloc.id === 'real-estate') {
+      colorClass = 'bg-tertiary';
+      dotColorClass = 'bg-tertiary';
+    } else if (alloc.id === 'ai-funds') {
+      colorClass = 'bg-outline';
+      dotColorClass = 'bg-outline';
+    } else if (alloc.id === 'cars') {
+      colorClass = 'bg-primary-container';
+      dotColorClass = 'bg-primary-container';
+    }
+
+    return {
+      name: alloc.name,
+      amount: alloc.actualValue,
+      pct: alloc.actualPct,
+      color: colorClass,
+      dotColor: dotColorClass,
+    };
+  });
 
   return (
     <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-      {/* CARD A: AVAILABLE LIQUID BALANCE (UNENCUMBERED CASH) */}
-      <div className="lg:col-span-6 bg-surface-container-lowest border-2 border-primary/60 rounded-DEFAULT p-4 flex flex-col justify-between relative shadow-lg">
-        <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 border border-primary/40 rounded-DEFAULT">
-          <Zap className="w-3.5 h-3.5 text-primary" />
-          <span className="text-[10px] font-mono text-primary uppercase font-bold tracking-wider">
-            Unencumbered & Instant Spendable
-          </span>
-        </div>
-
+      {/* CARD A: ACCOUNT BALANCE (UNENCUMBERED CASH) */}
+      <div className="lg:col-span-6 bg-surface-container-lowest border-2 border-primary/60 rounded-DEFAULT p-4 flex flex-col justify-between shadow-lg">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Wallet className="w-4 h-4 text-primary" />
-            <span className="text-xs font-mono text-on-surface uppercase tracking-wider font-semibold">
-              Card A: Available Liquid Balance
-            </span>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              <Wallet className="w-4 h-4 text-primary shrink-0" />
+              <span className="text-xs font-mono text-on-surface uppercase tracking-wider font-semibold">
+                Card A: Account Balance
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 border border-primary/40 rounded-DEFAULT shrink-0">
+              <Zap className="w-3.5 h-3.5 text-primary" />
+              <span className="text-[10px] font-mono text-primary uppercase font-bold tracking-wider">
+                Unencumbered &amp; Instant Spendable
+              </span>
+            </div>
           </div>
           <p className="text-xs font-sans text-outline max-w-xl mb-3">
-            Liquid unencumbered cash & stablecoins ready for immediate withdrawal, OTC execution, or card funding.
+            Liquid unencumbered cash &amp; stablecoins ready for immediate withdrawal, OTC execution, or card funding.
           </p>
 
           <div className="flex items-baseline gap-2 mb-4 pb-3 border-b border-border-hairline">
             <span className="text-2xl font-mono text-primary tabular-nums font-bold tracking-tight">
-              {formatMaskedCurrency(1820450.0, maskBalances)}
+              {formatMaskedCurrency(availableCash, maskBalances)}
             </span>
             <span className="text-[10px] font-mono text-outline uppercase tracking-wider">
               USD Equivalent
             </span>
           </div>
 
-          {/* Four-Way Liquidity Sub-Ledger */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-            <div className="bg-surface-container p-2.5 rounded-DEFAULT border border-border-hairline">
-              <div className="flex items-center justify-between text-outline text-[11px] font-mono">
-                <span>USDC Circle</span>
-                <span className="text-tertiary">99.9%</span>
+          {/* Optional Four-Way Liquidity Sub-Ledger (Only rendered when actual per-currency balances are available) */}
+          {hasPerCurrency && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+              <div className="bg-surface-container p-2.5 rounded-DEFAULT border border-border-hairline">
+                <div className="flex items-center justify-between text-outline text-[11px] font-mono">
+                  <span>USDC Circle</span>
+                  <span className="text-tertiary">99.9%</span>
+                </div>
+                <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
+                  {formatMaskedCurrency(usdcBalance, maskBalances)}
+                </div>
+                <span className="text-[10px] font-sans text-outline">Native ERC-20</span>
               </div>
-              <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
-                {formatMaskedCurrency(1115337.5, maskBalances)}
-              </div>
-              <span className="text-[10px] font-sans text-outline">Native ERC-20</span>
-            </div>
 
-            <div className="bg-surface-container p-2.5 rounded-DEFAULT border border-border-hairline">
-              <div className="flex items-center justify-between text-outline text-[11px] font-mono">
-                <span>USD Cash</span>
-                <span className="text-primary font-semibold">Fedwire</span>
+              <div className="bg-surface-container p-2.5 rounded-DEFAULT border border-border-hairline">
+                <div className="flex items-center justify-between text-outline text-[11px] font-mono">
+                  <span>USD Cash</span>
+                  <span className="text-primary font-semibold">Fedwire</span>
+                </div>
+                <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
+                  {formatMaskedCurrency(usdCashBalance, maskBalances)}
+                </div>
+                <span className="text-[10px] font-sans text-outline">JPMorgan Segregated</span>
               </div>
-              <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
-                {formatMaskedCurrency(276400.0, maskBalances)}
-              </div>
-              <span className="text-[10px] font-sans text-outline">JPMorgan Segregated</span>
-            </div>
 
-            <div className="bg-surface-container p-2.5 rounded-DEFAULT border border-border-hairline">
-              <div className="flex items-center justify-between text-outline text-[11px] font-mono">
-                <span>CHF Cash</span>
-                <span className="text-tertiary font-semibold">SIC RTGS</span>
+              <div className="bg-surface-container p-2.5 rounded-DEFAULT border border-border-hairline">
+                <div className="flex items-center justify-between text-outline text-[11px] font-mono">
+                  <span>CHF Cash</span>
+                  <span className="text-tertiary font-semibold">SIC RTGS</span>
+                </div>
+                <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
+                  {formatMaskedCurrency(chfCashBalance, maskBalances)}
+                </div>
+                <span className="text-[10px] font-sans text-outline">
+                  {maskBalances ? '•••••• CHF' : `${chfCashBalance.toLocaleString()} CHF`}
+                </span>
               </div>
-              <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
-                {formatMaskedCurrency(248712.5, maskBalances)}
-              </div>
-              <span className="text-[10px] font-sans text-outline">
-                {maskBalances ? '•••••• CHF' : '220,650.00 CHF'}
-              </span>
-            </div>
 
-            <div className="bg-surface-container p-2.5 rounded-DEFAULT border border-border-hairline">
-              <div className="flex items-center justify-between text-outline text-[11px] font-mono">
-                <span>EUR Cash</span>
-                <span className="text-outline">SEPA Inst</span>
+              <div className="bg-surface-container p-2.5 rounded-DEFAULT border border-border-hairline">
+                <div className="flex items-center justify-between text-outline text-[11px] font-mono">
+                  <span>EUR Cash</span>
+                  <span className="text-outline">SEPA Inst</span>
+                </div>
+                <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
+                  {formatMaskedCurrency(eurCashBalance, maskBalances)}
+                </div>
+                <span className="text-[10px] font-sans text-outline">
+                  {maskBalances ? '•••••• EUR' : `€${eurCashBalance.toLocaleString()} EUR`}
+                </span>
               </div>
-              <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
-                {maskBalances ? '••••••••' : '≈ $180,000.00'}
-              </div>
-              <span className="text-[10px] font-sans text-outline">
-                {maskBalances ? '•••••• EUR' : '€166,200.00 EUR'}
-              </span>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Quick Action Triggers */}
         <div className="flex flex-wrap items-center gap-2 pt-2">
           <button
             type="button"
-            className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-primary text-surface font-mono text-xs font-bold rounded-DEFAULT hover:bg-primary-hover transition-colors uppercase tracking-wider"
+            onClick={() => openModal('withdraw')}
+            className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-primary text-surface font-mono text-xs font-bold rounded-DEFAULT hover:bg-primary-hover transition-colors uppercase tracking-wider cursor-pointer"
           >
             <ArrowUpRight className="w-4 h-4" />
             <span>Withdraw to Bank</span>
           </button>
           <button
             type="button"
-            className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-surface-container border border-border-hairline text-on-surface hover:bg-surface-container-high font-mono text-xs rounded-DEFAULT transition-colors uppercase tracking-wider"
+            onClick={() => openModal('deposit')}
+            className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-surface-container border border-border-hairline text-on-surface hover:bg-surface-container-high font-mono text-xs rounded-DEFAULT transition-colors uppercase tracking-wider cursor-pointer"
           >
             <ArrowDownLeft className="w-4 h-4 text-tertiary" />
             <span>Deposit Capital</span>
           </button>
           <button
             type="button"
-            className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-surface-container border border-border-hairline text-on-surface hover:bg-surface-container-high font-mono text-xs rounded-DEFAULT transition-colors uppercase tracking-wider"
+            onClick={() => openModal('trade')}
+            className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-surface-container border border-border-hairline text-on-surface hover:bg-surface-container-high font-mono text-xs rounded-DEFAULT transition-colors uppercase tracking-wider cursor-pointer"
           >
             <ArrowLeftRight className="w-4 h-4 text-secondary" />
             <span>Internal Transfer</span>
@@ -166,29 +195,30 @@ export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances
         </div>
       </div>
 
-      {/* CARD B: INVESTED & LOCKED FIDUCIARY CAPITAL */}
-      <div className="lg:col-span-6 bg-surface-container-lowest border border-border-hairline rounded-DEFAULT p-4 flex flex-col justify-between relative">
-        <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-0.5 bg-surface-container border border-border-hairline rounded-DEFAULT">
-          <ShieldCheck className="w-3.5 h-3.5 text-tertiary" />
-          <span className="text-[10px] font-mono text-tertiary uppercase font-medium tracking-wider">
-            All Vaults Bonded & Collateralized
-          </span>
-        </div>
-
+      {/* CARD B: CONSOLIDATED PLATFORM NET WORTH */}
+      <div className="lg:col-span-6 bg-surface-container-lowest border border-border-hairline rounded-DEFAULT p-4 flex flex-col justify-between">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Lock className="w-4 h-4 text-outline" />
-            <span className="text-xs font-mono text-on-surface uppercase tracking-wider font-semibold">
-              Card B: Invested & Locked Capital
-            </span>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              <Lock className="w-4 h-4 text-outline shrink-0" />
+              <span className="text-xs font-mono text-on-surface uppercase tracking-wider font-semibold">
+                Card B: Invested &amp; Locked Capital
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-surface-container border border-border-hairline rounded-DEFAULT shrink-0">
+              <ShieldCheck className="w-3.5 h-3.5 text-tertiary" />
+              <span className="text-[10px] font-mono text-tertiary uppercase font-medium tracking-wider">
+                All Vaults Bonded &amp; Collateralized
+              </span>
+            </div>
           </div>
           <p className="text-xs font-sans text-outline max-w-xl mb-3">
-            Fiduciary capital locked in real estate SPVs, exotic vehicles, horology, equities, & validator staking.
+            Fiduciary capital locked in real estate SPVs, exotic vehicles, horology, equities, &amp; validator staking.
           </p>
 
           <div className="flex items-baseline gap-2 mb-4 pb-3 border-b border-border-hairline">
             <span className="text-2xl font-mono text-on-surface tabular-nums font-bold tracking-tight">
-              {formatMaskedCurrency(13000000.0, maskBalances)}
+              {formatMaskedCurrency(investedCapital, maskBalances)}
             </span>
             <span className="text-[10px] font-mono text-outline uppercase tracking-wider">
               Bonded Asset Valuation
