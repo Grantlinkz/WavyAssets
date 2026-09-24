@@ -62,7 +62,7 @@ export const FiatRampWizard: React.FC<FiatRampWizardProps> = ({ maskBalances: pr
         .filter(
           (t) =>
             t.type === 'WITHDRAWAL' &&
-            (t.status === 'CLEARED' || t.status === 'SETTLED' || t.status === 'PENDING') &&
+            (t.status === 'CLEARED' || t.status === 'SETTLING' || t.status === 'PENDING') &&
             t.timestamp.includes(todayStr)
         )
         .reduce((sum, t) => sum + (t.amountUsd || 0), 0);
