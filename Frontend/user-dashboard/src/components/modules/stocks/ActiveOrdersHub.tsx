@@ -36,15 +36,19 @@ export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBala
     }
   }, [selectedStock]);
 
-  const handleCancel = (id: string) => {
+  const handleCancel = async (id: string) => {
     const targetOrder = activeOrders.find((o) => o.id === id);
-    if (targetOrder && targetOrder.type === 'BUY_LIMIT') {
-      const orderTotal = targetOrder.shares * targetOrder.limitPrice;
-      usePortfolioStore.getState().adjustAvailableCash(orderTotal);
+    try {
+      await cancelActiveOrder(id, user?.id);
+      if (targetOrder && targetOrder.type === 'BUY_LIMIT') {
+        const orderTotal = targetOrder.shares * targetOrder.limitPrice;
+        usePortfolioStore.getState().adjustAvailableCash(orderTotal);
+      }
+      setCancelledId(id);
+      setTimeout(() => setCancelledId(null), 2500);
+    } catch {
+      console.error('Failed to cancel active order');
     }
-    cancelActiveOrder(id, user?.id);
-    setCancelledId(id);
-    setTimeout(() => setCancelledId(null), 2500);
   };
 
   const handlePlaceOrder = (e: React.FormEvent) => {

@@ -35,15 +35,15 @@ export function getActualClientDevice(): ClientSession {
   } else if (/Windows/i.test(ua)) {
     osName = 'Windows PC';
     icon = 'laptop_mac';
-  } else if (/Macintosh|Mac OS X/i.test(ua)) {
-    osName = 'MacBook / Apple Mac';
-    icon = 'laptop_mac';
   } else if (/iPhone/i.test(ua)) {
     osName = 'Apple iPhone';
     icon = 'smartphone';
   } else if (/iPad/i.test(ua)) {
     osName = 'Apple iPad';
     icon = 'smartphone';
+  } else if (/Macintosh|Mac OS X/i.test(ua)) {
+    osName = 'MacBook / Apple Mac';
+    icon = 'laptop_mac';
   } else if (/Android/i.test(ua)) {
     osName = 'Android Mobile';
     icon = 'smartphone';

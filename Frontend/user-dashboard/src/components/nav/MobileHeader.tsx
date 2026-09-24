@@ -110,8 +110,11 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({ isOpen }) => {
           <button
             onClick={async () => {
               setMobileMenuOpen(false);
-              await logoutUser();
-              useAuthStore.getState().logout();
+              try {
+                await logoutUser();
+              } finally {
+                useAuthStore.getState().logout();
+              }
             }}
             data-testid="mobile-nav-item-sign-out"
             className="flex items-center space-x-3 w-full px-3 py-2 rounded-sm text-xs font-medium text-error/90 hover:bg-error/10 hover:text-error transition-colors text-left cursor-pointer"

@@ -116,17 +116,31 @@ export const App: React.FC<AppProps> = ({
 
   // Load user-scoped execution schedules, active limit orders, and alternative holdings on mount or user change
   useEffect(() => {
-    useLiquidStore.getState().loadUserDcaSchedules(user?.id);
-    useLiquidStore.getState().loadUserOrders(user?.id);
-    useAlternativeStore.getState().loadUserAlternativeHoldings();
+    let isCancelled = false;
 
-    // Initial sync of liquid holdings into portfolio store
-    const liquidState = useLiquidStore.getState();
-    const cryptoNav = liquidState.dcaSchedules
-      .filter((s) => s.active)
-      .reduce((sum, s) => sum + s.amountUsd, 0);
-    const stocksNav = calculateStocksEquitiesNav(liquidState.activeOrders);
-    usePortfolioStore.getState().syncUserHoldings(cryptoNav, stocksNav);
+    const loadData = async () => {
+      await Promise.all([
+        useLiquidStore.getState().loadUserDcaSchedules(user?.id),
+        useLiquidStore.getState().loadUserOrders(user?.id),
+        useAlternativeStore.getState().loadUserAlternativeHoldings(),
+      ]);
+
+      if (isCancelled) return;
+
+      // Initial sync of liquid holdings into portfolio store with refreshed state
+      const liquidState = useLiquidStore.getState();
+      const cryptoNav = liquidState.dcaSchedules
+        .filter((s) => s.active)
+        .reduce((sum, s) => sum + s.amountUsd, 0);
+      const stocksNav = calculateStocksEquitiesNav(liquidState.activeOrders);
+      usePortfolioStore.getState().syncUserHoldings(cryptoNav, stocksNav);
+    };
+
+    loadData().catch(console.error);
+
+    return () => {
+      isCancelled = true;
+    };
   }, [user?.id]);
 
   // Dynamically load user-specific command bar financial valuations

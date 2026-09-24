@@ -37,16 +37,6 @@ export class WalletController {
     return this.walletService.initiateFiatRamp(user.id, dto);
   }
 
-  /**
-   * Direct balance adjustment for multi-asset executions
-   */
-  @Post('adjust-balance')
-  async adjustBalance(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() body: { amount: number; description?: string },
-  ) {
-    return this.walletService.adjustBalance(user.id, body.amount, body.description);
-  }
 
   /**
    * Paginated Transaction Ledger

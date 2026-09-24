@@ -357,28 +357,42 @@ export class CarsService {
   /**
    * Acquire vehicle asset or fractional share with ledger debit
    */
-  async buyVehicle(userId: string, dto: { assetId: string; price: number; purchaseType?: string; fractionalPct?: number }) {
+  async buyVehicle(userId: string, dto: { assetId: string; price?: number; purchaseType?: string; fractionalPct?: number }) {
+    const car = await this.prisma.exoticCar.findUnique({
+      where: { id: dto.assetId },
+    });
+    if (!car) {
+      throw new NotFoundException(`Exotic car asset ${dto.assetId} not found`);
+    }
+
+    const sharePct = dto.purchaseType === 'fractional' ? (dto.fractionalPct || 10) : 100;
+    if (sharePct <= 0 || sharePct > 100) {
+      throw new BadRequestException('Fractional percentage must be between 1 and 100');
+    }
+
+    const derivedPrice = (car.insuredValue * sharePct) / 100;
+    const finalPrice = dto.price || derivedPrice;
+
     if (this.walletService) {
       const cashAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');
       const currentBalance = Number(cashAccount.balance);
-      if (currentBalance < dto.price) {
+      if (currentBalance < finalPrice) {
         throw new BadRequestException(
-          `Insufficient Account Balance ($${currentBalance}) to acquire vehicle asset ($${dto.price}).`
+          `Insufficient Account Balance ($${currentBalance}) to acquire vehicle asset ($${finalPrice}).`
         );
       }
 
       const investedAccount = await this.walletService.getOrCreateAccount(userId, 'INVESTED_CAPITAL', 'USD');
       await this.walletService.recordLedgerTransaction({
         type: 'TRADE',
-        description: `Exotic Vehicle Acquisition: ${dto.assetId} ($${dto.price})`,
+        description: `Exotic Vehicle Acquisition: ${dto.assetId} ($${finalPrice})`,
         entries: [
-          { accountId: cashAccount.id, amount: -dto.price },
-          { accountId: investedAccount.id, amount: dto.price },
+          { accountId: cashAccount.id, amount: -finalPrice },
+          { accountId: investedAccount.id, amount: finalPrice },
         ],
       });
     }
 
-    const sharePct = dto.purchaseType === 'fractional' ? (dto.fractionalPct || 10) : 100;
     let carShare = await this.prisma.carShare.findFirst({
       where: { userId, carId: dto.assetId },
     });
@@ -402,39 +416,45 @@ export class CarsService {
     return {
       success: true,
       carShare,
-      cost: dto.price,
+      cost: finalPrice,
     };
   }
 
   /**
    * Liquidate vehicle share with ledger credit
    */
-  async sellVehicle(userId: string, dto: { assetId: string; proceeds: number }) {
+  async sellVehicle(userId: string, dto: { assetId: string; proceeds?: number }) {
     const carShare = await this.prisma.carShare.findFirst({
       where: { userId, carId: dto.assetId },
+      include: { car: true },
     });
+
+    if (!carShare) {
+      throw new NotFoundException(`No vehicle share holding found for asset ${dto.assetId}`);
+    }
+
+    const derivedProceeds = (carShare.car.insuredValue * carShare.sharePct) / 100;
+    const finalProceeds = dto.proceeds || derivedProceeds;
 
     if (this.walletService) {
       const cashAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');
       const investedAccount = await this.walletService.getOrCreateAccount(userId, 'INVESTED_CAPITAL', 'USD');
       await this.walletService.recordLedgerTransaction({
         type: 'TRADE',
-        description: `Exotic Vehicle Liquidation: ${dto.assetId} (+$${dto.proceeds})`,
+        description: `Exotic Vehicle Liquidation: ${dto.assetId} (+$${finalProceeds})`,
         entries: [
-          { accountId: cashAccount.id, amount: dto.proceeds },
-          { accountId: investedAccount.id, amount: -dto.proceeds },
+          { accountId: cashAccount.id, amount: finalProceeds },
+          { accountId: investedAccount.id, amount: -finalProceeds },
         ],
       });
     }
 
-    if (carShare) {
-      await this.prisma.carShare.delete({ where: { id: carShare.id } });
-    }
+    await this.prisma.carShare.delete({ where: { id: carShare.id } });
 
     this.dashboardService?.invalidateCache(userId);
     return {
       success: true,
-      proceeds: dto.proceeds,
+      proceeds: finalProceeds,
     };
   }
 }

@@ -5,7 +5,6 @@ import {
   TOTAL_Global_NET_WORTH,
   type VerticalAllocation,
 } from '../lib/calculations';
-import { adjustWalletBalanceApi } from '../lib/api';
 
 export type ModalType = 'deposit' | 'withdraw' | 'trade' | 'kyc';
 export type DepositRailTab = 'wire' | 'crypto' | 'card';
@@ -75,7 +74,6 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
       if (current + delta >= 0) {
         success = true;
         const updated = current + delta;
-        adjustWalletBalanceApi(delta, 'Liquid balance adjustment').catch(console.error);
         return { availableCash: updated, accountBalance: updated };
       }
       return state;
@@ -89,7 +87,6 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
       if (current + delta >= 0) {
         success = true;
         const updated = current + delta;
-        adjustWalletBalanceApi(delta, 'Liquid balance adjustment').catch(console.error);
         return { availableCash: updated, accountBalance: updated };
       }
       return state;

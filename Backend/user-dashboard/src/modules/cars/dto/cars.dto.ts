@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsDateString } from 'class-validator';
+import { IsString, IsNotEmpty, IsDateString, IsOptional, IsNumber, Min } from 'class-validator';
 
 export class CreateDriveBookingDto {
   @IsString()
@@ -11,6 +11,37 @@ export class CreateDriveBookingDto {
 
   @IsDateString()
   bookingDate!: string;
+}
+
+export class BuyVehicleDto {
+  @IsString()
+  @IsNotEmpty()
+  assetId!: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0.01)
+  price?: number;
+
+  @IsOptional()
+  @IsString()
+  purchaseType?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0.01)
+  fractionalPct?: number;
+}
+
+export class SellVehicleDto {
+  @IsString()
+  @IsNotEmpty()
+  assetId!: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0.01)
+  proceeds?: number;
 }
 
 export interface CarInventoryItemResponse {

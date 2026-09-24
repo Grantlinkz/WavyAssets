@@ -77,12 +77,12 @@ async function requestApi<T>(
       headers,
       credentials: 'include', // Include HttpOnly refresh cookies
     });
-  } catch {
+  } catch (err) {
     if (fallbackData !== undefined) {
       // Graceful offline fallback ONLY on transport-level fetch failures
       return fallbackData;
     }
-    return {} as T;
+    throw err;
   }
 
   if (!res.ok) {

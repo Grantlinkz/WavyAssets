@@ -370,6 +370,18 @@ export class AiFundsService {
     const position = await this.prisma.aiFundPosition.findFirst({
       where: { userId },
     });
+    const positions =
+      position && position.allocatedUsd > 0
+        ? [
+            {
+              strategyId: 'ai-1',
+              strategyTier: position.strategyTier,
+              tokens: Math.floor(position.allocatedUsd / 500),
+              totalInvested: position.allocatedUsd,
+            },
+          ]
+        : [];
+
     return {
       success: true,
       position: position || {
@@ -380,14 +392,19 @@ export class AiFundsService {
         claimedYield: 0,
         pendingYield: 0,
       },
+      positions,
     };
   }
 
   /**
    * Buy AI compute tokens: updates database position and debits available cash from ledger
    */
-  async buyAiAsset(userId: string, dto: { assetId: string; tokens: number; tokenPrice: number }) {
-    const totalCost = dto.tokens * dto.tokenPrice;
+  async buyAiAsset(userId: string, dto: { assetId: string; tokens: number; tokenPrice?: number }) {
+    if (!dto.tokens || dto.tokens <= 0) {
+      throw new BadRequestException('Tokens to acquire must be positive.');
+    }
+    const tokenPrice = dto.tokenPrice || 500;
+    const totalCost = dto.tokens * tokenPrice;
     const cashAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');
     const currentBalance = Number(cashAccount.balance);
 
@@ -400,7 +417,7 @@ export class AiFundsService {
     const investedAccount = await this.walletService.getOrCreateAccount(userId, 'INVESTED_CAPITAL', 'USD');
     await this.walletService.recordLedgerTransaction({
       type: 'TRADE',
-      description: `AI Fund Token Acquisition: ${dto.assetId} (${dto.tokens} @ $${dto.tokenPrice})`,
+      description: `AI Fund Token Acquisition: ${dto.assetId} (${dto.tokens} @ $${tokenPrice})`,
       entries: [
         { accountId: cashAccount.id, amount: -totalCost },
         { accountId: investedAccount.id, amount: totalCost },
@@ -438,7 +455,20 @@ export class AiFundsService {
    * Sell AI compute tokens: updates database position and credits available cash in ledger
    */
   async sellAiAsset(userId: string, dto: { assetId: string; tokensToSell: number; pricePerToken?: number }) {
-    const resolvedPrice = dto.pricePerToken || 500;
+    if (!dto.tokensToSell || dto.tokensToSell <= 0) {
+      throw new BadRequestException('Tokens to sell must be positive.');
+    }
+
+    const resolvedPrice = 500; // Server-side asset pricing
+    const position = await this.prisma.aiFundPosition.findFirst({ where: { userId } });
+    const userTokens = position ? Math.floor(position.allocatedUsd / resolvedPrice) : 0;
+
+    if (userTokens < dto.tokensToSell) {
+      throw new BadRequestException(
+        `Insufficient AI tokens held (${userTokens}) to sell requested quantity (${dto.tokensToSell}).`
+      );
+    }
+
     const proceeds = dto.tokensToSell * resolvedPrice;
 
     const cashAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');
@@ -453,9 +483,9 @@ export class AiFundsService {
       ],
     });
 
-    let position = await this.prisma.aiFundPosition.findFirst({ where: { userId } });
+    let updatedPosition = position;
     if (position) {
-      position = await this.prisma.aiFundPosition.update({
+      updatedPosition = await this.prisma.aiFundPosition.update({
         where: { id: position.id },
         data: {
           allocatedUsd: Math.max(0, position.allocatedUsd - proceeds),
@@ -466,7 +496,7 @@ export class AiFundsService {
     this.dashboardService?.invalidateCache(userId);
     return {
       success: true,
-      position,
+      position: updatedPosition,
       proceeds,
     };
   }

@@ -14,9 +14,18 @@ import { formatMaskedCurrency, isSsrOrTestEnv } from '../../../lib/calculations'
 
 interface LedgerSplitCardsProps {
   maskBalances?: boolean;
+  perCurrencyBalances?: {
+    usdc?: number;
+    usd?: number;
+    chf?: number;
+    eur?: number;
+  };
 }
 
-export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances: propMask }) => {
+export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({
+  maskBalances: propMask,
+  perCurrencyBalances,
+}) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
 
@@ -32,10 +41,18 @@ export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances
 
   const investedCapital = Math.max(0, netWorth - availableCash);
 
-  const usdcBalance = availableCash * 0.6127;
-  const usdCashBalance = availableCash * 0.1518;
-  const chfCashBalance = availableCash * 0.1366;
-  const eurCashBalance = availableCash * 0.0989;
+  const hasPerCurrency = Boolean(
+    perCurrencyBalances &&
+      (perCurrencyBalances.usdc !== undefined ||
+        perCurrencyBalances.usd !== undefined ||
+        perCurrencyBalances.chf !== undefined ||
+        perCurrencyBalances.eur !== undefined)
+  );
+
+  const usdcBalance = perCurrencyBalances?.usdc ?? 0;
+  const usdCashBalance = perCurrencyBalances?.usd ?? 0;
+  const chfCashBalance = perCurrencyBalances?.chf ?? 0;
+  const eurCashBalance = perCurrencyBalances?.eur ?? 0;
 
   const investedAllocations = storeAllocations.map((alloc) => {
     let colorClass = 'bg-primary';
@@ -78,12 +95,12 @@ export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances
             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 border border-primary/40 rounded-DEFAULT shrink-0">
               <Zap className="w-3.5 h-3.5 text-primary" />
               <span className="text-[10px] font-mono text-primary uppercase font-bold tracking-wider">
-                Unencumbered & Instant Spendable
+                Unencumbered &amp; Instant Spendable
               </span>
             </div>
           </div>
           <p className="text-xs font-sans text-outline max-w-xl mb-3">
-            Liquid unencumbered cash & stablecoins ready for immediate withdrawal, OTC execution, or card funding.
+            Liquid unencumbered cash &amp; stablecoins ready for immediate withdrawal, OTC execution, or card funding.
           </p>
 
           <div className="flex items-baseline gap-2 mb-4 pb-3 border-b border-border-hairline">
@@ -95,56 +112,58 @@ export const LedgerSplitCards: React.FC<LedgerSplitCardsProps> = ({ maskBalances
             </span>
           </div>
 
-          {/* Four-Way Liquidity Sub-Ledger */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-            <div className="bg-surface-container p-2.5 rounded-DEFAULT border border-border-hairline">
-              <div className="flex items-center justify-between text-outline text-[11px] font-mono">
-                <span>USDC Circle</span>
-                <span className="text-tertiary">99.9%</span>
+          {/* Optional Four-Way Liquidity Sub-Ledger (Only rendered when actual per-currency balances are available) */}
+          {hasPerCurrency && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+              <div className="bg-surface-container p-2.5 rounded-DEFAULT border border-border-hairline">
+                <div className="flex items-center justify-between text-outline text-[11px] font-mono">
+                  <span>USDC Circle</span>
+                  <span className="text-tertiary">99.9%</span>
+                </div>
+                <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
+                  {formatMaskedCurrency(usdcBalance, maskBalances)}
+                </div>
+                <span className="text-[10px] font-sans text-outline">Native ERC-20</span>
               </div>
-              <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
-                {formatMaskedCurrency(usdcBalance, maskBalances)}
-              </div>
-              <span className="text-[10px] font-sans text-outline">Native ERC-20</span>
-            </div>
 
-            <div className="bg-surface-container p-2.5 rounded-DEFAULT border border-border-hairline">
-              <div className="flex items-center justify-between text-outline text-[11px] font-mono">
-                <span>USD Cash</span>
-                <span className="text-primary font-semibold">Fedwire</span>
+              <div className="bg-surface-container p-2.5 rounded-DEFAULT border border-border-hairline">
+                <div className="flex items-center justify-between text-outline text-[11px] font-mono">
+                  <span>USD Cash</span>
+                  <span className="text-primary font-semibold">Fedwire</span>
+                </div>
+                <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
+                  {formatMaskedCurrency(usdCashBalance, maskBalances)}
+                </div>
+                <span className="text-[10px] font-sans text-outline">JPMorgan Segregated</span>
               </div>
-              <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
-                {formatMaskedCurrency(usdCashBalance, maskBalances)}
-              </div>
-              <span className="text-[10px] font-sans text-outline">JPMorgan Segregated</span>
-            </div>
 
-            <div className="bg-surface-container p-2.5 rounded-DEFAULT border border-border-hairline">
-              <div className="flex items-center justify-between text-outline text-[11px] font-mono">
-                <span>CHF Cash</span>
-                <span className="text-tertiary font-semibold">SIC RTGS</span>
+              <div className="bg-surface-container p-2.5 rounded-DEFAULT border border-border-hairline">
+                <div className="flex items-center justify-between text-outline text-[11px] font-mono">
+                  <span>CHF Cash</span>
+                  <span className="text-tertiary font-semibold">SIC RTGS</span>
+                </div>
+                <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
+                  {formatMaskedCurrency(chfCashBalance, maskBalances)}
+                </div>
+                <span className="text-[10px] font-sans text-outline">
+                  {maskBalances ? '•••••• CHF' : `${chfCashBalance.toLocaleString()} CHF`}
+                </span>
               </div>
-              <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
-                {formatMaskedCurrency(chfCashBalance, maskBalances)}
-              </div>
-              <span className="text-[10px] font-sans text-outline">
-                {maskBalances ? '•••••• CHF' : `${Math.round(chfCashBalance * 0.887).toLocaleString()} CHF`}
-              </span>
-            </div>
 
-            <div className="bg-surface-container p-2.5 rounded-DEFAULT border border-border-hairline">
-              <div className="flex items-center justify-between text-outline text-[11px] font-mono">
-                <span>EUR Cash</span>
-                <span className="text-outline">SEPA Inst</span>
+              <div className="bg-surface-container p-2.5 rounded-DEFAULT border border-border-hairline">
+                <div className="flex items-center justify-between text-outline text-[11px] font-mono">
+                  <span>EUR Cash</span>
+                  <span className="text-outline">SEPA Inst</span>
+                </div>
+                <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
+                  {formatMaskedCurrency(eurCashBalance, maskBalances)}
+                </div>
+                <span className="text-[10px] font-sans text-outline">
+                  {maskBalances ? '•••••• EUR' : `€${eurCashBalance.toLocaleString()} EUR`}
+                </span>
               </div>
-              <div className="text-sm font-mono text-on-surface tabular-nums font-semibold mt-0.5">
-                {formatMaskedCurrency(eurCashBalance, maskBalances)}
-              </div>
-              <span className="text-[10px] font-sans text-outline">
-                {maskBalances ? '•••••• EUR' : `€${Math.round(eurCashBalance * 0.923).toLocaleString()} EUR`}
-              </span>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Quick Action Triggers */}

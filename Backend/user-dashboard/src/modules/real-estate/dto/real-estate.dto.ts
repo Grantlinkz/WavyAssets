@@ -1,9 +1,37 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsNumber, Min } from 'class-validator';
 
 export class ExecuteOtcOrderDto {
   @IsOptional()
   @IsString()
   notes?: string;
+}
+
+export class BuyPropertyDto {
+  @IsString()
+  propertyId!: string;
+
+  @IsNumber()
+  @Min(1)
+  tokens!: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0.01)
+  tokenPrice?: number;
+}
+
+export class SellPropertyDto {
+  @IsString()
+  propertyId!: string;
+
+  @IsNumber()
+  @Min(1)
+  tokensToSell!: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0.01)
+  pricePerToken?: number;
 }
 
 export interface PropertyItemResponse {

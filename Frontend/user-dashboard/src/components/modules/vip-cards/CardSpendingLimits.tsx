@@ -71,10 +71,10 @@ export const CardSpendingLimits: React.FC<CardSpendingLimitsProps> = ({ maskBala
 
     setIsUpdating(true);
     try {
-      await updateCardSpendingLimitApi('card-obsidian-001', dailyLimit);
+      await updateCardSpendingLimitApi(dailyLimit);
       setUpdateNotice(`Daily spending cap committed to HSM Enclave & Database (${kycTier} Verified).`);
     } catch {
-      setUpdateNotice(`Daily spending cap updated locally (${kycTier} Verified).`);
+      setUpdateNotice('Failed to update spending cap on server. Please try again.');
     } finally {
       setIsUpdating(false);
       setTimeout(() => setUpdateNotice(null), 3000);

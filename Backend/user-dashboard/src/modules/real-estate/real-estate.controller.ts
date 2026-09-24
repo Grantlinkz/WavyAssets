@@ -9,7 +9,7 @@ import {
 import { RealEstateService } from './real-estate.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
-import { ExecuteOtcOrderDto } from './dto/real-estate.dto';
+import { ExecuteOtcOrderDto, BuyPropertyDto, SellPropertyDto } from './dto/real-estate.dto';
 
 @Controller('api/v1/real-estate')
 @UseGuards(JwtAuthGuard)
@@ -77,9 +77,9 @@ export class RealEstateController {
   @Post('buy')
   async buyProperty(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() body: { propertyId: string; tokens: number; tokenPrice: number },
+    @Body() dto: BuyPropertyDto,
   ) {
-    return this.realEstateService.buyProperty(user.id, body);
+    return this.realEstateService.buyProperty(user.id, dto);
   }
 
   /**
@@ -88,8 +88,8 @@ export class RealEstateController {
   @Post('sell')
   async sellProperty(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() body: { propertyId: string; tokensToSell: number; pricePerToken?: number },
+    @Body() dto: SellPropertyDto,
   ) {
-    return this.realEstateService.sellProperty(user.id, body);
+    return this.realEstateService.sellProperty(user.id, dto);
   }
 }

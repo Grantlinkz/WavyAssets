@@ -171,12 +171,25 @@ export const RealEstateActionModal: React.FC<RealEstateActionModalProps> = ({
     setErrorMsg(null);
     setIsProcessing(true);
     setTimeout(() => {
+      let success = false;
       if (activeMode === 'buy') {
         const tokensAcquired =
           buyType === 'full' ? property.tokenCount : tokenQty;
-        buyProperty(property.id, tokensAcquired, tokenPrice);
+        success = buyProperty(property.id, tokensAcquired, tokenPrice);
+        if (!success) {
+          setIsProcessing(false);
+          setErrorMsg('Failed to acquire real estate tokens: Insufficient account funds.');
+          setTimeout(() => setErrorMsg(null), 4000);
+          return;
+        }
       } else {
-        leaseProperty(property.id, leaseTerm, effectiveMonthlyRent, unitType);
+        success = leaseProperty(property.id, leaseTerm, effectiveMonthlyRent, unitType, securityDeposit);
+        if (!success) {
+          setIsProcessing(false);
+          setErrorMsg('Failed to execute real estate lease: Insufficient account funds.');
+          setTimeout(() => setErrorMsg(null), 4000);
+          return;
+        }
       }
       const randomTx = `0x${Array.from({ length: 16 }, () =>
         Math.floor(Math.random() * 16).toString(16)

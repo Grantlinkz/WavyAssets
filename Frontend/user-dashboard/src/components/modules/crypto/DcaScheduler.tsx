@@ -23,7 +23,6 @@ export const DcaScheduler: React.FC<DcaSchedulerProps> = ({ maskBalances: propMa
   const user = useAuthStore((s) => s.user);
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
-  const availableCash = usePortfolioStore((s) => s.availableCash);
 
   const [asset, setAsset] = useState<string>(targetDcaAsset || 'BTC');
   const [frequency, setFrequency] = useState<'DAILY' | 'WEEKLY' | 'BI_WEEKLY' | 'MONTHLY'>('WEEKLY');
@@ -43,7 +42,7 @@ export const DcaScheduler: React.FC<DcaSchedulerProps> = ({ maskBalances: propMa
     setTargetDcaAsset(newAsset);
   };
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!Number.isFinite(amountUsd) || amountUsd <= 0) {
       return;
@@ -63,32 +62,35 @@ export const DcaScheduler: React.FC<DcaSchedulerProps> = ({ maskBalances: propMa
       return;
     }
 
-    const deducted = usePortfolioStore.getState().adjustAvailableCash(-amountUsd);
-    if (!deducted) {
-      setErrorMsg('Transaction rejected: Insufficient Account Balance.');
-      setTimeout(() => setErrorMsg(null), 4000);
-      return;
+    try {
+      await addDcaSchedule(
+        {
+          asset,
+          frequency,
+          amountUsd,
+          sourceAccount,
+          nextExecution: 'Scheduled next cycle',
+          active: true,
+        },
+        user?.id
+      );
+      usePortfolioStore.getState().adjustAvailableCash(-amountUsd);
+      setErrorMsg(null);
+      setJustAdded(true);
+      setTimeout(() => setJustAdded(false), 2000);
+    } catch {
+      setErrorMsg('Failed to create DCA schedule.');
+      setTimeout(() => setErrorMsg(null), 3000);
     }
-
-    setErrorMsg(null);
-    addDcaSchedule(
-      {
-        asset,
-        frequency,
-        amountUsd,
-        sourceAccount,
-        nextExecution: 'Scheduled next cycle',
-        active: true,
-      },
-      user?.id
-    );
-    setJustAdded(true);
-    setTimeout(() => setJustAdded(false), 2000);
   };
 
-  const handleDelete = (schedule: { id: string; amountUsd: number; asset: string }) => {
-    usePortfolioStore.getState().adjustAvailableCash(schedule.amountUsd);
-    deleteDcaSchedule(schedule.id, user?.id);
+  const handleDelete = async (schedule: { id: string; amountUsd: number; asset: string }) => {
+    try {
+      await deleteDcaSchedule(schedule.id, user?.id);
+      usePortfolioStore.getState().adjustAvailableCash(schedule.amountUsd);
+    } catch {
+      console.error('Failed to delete DCA schedule');
+    }
   };
 
   return (

@@ -205,6 +205,7 @@ describe('Global Verticals Dynamic Enhancements Suite', () => {
     });
 
     it('calculates positive real estate rental yield when properties are acquired', () => {
+      usePortfolioStore.getState().setAvailableCash(10000000);
       useAlternativeStore.getState().buyProperty('re-1', 100, 500);
       const html = renderToString(<TaxPackAggregator selectedTaxYear="2024" />);
       expect(html).toContain('Audited SPVs Cleared');
@@ -228,6 +229,7 @@ describe('Global Verticals Dynamic Enhancements Suite', () => {
     });
 
     it('generates distribution periods ending at current month when properties are held', () => {
+      usePortfolioStore.getState().setAvailableCash(10000000);
       useAlternativeStore.getState().buyProperty('re-1', 200, 500);
       const html = renderToString(<RentalDistributionBlotter />);
       expect(html).toContain('(Current)');
@@ -246,6 +248,7 @@ describe('Global Verticals Dynamic Enhancements Suite', () => {
     });
 
     it('calculates fleet placements and provides pagination and sorting when cars are held', () => {
+      usePortfolioStore.getState().setAvailableCash(10000000);
       useAlternativeStore.getState().buyVehicleAsset('car-1', 580000, 'full');
       useAlternativeStore.getState().buyVehicleAsset('car-2', 1200000, 'full');
       const html = renderToString(<DriveBookingEngine />);

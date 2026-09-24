@@ -178,13 +178,20 @@ export const VehicleActionModal: React.FC<VehicleActionModalProps> = ({
     setErrorMsg(null);
     setIsProcessing(true);
     setTimeout(() => {
+      let success = false;
       if (activeMode === 'buy') {
-        buyVehicleAsset(
+        success = buyVehicleAsset(
           asset.id,
           totalBuyCost,
           buyType,
           buyType === 'fractional' ? syndicatePct : 100
         );
+        if (!success) {
+          setIsProcessing(false);
+          setErrorMsg('Failed to acquire vehicle asset: Insufficient account funds.');
+          setTimeout(() => setErrorMsg(null), 4000);
+          return;
+        }
       } else {
         const durationLabel =
           leaseOption === 'monthly' || leaseOption === 'month'
@@ -194,12 +201,19 @@ export const VehicleActionModal: React.FC<VehicleActionModalProps> = ({
             : isVehicle
             ? 'Weekend'
             : 'Gala Event';
-        leaseVehicleAsset(
+        success = leaseVehicleAsset(
           asset.id,
           leaseOption,
           durationLabel,
-          effectiveRentCost
+          effectiveRentCost,
+          insuranceEscrowDeposit
         );
+        if (!success) {
+          setIsProcessing(false);
+          setErrorMsg('Failed to complete vehicle lease: Insufficient account funds.');
+          setTimeout(() => setErrorMsg(null), 4000);
+          return;
+        }
       }
       const randomTx = `0x${Array.from({ length: 16 }, () =>
         Math.floor(Math.random() * 16).toString(16)

@@ -9,7 +9,7 @@ import {
 import { CarsService } from './cars.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
-import { CreateDriveBookingDto } from './dto/cars.dto';
+import { CreateDriveBookingDto, BuyVehicleDto, SellVehicleDto } from './dto/cars.dto';
 
 @Controller('api/v1/cars')
 @UseGuards(JwtAuthGuard)
@@ -73,9 +73,9 @@ export class CarsController {
   @Post('buy')
   async buyVehicle(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() body: { assetId: string; price: number; purchaseType?: string; fractionalPct?: number },
+    @Body() dto: BuyVehicleDto,
   ) {
-    return this.carsService.buyVehicle(user.id, body);
+    return this.carsService.buyVehicle(user.id, dto);
   }
 
   /**
@@ -84,8 +84,8 @@ export class CarsController {
   @Post('sell')
   async sellVehicle(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() body: { assetId: string; proceeds: number },
+    @Body() dto: SellVehicleDto,
   ) {
-    return this.carsService.sellVehicle(user.id, body);
+    return this.carsService.sellVehicle(user.id, dto);
   }
 }

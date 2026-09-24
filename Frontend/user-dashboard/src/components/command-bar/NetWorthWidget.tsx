@@ -36,9 +36,11 @@ export const NetWorthWidget: React.FC<NetWorthWidgetProps> = ({
       : propNetWorth !== undefined
       ? propNetWorth
       : currentAccountBalance;
+  const rawNetWorth = usePortfolioStore((s) => s.netWorth);
+  const currentNetWorth = isSsr ? usePortfolioStore.getState().netWorth : rawNetWorth;
   const currentReturns = isSsr ? usePortfolioStore.getState().returns : returns;
-
-  const pnl = calculateUserTimeframePnL(displayBalance, timeframe, currentReturns ?? undefined);
+  const pnlBase = propNetWorth !== undefined ? propNetWorth : currentNetWorth;
+  const pnl = calculateUserTimeframePnL(pnlBase, timeframe, currentReturns ?? undefined);
 
   return (
     <div className="flex items-center gap-3 shrink-0" data-testid="net-worth-widget">
@@ -55,6 +57,8 @@ export const NetWorthWidget: React.FC<NetWorthWidgetProps> = ({
           </span>
           <span
             data-testid="pnl-delta-indicator"
+            aria-label="Portfolio P&L"
+            title="Portfolio P&L"
             className={`text-xs font-mono font-medium tabular-nums ${
               pnl.isPositive ? 'text-tertiary' : 'text-error'
             }`}

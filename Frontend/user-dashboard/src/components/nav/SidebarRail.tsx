@@ -134,8 +134,11 @@ export const SidebarRail: React.FC<SidebarRailProps> = ({ isCollapsed, activeTab
         {/* Sign Out Action after Security & Access Vault */}
         <button
           onClick={async () => {
-            await logoutUser();
-            useAuthStore.getState().logout();
+            try {
+              await logoutUser();
+            } finally {
+              useAuthStore.getState().logout();
+            }
           }}
           data-testid="nav-item-sign-out"
           title={isSidebarCollapsed ? 'Sign Out' : undefined}

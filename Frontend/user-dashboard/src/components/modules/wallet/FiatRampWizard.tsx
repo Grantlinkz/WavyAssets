@@ -56,7 +56,18 @@ export const FiatRampWizard: React.FC<FiatRampWizardProps> = ({ maskBalances: pr
       return;
     }
     if (wireDirection === 'WITHDRAW') {
-      const kycCheck = checkKycWithdrawalLimit(numAmount, user?.kycTier || 'TIER_1');
+      const transactions = useLiquidStore.getState().transactions;
+      const todayStr = new Date().toISOString().substring(0, 10);
+      const withdrawnToday = transactions
+        .filter(
+          (t) =>
+            t.type === 'WITHDRAWAL' &&
+            (t.status === 'CLEARED' || t.status === 'SETTLED' || t.status === 'PENDING') &&
+            t.timestamp.includes(todayStr)
+        )
+        .reduce((sum, t) => sum + (t.amountUsd || 0), 0);
+
+      const kycCheck = checkKycWithdrawalLimit(withdrawnToday + numAmount, user?.kycTier || 'TIER_1');
       if (!kycCheck.allowed) {
         setValidationErr(
           kycCheck.error ||
@@ -86,24 +97,30 @@ export const FiatRampWizard: React.FC<FiatRampWizardProps> = ({ maskBalances: pr
     setIsExecuting(true);
     setTimeout(() => {
       if (wireDirection === 'DEPOSIT') {
-        adjustAvailableCash(numAmount);
+        const refCode = `WY-${Math.floor(1000 + Math.random() * 9000)}-WIRE-IN`;
         addTransaction({
           id: `tx-dep-${Date.now()}`,
           timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
           vertical: 'CASH',
           type: 'DEPOSIT',
-          description: 'Incoming Bank Wire • Zurich Enclave',
+          description: 'Incoming Bank Wire • Zurich Enclave (Pending Settlement)',
           amountUsd: numAmount,
-          status: 'CLEARED',
-          reference: `WY-${Math.floor(1000 + Math.random() * 9000)}-WIRE-IN`,
+          status: 'PENDING',
+          reference: refCode,
         });
         setSuccessMsg(
           maskBalances
-            ? 'Deposit wire settlement cleared into vault.'
-            : `Wire deposit of $${numAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD cleared into vault.`
+            ? 'Deposit intent created. Wire instructions issued.'
+            : `Deposit intent of $${numAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD initiated (Ref: ${refCode}). Pending wire settlement.`
         );
       } else {
-        adjustAvailableCash(-numAmount);
+        const debited = adjustAvailableCash(-numAmount);
+        if (!debited) {
+          setIsExecuting(false);
+          setValidationErr('Insufficient available balance to complete withdrawal.');
+          setTimeout(() => setValidationErr(''), 3500);
+          return;
+        }
         addTransaction({
           id: `tx-wth-${Date.now()}`,
           timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
@@ -302,7 +319,12 @@ export const FiatRampWizard: React.FC<FiatRampWizardProps> = ({ maskBalances: pr
                   setTimeout(() => setCardSweepSuccess(''), 3000);
                   return;
                 }
-                adjustAvailableCash(-sweepAmount);
+                const debited = adjustAvailableCash(-sweepAmount);
+                if (!debited) {
+                  setCardSweepSuccess('Insufficient liquid cash to sweep.');
+                  setTimeout(() => setCardSweepSuccess(''), 3000);
+                  return;
+                }
                 addTransaction({
                   id: `tx-swp-${Date.now()}`,
                   timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',

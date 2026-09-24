@@ -32,10 +32,10 @@ export const WalletModule: React.FC<WalletModuleProps> = ({ maskBalances: propMa
   const user = isSsr ? useAuthStore.getState().user : storeUser;
 
   const enclaveTierBadge = React.useMemo(() => {
-    if (user?.kycTier === 'TIER_3' || netWorth >= 10000000) return 'TIER 3 AUDITED ENCLAVE';
-    if (user?.kycTier === 'TIER_2' || netWorth >= 1000000) return 'TIER 2 VERIFIED ENCLAVE';
+    if (user?.kycTier === 'TIER_3') return 'TIER 3 AUDITED ENCLAVE';
+    if (user?.kycTier === 'TIER_2') return 'TIER 2 VERIFIED ENCLAVE';
     return 'TIER 1 STANDARD ENCLAVE';
-  }, [user?.kycTier, netWorth]);
+  }, [user?.kycTier]);
 
   const liquidRatioPct = netWorth > 0 ? Number(((availableCash / netWorth) * 100).toFixed(2)) : 0;
 

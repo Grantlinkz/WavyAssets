@@ -15,6 +15,8 @@ import {
   SetRiskTierDto,
   ToggleCircuitBreakerDto,
   SimulateRebalanceDto,
+  BuyAiAssetDto,
+  SellAiAssetDto,
 } from './dto/ai-funds.dto';
 
 @Controller('api/v1/ai-funds')
@@ -103,9 +105,9 @@ export class AiFundsController {
   @Post('buy')
   async buyAiAsset(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() body: { assetId: string; tokens: number; tokenPrice: number },
+    @Body() dto: BuyAiAssetDto,
   ) {
-    return this.aiFundsService.buyAiAsset(user.id, body);
+    return this.aiFundsService.buyAiAsset(user.id, dto);
   }
 
   /**
@@ -114,8 +116,8 @@ export class AiFundsController {
   @Post('sell')
   async sellAiAsset(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() body: { assetId: string; tokensToSell: number; pricePerToken?: number },
+    @Body() dto: SellAiAssetDto,
   ) {
-    return this.aiFundsService.sellAiAsset(user.id, body);
+    return this.aiFundsService.sellAiAsset(user.id, dto);
   }
 }

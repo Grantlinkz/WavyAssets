@@ -14,6 +14,7 @@ import {
   submitStockOrder,
   cancelStockOrderApi,
 } from '../lib/api';
+import { isSsrOrTestEnv } from '../lib/calculations';
 
 export interface ActiveOrder {
   id: string;
@@ -76,6 +77,7 @@ export const useLiquidStore = create<LiquidState>((set) => ({
     set((state) => ({ livePrices: { ...state.livePrices, ...prices } })),
 
   loadUserDcaSchedules: async () => {
+    if (isSsrOrTestEnv()) return;
     try {
       const data = await fetchUserDcaSchedules<any[]>([]);
       if (Array.isArray(data)) {
@@ -85,8 +87,12 @@ export const useLiquidStore = create<LiquidState>((set) => ({
           amountUsd: Number(d.amountUsd),
           frequency: (d.frequency || 'DAILY') as DcaScheduleItem['frequency'],
           sourceAccount: d.sourceAccount || 'USD Operating Balance',
-          active: Boolean(d.active),
-          nextExecution: d.nextExecution ? new Date(d.nextExecution).toLocaleString() : 'In 24h',
+          active: d.isActive !== undefined ? Boolean(d.isActive) : Boolean(d.active),
+          nextExecution: d.nextRunAt
+            ? new Date(d.nextRunAt).toLocaleString()
+            : d.nextExecution
+            ? new Date(d.nextExecution).toLocaleString()
+            : 'In 24h',
         }));
         set({ dcaSchedules: mapped });
       }
@@ -101,6 +107,7 @@ export const useLiquidStore = create<LiquidState>((set) => ({
         item.id === id ? { ...item, active: !item.active } : item
       ),
     }));
+    if (isSsrOrTestEnv()) return;
     try {
       await toggleDcaScheduleApi(id);
     } catch (err) {
@@ -117,15 +124,19 @@ export const useLiquidStore = create<LiquidState>((set) => ({
     set((state) => ({
       dcaSchedules: [...state.dcaSchedules, newSchedule],
     }));
+    if (isSsrOrTestEnv()) return;
     try {
+      const frequencyPayload =
+        schedule.frequency === 'BI_WEEKLY' ? 'BIWEEKLY' : schedule.frequency;
       const res: any = await createDcaScheduleApi({
         symbol: schedule.asset,
         amountUsd: schedule.amountUsd,
-        frequency: schedule.frequency,
+        frequency: frequencyPayload,
       });
-      if (res?.id) {
+      const serverId = res?.schedule?.id ?? res?.id;
+      if (serverId) {
         set((state) => ({
-          dcaSchedules: state.dcaSchedules.map((s) => (s.id === tempId ? { ...s, id: res.id } : s)),
+          dcaSchedules: state.dcaSchedules.map((s) => (s.id === tempId ? { ...s, id: serverId } : s)),
         }));
       }
     } catch (err) {
@@ -137,6 +148,7 @@ export const useLiquidStore = create<LiquidState>((set) => ({
     set((state) => ({
       dcaSchedules: state.dcaSchedules.filter((item) => item.id !== id),
     }));
+    if (isSsrOrTestEnv()) return;
     try {
       await deleteDcaScheduleApi(id);
     } catch (err) {
@@ -173,6 +185,7 @@ export const useLiquidStore = create<LiquidState>((set) => ({
     })),
 
   loadUserOrders: async () => {
+    if (isSsrOrTestEnv()) return;
     try {
       const data = await fetchUserStockOrders<any[]>([]);
       if (Array.isArray(data)) {
@@ -201,6 +214,7 @@ export const useLiquidStore = create<LiquidState>((set) => ({
     set((state) => ({
       activeOrders: [newOrder, ...state.activeOrders],
     }));
+    if (isSsrOrTestEnv()) return;
     try {
       const side = order.type.startsWith('BUY') ? 'BUY' : 'SELL';
       const res: any = await submitStockOrder({
@@ -210,9 +224,10 @@ export const useLiquidStore = create<LiquidState>((set) => ({
         shares: order.shares,
         limitPrice: order.limitPrice,
       });
-      if (res?.id) {
+      const serverId = res?.order?.id ?? res?.id;
+      if (serverId) {
         set((state) => ({
-          activeOrders: state.activeOrders.map((o) => (o.id === tempId ? { ...o, id: res.id } : o)),
+          activeOrders: state.activeOrders.map((o) => (o.id === tempId ? { ...o, id: serverId } : o)),
         }));
       }
     } catch (err) {
@@ -224,6 +239,7 @@ export const useLiquidStore = create<LiquidState>((set) => ({
     set((state) => ({
       activeOrders: state.activeOrders.filter((order) => order.id !== id),
     }));
+    if (isSsrOrTestEnv()) return;
     try {
       await cancelStockOrderApi(id);
     } catch (err) {

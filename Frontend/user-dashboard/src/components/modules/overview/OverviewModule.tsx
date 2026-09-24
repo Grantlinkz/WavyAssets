@@ -125,8 +125,8 @@ export const OverviewModule: React.FC = () => {
         id: tx.id,
         asset: tx.description,
         side: tx.type,
-        size: formatMaskedCurrency(tx.amountUsd, false),
-        price: formatMaskedCurrency(tx.amountUsd, false),
+        size: formatMaskedCurrency(tx.amountUsd, maskBalances),
+        price: formatMaskedCurrency(tx.amountUsd, maskBalances),
         numericPrice: tx.amountUsd,
         venue,
         status: tx.status,
@@ -143,7 +143,7 @@ export const OverviewModule: React.FC = () => {
           asset: asset.name.toUpperCase(),
           side: 'BUY SPV',
           size: `${holding.tokens.toLocaleString()} TKNS`,
-          price: `$${asset.tokenPrice.toFixed(2)}`,
+          price: formatMaskedCurrency(asset.tokenPrice, maskBalances),
           numericPrice: holding.tokens * asset.tokenPrice,
           venue: 'DLT Land Registry',
           status: 'CLEARED',
@@ -161,7 +161,7 @@ export const OverviewModule: React.FC = () => {
           asset: asset.title.toUpperCase(),
           side: holding.purchaseType === 'fractional' ? 'FRACTIONAL' : 'FULL ASSET',
           size: '1 UNIT',
-          price: `$${(holding.totalInvested || asset.fairMarketValue).toLocaleString()}`,
+          price: formatMaskedCurrency(holding.totalInvested || asset.fairMarketValue, maskBalances),
           numericPrice: holding.totalInvested || asset.fairMarketValue,
           venue: asset.custodyEnclave || 'Geneva Freeport Vault',
           status: 'BONDED',
@@ -180,7 +180,7 @@ export const OverviewModule: React.FC = () => {
       const cmp = a.time.localeCompare(b.time);
       return blotterSortOrder === 'asc' ? cmp : -cmp;
     });
-  }, [transactions, userRealEstateHoldings, userVehicleHoldings, blotterSortField, blotterSortOrder]);
+  }, [transactions, userRealEstateHoldings, userVehicleHoldings, blotterSortField, blotterSortOrder, maskBalances]);
 
   const totalBlotterPages = Math.max(1, Math.ceil(dynamicBlotter.length / BLOTTER_PAGE_SIZE));
   const safeBlotterPage = Math.min(blotterPage, totalBlotterPages);
@@ -589,7 +589,7 @@ export const OverviewModule: React.FC = () => {
                       type="button"
                       data-testid="blotter-prev-btn"
                       disabled={safeBlotterPage <= 1}
-                      onClick={() => setBlotterPage((p) => Math.max(1, p - 1))}
+                      onClick={() => setBlotterPage(Math.max(1, safeBlotterPage - 1))}
                       className="p-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-hairline disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                       title="Previous Page"
                     >
@@ -599,7 +599,7 @@ export const OverviewModule: React.FC = () => {
                       type="button"
                       data-testid="blotter-next-btn"
                       disabled={safeBlotterPage >= totalBlotterPages}
-                      onClick={() => setBlotterPage((p) => Math.min(totalBlotterPages, p + 1))}
+                      onClick={() => setBlotterPage(Math.min(totalBlotterPages, safeBlotterPage + 1))}
                       className="p-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-hairline disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                       title="Next Page"
                     >

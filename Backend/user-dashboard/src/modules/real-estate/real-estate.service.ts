@@ -486,8 +486,20 @@ export class RealEstateService {
   /**
    * Buy fractional real estate property tokens and debit ledger
    */
-  async buyProperty(userId: string, dto: { propertyId: string; tokens: number; tokenPrice: number }) {
-    const totalCost = dto.tokens * dto.tokenPrice;
+  async buyProperty(userId: string, dto: { propertyId: string; tokens: number; tokenPrice?: number }) {
+    if (!dto.tokens || dto.tokens <= 0) {
+      throw new BadRequestException('Tokens to acquire must be positive.');
+    }
+
+    const property = await this.prisma.realEstateProperty.findUnique({
+      where: { id: dto.propertyId },
+    });
+    if (!property) {
+      throw new NotFoundException(`Real estate property ${dto.propertyId} not found`);
+    }
+
+    const tokenPrice = property.tokenPriceUsd;
+    const totalCost = dto.tokens * tokenPrice;
     const cashAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');
     const currentBalance = Number(cashAccount.balance);
 
@@ -500,7 +512,7 @@ export class RealEstateService {
     const investedAccount = await this.walletService.getOrCreateAccount(userId, 'INVESTED_CAPITAL', 'USD');
     await this.walletService.recordLedgerTransaction({
       type: 'TRADE',
-      description: `Real Estate Fractional Share Acquisition: ${dto.propertyId} (${dto.tokens} tokens @ $${dto.tokenPrice})`,
+      description: `Real Estate Fractional Share Acquisition: ${dto.propertyId} (${dto.tokens} tokens @ $${tokenPrice})`,
       entries: [
         { accountId: cashAccount.id, amount: -totalCost },
         { accountId: investedAccount.id, amount: totalCost },
@@ -540,6 +552,17 @@ export class RealEstateService {
    * Sell fractional real estate property tokens and credit ledger
    */
   async sellProperty(userId: string, dto: { propertyId: string; tokensToSell: number; pricePerToken?: number }) {
+    if (!dto.tokensToSell || dto.tokensToSell <= 0) {
+      throw new BadRequestException('Tokens to sell must be positive.');
+    }
+
+    const property = await this.prisma.realEstateProperty.findUnique({
+      where: { id: dto.propertyId },
+    });
+    if (!property) {
+      throw new NotFoundException(`Real estate property ${dto.propertyId} not found`);
+    }
+
     const share = await this.prisma.realEstateShare.findFirst({
       where: { userId, propertyId: dto.propertyId },
     });
@@ -548,7 +571,7 @@ export class RealEstateService {
       throw new BadRequestException('Insufficient property shares to sell.');
     }
 
-    const resolvedPrice = dto.pricePerToken || 500;
+    const resolvedPrice = property.tokenPriceUsd;
     const proceeds = dto.tokensToSell * resolvedPrice;
 
     const cashAccount = await this.walletService.getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD');

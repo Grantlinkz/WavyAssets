@@ -252,7 +252,7 @@ export const TxHistoryTable: React.FC<TxHistoryTableProps> = ({ maskBalances: pr
             <option value={20}>20</option>
           </select>
           <span data-testid="tx-page-counter" className="ml-2 text-on-surface-variant text-[11px]">
-            Showing {(safeCurrentPage - 1) * pageSize + 1} -{' '}
+            Showing {sortedTransactions.length === 0 ? 0 : (safeCurrentPage - 1) * pageSize + 1} -{' '}
             {Math.min(safeCurrentPage * pageSize, sortedTransactions.length)} of {sortedTransactions.length}
           </span>
         </div>
