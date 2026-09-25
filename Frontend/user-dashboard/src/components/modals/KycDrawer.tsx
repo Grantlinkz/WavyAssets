@@ -53,8 +53,6 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
   const isOpen = propIsOpen !== undefined ? propIsOpen : storeModal === 'kyc';
   const closeModal = propClose !== undefined ? propClose : storeClose;
 
-  const userId = user?.id || 'guest';
-
   // Submissions state
   const [submissions, setSubmissions] = useState<KycSubmissions>({});
 
@@ -86,7 +84,14 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
   const [serverCompliance, setServerCompliance] = useState<{
     currentTier: string;
     requirements?: Array<{ tier: string; isMet: boolean }>;
-    documents?: Array<{ id: string; docType: string; isVerified: boolean }>;
+    documents?: Array<{
+      id: string;
+      docType: string;
+      isVerified: boolean;
+      fileName?: string;
+      createdAt?: string;
+      submittedAt?: string;
+    }>;
   } | null>(null);
 
   useEffect(() => {
@@ -99,7 +104,14 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
           currentTier?: string;
           kycTier?: string;
           requirements?: Array<{ tier: string; isMet: boolean }>;
-          documents?: Array<{ id: string; docType: string; isVerified: boolean }>;
+          documents?: Array<{
+            id: string;
+            docType: string;
+            isVerified: boolean;
+            fileName?: string;
+            createdAt?: string;
+            submittedAt?: string;
+          }>;
         };
         if (data && typeof data === 'object') {
           const tier = data.kycTier || data.currentTier || 'TIER_1';
@@ -120,7 +132,7 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
               level2: l2Doc
                 ? {
                     fileName: l2Doc.fileName || 'Government_ID_Verified.pdf',
-                    submittedAt: l2Timestamp ? new Date(l2Timestamp).toISOString() : undefined,
+                    submittedAt: l2Timestamp ? new Date(l2Timestamp).toISOString() : new Date().toISOString(),
                     status: l2Doc.isVerified ? 'APPROVED' : 'PENDING_APPROVAL',
                   }
                 : undefined,
@@ -128,7 +140,7 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
                 ? {
                     docCategory: l3Doc.docType === 'BANK_STATEMENT' ? 'BANK_STATEMENT' : 'UTILITY_BILL',
                     fileName: l3Doc.fileName || (l3Doc.docType === 'BANK_STATEMENT' ? 'Bank_Statement_Verified.pdf' : 'Proof_Of_Address.pdf'),
-                    submittedAt: l3Timestamp ? new Date(l3Timestamp).toISOString() : undefined,
+                    submittedAt: l3Timestamp ? new Date(l3Timestamp).toISOString() : new Date().toISOString(),
                     status: l3Doc.isVerified ? 'APPROVED' : 'PENDING_APPROVAL',
                   }
                 : undefined,
