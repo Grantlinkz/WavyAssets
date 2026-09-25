@@ -19,8 +19,10 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 import { RedactedLoggingInterceptor } from './common/interceptors/redacted-logging.interceptor';
 import { TransformResponseInterceptor } from './common/interceptors/transform-response.interceptor';
 import { CorrelationMiddleware } from './common/middleware/correlation.middleware';
+import { AppController } from './app.controller';
 
 @Module({
+  controllers: [AppController],
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,

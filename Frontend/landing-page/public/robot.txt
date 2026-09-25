@@ -1,0 +1,14 @@
+# WavyAssets Global Institutional Terminal — Robots Directive
+# https://wavyassets.com
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /private/
+
+# Search Engine Crawl Delay & Sitemap
+Crawl-delay: 1
+Host: https://wavyassets.com
+Sitemap: https://wavyassets.com/sitemap.xml

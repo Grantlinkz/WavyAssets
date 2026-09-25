@@ -1,10 +1,15 @@
 # ==============================================================================
-# WavyAssets Global Institutional Platform — Render Blueprint
+# WavyAssets Sovereign Institutional Wealth Platform — Unified Render Blueprint
 # ==============================================================================
-# Declarative Infrastructure-as-Code for hosting Backend/landing-page on Render Free Tier
+# Multi-Service Infrastructure-as-Code for WavyAssets Ecosystem:
+# 1. wavyassets-backend: Landing Page NestJS API Gateway & Telemetry Stream
+# 2. wavyassets-backend-userdashboard: User Dashboard Double-Entry Ledger Core
 # ==============================================================================
 
 services:
+  # ----------------------------------------------------------------------------
+  # 1. Landing Page API Gateway & Real-Time Telemetry Engine
+  # ----------------------------------------------------------------------------
   - type: web
     name: wavyassets-backend
     runtime: node
@@ -24,14 +29,18 @@ services:
         value: https://wavyassets-backend.onrender.com
       - key: CLIENT_URL
         value: https://wavy-assets.vercel.app
+      - key: DASHBOARD_URL
+        value: https://wavy-assets-userdashboard-two.vercel.app
       - key: DATABASE_URL
-        sync: false # User enters their Prisma Postgres connection string in Render dashboard
+        sync: false # PostgreSQL Cloud Database (e.g. pooled.db.prisma.io)
       - key: JWT_SECRET
         generateValue: true
       - key: REFRESH_TOKEN_SECRET
         generateValue: true
+      - key: HANDOFF_TICKET_SECRET
+        sync: false # Shared with Backend/user-dashboard
       - key: FIELD_ENCRYPTION_KEY
-        value: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+        sync: false # 64-character hex key
       - key: THROTTLE_TTL
         value: 60
       - key: THROTTLE_LIMIT
@@ -41,6 +50,49 @@ services:
       - key: EMAIL_PROVIDER
         value: resend
       - key: RESEND_API_KEY
-        sync: false # User enters their own Resend API key in Render dashboard
+        sync: false
       - key: EMAIL_FROM
         value: WavyAssets Security <security@wavyassets.com>
+
+  # ----------------------------------------------------------------------------
+  # 2. User Dashboard Core Backend & Double-Entry Ledger Engine
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: wavyassets-backend-userdashboard
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: Backend/user-dashboard
+    buildCommand: npm install --include=dev && npm run build:render
+    startCommand: npm run start:prod
+    healthCheckPath: /health/live
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4001
+      - key: APP_URL
+        value: https://wavyassets-backend-userdashboard.onrender.com
+      - key: CLIENT_URL
+        value: https://wavy-assets.vercel.app
+      - key: DASHBOARD_URL
+        value: https://wavy-assets-userdashboard-two.vercel.app
+      - key: FRONTEND_ORIGINS
+        value: https://wavy-assets.vercel.app,https://wavy-assets-userdashboard-two.vercel.app,http://localhost:5173,http://localhost:5174
+      - key: DATABASE_URL
+        sync: false # Shared PostgreSQL Cloud Database
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: HANDOFF_TICKET_SECRET
+        sync: false # Shared with Backend/landing-page
+      - key: ENCRYPTION_KEY_HEX
+        sync: false # 64-character hex string
+      - key: CIPHER_KEY_HEX
+        sync: false # 64-character hex string
+      - key: DOCUMENT_HMAC_SECRET
+        generateValue: true
+      - key: AUDIT_LOG_HMAC_SECRET
+        generateValue: true

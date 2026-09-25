@@ -1,0 +1,8 @@
+# WavyAssets Sovereign Institutional Terminal / User Dashboard
+# Confidential Institutional Financial Portal — Automated Crawling Strictly Prohibited
+# https://wavy-assets-userdashboard-two.vercel.app
+
+User-agent: *
+Disallow: /
+
+Host: https://wavy-assets-userdashboard-two.vercel.app

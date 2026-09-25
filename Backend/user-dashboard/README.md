@@ -314,6 +314,42 @@ All requests must supply `Authorization: Bearer <token>` (except `/health` and `
 
 ---
 
+## 🚢 Production Deployment (Render & Docker)
+
+### 1. Render Blueprint Deployment
+The service is deployed on Render as `wavyassets-backend-userdashboard` via [render.yaml](file:///c:/Users/ANIK/Desktop/WavyAssets/Backend/user-dashboard/render.yaml):
+- **Build Command**: `npm install --include=dev && npm run build:render`
+  - Runs `prisma generate && prisma db push --skip-generate && nest build` ensuring PostgreSQL database tables are synchronized before bootstrap.
+- **Start Command**: `npm run start:prod` (`node dist/src/main.js`)
+- **Health Check Path**: `/health/live` (with fallback support for `HEAD /` and `GET /` on the root route).
+- **Environment Variables**: Managed via Render Environment Groups as specified in [.env.prod](file:///c:/Users/ANIK/Desktop/WavyAssets/Backend/user-dashboard/.env.prod).
+
+### 2. Standalone Docker Build & Run
+```bash
+# Build multi-stage hardened Alpine container
+docker build -t wavyassets/user-dashboard-backend:1.0.0 .
+
+# Run with environment variables
+docker run -d -p 4001:4000 \
+  -e NODE_ENV=production \
+  -e PORT=4000 \
+  -e DATABASE_URL="postgres://..." \
+  -e JWT_ACCESS_SECRET="..." \
+  -e JWT_REFRESH_SECRET="..." \
+  -e HANDOFF_TICKET_SECRET="..." \
+  -e ENCRYPTION_KEY_HEX="..." \
+  --name wavyassets-backend-user-dashboard \
+  wavyassets/user-dashboard-backend:1.0.0
+```
+
+### 3. Docker Compose Orchestration
+```bash
+docker compose up -d
+```
+Container health checks verify connectivity at `http://localhost:4001/health/live`.
+
+---
+
 ## 🧪 Testing & Verification
 
 The test suite is organized into **Unit Tests**, **Integration Tests**, and **Load Benchmarks** using Vitest 3.0:

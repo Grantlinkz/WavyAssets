@@ -45,7 +45,7 @@ COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 
 # Default runtime configuration
 ENV PORT=80
-ENV BACKEND_HOST=wavyassets-landing-backend
+ENV BACKEND_HOST=wavyassets-backend-user-dashboard
 ENV BACKEND_PORT=4000
 
 # Expose HTTP port

@@ -79,7 +79,7 @@ async function bootstrap(): Promise<void> {
 
   // 4. Global API Prefix with Health Route Exclusions
   app.setGlobalPrefix('api/v1', {
-    exclude: ['health', 'health/live', 'health/ready'],
+    exclude: ['/', 'health', 'health/live', 'health/ready'],
   });
 
   // 5. Global Input Validation Pipe

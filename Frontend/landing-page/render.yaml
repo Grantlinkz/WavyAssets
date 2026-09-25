@@ -1,0 +1,35 @@
+# ==============================================================================
+# WavyAssets Landing Page Frontend — Render Blueprint Specification
+# ==============================================================================
+
+services:
+  - type: web
+    runtime: static
+    name: wavyassets-frontend-landing
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    pullRequestPreviewsEnabled: true
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://wavyassets-backend.onrender.com/api/v1
+      - key: VITE_WS_URL
+        value: https://wavyassets-backend.onrender.com
+      - key: VITE_DASHBOARD_URL
+        value: https://wavy-assets-userdashboard-two.vercel.app
