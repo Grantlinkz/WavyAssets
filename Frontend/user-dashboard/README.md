@@ -168,8 +168,39 @@ npm run preview
 
 ---
 
+## 🚢 Production Deployment
+
+### 1. Vercel Deployment
+The User Dashboard is deployed to Vercel at `https://wavy-assets-userdashboard-two.vercel.app` using [vercel.json](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/user-dashboard/vercel.json):
+- **Vite SPA Catch-All**: Rewrites all routes to `/index.html` for client-side routing.
+- **Backend API Reverse Proxy**: Transparently proxies `/api/(.*)` to the production User Dashboard backend at `https://wavyassets-backend-userdashboard.onrender.com/api/$1`.
+- **Private Financial Portal Invariant (`robots.txt`)**: Search engines and web crawlers are strictly disallowed via `/robots.txt` (`Disallow: /`) to preserve institutional confidentiality.
+- **Hardened Security Headers**: Enforces strict Content-Security-Policy (CSP), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and `Strict-Transport-Security: max-age=63072000`.
+
+### 2. Docker & Nginx Containerization
+The frontend can be built and run standalone using Docker:
+```bash
+# Build multi-stage hardened Nginx image
+docker build -t wavyassets/user-dashboard:1.0.0 .
+
+# Run container with dynamic backend proxy
+docker run -d -p 5174:80 \
+  -e BACKEND_HOST=wavyassets-backend-user-dashboard \
+  -e BACKEND_PORT=4000 \
+  --name wavyassets-user-dashboard \
+  wavyassets/user-dashboard:1.0.0
+```
+Or orchestrate via Docker Compose:
+```bash
+docker compose up -d
+```
+Container liveness probe is available at `http://localhost:5174/healthz`.
+
+---
+
 ## 🔐 Security Architecture
 
+- **Private Terminal Crawler Quarantine**: Automatic `robots.txt` prevents public search indices from logging authenticated screens.
 - **Zero Client Secret Storage**: No private keys, admin API credentials, or seed phrases are exposed in client bundles.
 - **Argon2id & WebAuthn / FIDO2**: Hardened credential derivation and biometric touch validation for privileged actions (CVV reveal, whitelist addition, limit increase).
 - **Time-Lock Quarantine**: All withdrawal destination addresses are cryptographically quarantined with a mandatory 48-hour cold lock timer.

@@ -1,0 +1,43 @@
+# ==============================================================================
+# WavyAssets User Dashboard Backend — Render Blueprint Specification
+# ==============================================================================
+
+services:
+  - type: web
+    name: wavyassets-backend-userdashboard
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install --include=dev && npm run build:render
+    startCommand: npm run start:prod
+    healthCheckPath: /health/live
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4001
+      - key: APP_URL
+        value: https://wavyassets-backend-userdashboard.onrender.com
+      - key: CLIENT_URL
+        value: https://wavy-assets.vercel.app
+      - key: DASHBOARD_URL
+        value: https://wavy-assets-userdashboard-two.vercel.app
+      - key: FRONTEND_ORIGINS
+        value: https://wavy-assets.vercel.app,https://wavy-assets-userdashboard-two.vercel.app,http://localhost:5173,http://localhost:5174
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: HANDOFF_TICKET_SECRET
+        sync: false # Must match Backend/landing-page HANDOFF_TICKET_SECRET
+      - key: ENCRYPTION_KEY_HEX
+        sync: false # 64-character hex string
+      - key: CIPHER_KEY_HEX
+        sync: false # 64-character hex string
+      - key: DOCUMENT_HMAC_SECRET
+        generateValue: true
+      - key: AUDIT_LOG_HMAC_SECRET
+        generateValue: true

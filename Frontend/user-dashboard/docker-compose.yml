@@ -20,7 +20,7 @@ services:
       - "${DASHBOARD_PORT:-5174}:80"
     environment:
       - PORT=80
-      - BACKEND_HOST=${BACKEND_HOST:-wavyassets-landing-backend}
+      - BACKEND_HOST=${BACKEND_HOST:-wavyassets-backend-user-dashboard}
       - BACKEND_PORT=${BACKEND_PORT:-4000}
     networks:
       - wavyassets-network

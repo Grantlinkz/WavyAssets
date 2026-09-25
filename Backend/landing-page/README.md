@@ -119,7 +119,7 @@ Interactive OpenAPI 3 / Swagger documentation is available at **`http://localhos
 
 ```prisma
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -267,7 +267,22 @@ npm run lint
 
 ---
 
-## 6. Docker & Docker Compose Orchestration
+## 6. Production Cloud Deployment (Render & Vercel)
+
+### Render Deployment (Recommended API Gateway Hosting)
+The service is deployed on Render as `wavyassets-backend` via [render.yaml](file:///c:/Users/ANIK/Desktop/WavyAssets/Backend/landing-page/render.yaml):
+- **Build Command**: `npm install --include=dev && npm run build:render`
+  - Runs `prisma generate && prisma db push --skip-generate && nest build` ensuring PostgreSQL tables are created and synchronized.
+- **Start Command**: `npm run start:prod` (`node dist-runner.js`)
+- **Health Check Path**: `/health/live` (with root route `HEAD /` and `GET /` support).
+- **Environment Secrets**: Managed as documented in [.env.prod](file:///c:/Users/ANIK/Desktop/WavyAssets/Backend/landing-page/.env.prod).
+
+### Vercel Serverless Function Deployment
+Configured via [vercel.json](file:///c:/Users/ANIK/Desktop/WavyAssets/Backend/landing-page/vercel.json) using `@vercel/node` routing requests to `dist/main.js`.
+
+---
+
+## 7. Docker & Docker Compose Orchestration
 
 The repository includes a hardened, multi-stage production container running as an unprivileged `node` user with volume persistence, health probes, and Docker Compose orchestration:
 

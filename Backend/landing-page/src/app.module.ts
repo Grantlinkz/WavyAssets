@@ -12,8 +12,10 @@ import { SimulationModule } from './modules/simulation/simulation.module';
 import { NewsletterModule } from './modules/newsletter/newsletter.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
 import { TelemetryModule } from './modules/telemetry/telemetry.module';
+import { AppController } from './app.controller';
 
 @Module({
+  controllers: [AppController],
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,

@@ -1,0 +1,14 @@
+node_modules
+dist
+.git
+.gitignore
+.agents
+.ai
+*.md
+.env*
+!*.example
+Tests
+coverage
+.system_generated
+*.db*
+.seed-credentials.local.json

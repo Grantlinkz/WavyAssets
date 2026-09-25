@@ -1,0 +1,33 @@
+# ==============================================================================
+# WavyAssets User Dashboard Frontend — Render Blueprint Specification
+# ==============================================================================
+
+services:
+  - type: web
+    runtime: static
+    name: wavyassets-frontend-userdashboard
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    pullRequestPreviewsEnabled: true
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://wavyassets-backend-userdashboard.onrender.com/api
+      - key: VITE_BACKEND_ORIGIN
+        value: https://wavyassets-backend-userdashboard.onrender.com

@@ -170,7 +170,46 @@ npm run dev
 
 ---
 
-## 7. Automated Test Suites (558 Total Tests)
+## 7. Production Cloud Deployments (Render & Vercel)
+
+The WavyAssets platform is engineered for zero-downtime, distributed cloud deployments across Vercel (Frontends) and Render (Backends):
+
+```
+                                      [ Production Architecture ]
+                                                    │
+                 ┌──────────────────────────────────┴──────────────────────────────────┐
+                 ▼                                                                     ▼
+    [ Vercel Edge Network ]                                                [ Render Cloud Services ]
+    • Landing Page (https://wavy-assets.vercel.app)                         • Landing Gateway (https://wavyassets-backend.onrender.com)
+    • User Dashboard (https://wavy-assets-userdashboard-two.vercel.app)     • Dashboard Core (https://wavyassets-backend-userdashboard.onrender.com)
+                 │                                                                     │
+                 │                               Reverse Proxy (/api, /ws)             │
+                 └────────────────────────────────────────────────────────────────────►│
+                                                                                       ▼
+                                                                           [ Prisma Postgres Cloud ]
+                                                                           pooled.db.prisma.io:5432
+```
+
+### 1. Frontend Vercel Deployments
+- **Landing Page Frontend** ([Frontend/landing-page/vercel.json](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/landing-page/vercel.json)):
+  - Production URL: `https://wavy-assets.vercel.app`
+  - Public `robots.txt` indexing allowed for organic discovery, with private paths (`/api/`, `/auth/`, `/private/`) quarantined.
+  - Transparent API reverse proxy: `/api/(.*) -> https://wavyassets-backend.onrender.com/api/$1`.
+- **User Dashboard Frontend** ([Frontend/user-dashboard/vercel.json](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/user-dashboard/vercel.json)):
+  - Production URL: `https://wavy-assets-userdashboard-two.vercel.app`
+  - Private `robots.txt` (`Disallow: /`) strictly forbids search bots and crawlers from indexing authenticated portfolio data.
+  - Transparent API reverse proxy: `/api/(.*) -> https://wavyassets-backend-userdashboard.onrender.com/api/$1`.
+  - Strict Content-Security-Policy with WebSocket connection permissions (`wss://*.onrender.com`).
+
+### 2. Backend Render Deployments
+- **Unified Render Blueprint** ([render.yaml](file:///c:/Users/ANIK/Desktop/WavyAssets/render.yaml)):
+  - **Landing Page Backend (`wavyassets-backend`)**: Port `4000`, `/health/live` probe, builds with `npm install --include=dev && npm run build:render`.
+  - **User Dashboard Core (`wavyassets-backend-userdashboard`)**: Port `4001`, `/health/live` probe (with root route `HEAD /` and `GET /` support), builds with `npm install --include=dev && npm run build:render`.
+  - **Automated Database Synchronization**: Both services run `prisma db push --skip-generate` during the build step, ensuring PostgreSQL tables and relations on `pooled.db.prisma.io` are updated automatically on deployment.
+
+---
+
+## 8. Automated Test Suites (558 Total Tests)
 
 All four projects include comprehensive automated unit, integration, and end-to-end test suites powered by **Vitest**:
 
