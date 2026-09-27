@@ -400,6 +400,160 @@ async function main() {
     }
   }
 
+  // 7. Seed Additional Sovereign Clients for User Directory & Compliance
+  const additionalClients = [
+    {
+      id: 'usr-wealth-002',
+      email: 'b.vonberg@zurich-private.ch',
+      fullName: 'Baroness Beatrice von Berg',
+      tier: 'PRIVATE_WEALTH',
+      kycTier: 'TIER_2',
+      isActive: true,
+      cash: 8450200.0,
+      invested: 12500000.0,
+      cardLast4: '8821',
+      cardTier: 'OBSIDIAN',
+      docs: [
+        { docType: 'PASSPORT', fileUrl: '/api/v1/compliance/dossiers/vonberg-passport.pdf', isVerified: true },
+        { docType: 'TAX_AFFIDAVIT', fileUrl: '/api/v1/compliance/dossiers/vonberg-tax.pdf', isVerified: false },
+      ],
+    },
+    {
+      id: 'usr-wealth-003',
+      email: 'c.castiglione@geneva-trust.ch',
+      fullName: 'Carlo Castiglione',
+      tier: 'INSTITUTIONAL',
+      kycTier: 'TIER_3',
+      isActive: true,
+      cash: 4200000.0,
+      invested: 18000000.0,
+      cardLast4: '4410',
+      cardTier: 'BLACK',
+      docs: [
+        { docType: 'ARTICLES_OF_INC', fileUrl: '/api/v1/compliance/dossiers/castiglione-spv.pdf', isVerified: true },
+      ],
+    },
+    {
+      id: 'usr-retail-004',
+      email: 'hans.weber@basel-biotech.ch',
+      fullName: 'Dr. Hans Weber',
+      tier: 'RETAIL',
+      kycTier: 'TIER_1',
+      isActive: true,
+      cash: 450000.0,
+      invested: 800000.0,
+      cardLast4: null,
+      cardTier: null,
+      docs: [
+        { docType: 'PASSPORT', fileUrl: '/api/v1/compliance/dossiers/weber-passport.pdf', isVerified: false },
+      ],
+    },
+    {
+      id: 'usr-locked-005',
+      email: 'viktor.petrov@alpen-holdings.li',
+      fullName: 'Viktor Petrov',
+      tier: 'PRIVATE_WEALTH',
+      kycTier: 'TIER_2',
+      isActive: false, // Suspended / Locked
+      cash: 2100000.0,
+      invested: 5400000.0,
+      cardLast4: '1904',
+      cardTier: 'OBSIDIAN',
+      docs: [
+        { docType: 'PASSPORT', fileUrl: '/api/v1/compliance/dossiers/petrov-passport.pdf', isVerified: false },
+      ],
+    },
+  ];
+
+  for (const client of additionalClients) {
+    const user = await prisma.user.upsert({
+      where: { email: client.email },
+      update: {
+        fullName: client.fullName,
+        tier: client.tier,
+        kycTier: client.kycTier,
+        isActive: client.isActive,
+      },
+      create: {
+        id: client.id,
+        email: client.email,
+        fullName: client.fullName,
+        passphraseHash,
+        tier: client.tier,
+        kycTier: client.kycTier,
+        isActive: client.isActive,
+      },
+    });
+
+    await prisma.ledgerAccount.upsert({
+      where: {
+        userId_accountType_currency: {
+          userId: user.id,
+          accountType: 'AVAILABLE_CASH',
+          currency: 'USD',
+        },
+      },
+      update: { balance: client.cash },
+      create: {
+        userId: user.id,
+        accountType: 'AVAILABLE_CASH',
+        currency: 'USD',
+        balance: client.cash,
+      },
+    });
+
+    await prisma.ledgerAccount.upsert({
+      where: {
+        userId_accountType_currency: {
+          userId: user.id,
+          accountType: 'INVESTED_CAPITAL',
+          currency: 'USD',
+        },
+      },
+      update: { balance: client.invested },
+      create: {
+        userId: user.id,
+        accountType: 'INVESTED_CAPITAL',
+        currency: 'USD',
+        balance: client.invested,
+      },
+    });
+
+    if (client.cardLast4) {
+      await prisma.vipCard.upsert({
+        where: { userId: user.id },
+        update: {
+          cardNumberLast4: client.cardLast4,
+          tier: client.cardTier || 'OBSIDIAN',
+        },
+        create: {
+          userId: user.id,
+          cardNumberLast4: client.cardLast4,
+          tier: client.cardTier || 'OBSIDIAN',
+          dailySpendLimit: 50000.0,
+          pinEncrypted: encryptField('1234'),
+          shippingStatus: 'DELIVERED',
+        },
+      });
+    }
+
+    for (const doc of client.docs) {
+      const existingDoc = await prisma.kycDocument.findFirst({
+        where: { userId: user.id, docType: doc.docType },
+      });
+      if (!existingDoc) {
+        await prisma.kycDocument.create({
+          data: {
+            userId: user.id,
+            docType: doc.docType,
+            fileUrl: doc.fileUrl,
+            isVerified: doc.isVerified,
+          },
+        });
+      }
+    }
+  }
+
   console.log('Seeding completed successfully!');
 }
 

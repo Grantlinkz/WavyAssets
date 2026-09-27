@@ -18,10 +18,10 @@
 - [x] `InquiriesModule` (AES-256-GCM lead decryption, status transitions, notes, convert-lead)
 
 ### Sprint 2: User Lifecycle & KYC Compliance Engine
-- [ ] `UsersModule` Directory & Segregated Balance Aggregation (`AVAILABLE_CASH` vs `INVESTED_CAPITAL`)
-- [ ] Account Creation, Suspension Kill-Switch & Deletion
-- [ ] Direct Capital Funding (`fund-balance`) with Atomic Double-Entry Ledger
-- [ ] `ComplianceModule` KYC Queue, Document Signing & Tier Upgrade Engine (`TIER_1` -> `INSTITUTIONAL`)
+- [x] `UsersModule` Directory & Segregated Balance Aggregation (`AVAILABLE_CASH` vs `INVESTED_CAPITAL`)
+- [x] Account Creation, Suspension Kill-Switch & Deletion
+- [x] Direct Capital Funding (`fund-balance`) with Atomic Double-Entry Ledger
+- [x] `ComplianceModule` KYC Queue, Document Signing & Tier Upgrade Engine (`TIER_1` -> `INSTITUTIONAL`)
 
 ### Sprint 3: Treasury Operations & Global Deposit Rails
 - [ ] Inbound Deposits Verification & 1-Click Credit Engine
