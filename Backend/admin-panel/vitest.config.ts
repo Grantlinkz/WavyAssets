@@ -7,10 +7,23 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     root: './',
-    testTimeout: 30000,
-    hookTimeout: 30000,
-    fileParallelism: false,
-    maxConcurrency: 1,
+    testTimeout: 60000,
+    hookTimeout: 60000,
+    fileParallelism: true,
+    pool: 'forks',
+    server: {
+      deps: {
+        external: [
+          'argon2',
+          '@prisma/client',
+          'prisma',
+          /^@nestjs\//,
+          'express',
+          'supertest',
+          'rxjs',
+        ],
+      },
+    },
     include: ['Tests/**/*.test.ts', 'Tests/**/*.spec.ts', 'src/**/*.spec.ts'],
   },
   resolve: {

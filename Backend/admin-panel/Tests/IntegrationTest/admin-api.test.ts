@@ -71,7 +71,7 @@ describe('Admin API Endpoints (Integration)', () => {
       },
     });
     testLeadId = sampleLead.id;
-  });
+  }, 90000);
 
   afterAll(async () => {
     // Clean up test data

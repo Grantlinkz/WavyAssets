@@ -11,6 +11,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 @Module({
   imports: [
     JwtModule.register({
+      global: true,
       secret:
         process.env.JWT_ACCESS_SECRET ||
         process.env.JWT_SECRET ||

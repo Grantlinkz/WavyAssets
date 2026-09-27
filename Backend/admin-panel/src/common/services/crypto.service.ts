@@ -25,7 +25,7 @@ export class CryptoService {
     const isProd = process.env.NODE_ENV === 'production';
     return argon2.hash(password, {
       type: argon2.argon2id,
-      memoryCost: isProd ? 65536 : 4096,
+      memoryCost: isProd ? 65536 : 2048,
       timeCost: isProd ? 3 : 2,
       parallelism: isProd ? 4 : 1,
     });
@@ -96,5 +96,9 @@ export class CryptoService {
   hashIp(ip: string): string {
     if (!ip) return '';
     return crypto.createHash('sha256').update(ip.trim()).digest('hex');
+  }
+
+  hashIpAddress(ip: string): string {
+    return this.hashIp(ip);
   }
 }
