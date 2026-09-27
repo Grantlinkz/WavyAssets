@@ -1,0 +1,242 @@
+// ==============================================================================
+// Prisma Schema — WavyAssets Global Database Model (Admin Extensions)
+// ==============================================================================
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ------------------------------------------------------------------------------
+// Administrative Identity, RBAC & Audit Models
+// ------------------------------------------------------------------------------
+
+model AdminUser {
+  id             String         @id @default(uuid())
+  email          String         @unique
+  fullName       String
+  passphraseHash String         // Argon2id
+  role           String         @default("DESK_LEAD") // SUPER_ADMIN | TREASURY_OFFICER | COMPLIANCE_OFFICER | CONCIERGE | DESK_LEAD
+  totpSecretHash String?        // Encrypted TOTP secret for 2FA
+  isActive       Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  sessions       AdminSession[]
+  auditLogs      AdminAuditLog[]
+  signOffs       TreasurySignOff[]
+}
+
+model AdminSession {
+  id                String    @id @default(uuid())
+  adminId           String
+  admin             AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  refreshTokenHash  String    @unique
+  ipAddress         String?
+  userAgent         String?
+  expiresAt         DateTime
+  createdAt         DateTime  @default(now())
+}
+
+model AdminAuditLog {
+  id            String     @id @default(uuid())
+  adminId       String?
+  admin         AdminUser? @relation(fields: [adminId], references: [id])
+  action        String     // e.g. "USER_SUSPEND", "BALANCE_CREDIT", "KYC_APPROVE"
+  targetEntity  String     // "User", "LedgerAccount", "VipCard", "DepositRail"
+  targetId      String?
+  diffBefore    String?    // Redacted JSON string of state before mutation
+  diffAfter     String?    // Redacted JSON string of state after mutation
+  reason        String?    // Mandatory justification
+  ipAddressHash String
+  userAgent     String?
+  createdAt     DateTime   @default(now())
+
+  @@index([adminId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// ------------------------------------------------------------------------------
+// Global Deposit Rail Configuration Models
+// ------------------------------------------------------------------------------
+
+model FiatDepositRailConfig {
+  id              String   @id @default("GLOBAL_FIAT_RAIL")
+  beneficiaryName String   @default("WavyAssets Sovereign Custody AG")
+  swissIban       String   @default("CH93 0023 8812 4019 8821 0")
+  bicSwift        String   @default("UBSWCHZH80A")
+  clearingRail    String   @default("Swiss SIC RTGS / Fedwire DvP")
+  memoFormat      String   @default("WY-{USER_REF}-TREASURY-03")
+  updatedAt       DateTime @updatedAt
+  updatedBy       String?
+}
+
+model CryptoDepositRailConfig {
+  id              String   @id @default(uuid())
+  asset           String   // USDC | USDT | BTC | ETH
+  network         String   // ERC-20 | BEP-20 | Polygon | TRC-20 | Bitcoin Native | Arbitrum | Optimism
+  vaultAddress    String
+  minDepositUsd   Float    @default(500.0)
+  confirmations   Int      @default(3)
+  isActive        Boolean  @default(true)
+  updatedAt       DateTime @updatedAt
+  updatedBy       String?
+
+  @@unique([asset, network])
+}
+
+// ------------------------------------------------------------------------------
+// Treasury Dual-Sign-Off Models (FINMA AMLA Article 14)
+// ------------------------------------------------------------------------------
+
+model TreasurySignOff {
+  id            String    @id @default(uuid())
+  withdrawalId  String    // References LedgerTransaction.id
+  officerId     String
+  officer       AdminUser @relation(fields: [officerId], references: [id])
+  action        String    // APPROVE | REJECT
+  notes         String?
+  signedAt      DateTime  @default(now())
+
+  @@unique([withdrawalId, officerId])
+}
+
+// ------------------------------------------------------------------------------
+// Identity, Session & Security Models (Unified Monorepo Models)
+// ------------------------------------------------------------------------------
+
+model User {
+  id                 String               @id @default(uuid())
+  email              String               @unique
+  fullName           String?
+  passphraseHash     String
+  tier               String               @default("PRIVATE_WEALTH") // RETAIL | PRIVATE_WEALTH | INSTITUTIONAL
+  kycTier            String               @default("TIER_1")         // TIER_1 | TIER_2 | TIER_3
+  isCorporate        Boolean              @default(false)
+  isActive           Boolean              @default(true)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  sessions           Session[]
+  kycDocuments       KycDocument[]
+  ledgerAccounts     LedgerAccount[]
+  vipCard            VipCard?
+}
+
+model Session {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash  String   @unique
+  ipAddress         String?
+  userAgent         String?
+  expiresAt         DateTime
+  createdAt         DateTime @default(now())
+}
+
+model LeadInquiry {
+  id                 String   @id @default(uuid())
+  fullNameEncrypted  String   // AES-256-GCM encrypted
+  workEmailEncrypted String   // AES-256-GCM encrypted
+  workEmailHash      String   // Blind index HMAC-SHA256
+  companyName        String
+  websiteUrl         String?
+  telegramEncrypted  String?  // AES-256-GCM encrypted
+  service            String   // CRYPTO | STOCKS | AI_FUNDS | REAL_ESTATE | VIP_CARDS | CARS | WALLET
+  allocationRange    String   // e.g. "$5M - $10M"
+  domainScore        Float    @default(1.0)
+  isSpam             Boolean  @default(false)
+  crmDispatched      Boolean  @default(false)
+  status             String   @default("NEW") // NEW | IN_REVIEW | MANDATE_SENT | MANDATE_ISSUED | ARCHIVED
+  notes              String?
+  location           String?  @default("Zurich, Switzerland")
+  custodyPreference  String?  @default("Qualified Institutional Custody")
+  investmentWindow   String?  @default("Immediate (< 30 days)")
+  ipAddress          String?  @default("194.230.144.1")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([workEmailHash])
+  @@index([status])
+}
+
+// ------------------------------------------------------------------------------
+// Double-Entry Financial Ledger Models
+// ------------------------------------------------------------------------------
+
+model LedgerAccount {
+  id          String        @id @default(uuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountType String        // AVAILABLE_CASH | INVESTED_CAPITAL | STAKING_ESCROW | FEE_RECEIVABLE
+  currency    String        @default("USD") // USD | EUR | CHF | USDC | BTC | ETH
+  balance     Decimal       @default(0.0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  entries     LedgerEntry[]
+
+  @@unique([userId, accountType, currency])
+}
+
+model LedgerTransaction {
+  id            String        @id @default(uuid())
+  referenceId   String        @unique // Idempotency key
+  type          String        // DEPOSIT | WITHDRAWAL | TRADE | STAKE | REWARD | DIVIDEND | SWEEP
+  status        String        // PENDING | PENDING_SECOND_SIGN_OFF | SETTLED | FAILED
+  description   String
+  amount        Decimal       @default(0.0)
+  currency      String        @default("USD")
+  rail          String?       // SWISS_SIC | FEDWIRE | ETH | BTC | POLYGON
+  counterparty  String?
+  accountNumber String?
+  createdAt     DateTime      @default(now())
+
+  entries       LedgerEntry[]
+}
+
+model LedgerEntry {
+  id            String            @id @default(uuid())
+  transactionId String
+  transaction   LedgerTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  accountId     String
+  account       LedgerAccount     @relation(fields: [accountId], references: [id])
+  amount        Decimal           // Positive for Credit, Negative for Debit
+  createdAt     DateTime          @default(now())
+
+  @@index([accountId])
+  @@index([transactionId])
+}
+
+// ------------------------------------------------------------------------------
+// VIP Cards & KYC
+// ------------------------------------------------------------------------------
+
+model VipCard {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cardNumberLast4 String
+  cardType        String   @default("PHYSICAL") // PHYSICAL | VIRTUAL
+  tier            String   @default("OBSIDIAN") // SILVER | OBSIDIAN | BLACK
+  isFrozen        Boolean  @default(false)
+  dailySpendLimit Float    @default(50000.0)
+  pinEncrypted    String   // AES-256-GCM encrypted
+  shippingStatus  String?  // DELIVERED | IN_TRANSIT
+  updatedAt       DateTime @updatedAt
+}
+
+model KycDocument {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  docType    String   // PASSPORT | UTILITY_BILL | ARTICLES_OF_INC | TAX_AFFIDAVIT
+  fileUrl    String
+  isVerified Boolean  @default(false)
+  uploadedAt DateTime @default(now())
+}
