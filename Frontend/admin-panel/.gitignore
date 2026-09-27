@@ -1,0 +1,19 @@
+# Dependencies & Build Outputs
+node_modules
+dist
+dist-ssr
+*.local
+.env
+.env.*
+!.env.example
+
+# Logs & temp
+*.log
+.npm
+.eslintcache
+
+# Editor & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
