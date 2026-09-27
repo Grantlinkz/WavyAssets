@@ -15,3 +15,7 @@ dist-ssr/
 
 # Tools & custom directories
 tools/
+
+# Database & SQLite files
+*.db
+*.db-journal
