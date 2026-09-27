@@ -22,10 +22,10 @@
 - [x] Vitest Component & Integration Test Suite (23/23 tests passing)
 
 ### Sprint 2: User Directory & KYC Compliance Deck
-- [ ] User & Ledger Directory Table (`/users`) with Segregated Balance Breakdown (`AVAILABLE_CASH` vs `INVESTED_CAPITAL`)
-- [ ] `CreateUserModal`, `SuspendUserModal` & `DirectFundingModal` with Mandatory Audit Justification
-- [ ] KYC & AML Queue Table (`/compliance`)
-- [ ] Split-Screen Document Inspector & 1-Click FINMA Tier Upgrade Engine (`TIER_1` -> `INSTITUTIONAL`)
+- [x] User & Ledger Directory Table (`/users`) with Segregated Balance Breakdown (`AVAILABLE_CASH` vs `INVESTED_CAPITAL`)
+- [x] `CreateUserModal`, `SuspendUserModal` & `DirectFundingModal` with Mandatory Audit Justification
+- [x] KYC & AML Queue Table (`/compliance`)
+- [x] Split-Screen Document Inspector & 1-Click FINMA Tier Upgrade Engine (`TIER_1` -> `INSTITUTIONAL`)
 
 ### Sprint 3: Treasury Operations Hub & Global Deposit Rails
 - [ ] Pending Deposits Table with Wire Proof Receipt Viewer & 1-Click Credit

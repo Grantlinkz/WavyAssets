@@ -5,6 +5,8 @@ import { AdminLayout } from "./components/layout/AdminLayout"
 import { useAdminNavStore } from "./store/useAdminNavStore"
 import { OverviewView } from "./views/OverviewView"
 import { InquiriesView } from "./views/InquiriesView"
+import { UserDirectoryView } from "./views/UserDirectoryView"
+import { ComplianceView } from "./views/ComplianceView"
 import { PlaceholderView } from "./views/PlaceholderView"
 
 const queryClient = new QueryClient({
@@ -26,23 +28,9 @@ export const AppContent: React.FC = () => {
       case "inquiries":
         return <InquiriesView />
       case "user-directory":
-        return (
-          <PlaceholderView
-            route="user-directory"
-            title="User Directory & Ledger Governance"
-            sprintPhase="Sprint 2"
-            description="Directory of sovereign users, balance inspection, CreateUserModal, SuspendUserModal, and DirectFundingModal with mandatory audit justification."
-          />
-        )
+        return <UserDirectoryView />
       case "compliance":
-        return (
-          <PlaceholderView
-            route="compliance"
-            title="KYC & AML Compliance Queue"
-            sprintPhase="Sprint 2"
-            description="Pending verification dossiers, split-screen document viewer, FINMA AML checklist, and 1-click tier upgrade engine (TIER_1 to INSTITUTIONAL)."
-          />
-        )
+        return <ComplianceView />
       case "treasury":
         return (
           <PlaceholderView
