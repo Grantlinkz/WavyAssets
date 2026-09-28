@@ -1,9 +1,11 @@
 import React, { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { Download, Search, KeyRound } from "lucide-react"
 import { InquiriesTable } from "../components/inquiries/InquiriesTable"
 import { LeadDetailDrawer } from "../components/inquiries/LeadDetailDrawer"
 import { LeadConvertModal } from "../components/inquiries/LeadConvertModal"
 import { useAdminNavStore } from "../store/useAdminNavStore"
+import { fetchInquiries, type LeadInquiry } from "../api/inquiries"
 
 export const InquiriesView: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState("ALL")
@@ -11,16 +13,71 @@ export const InquiriesView: React.FC = () => {
   const [isDecrypted, setIsDecrypted] = useState(true)
   const { badgeCounts } = useAdminNavStore()
 
+  const { data: allInquiries } = useQuery<LeadInquiry[]>({
+    queryKey: ["inquiries", "ALL"],
+    queryFn: () => fetchInquiries("ALL"),
+  })
+
+  const { data: currentInquiries } = useQuery<LeadInquiry[]>({
+    queryKey: ["inquiries", statusFilter],
+    queryFn: () => fetchInquiries(statusFilter),
+  })
+
+  const allCount = allInquiries ? allInquiries.length : "--"
+  const inReviewCount = allInquiries ? allInquiries.filter((i) => i.status === "IN_REVIEW").length : "--"
+  const mandateSentCount = allInquiries ? allInquiries.filter((i) => i.status === "MANDATE_SENT").length : "--"
+  const archivedCount = allInquiries ? allInquiries.filter((i) => i.status === "ARCHIVED").length : "--"
+  const liveNewCount = allInquiries ? allInquiries.filter((i) => i.status === "NEW").length : "--"
+
   const filterTabs = [
-    { id: "ALL", label: "All", count: 48 },
-    { id: "NEW", label: "New", count: badgeCounts.newInquiries },
-    { id: "IN_REVIEW", label: "In Review", count: 18 },
-    { id: "MANDATE_SENT", label: "Mandate Sent", count: 14 },
-    { id: "ARCHIVED", label: "Archived", count: 4 },
+    { id: "ALL", label: "All", count: allCount },
+    { id: "NEW", label: "New", count: badgeCounts.newInquiries ?? liveNewCount },
+    { id: "IN_REVIEW", label: "In Review", count: inReviewCount },
+    { id: "MANDATE_SENT", label: "Mandate Sent", count: mandateSentCount },
+    { id: "ARCHIVED", label: "Archived", count: archivedCount },
   ]
 
   const handleExportCSV = () => {
-    alert("Exporting institutional mandate dossier to signed CSV format...")
+    const list = currentInquiries || allInquiries || []
+    if (list.length === 0) return
+
+    const headers = [
+      "Dossier ID",
+      "Received At",
+      "Company",
+      "Trust Score",
+      "Contact Name",
+      "Email",
+      "Telegram",
+      "Location",
+      "Asset Interest",
+      "Declared Capital",
+      "Status",
+    ]
+    const rows = list.map((inq) => [
+      inq.dossierId,
+      inq.receivedAt,
+      `"${inq.company.replace(/"/g, '""')}"`,
+      inq.trustScore,
+      `"${isDecrypted ? inq.contactName.replace(/"/g, '""') : "[ENCRYPTED]"}"`,
+      `"${isDecrypted ? inq.email.replace(/"/g, '""') : "[ENCRYPTED]"}"`,
+      `"${isDecrypted ? inq.telegram.replace(/"/g, '""') : "[ENCRYPTED]"}"`,
+      `"${inq.location.replace(/"/g, '""')}"`,
+      `"${inq.assetInterest.replace(/"/g, '""')}"`,
+      `"${inq.declaredCapital.replace(/"/g, '""')}"`,
+      inq.status,
+    ])
+
+    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n")
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `wavyassets-mandate-inquiries-${statusFilter.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
   }
 
   return (
@@ -35,7 +92,9 @@ export const InquiriesView: React.FC = () => {
               </h1>
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[2px] bg-telemetry-cyan/10 border border-telemetry-cyan/30 text-telemetry-cyan font-mono text-xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-telemetry-cyan animate-pulse" />
-                <span>{badgeCounts.newInquiries} Inbound Queue</span>
+                <span>
+                  {badgeCounts.newInquiries !== null ? `${badgeCounts.newInquiries} Inbound Queue` : "Inbound Queue"}
+                </span>
               </span>
             </div>
             <p className="text-xs text-secondary">
@@ -104,10 +163,11 @@ export const InquiriesView: React.FC = () => {
       <InquiriesTable
         statusFilter={statusFilter}
         searchQuery={searchQuery}
+        isDecrypted={isDecrypted}
       />
 
       {/* Slide-over Detail Drawer & Conversion Modal */}
-      <LeadDetailDrawer />
+      <LeadDetailDrawer isDecrypted={isDecrypted} />
       <LeadConvertModal />
     </div>
   )

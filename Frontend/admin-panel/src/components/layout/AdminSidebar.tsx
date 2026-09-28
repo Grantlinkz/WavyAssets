@@ -17,8 +17,9 @@ interface NavItem {
   label: string
   icon: React.ComponentType<{ className?: string }>
   badge?: {
-    text: string
-    variant: "warning" | "cyan" | "success" | "secondary"
+    text?: string
+    variant?: "warning" | "cyan" | "success" | "secondary"
+    isSkeleton?: boolean
   }
 }
 
@@ -30,31 +31,46 @@ export const AdminSidebar: React.FC = () => {
       id: "overview",
       label: "Overview",
       icon: Activity,
-      badge: { text: `${badgeCounts.urgentActions} Urgent`, variant: "warning" },
+      badge:
+        badgeCounts.urgentActions !== null
+          ? { text: `${badgeCounts.urgentActions} Urgent`, variant: "warning" }
+          : { isSkeleton: true },
     },
     {
       id: "inquiries",
       label: "Inquiries",
       icon: FileText,
-      badge: { text: `${badgeCounts.newInquiries} New`, variant: "cyan" },
+      badge:
+        badgeCounts.newInquiries !== null
+          ? { text: `${badgeCounts.newInquiries} New`, variant: "cyan" }
+          : { isSkeleton: true },
     },
     {
       id: "user-directory",
       label: "User Directory",
       icon: Users,
-      badge: { text: badgeCounts.totalUsers.toLocaleString(), variant: "secondary" },
+      badge:
+        badgeCounts.totalUsers !== null
+          ? { text: badgeCounts.totalUsers.toLocaleString(), variant: "secondary" }
+          : { isSkeleton: true },
     },
     {
       id: "compliance",
       label: "Compliance",
       icon: ShieldAlert,
-      badge: { text: `${badgeCounts.pendingCompliance} Pending`, variant: "warning" },
+      badge:
+        badgeCounts.pendingCompliance !== null
+          ? { text: `${badgeCounts.pendingCompliance} Pending`, variant: "warning" }
+          : { isSkeleton: true },
     },
     {
       id: "treasury",
       label: "Treasury",
       icon: Wallet,
-      badge: { text: `${badgeCounts.treasurySignOffs} Sign-Offs`, variant: "warning" },
+      badge:
+        badgeCounts.treasurySignOffs !== null
+          ? { text: `${badgeCounts.treasurySignOffs} Sign-Offs`, variant: "warning" }
+          : { isSkeleton: true },
     },
     {
       id: "deposit-rails",
@@ -66,7 +82,10 @@ export const AdminSidebar: React.FC = () => {
       id: "vip-cards",
       label: "VIP Cards",
       icon: CreditCard,
-      badge: { text: `${badgeCounts.activeCards} Active`, variant: "secondary" },
+      badge:
+        badgeCounts.activeCards !== null
+          ? { text: `${badgeCounts.activeCards} Active`, variant: "secondary" }
+          : { isSkeleton: true },
     },
     {
       id: "audit-log",
@@ -127,15 +146,18 @@ export const AdminSidebar: React.FC = () => {
                   />
                   <span>{item.label}</span>
                 </div>
-                {item.badge && (
-                  <span
-                    className={`font-mono text-[10px] px-1.5 py-0.5 rounded-[2px] border ${getBadgeStyle(
-                      item.badge.variant
-                    )}`}
-                  >
-                    {item.badge.text}
-                  </span>
-                )}
+                {item.badge &&
+                  (item.badge.isSkeleton ? (
+                    <span className="w-12 h-3.5 rounded-[2px] wavy-skeleton shrink-0" />
+                  ) : (
+                    <span
+                      className={`font-mono text-[10px] px-1.5 py-0.5 rounded-[2px] border ${getBadgeStyle(
+                        item.badge.variant
+                      )}`}
+                    >
+                      {item.badge.text}
+                    </span>
+                  ))}
               </button>
             )
           })}

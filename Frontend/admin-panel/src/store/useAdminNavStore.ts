@@ -23,12 +23,12 @@ export interface AdminNavState {
   
   // Real-time counter badges
   badgeCounts: {
-    urgentActions: number
-    newInquiries: number
-    totalUsers: number
-    pendingCompliance: number
-    treasurySignOffs: number
-    activeCards: number
+    urgentActions: number | null
+    newInquiries: number | null
+    totalUsers: number | null
+    pendingCompliance: number | null
+    treasurySignOffs: number | null
+    activeCards: number | null
   }
 
   // Actions
@@ -39,7 +39,7 @@ export interface AdminNavState {
   closeLeadDrawer: () => void
   openConvertModal: (inquiry: LeadInquiry) => void
   closeConvertModal: () => void
-  updateBadgeCount: (key: keyof AdminNavState["badgeCounts"], count: number) => void
+  updateBadgeCount: (key: keyof AdminNavState["badgeCounts"], count: number | null) => void
 }
 
 export const useAdminNavStore = create<AdminNavState>((set) => ({
@@ -51,12 +51,12 @@ export const useAdminNavStore = create<AdminNavState>((set) => ({
   isConvertModalOpen: false,
 
   badgeCounts: {
-    urgentActions: 3,
-    newInquiries: 12,
-    totalUsers: 1429,
-    pendingCompliance: 5,
-    treasurySignOffs: 4,
-    activeCards: 38,
+    urgentActions: null,
+    newInquiries: null,
+    totalUsers: null,
+    pendingCompliance: null,
+    treasurySignOffs: null,
+    activeCards: null,
   },
 
   setActiveRoute: (route) => set({ activeRoute: route }),

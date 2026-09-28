@@ -17,12 +17,8 @@ export const DiffModal: React.FC<DiffModalProps> = ({ isOpen, log: propLog }) =>
   const log = propLog || selectedLogForDiff
 
   if (!showModal || !log) return null
-  const beforeJson = log.diffBefore
-    ? JSON.stringify(log.diffBefore, null, 2)
-    : `{\n  "status": "PREVIOUS_STATE",\n  "verified": true\n}`
-  const afterJson = log.diffAfter
-    ? JSON.stringify(log.diffAfter, null, 2)
-    : `{\n  "status": "APPLIED_MUTATION",\n  "verified": true\n}`
+  const beforeJson = log.diffBefore ? JSON.stringify(log.diffBefore, null, 2) : null
+  const afterJson = log.diffAfter ? JSON.stringify(log.diffAfter, null, 2) : null
 
   return (
     <div
@@ -72,10 +68,18 @@ export const DiffModal: React.FC<DiffModalProps> = ({ isOpen, log: propLog }) =>
                 <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">
                   Before Change
                 </span>
-                <span className="font-mono text-[10px] text-secondary">State v14.01</span>
+                <span className="font-mono text-[10px] text-secondary">
+                  {beforeJson ? "Recorded State" : "Unavailable"}
+                </span>
               </div>
               <div className="bg-bg-canvas border border-border-subtle p-3 rounded-[4px] font-mono text-xs text-secondary h-44 overflow-y-auto">
-                <pre className="whitespace-pre-wrap">{beforeJson}</pre>
+                {beforeJson ? (
+                  <pre className="whitespace-pre-wrap">{beforeJson}</pre>
+                ) : (
+                  <div className="h-full flex items-center justify-center italic text-secondary/60 text-center">
+                    No prior state recorded
+                  </div>
+                )}
               </div>
             </div>
 
@@ -85,10 +89,18 @@ export const DiffModal: React.FC<DiffModalProps> = ({ isOpen, log: propLog }) =>
                 <span className="font-mono text-[10px] text-status-success uppercase tracking-wider font-semibold">
                   After Change (Applied)
                 </span>
-                <span className="font-mono text-[10px] text-status-success">State v14.02</span>
+                <span className="font-mono text-[10px] text-status-success">
+                  {afterJson ? "Applied State" : "Unavailable"}
+                </span>
               </div>
               <div className="bg-bg-canvas border border-status-success/30 p-3 rounded-[4px] font-mono text-xs text-status-success h-44 overflow-y-auto">
-                <pre className="whitespace-pre-wrap">{afterJson}</pre>
+                {afterJson ? (
+                  <pre className="whitespace-pre-wrap">{afterJson}</pre>
+                ) : (
+                  <div className="h-full flex items-center justify-center italic text-secondary/60 text-center">
+                    No mutation diff recorded
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -108,7 +120,7 @@ export const DiffModal: React.FC<DiffModalProps> = ({ isOpen, log: propLog }) =>
               <div className="flex items-center gap-2">
                 <span className="font-mono text-base text-status-success font-bold">
                   {log.deltaAmount > 0 ? "+" : ""}
-                  {formatCurrency(log.deltaAmount)} {log.deltaCurrency || "USD"}
+                  {formatCurrency(log.deltaAmount, log.deltaCurrency || "USD")}
                 </span>
                 <span className="px-2 py-0.5 rounded-[4px] bg-status-success/10 text-status-success font-mono text-[10px] border border-status-success/30 font-semibold">
                   Settled
@@ -118,19 +130,35 @@ export const DiffModal: React.FC<DiffModalProps> = ({ isOpen, log: propLog }) =>
           )}
 
           {/* Double-entry Ledger Invariant Verification Notice */}
-          <div className="bg-bg-elevated border border-border-subtle p-3 rounded-[4px] flex items-start gap-3">
-            <div className="w-6 h-6 rounded-full bg-status-success/20 flex items-center justify-center shrink-0 mt-0.5">
-              <CheckCircle2 className="w-4 h-4 text-status-success" />
+          {log.sha256Hash && log.merkleBlock ? (
+            <div className="bg-bg-elevated border border-border-subtle p-3 rounded-[4px] flex items-start gap-3">
+              <div className="w-6 h-6 rounded-full bg-status-success/20 flex items-center justify-center shrink-0 mt-0.5">
+                <CheckCircle2 className="w-4 h-4 text-status-success" />
+              </div>
+              <div className="flex flex-col gap-0.5 text-xs">
+                <span className="text-on-surface font-semibold">
+                  Ledger Conservation Verified: Debits Equal Credits
+                </span>
+                <p className="text-secondary text-[11px] leading-relaxed">
+                  Cryptographic zero-knowledge proof anchored at Merkle Block #{log.merkleBlock.toLocaleString()}. Root transition verified with SHA-256 digest.
+                </p>
+              </div>
             </div>
-            <div className="flex flex-col gap-0.5 text-xs">
-              <span className="text-on-surface font-semibold">
-                Ledger Conservation Verified: Debits Equal Credits
-              </span>
-              <p className="text-secondary text-[11px] leading-relaxed">
-                Cryptographic zero-knowledge proof generated by Zurich Custody Enclave. Root transition signed by FIPS-140-3 Hardware Security Module.
-              </p>
+          ) : (
+            <div className="bg-bg-elevated border border-border-subtle p-3 rounded-[4px] flex items-start gap-3">
+              <div className="w-6 h-6 rounded-full bg-status-warning/20 flex items-center justify-center shrink-0 mt-0.5">
+                <Hash className="w-4 h-4 text-status-warning" />
+              </div>
+              <div className="flex flex-col gap-0.5 text-xs">
+                <span className="text-on-surface font-semibold text-status-warning">
+                  Pending Cryptographic Finalization
+                </span>
+                <p className="text-secondary text-[11px] leading-relaxed">
+                  Block commitment and Merkle root inclusion proof are pending consensus validation.
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Modal Footer */}

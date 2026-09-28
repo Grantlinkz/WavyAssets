@@ -28,7 +28,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("[WavyAssets Institutional Error Boundary]", error, errorInfo)
+    console.error(`[WavyAssets Institutional Error Boundary] [${this.state.correlationId}]`, error, errorInfo)
   }
 
   private handleReload = () => {

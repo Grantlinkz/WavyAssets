@@ -1,8 +1,9 @@
-import React from "react"
+import React, { useEffect } from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ErrorBoundary } from "./components/common/ErrorBoundary"
 import { AdminLayout } from "./components/layout/AdminLayout"
 import { useAdminNavStore } from "./store/useAdminNavStore"
+import { useAdminAuthStore } from "./store/useAdminAuthStore"
 import { OverviewView } from "./views/OverviewView"
 import { InquiriesView } from "./views/InquiriesView"
 import { UserDirectoryView } from "./views/UserDirectoryView"
@@ -23,6 +24,19 @@ const queryClient = new QueryClient({
 
 export const AppContent: React.FC = () => {
   const { activeRoute } = useAdminNavStore()
+  const { logout, setLoginModalOpen } = useAdminAuthStore()
+
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      logout()
+      setLoginModalOpen(true)
+    }
+
+    window.addEventListener("wavy:session_expired", handleSessionExpired)
+    return () => {
+      window.removeEventListener("wavy:session_expired", handleSessionExpired)
+    }
+  }, [logout, setLoginModalOpen])
 
   const renderActiveView = () => {
     switch (activeRoute) {

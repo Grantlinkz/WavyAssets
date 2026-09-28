@@ -1,6 +1,6 @@
 import React, { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
-import { Lock, Droplets, PenTool, CheckCircle, Clock, RefreshCw, Layers } from "lucide-react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { Lock, Droplets, PenTool, CheckCircle, Clock, RefreshCw, Layers, AlertCircle } from "lucide-react"
 import { MetricCard } from "../components/overview/MetricCard"
 import { SettlementLedger } from "../components/overview/SettlementLedger"
 import { fetchOverviewMetrics, type OverviewMetrics } from "../api/overview"
@@ -9,11 +9,13 @@ import { formatCurrency, formatPercentage } from "../lib/formatters"
 export const OverviewView: React.FC = () => {
   const [timeHorizon, setTimeHorizon] = useState("24h")
   const [currency, setCurrency] = useState("ALL")
+  const queryClient = useQueryClient()
 
   const {
     data: metrics,
     isLoading,
-    refetch,
+    isError,
+    error,
     isFetching,
   } = useQuery<OverviewMetrics, Error>({
     queryKey: ["overview-metrics"],
@@ -21,17 +23,20 @@ export const OverviewView: React.FC = () => {
     retry: 2,
   })
 
-  // Format metric values safely when loaded
-  const totalBalance = metrics
-    ? formatCurrency(metrics.totalVaultBalance, "USD")
-    : "$142,890,420.00"
-  const liquidCapital = metrics
-    ? formatCurrency(metrics.liquidSettlementCapital, "USD")
-    : "$28,450,110.50"
+  const handleRefresh = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["overview-metrics"] }),
+      queryClient.invalidateQueries({ queryKey: ["settlement-ledger"] }),
+    ])
+  }
+
+  // Format metric values safely when loaded without fabricated fallbacks
+  const totalBalance = metrics ? formatCurrency(metrics.totalVaultBalance, "USD") : "--"
+  const liquidCapital = metrics ? formatCurrency(metrics.liquidSettlementCapital, "USD") : "--"
   const netSettlement = metrics
-    ? `+${formatCurrency(metrics.netSettlement24h, "USD")}`
-    : "+$12,410,900.00"
-  const pendingActions = metrics ? `${metrics.actionQueuePending} Pending` : "10 Pending"
+    ? `${metrics.netSettlement24h >= 0 ? "+" : ""}${formatCurrency(metrics.netSettlement24h, "USD")}`
+    : "--"
+  const pendingActions = metrics ? `${metrics.actionQueuePending} Pending` : "--"
 
   return (
     <div className="flex flex-col gap-6 w-full animate-in fade-in duration-200" data-testid="overview-view">
@@ -87,7 +92,7 @@ export const OverviewView: React.FC = () => {
 
           {/* Refresh Action */}
           <button
-            onClick={() => refetch()}
+            onClick={handleRefresh}
             disabled={isFetching}
             className="bg-bg-elevated hover:bg-state-hover text-on-surface border border-border-subtle rounded-[4px] px-3 py-1.5 text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
           >
@@ -97,14 +102,30 @@ export const OverviewView: React.FC = () => {
         </div>
       </div>
 
+      {/* Semantic Error State */}
+      {isError && (
+        <div className="p-4 bg-status-danger/10 border border-status-danger/30 rounded-[4px] text-xs text-status-danger flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>Failed to load institutional overview telemetry. {error?.message}</span>
+          </div>
+          <button
+            onClick={handleRefresh}
+            className="px-3 py-1 bg-status-danger hover:bg-status-danger/80 text-white rounded-[2px] font-mono text-[11px] transition-colors cursor-pointer"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Primary 4-Metric Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Metric 1: Total Vault Balance */}
         <MetricCard
           title="Total Vault Balance"
           value={totalBalance}
-          change={metrics ? formatPercentage(metrics.vaultBalanceChange24h) : "+3.4%"}
-          isPositive={true}
+          change={metrics && metrics.vaultBalanceChange24h !== undefined ? formatPercentage(metrics.vaultBalanceChange24h) : undefined}
+          isPositive={metrics ? metrics.vaultBalanceChange24h >= 0 : true}
           description="vs. 24h prior rolling"
           icon={Lock}
           iconColorClass="text-gold-accent"
@@ -115,7 +136,11 @@ export const OverviewView: React.FC = () => {
         <MetricCard
           title="Liquid Settlement Capital"
           value={liquidCapital}
-          description="Active across 4 tier-1 liquidity rails"
+          description={
+            metrics
+              ? `Active across ${metrics.activeLiquidityRailsCount} tier-1 liquidity rails`
+              : "Active across tier-1 liquidity rails"
+          }
           icon={Droplets}
           iconColorClass="text-telemetry-cyan"
           badgeText="TIER-1 LIQUIDITY"
@@ -127,7 +152,7 @@ export const OverviewView: React.FC = () => {
         <MetricCard
           title="Action Queue"
           value={pendingActions}
-          description={metrics?.actionQueueWarning || "3 multi-sig wires > $100k awaiting dual clearance"}
+          description={metrics?.actionQueueWarning || ""}
           icon={PenTool}
           iconColorClass="text-status-warning"
           badgeText="SIGNATURE REQUIRED"
@@ -139,9 +164,12 @@ export const OverviewView: React.FC = () => {
         <MetricCard
           title="24h Net Settlement"
           value={netSettlement}
-          change={metrics ? formatPercentage(8.2) : "+8.2%"}
-          isPositive={true}
-          description={`${metrics?.settledTransactionsCount24h || 42} gross settled transaction batches`}
+          isPositive={metrics ? metrics.netSettlement24h >= 0 : true}
+          description={
+            metrics
+              ? `${metrics.settledTransactionsCount24h} gross settled transaction batches`
+              : ""
+          }
           icon={CheckCircle}
           iconColorClass="text-status-success"
           isLoading={isLoading}

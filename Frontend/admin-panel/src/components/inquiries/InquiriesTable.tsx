@@ -17,11 +17,13 @@ import { SkeletonTable } from "../common/SkeletonTable"
 export interface InquiriesTableProps {
   statusFilter: string
   searchQuery: string
+  isDecrypted?: boolean
 }
 
 export const InquiriesTable: React.FC<InquiriesTableProps> = ({
   statusFilter,
   searchQuery,
+  isDecrypted = true,
 }) => {
   const { openLeadDrawer } = useAdminNavStore()
 
@@ -202,16 +204,16 @@ export const InquiriesTable: React.FC<InquiriesTableProps> = ({
                     {/* Contact */}
                     <td className="py-2.5 px-4 whitespace-nowrap">
                       <div className="text-on-surface font-medium">
-                        {inquiry.contactName}
+                        {isDecrypted ? inquiry.contactName : "••••••••"}
                       </div>
                       <div className="flex items-center gap-3 text-[11px] text-secondary font-mono mt-0.5">
                         <span className="flex items-center gap-1 hover:text-gold-accent">
                           <Mail className="w-3 h-3 text-secondary" />
-                          <span>{inquiry.email}</span>
+                          <span>{isDecrypted ? inquiry.email : "••••••••"}</span>
                         </span>
                         <span className="flex items-center gap-1 text-telemetry-cyan">
                           <Send className="w-3 h-3" />
-                          <span>{inquiry.telegram}</span>
+                          <span>{isDecrypted ? inquiry.telegram : "••••••••"}</span>
                         </span>
                       </div>
                     </td>

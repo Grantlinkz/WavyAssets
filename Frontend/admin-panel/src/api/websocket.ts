@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query"
 
 export interface WebSocketTelemetry {
   isConnected: boolean
-  latencyMs: number
+  latencyMs: number | null
   status: "connected" | "reconnecting" | "offline"
   lastPingAt: Date | null
 }
@@ -12,8 +12,8 @@ export function useAdminWebSocket() {
   const queryClient = useQueryClient()
   const [telemetry, setTelemetry] = useState<WebSocketTelemetry>({
     isConnected: false,
-    latencyMs: 18,
-    status: "reconnecting",
+    latencyMs: null,
+    status: "offline",
     lastPingAt: null,
   })
 
@@ -21,9 +21,18 @@ export function useAdminWebSocket() {
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    // Avoid running in non-browser environments like Vitest jsdom if WebSocket isn't mocked
+    let isDisposed = false
+    let pingInterval: ReturnType<typeof setInterval> | null = null
+    let pingStartTime: number | null = null
+
+    // If WebSocket is unavailable, report offline and disconnected
     if (typeof window === "undefined" || typeof WebSocket === "undefined") {
-      setTelemetry((prev) => ({ ...prev, isConnected: true, status: "connected" }))
+      setTelemetry({
+        isConnected: false,
+        latencyMs: null,
+        status: "offline",
+        lastPingAt: null,
+      })
       return
     }
 
@@ -31,22 +40,57 @@ export function useAdminWebSocket() {
     const wsUrl = `${protocol}//${window.location.host}/ws/admin`
 
     function connect() {
+      if (isDisposed) return
+
       try {
+        setTelemetry((prev) => ({
+          ...prev,
+          isConnected: false,
+          status: "reconnecting",
+        }))
+
         const ws = new WebSocket(wsUrl)
         socketRef.current = ws
 
+        const sendPing = () => {
+          if (ws.readyState === WebSocket.OPEN && !isDisposed) {
+            pingStartTime = performance.now()
+            try {
+              ws.send(JSON.stringify({ type: "ping", timestamp: Date.now() }))
+            } catch {
+              // Ignore ping send failures
+            }
+          }
+        }
+
         ws.onopen = () => {
-          setTelemetry({
+          if (isDisposed) return
+          setTelemetry((prev) => ({
+            ...prev,
             isConnected: true,
-            latencyMs: 14,
             status: "connected",
             lastPingAt: new Date(),
-          })
+          }))
+          sendPing()
+          pingInterval = setInterval(sendPing, 10000)
         }
 
         ws.onmessage = (event) => {
+          if (isDisposed) return
           try {
             const data = JSON.parse(event.data)
+            if (data.type === "pong" || data.event === "pong" || data.pong) {
+              if (pingStartTime !== null) {
+                const rtt = Math.round(performance.now() - pingStartTime)
+                setTelemetry((prev) => ({
+                  ...prev,
+                  latencyMs: rtt,
+                  lastPingAt: new Date(),
+                }))
+                pingStartTime = null
+              }
+              return
+            }
             if (data.type === "SETTLEMENT_UPDATE") {
               queryClient.invalidateQueries({ queryKey: ["settlement-ledger"] })
               queryClient.invalidateQueries({ queryKey: ["overview-metrics"] })
@@ -67,7 +111,7 @@ export function useAdminWebSocket() {
         }
 
         ws.onerror = () => {
-          // Graceful handling when socket server is inactive
+          if (isDisposed) return
           setTelemetry((prev) => ({
             ...prev,
             isConnected: false,
@@ -76,23 +120,54 @@ export function useAdminWebSocket() {
         }
 
         ws.onclose = () => {
+          if (pingInterval) {
+            clearInterval(pingInterval)
+            pingInterval = null
+          }
+          if (isDisposed) return
           setTelemetry((prev) => ({
             ...prev,
             isConnected: false,
+            latencyMs: null,
             status: "reconnecting",
           }))
-          reconnectTimeoutRef.current = setTimeout(connect, 5000)
+          reconnectTimeoutRef.current = setTimeout(() => {
+            if (!isDisposed) connect()
+          }, 5000)
         }
       } catch {
-        setTelemetry((prev) => ({ ...prev, isConnected: false, status: "offline" }))
+        if (!isDisposed) {
+          setTelemetry({
+            isConnected: false,
+            latencyMs: null,
+            status: "offline",
+            lastPingAt: null,
+          })
+        }
       }
     }
 
     connect()
 
     return () => {
-      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current)
-      if (socketRef.current) socketRef.current.close()
+      isDisposed = true
+      if (pingInterval) {
+        clearInterval(pingInterval)
+        pingInterval = null
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+        reconnectTimeoutRef.current = null
+      }
+      if (socketRef.current) {
+        // Detach handlers before closing so closure does not restart reconnect loop
+        socketRef.current.onopen = null
+        socketRef.current.onmessage = null
+        socketRef.current.onerror = null
+        socketRef.current.onclose = null
+        socketRef.current.close()
+        socketRef.current = null
+      }
     }
   }, [queryClient])
 

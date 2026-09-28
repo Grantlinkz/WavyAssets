@@ -77,11 +77,18 @@ export const SplitScreenDocInspector: React.FC = () => {
   }, [selectedDossier])
 
   // Checklist toggle
-  const toggleChecklistItem = (key: keyof FinmaChecklist) => {
-    const updated = { ...checklist, [key]: !checklist[key] }
+  const toggleChecklistItem = async (key: keyof FinmaChecklist) => {
+    const originalValue = checklist[key]
+    const updated = { ...checklist, [key]: !originalValue }
     setChecklist(updated)
     if (selectedDossier) {
-      updateFinmaChecklist(selectedDossier.id, { [key]: updated[key] }).catch(() => {})
+      try {
+        await updateFinmaChecklist(selectedDossier.id, { [key]: updated[key] })
+      } catch (err: unknown) {
+        // Revert local state and show error so elevation cannot rely on unpersisted checks
+        setChecklist((prev) => ({ ...prev, [key]: originalValue }))
+        setErrorMsg((err as Error)?.message || "Failed to persist FINMA checklist update. Verification not saved.")
+      }
     }
   }
 
@@ -91,6 +98,9 @@ export const SplitScreenDocInspector: React.FC = () => {
   const elevateMutation = useMutation({
     mutationFn: async () => {
       if (!selectedDossier) throw new Error("No dossier selected.")
+      if (!operator?.id) {
+        throw new Error("Authenticated operator required to authorize tier elevation.")
+      }
       if (!allChecklistItemsChecked) {
         throw new Error("All 5 FINMA AML compliance checks must be explicitly confirmed before tier elevation.")
       }
@@ -102,7 +112,7 @@ export const SplitScreenDocInspector: React.FC = () => {
         dossierId: selectedDossier.id,
         targetTier: selectedDossier.requestedTier,
         finmaSignOffNotes: finmaSignOffNotes.trim(),
-        officerId: operator?.id || "op-eleanor-vance-01",
+        officerId: operator.id,
       })
     },
     onSuccess: (data) => {
@@ -124,6 +134,9 @@ export const SplitScreenDocInspector: React.FC = () => {
   const rejectMutation = useMutation({
     mutationFn: async () => {
       if (!selectedDossier) throw new Error("No dossier selected.")
+      if (!operator?.id) {
+        throw new Error("Authenticated operator required to reject or escalate dossier.")
+      }
       if (!rejectionReason.trim()) {
         throw new Error("Mandatory audit reason required for dossier rejection/escalation.")
       }
@@ -131,7 +144,7 @@ export const SplitScreenDocInspector: React.FC = () => {
       return rejectKycDossier({
         dossierId: selectedDossier.id,
         reason: rejectionReason.trim(),
-        officerId: operator?.id || "op-eleanor-vance-01",
+        officerId: operator.id,
       })
     },
     onSuccess: () => {
@@ -148,16 +161,7 @@ export const SplitScreenDocInspector: React.FC = () => {
 
   if (!isSplitInspectorOpen || !selectedDossier) return null
 
-  const activeDoc = selectedDossier.documents?.[activeDocumentIndex] || {
-    id: "doc-sample-01",
-    type: "PASSPORT",
-    filename: "CH_Passport_Encrypted_Dossier.pdf",
-    fileSize: "4.8 MB",
-    uploadedAt: new Date().toISOString(),
-    verified: true,
-    documentUrl: "#",
-    sha256Hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  }
+  const activeDoc = selectedDossier.documents?.[activeDocumentIndex] || null
 
   return (
     <div
@@ -183,8 +187,20 @@ export const SplitScreenDocInspector: React.FC = () => {
                 <span className="font-mono text-[10px] px-1.5 py-0.2 bg-bg-elevated border border-border-subtle text-secondary rounded-[2px]">
                   {selectedDossier.dossierNumber}
                 </span>
-                <span className="font-mono text-[10px] px-1.5 py-0.2 bg-status-success/15 text-status-success border border-status-success/30 rounded-[2px]">
-                  PEP / Sanctions Clear
+                <span
+                  className={`font-mono text-[10px] px-1.5 py-0.2 rounded-[2px] border ${
+                    selectedDossier.pepCheckPassed && selectedDossier.sanctionListClear
+                      ? "bg-status-success/15 text-status-success border-status-success/30"
+                      : "bg-status-danger/15 text-status-danger border-status-danger/30"
+                  }`}
+                >
+                  {selectedDossier.pepCheckPassed && selectedDossier.sanctionListClear
+                    ? "PEP / Sanctions Clear"
+                    : !selectedDossier.pepCheckPassed && !selectedDossier.sanctionListClear
+                    ? "PEP & Sanctions Hit"
+                    : !selectedDossier.pepCheckPassed
+                    ? "PEP Hit"
+                    : "Sanctions Hit"}
                 </span>
               </div>
               <p className="text-xs text-secondary">
@@ -454,132 +470,158 @@ export const SplitScreenDocInspector: React.FC = () => {
 
           {/* Right Panel: Split Document Viewer (7 cols) */}
           <div className="lg:col-span-7 bg-bg-canvas flex flex-col overflow-hidden">
-            {/* Document Tabs */}
-            <div className="flex items-center gap-1 px-4 py-2 border-b border-border-subtle bg-bg-panel/50 overflow-x-auto">
-              {(selectedDossier.documents || []).map((doc, idx) => (
-                <button
-                  key={doc.id || idx}
-                  onClick={() => setActiveDocumentIndex(idx)}
-                  className={`px-3 py-1.5 rounded-[2px] font-mono text-[11px] flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 border ${
-                    activeDocumentIndex === idx
-                      ? "bg-bg-canvas text-gold-accent border-gold-accent/40 font-semibold"
-                      : "bg-transparent text-secondary border-transparent hover:text-on-surface hover:bg-state-hover/40"
-                  }`}
-                >
-                  <FileCheck className="w-3 h-3" />
-                  <span>{doc.type.replace(/_/g, " ")}</span>
-                  {doc.verified && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-status-success ml-0.5" />
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {/* Document Inspector Toolbar */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-border-subtle/50 text-[11px] text-secondary">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-on-surface">{activeDoc.filename}</span>
-                <span className="font-mono text-secondary">({activeDoc.fileSize})</span>
+            {!activeDoc ? (
+              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-secondary">
+                <FileCheck className="w-10 h-10 text-secondary mb-3 opacity-40" />
+                <span className="font-semibold text-on-surface text-sm">No Documents Uploaded</span>
+                <span className="text-xs text-secondary mt-1 max-w-sm">
+                  This sovereign dossier does not contain any uploaded identification documents or corporate registry filings.
+                </span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => setZoomLevel((z) => Math.max(50, z - 15))}
-                  className="p-1 rounded-[2px] hover:bg-state-hover border border-border-subtle cursor-pointer"
-                  title="Zoom Out"
-                >
-                  <ZoomOut className="w-3.5 h-3.5" />
-                </button>
-                <span className="font-mono text-[10px] px-1">{zoomLevel}%</span>
-                <button
-                  onClick={() => setZoomLevel((z) => Math.min(200, z + 15))}
-                  className="p-1 rounded-[2px] hover:bg-state-hover border border-border-subtle cursor-pointer"
-                  title="Zoom In"
-                >
-                  <ZoomIn className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => setRotation((r) => (r + 90) % 360)}
-                  className="p-1 rounded-[2px] hover:bg-state-hover border border-border-subtle cursor-pointer ml-1"
-                  title="Rotate 90deg"
-                >
-                  <RotateCw className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
+            ) : (
+              <>
+                {/* Document Tabs */}
+                <div className="flex items-center gap-1 px-4 py-2 border-b border-border-subtle bg-bg-panel/50 overflow-x-auto">
+                  {(selectedDossier.documents || []).map((doc, idx) => (
+                    <button
+                      key={doc.id || idx}
+                      onClick={() => setActiveDocumentIndex(idx)}
+                      className={`px-3 py-1.5 rounded-[2px] font-mono text-[11px] flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 border ${
+                        activeDocumentIndex === idx
+                          ? "bg-bg-canvas text-gold-accent border-gold-accent/40 font-semibold"
+                          : "bg-transparent text-secondary border-transparent hover:text-on-surface hover:bg-state-hover/40"
+                      }`}
+                    >
+                      <FileCheck className="w-3 h-3" />
+                      <span>{doc.type.replace(/_/g, " ")}</span>
+                      {doc.verified && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-status-success ml-0.5" />
+                      )}
+                    </button>
+                  ))}
+                </div>
 
-            {/* Document Preview Canvas */}
-            <div className="flex-1 p-6 overflow-auto flex items-center justify-center bg-black/40">
-              <div
-                style={{
-                  transform: `scale(${zoomLevel / 100}) rotate(${rotation}deg)`,
-                  transition: "transform 0.15s ease",
-                }}
-                className="w-full max-w-md bg-bg-panel border border-border-subtle rounded-[4px] p-6 shadow-2xl relative text-xs flex flex-col gap-4"
-              >
-                {/* Visual Security Hologram Header */}
-                <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+                {/* Document Inspector Toolbar */}
+                <div className="flex items-center justify-between px-4 py-2 border-b border-border-subtle/50 text-[11px] text-secondary">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-gold-accent/20 border border-gold-accent flex items-center justify-center text-gold-accent">
-                      <Lock className="w-3 h-3" />
-                    </div>
-                    <div>
-                      <div className="font-mono text-[10px] font-bold text-gold-accent uppercase tracking-wider">
-                        Sovereign Vault Archive Encrypted Record
+                    <span className="font-semibold text-on-surface">{activeDoc.filename}</span>
+                    <span className="font-mono text-secondary">({activeDoc.fileSize})</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setZoomLevel((z) => Math.max(50, z - 15))}
+                      className="p-1 rounded-[2px] hover:bg-state-hover border border-border-subtle cursor-pointer"
+                      title="Zoom Out"
+                    >
+                      <ZoomOut className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="font-mono text-[10px] px-1">{zoomLevel}%</span>
+                    <button
+                      onClick={() => setZoomLevel((z) => Math.min(200, z + 15))}
+                      className="p-1 rounded-[2px] hover:bg-state-hover border border-border-subtle cursor-pointer"
+                      title="Zoom In"
+                    >
+                      <ZoomIn className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setRotation((r) => (r + 90) % 360)}
+                      className="p-1 rounded-[2px] hover:bg-state-hover border border-border-subtle cursor-pointer ml-1"
+                      title="Rotate 90deg"
+                    >
+                      <RotateCw className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Document Preview Canvas */}
+                <div className="flex-1 p-6 overflow-auto flex items-center justify-center bg-black/40">
+                  <div
+                    style={{
+                      transform: `scale(${zoomLevel / 100}) rotate(${rotation}deg)`,
+                      transition: "transform 0.15s ease",
+                    }}
+                    className="w-full max-w-md bg-bg-panel border border-border-subtle rounded-[4px] p-6 shadow-2xl relative text-xs flex flex-col gap-4"
+                  >
+                    {/* Visual Security Hologram Header */}
+                    <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-gold-accent/20 border border-gold-accent flex items-center justify-center text-gold-accent">
+                          <Lock className="w-3 h-3" />
+                        </div>
+                        <div>
+                          <div className="font-mono text-[10px] font-bold text-gold-accent uppercase tracking-wider">
+                            Sovereign Vault Archive Encrypted Record
+                          </div>
+                          <div className="text-[9px] text-secondary">
+                            FINMA Verification Enclave Zurich Shard #04
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-[9px] text-secondary">
-                        FINMA Verification Enclave Zurich Shard #04
+                      <span
+                        className={`px-1.5 py-0.5 rounded-[2px] font-mono text-[9px] font-bold border ${
+                          activeDoc.verified
+                            ? "bg-status-success/20 text-status-success border-status-success/40"
+                            : "bg-status-warning/20 text-status-warning border-status-warning/40"
+                        }`}
+                      >
+                        {activeDoc.verified ? "VERIFIED ENCLAVE" : "UNVERIFIED"}
+                      </span>
+                    </div>
+
+                    {/* Simulated Document Details */}
+                    <div className="space-y-2 py-2">
+                      <div className="p-3 bg-bg-canvas/80 rounded-[2px] border border-border-subtle">
+                        <div className="text-[10px] text-secondary uppercase font-mono mb-1">
+                          Document Classification
+                        </div>
+                        <div className="text-sm font-semibold text-on-surface">
+                          {activeDoc.type.replace(/_/g, " ")}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-[11px]">
+                        <div className="p-2 bg-bg-canvas/80 rounded-[2px] border border-border-subtle">
+                          <div className="text-[9px] text-secondary">Subject Entity</div>
+                          <div className="font-semibold text-on-surface truncate">{selectedDossier.userName}</div>
+                        </div>
+                        <div className="p-2 bg-bg-canvas/80 rounded-[2px] border border-border-subtle">
+                          <div className="text-[9px] text-secondary">Jurisdiction</div>
+                          <div className="font-semibold text-on-surface">{selectedDossier.country}</div>
+                        </div>
+                      </div>
+
+                      {/* Hash Integrity Box */}
+                      <div className="p-2.5 bg-bg-canvas/80 rounded-[2px] border border-border-subtle font-mono text-[10px]">
+                        <div className="text-secondary flex items-center gap-1 mb-1">
+                          <Hash className="w-3 h-3 text-telemetry-cyan" />
+                          <span>SHA-256 Checksum:</span>
+                        </div>
+                        <div className="text-telemetry-cyan break-all">
+                          {activeDoc.sha256Hash || "Verification pending"}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <span className="px-1.5 py-0.5 rounded-[2px] bg-status-success/20 text-status-success font-mono text-[9px] font-bold border border-status-success/40">
-                    VERIFIED ENCLAVE
-                  </span>
-                </div>
 
-                {/* Simulated Document Details */}
-                <div className="space-y-2 py-2">
-                  <div className="p-3 bg-bg-canvas/80 rounded-[2px] border border-border-subtle">
-                    <div className="text-[10px] text-secondary uppercase font-mono mb-1">
-                      Document Classification
-                    </div>
-                    <div className="text-sm font-semibold text-on-surface">
-                      {activeDoc.type.replace(/_/g, " ")}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-[11px]">
-                    <div className="p-2 bg-bg-canvas/80 rounded-[2px] border border-border-subtle">
-                      <div className="text-[9px] text-secondary">Subject Entity</div>
-                      <div className="font-semibold text-on-surface truncate">{selectedDossier.userName}</div>
-                    </div>
-                    <div className="p-2 bg-bg-canvas/80 rounded-[2px] border border-border-subtle">
-                      <div className="text-[9px] text-secondary">Jurisdiction</div>
-                      <div className="font-semibold text-on-surface">{selectedDossier.country}</div>
-                    </div>
-                  </div>
-
-                  {/* Hash Integrity Box */}
-                  <div className="p-2.5 bg-bg-canvas/80 rounded-[2px] border border-border-subtle font-mono text-[10px]">
-                    <div className="text-secondary flex items-center gap-1 mb-1">
-                      <Hash className="w-3 h-3 text-telemetry-cyan" />
-                      <span>SHA-256 Checksum:</span>
-                    </div>
-                    <div className="text-telemetry-cyan break-all">
-                      {activeDoc.sha256Hash || "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}
+                    {/* Watermark Footer */}
+                    <div className="pt-2 border-t border-border-subtle/50 flex justify-between items-center text-[10px] text-secondary">
+                      <span>Audit Timestamp: {formatTimestamp(selectedDossier.submittedAt)}</span>
+                      <span
+                        className={`flex items-center gap-1 ${
+                          activeDoc.verified ? "text-status-success" : "text-status-warning"
+                        }`}
+                      >
+                        <CheckCircle2 className="w-3 h-3" />
+                        <span>
+                          {activeDoc.verified
+                            ? "Cryptographic Seal Intact"
+                            : "Pending Cryptographic Seal"}
+                        </span>
+                      </span>
                     </div>
                   </div>
                 </div>
-
-                {/* Watermark Footer */}
-                <div className="pt-2 border-t border-border-subtle/50 flex justify-between items-center text-[10px] text-secondary">
-                  <span>Audit Timestamp: {formatTimestamp(selectedDossier.submittedAt)}</span>
-                  <span className="text-status-success flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" />
-                    <span>Cryptographic Seal Intact</span>
-                  </span>
-                </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         </div>
       </div>

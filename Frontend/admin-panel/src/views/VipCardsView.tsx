@@ -12,7 +12,13 @@ export const VipCardsView: React.FC = () => {
   const { setIsMintModalOpen } = useVipCardsStore()
   const { setActiveRoute } = useAdminNavStore()
 
-  const { data: telemetry } = useQuery({
+  const {
+    data: telemetry,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["vip-cards-telemetry"],
     queryFn: fetchVipCardsTelemetry,
     initialData: {
@@ -46,7 +52,7 @@ export const VipCardsView: React.FC = () => {
               Card Vault:
             </span>
             <span className="font-mono text-gold-accent font-semibold">
-              {telemetry?.vaultInventoryBlanks || 142} Unminted Tungsten Blanks
+              {telemetry?.vaultInventoryBlanks ?? 142} Unminted Tungsten Blanks
             </span>
           </div>
           <div className="h-3 w-px bg-border-subtle hidden md:block" />
@@ -103,67 +109,89 @@ export const VipCardsView: React.FC = () => {
       </div>
 
       {/* High-Density KPI Metric Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-bg-panel border border-border-subtle rounded-[4px] p-3.5 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">Active Card Portfolio</span>
-            <CreditCard className="w-4 h-4 text-status-success" />
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="font-mono text-xl text-on-surface font-semibold">
-              {telemetry?.activeCards || 38}
-            </span>
-            <span className="font-mono text-xs text-status-success">+2 this week</span>
-          </div>
-          <span className="font-mono text-[10px] text-secondary mt-1">
-            Total Capacity: {formatCurrency(telemetry?.authorizedDailyCapacity || 15400000)} / day
-          </span>
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="bg-bg-panel border border-border-subtle rounded-[4px] p-3.5 h-24 wavy-skeleton"
+            />
+          ))}
         </div>
+      ) : isError ? (
+        <div className="bg-bg-panel border border-status-danger/30 p-4 rounded-[4px] flex items-center justify-between text-xs text-status-danger">
+          <span>{error?.message || "Failed to load VIP card telemetry."}</span>
+          <button
+            onClick={() => refetch()}
+            className="px-2.5 py-1 rounded-[2px] bg-bg-elevated border border-border-subtle text-on-surface"
+          >
+            Retry
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-bg-panel border border-border-subtle rounded-[4px] p-3.5 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">Active Card Portfolio</span>
+              <CreditCard className="w-4 h-4 text-status-success" />
+            </div>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="font-mono text-xl text-on-surface font-semibold">
+                {telemetry?.activeCards ?? "—"}
+              </span>
+            </div>
+            <span className="font-mono text-[10px] text-secondary mt-1">
+              Total Capacity: {telemetry ? formatCurrency(telemetry.authorizedDailyCapacity) : "—"} / day
+            </span>
+          </div>
 
-        <div className="bg-bg-panel border border-border-subtle rounded-[4px] p-3.5 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">24h Settlement Volume</span>
-            <Terminal className="w-4 h-4 text-gold-accent" />
+          <div className="bg-bg-panel border border-border-subtle rounded-[4px] p-3.5 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">24h Settlement Volume</span>
+              <Terminal className="w-4 h-4 text-gold-accent" />
+            </div>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="font-mono text-xl text-gold-accent font-semibold">
+                {telemetry ? formatCurrency(telemetry.volume24h) : "—"}
+              </span>
+              {telemetry?.authRate24h !== undefined && (
+                <span className="font-mono text-xs text-status-success">
+                  {telemetry.authRate24h}% Auth Rate
+                </span>
+              )}
+            </div>
+            <span className="font-mono text-[10px] text-secondary mt-1">Direct Settlement Channel</span>
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="font-mono text-xl text-gold-accent font-semibold">
-              {formatCurrency(telemetry?.volume24h || 3184920)}
-            </span>
-            <span className="font-mono text-xs text-status-success">
-              {telemetry?.authRate24h || 99.8}% Auth Rate
-            </span>
-          </div>
-          <span className="font-mono text-[10px] text-secondary mt-1">Average Ticket: $84,200 USD</span>
-        </div>
 
-        <div className="bg-bg-panel border border-border-subtle rounded-[4px] p-3.5 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">Terminal Killswitches</span>
-            <Lock className="w-4 h-4 text-status-danger" />
+          <div className="bg-bg-panel border border-border-subtle rounded-[4px] p-3.5 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">Terminal Killswitches</span>
+              <Lock className="w-4 h-4 text-status-danger" />
+            </div>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="font-mono text-xl text-status-danger font-semibold">
+                {telemetry?.lockedCards ?? "—"}
+              </span>
+              <span className="font-mono text-xs text-secondary">Vault Locked</span>
+            </div>
+            <span className="font-mono text-[10px] text-secondary mt-1">Instant Desk Freeze Capable</span>
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="font-mono text-xl text-status-danger font-semibold">
-              {telemetry?.lockedCards || 3}
-            </span>
-            <span className="font-mono text-xs text-secondary">Vault Locked</span>
-          </div>
-          <span className="font-mono text-[10px] text-secondary mt-1">1 Client Request • 2 Desk Freeze</span>
-        </div>
 
-        <div className="bg-bg-panel border border-border-subtle rounded-[4px] p-3.5 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">Swiss Vault Inventory</span>
-            <Shield className="w-4 h-4 text-telemetry-cyan" />
+          <div className="bg-bg-panel border border-border-subtle rounded-[4px] p-3.5 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">Swiss Vault Inventory</span>
+              <Shield className="w-4 h-4 text-telemetry-cyan" />
+            </div>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="font-mono text-xl text-telemetry-cyan font-semibold">
+                {telemetry?.vaultInventoryBlanks ?? "—"} Blanks
+              </span>
+              <span className="font-mono text-xs text-secondary">42g Tungsten</span>
+            </div>
+            <span className="font-mono text-[10px] text-secondary mt-1">Laser Engraver Calibration: Nominal</span>
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="font-mono text-xl text-telemetry-cyan font-semibold">
-              {telemetry?.vaultInventoryBlanks || 142} Blanks
-            </span>
-            <span className="font-mono text-xs text-secondary">42g Tungsten</span>
-          </div>
-          <span className="font-mono text-[10px] text-secondary mt-1">Laser Engraver Calibration: Nominal</span>
         </div>
-      </div>
+      )}
 
       {/* Cardholder Ledger Table */}
       <VipCardsTable />

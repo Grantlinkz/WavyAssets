@@ -1,5 +1,6 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { X, Copy, Check, QrCode, ShieldAlert } from "lucide-react"
+import QRCode from "qrcode"
 import { useDepositRailsStore, type QrModalData } from "../../store/useDepositRailsStore"
 
 interface DepositQrModalProps {
@@ -18,6 +19,22 @@ export const DepositQrModal: React.FC<DepositQrModalProps> = ({
   const isQrModalOpen = propIsOpen !== undefined ? propIsOpen : store.isQrModalOpen
   const closeQrModal = propOnClose ?? store.closeQrModal
   const [copied, setCopied] = useState(false)
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (qrModalData?.address) {
+      QRCode.toDataURL(qrModalData.address, {
+        margin: 2,
+        width: 200,
+        color: {
+          dark: "#090D14",
+          light: "#FFFFFF",
+        },
+      })
+        .then((url) => setQrDataUrl(url))
+        .catch(() => setQrDataUrl(null))
+    }
+  }, [qrModalData?.address])
 
   if (!isQrModalOpen || !qrModalData) return null
 
@@ -52,46 +69,19 @@ export const DepositQrModal: React.FC<DepositQrModalProps> = ({
 
         {/* Body */}
         <div className="p-6 flex flex-col items-center gap-4 text-center">
-          <div className="bg-white p-4 rounded-lg shadow-inner">
-            {/* SVG Representation of QR matrix */}
-            <svg
-              className="w-48 h-48"
-              viewBox="0 0 100 100"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <rect width="100" height="100" fill="white" />
-              {/* Corner position markers */}
-              <rect x="10" y="10" width="25" height="25" fill="#090D14" />
-              <rect x="15" y="15" width="15" height="15" fill="white" />
-              <rect x="18" y="18" width="9" height="9" fill="#D4AF37" />
-
-              <rect x="65" y="10" width="25" height="25" fill="#090D14" />
-              <rect x="70" y="15" width="15" height="15" fill="white" />
-              <rect x="73" y="18" width="9" height="9" fill="#D4AF37" />
-
-              <rect x="10" y="65" width="25" height="25" fill="#090D14" />
-              <rect x="15" y="70" width="15" height="15" fill="white" />
-              <rect x="18" y="73" width="9" height="9" fill="#D4AF37" />
-
-              {/* Data pixel simulation */}
-              <rect x="40" y="15" width="5" height="5" fill="#090D14" />
-              <rect x="50" y="20" width="5" height="5" fill="#090D14" />
-              <rect x="45" y="30" width="5" height="5" fill="#090D14" />
-              <rect x="55" y="35" width="5" height="5" fill="#090D14" />
-              <rect x="20" y="45" width="5" height="5" fill="#090D14" />
-              <rect x="30" y="50" width="5" height="5" fill="#090D14" />
-              <rect x="40" y="45" width="5" height="5" fill="#D4AF37" />
-              <rect x="50" y="55" width="5" height="5" fill="#090D14" />
-              <rect x="60" y="45" width="5" height="5" fill="#090D14" />
-              <rect x="70" y="55" width="5" height="5" fill="#090D14" />
-              <rect x="80" y="45" width="5" height="5" fill="#090D14" />
-              <rect x="45" y="65" width="5" height="5" fill="#090D14" />
-              <rect x="55" y="75" width="5" height="5" fill="#090D14" />
-              <rect x="65" y="65" width="5" height="5" fill="#090D14" />
-              <rect x="75" y="75" width="5" height="5" fill="#090D14" />
-              <rect x="85" y="85" width="5" height="5" fill="#090D14" />
-            </svg>
+          <div className="bg-white p-4 rounded-lg shadow-inner min-w-[216px] min-h-[216px] flex items-center justify-center">
+            {qrDataUrl ? (
+              <img
+                src={qrDataUrl}
+                alt={`${qrModalData.asset} Depository QR Code`}
+                className="w-48 h-48 block"
+                data-testid="scannable-qr-code"
+              />
+            ) : (
+              <div className="w-48 h-48 flex items-center justify-center text-xs font-mono text-gray-500">
+                Generating QR...
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-1 w-full">

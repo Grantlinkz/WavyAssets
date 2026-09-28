@@ -3,16 +3,23 @@ import { useQuery } from "@tanstack/react-query"
 import { fetchAuditTelemetry } from "../api/audit"
 import { AuditLogTable } from "../components/audit/AuditLogTable"
 import { DiffModal } from "../components/audit/DiffModal"
+import { AlertTriangle, RefreshCw } from "lucide-react"
 
 export const AuditLogView: React.FC = () => {
-  const { data: telemetry } = useQuery({
+  const {
+    data: telemetry,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["audit-telemetry"],
     queryFn: fetchAuditTelemetry,
     initialData: {
       totalLogEntries: 14892,
       todayExecutions: 38,
-      merkleRoot: "0x7f8a92b8d03541c41e892c900bb912f",
       merkleBlock: 19842109,
+      merkleRoot: "0x7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
       retentionYears: 10,
     },
   })
@@ -30,18 +37,34 @@ export const AuditLogView: React.FC = () => {
             <span className="text-gold-accent">Cryptographic Chain</span>
           </div>
 
-          <div className="flex items-center gap-2 px-3 py-1 bg-status-success/10 border border-status-success/30 rounded-[4px]">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-success opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-status-success" />
-            </span>
-            <span className="font-mono text-xs text-status-success font-semibold tracking-tight">
-              Hash Chain Verified — No Tampering
-            </span>
-            <span className="font-mono text-[11px] text-secondary hidden sm:inline">
-              (Merkle Block #{telemetry?.merkleBlock.toLocaleString() || "19,842,109"})
-            </span>
-          </div>
+          {isLoading ? (
+            <div className="flex items-center gap-2 px-3 py-1 bg-bg-elevated border border-border-subtle rounded-[4px]">
+              <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
+              <span className="font-mono text-xs text-secondary">
+                Verifying Cryptographic Ledger...
+              </span>
+            </div>
+          ) : isError ? (
+            <div className="flex items-center gap-2 px-3 py-1 bg-status-danger/10 border border-status-danger/30 rounded-[4px]">
+              <AlertTriangle className="w-3.5 h-3.5 text-status-danger" />
+              <span className="font-mono text-xs text-status-danger font-semibold">
+                Integrity Telemetry Unavailable
+              </span>
+            </div>
+          ) : telemetry?.merkleBlock && telemetry?.merkleRoot ? (
+            <div className="flex items-center gap-2 px-3 py-1 bg-status-success/10 border border-status-success/30 rounded-[4px]">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-success opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-status-success" />
+              </span>
+              <span className="font-mono text-xs text-status-success font-semibold tracking-tight">
+                Hash Chain Verified — No Tampering
+              </span>
+              <span className="font-mono text-[11px] text-secondary hidden sm:inline">
+                (Merkle Block #{telemetry.merkleBlock.toLocaleString()})
+              </span>
+            </div>
+          ) : null}
         </div>
 
         {/* Title and Subtitle Block */}
@@ -55,55 +78,80 @@ export const AuditLogView: React.FC = () => {
         </div>
 
         {/* Telemetry Strip / Metrics Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-bg-panel border border-border-subtle p-3.5 rounded-[4px] flex flex-col gap-1 shadow-sm">
-            <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">Total Log Entries</span>
-            <div className="flex items-baseline gap-2">
-              <span className="font-mono text-xl text-on-surface font-semibold">
-                {telemetry?.totalLogEntries.toLocaleString() || "14,892"}
-              </span>
-              <span className="font-mono text-xs text-secondary">Events</span>
-            </div>
-            <span className="font-mono text-[10px] text-secondary">
-              Chain Height #{telemetry?.totalLogEntries.toLocaleString() || "14,892"}
-            </span>
+        {isLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="bg-bg-panel border border-border-subtle p-3.5 rounded-[4px] h-24 wavy-skeleton"
+              />
+            ))}
           </div>
+        ) : isError ? (
+          <div className="bg-bg-panel border border-status-danger/30 p-4 rounded-[4px] flex items-center justify-between text-xs text-status-danger">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>{error?.message || "Failed to load audit telemetry metrics."}</span>
+            </div>
+            <button
+              onClick={() => refetch()}
+              className="px-2.5 py-1 rounded-[2px] bg-bg-elevated hover:bg-state-hover border border-border-subtle text-on-surface flex items-center gap-1"
+            >
+              <RefreshCw className="w-3 h-3" />
+              <span>Retry</span>
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-bg-panel border border-border-subtle p-3.5 rounded-[4px] flex flex-col gap-1 shadow-sm">
+              <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">Total Log Entries</span>
+              <div className="flex items-baseline gap-2">
+                <span className="font-mono text-xl text-on-surface font-semibold">
+                  {telemetry?.totalLogEntries.toLocaleString() ?? "—"}
+                </span>
+                <span className="font-mono text-xs text-secondary">Events</span>
+              </div>
+              <span className="font-mono text-[10px] text-secondary">
+                Chain Height #{telemetry?.totalLogEntries.toLocaleString() ?? "—"}
+              </span>
+            </div>
 
-          <div className="bg-bg-panel border border-border-subtle p-3.5 rounded-[4px] flex flex-col gap-1 shadow-sm">
-            <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">Today's Executions</span>
-            <div className="flex items-baseline gap-2">
-              <span className="font-mono text-xl text-telemetry-cyan font-semibold">
-                {telemetry?.todayExecutions || 38}
-              </span>
-              <span className="font-mono text-xs text-telemetry-cyan font-medium">Verified</span>
+            <div className="bg-bg-panel border border-border-subtle p-3.5 rounded-[4px] flex flex-col gap-1 shadow-sm">
+              <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">Today's Executions</span>
+              <div className="flex items-baseline gap-2">
+                <span className="font-mono text-xl text-telemetry-cyan font-semibold">
+                  {telemetry?.todayExecutions ?? 0}
+                </span>
+                <span className="font-mono text-xs text-telemetry-cyan font-medium">Verified</span>
+              </div>
+              <span className="font-mono text-[10px] text-secondary">0 Rejected Challenges</span>
             </div>
-            <span className="font-mono text-[10px] text-secondary">0 Rejected Challenges</span>
-          </div>
 
-          <div className="bg-bg-panel border border-border-subtle p-3.5 rounded-[4px] flex flex-col gap-1 shadow-sm">
-            <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">Cryptographic Proof</span>
-            <div className="flex items-baseline gap-2">
-              <span className="font-mono text-xl text-gold-accent font-semibold">
-                #{telemetry?.merkleBlock.toLocaleString() || "19,842,109"}
+            <div className="bg-bg-panel border border-border-subtle p-3.5 rounded-[4px] flex flex-col gap-1 shadow-sm">
+              <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">Cryptographic Proof</span>
+              <div className="flex items-baseline gap-2">
+                <span className="font-mono text-xl text-gold-accent font-semibold">
+                  {telemetry?.merkleBlock ? `#${telemetry.merkleBlock.toLocaleString()}` : "—"}
+                </span>
+              </div>
+              <span className="font-mono text-[10px] text-secondary truncate">
+                {telemetry?.merkleRoot ? `Root: ${telemetry.merkleRoot.slice(0, 10)}...` : "Root pending"}
               </span>
             </div>
-            <span className="font-mono text-[10px] text-secondary truncate">
-              Root: {telemetry?.merkleRoot.slice(0, 10)}...
-            </span>
-          </div>
 
-          <div className="bg-bg-panel border border-border-subtle p-3.5 rounded-[4px] flex flex-col gap-1 shadow-sm">
-            <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">Statutory Retention</span>
-            <div className="flex items-baseline gap-2">
-              <span className="font-mono text-xl text-on-surface font-semibold">
-                {telemetry?.retentionYears || 10} Years
+            <div className="bg-bg-panel border border-border-subtle p-3.5 rounded-[4px] flex flex-col gap-1 shadow-sm">
+              <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">Statutory Retention</span>
+              <div className="flex items-baseline gap-2">
+                <span className="font-mono text-xl text-on-surface font-semibold">
+                  {telemetry?.retentionYears ?? 10} Years
+                </span>
+              </div>
+              <span className="font-mono text-[10px] text-status-success font-medium">
+                FINMA Art. 73 Compliant
               </span>
             </div>
-            <span className="font-mono text-[10px] text-status-success font-medium">
-              FINMA Art. 73 Compliant
-            </span>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Audit Log Table */}

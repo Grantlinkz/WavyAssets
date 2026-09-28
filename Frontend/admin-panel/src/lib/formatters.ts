@@ -6,15 +6,26 @@ export function formatCurrency(
   currency: string = "USD",
   decimals: number = 2
 ): string {
-  if (isNaN(amount)) return "$0.00"
-  
-  const formatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currency,
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  })
-  return formatter.format(amount)
+  const safeAmount = isNaN(amount) ? 0 : amount
+
+  try {
+    const formatter = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency,
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    })
+    return formatter.format(safeAmount)
+  } catch (err) {
+    if (err instanceof RangeError) {
+      const plainFormatted = safeAmount.toLocaleString("en-US", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      })
+      return `${plainFormatted} ${currency}`
+    }
+    throw err
+  }
 }
 
 /**

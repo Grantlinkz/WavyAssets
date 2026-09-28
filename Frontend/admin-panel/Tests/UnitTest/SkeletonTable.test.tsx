@@ -8,7 +8,6 @@ describe("SkeletonTable", () => {
     expect(html).toContain('data-testid="skeleton-table"')
     expect(html).toContain("min-h-[540px]")
     expect(html).toContain("Ingesting Shard Buffers...")
-    expect(html).toContain("14ms RTT")
   })
 
   it("applies custom title and custom minHeight", () => {

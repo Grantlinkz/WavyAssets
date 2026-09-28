@@ -1,4 +1,5 @@
 import React from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   Download,
   Shield,
@@ -9,7 +10,7 @@ import {
   Search,
 } from "lucide-react"
 import { useTreasuryStore } from "../store/useTreasuryStore"
-import type { SettlementRail } from "../api/treasury"
+import type { SettlementRail, PendingWithdrawal, PendingDeposit } from "../api/treasury"
 import { PendingWithdrawalsTable } from "../components/treasury/PendingWithdrawalsTable"
 import { DualSignOffCard } from "../components/treasury/DualSignOffCard"
 import { PendingDepositsTable } from "../components/treasury/PendingDepositsTable"
@@ -23,6 +24,7 @@ const RAILS: { label: string; value: SettlementRail }[] = [
 ]
 
 export const TreasuryView: React.FC = () => {
+  const queryClient = useQueryClient()
   const {
     activeTab,
     railFilter,
@@ -34,14 +36,29 @@ export const TreasuryView: React.FC = () => {
   } = useTreasuryStore()
 
   const handleExportCsv = () => {
-    const csvContent =
-      "data:text/csv;charset=utf-8,TransactionId,Type,Amount,Currency,Rail,Status,Timestamp\n" +
-      "WTH-89,WITHDRAWAL,1500000,USD,SIC,PENDING_SECOND_SIGN_OFF,2026-09-28T13:05:00Z\n" +
-      "DEP-104,DEPOSIT,850000,USD,FEDWIRE,PENDING,2026-09-28T12:40:00Z\n"
+    const withdrawals =
+      queryClient.getQueryData<PendingWithdrawal[]>(["pending-withdrawals"]) || []
+    const deposits =
+      queryClient.getQueryData<PendingDeposit[]>(["pending-deposits"]) || []
+
+    const header = "TransactionId,Type,Amount,Currency,Rail,Status,Timestamp"
+    const withdrawalRows = withdrawals.map(
+      (w) =>
+        `"${w.id}",WITHDRAWAL,${w.amount},"${w.currency}","${w.settlementRail}","${w.status}","${w.createdAt}"`
+    )
+    const depositRows = deposits.map(
+      (d) =>
+        `"${d.id}",DEPOSIT,${d.amount},"${d.currency}","${d.railType}","${d.status}","${d.createdAt}"`
+    )
+    const allRows = [header, ...withdrawalRows, ...depositRows]
+    const csvContent = "data:text/csv;charset=utf-8," + allRows.join("\n")
     const encodedUri = encodeURI(csvContent)
     const link = document.createElement("a")
     link.setAttribute("href", encodedUri)
-    link.setAttribute("download", `treasury_settlements_${Date.now()}.csv`)
+    link.setAttribute(
+      "download",
+      `treasury_settlements_${new Date().toISOString().slice(0, 10)}.csv`
+    )
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

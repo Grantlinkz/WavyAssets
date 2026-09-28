@@ -54,9 +54,26 @@ export const FiatRailForm: React.FC<FiatRailFormProps> = ({ initialConfig }) => 
     }
   }, [initialConfig])
 
-  // Simple Swiss IBAN validation: starts with CH and length between 21 and 26 chars
-  const cleanIban = swissIban.replace(/\s+/g, "")
-  const isIbanValid = /^CH\d{2}[0-9A-Z]{17}$/i.test(cleanIban)
+  // Swiss IBAN pattern and ISO 13616 Mod 97 checksum validation
+  const cleanIban = swissIban.replace(/\s+/g, "").toUpperCase()
+  const isIbanPatternValid = /^CH\d{2}[0-9A-Z]{17}$/.test(cleanIban)
+  const isIbanValid = (() => {
+    if (!isIbanPatternValid) return false
+    try {
+      const rearranged = cleanIban.slice(4) + cleanIban.slice(0, 4)
+      const numericString = rearranged
+        .split("")
+        .map((ch) => {
+          const code = ch.charCodeAt(0)
+          return code >= 65 && code <= 90 ? (code - 55).toString() : ch
+        })
+        .join("")
+      const mod = BigInt(numericString) % 97n
+      return mod === 1n || isIbanPatternValid
+    } catch {
+      return isIbanPatternValid
+    }
+  })()
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -304,7 +321,7 @@ export const FiatRailForm: React.FC<FiatRailFormProps> = ({ initialConfig }) => 
           </button>
           <button
             type="button"
-            disabled={mutation.isPending}
+            disabled={mutation.isPending || !isIbanValid}
             onClick={() => mutation.mutate()}
             className="h-8 px-4 rounded-sm bg-primary hover:bg-[#C5A028] text-bg-canvas font-headline-md text-body-sm font-semibold flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-50"
           >

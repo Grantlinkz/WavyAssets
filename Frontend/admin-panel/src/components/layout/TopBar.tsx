@@ -45,11 +45,11 @@ export const TopBar: React.FC = () => {
           <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border border-border-subtle bg-bg-canvas">
             <span
               className={`w-2 h-2 rounded-full ${
-                ws.isConnected ? "bg-telemetry-cyan animate-pulse" : "bg-telemetry-cyan"
+                ws.isConnected ? "bg-telemetry-cyan animate-pulse" : "bg-text-muted"
               }`}
             />
             <span className="font-mono text-xs text-telemetry-cyan">
-              Live Sync: {ws.latencyMs}ms
+              Live Sync: {ws.latencyMs !== null ? `${ws.latencyMs}ms` : ws.isConnected ? "Connected" : "Offline"}
             </span>
           </div>
 
@@ -67,18 +67,18 @@ export const TopBar: React.FC = () => {
           <div
             onClick={() => setLoginModalOpen(true)}
             className="flex items-center gap-2 pl-3 border-l border-border-subtle cursor-pointer group hover:opacity-90"
-            title="Click to switch operator role"
+            title={operator ? "Click to switch operator role" : "Click to sign in"}
             data-testid="operator-profile-btn"
           >
             <div className="w-7 h-7 rounded-[4px] bg-bg-elevated text-gold-accent border border-border-subtle font-mono text-xs flex items-center justify-center font-bold group-hover:border-gold-accent transition-colors">
-              {operator?.initials || "EV"}
+              {operator?.initials || "--"}
             </div>
             <div className="hidden xl:flex flex-col text-left">
               <span className="text-xs font-medium text-on-surface leading-tight">
-                {operator?.name || "Eleanor Vance"}
+                {operator ? operator.name : "Signed Out"}
               </span>
               <span className="font-mono text-[10px] text-secondary leading-none">
-                [{operator?.role || "TREASURY_OFFICER"}]
+                {operator ? `[${operator.role}]` : "[Click to Sign In]"}
               </span>
             </div>
             <div className="w-6 h-6 rounded-full bg-primary/20 border border-gold-accent/40 flex items-center justify-center shrink-0">
@@ -91,9 +91,15 @@ export const TopBar: React.FC = () => {
       {/* Urgent Attention Ticker Banner */}
       <div className="h-8 bg-bg-elevated border-b border-border-subtle px-4 flex items-center justify-center gap-2 overflow-hidden">
         <AlertTriangle className="w-3.5 h-3.5 text-status-warning shrink-0" />
-        <span className="text-xs font-medium text-status-warning tracking-tight truncate">
-          Attention Needed: {badgeCounts.urgentActions} unverified bank wires • {badgeCounts.pendingCompliance} pending passport reviews • {badgeCounts.treasurySignOffs} large withdrawals over $100k waiting for second approval.
-        </span>
+        {badgeCounts.urgentActions === null &&
+        badgeCounts.pendingCompliance === null &&
+        badgeCounts.treasurySignOffs === null ? (
+          <div className="h-3 w-80 wavy-skeleton rounded-[2px]" />
+        ) : (
+          <span className="text-xs font-medium text-status-warning tracking-tight truncate">
+            Attention Needed: {badgeCounts.urgentActions ?? 0} unverified bank wires • {badgeCounts.pendingCompliance ?? 0} pending passport reviews • {badgeCounts.treasurySignOffs ?? 0} large withdrawals over $100k waiting for second approval.
+          </span>
+        )}
       </div>
     </header>
   )

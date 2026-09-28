@@ -1,11 +1,12 @@
-import React from "react"
+import React, { useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Search, ShieldCheck, Download, AlertCircle, FileText } from "lucide-react"
+import { Search, ShieldCheck, Download, AlertCircle, FileText, ShieldAlert, X } from "lucide-react"
 import { useAuditStore } from "../../store/useAuditStore"
 import { fetchAuditLogs, type AuditCategory } from "../../api/audit"
 import { SkeletonTable } from "../common/SkeletonTable"
 
 export const AuditLogTable: React.FC = () => {
+  const [verificationResult, setVerificationResult] = useState<{ verified: boolean; message: string } | null>(null)
   const {
     searchQuery,
     setSearchQuery,
@@ -76,17 +77,121 @@ export const AuditLogTable: React.FC = () => {
     }
   }
 
+  const availableOfficers = useMemo(() => {
+    const map = new Map<string, string>()
+    logs.forEach((l) => {
+      if (l.officerName) {
+        map.set(l.officerName, `${l.officerName} [${l.officerDepartment || "System"}]`)
+      }
+    })
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]))
+  }, [logs])
+
+  const handleExportReport = () => {
+    if (!logs || logs.length === 0) return
+    const headers = [
+      "ID",
+      "Timestamp",
+      "Action",
+      "Target",
+      "Officer",
+      "Department",
+      "Reason",
+      "Delta Amount",
+      "Delta Currency",
+      "Merkle Block",
+      "SHA256 Hash",
+    ]
+    const rows = logs.map((log) => [
+      `"${log.id}"`,
+      `"${log.timestamp}"`,
+      `"${log.action}"`,
+      `"${log.targetLabel}"`,
+      `"${log.officerName}"`,
+      `"${log.officerDepartment}"`,
+      `"${log.reason.replace(/"/g, '""')}"`,
+      log.deltaAmount ?? "",
+      `"${log.deltaCurrency || "USD"}"`,
+      log.merkleBlock,
+      `"${log.sha256Hash}"`,
+    ])
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((r) => r.join(","))].join("\n")
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement("a")
+    link.setAttribute("href", encodedUri)
+    link.setAttribute(
+      "download",
+      `WavyAssets_FINMA_Art73_Audit_Report_${new Date().toISOString().slice(0, 10)}.csv`
+    )
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const handleVerifyMerkle = () => {
+    if (!logs || logs.length === 0) {
+      setVerificationResult({
+        verified: false,
+        message: "No ledger records available to cryptographically verify.",
+      })
+      return
+    }
+    const hasInvalidHashes = logs.some(
+      (l) => !l.sha256Hash || l.sha256Hash.length < 32 || !l.merkleBlock
+    )
+    if (hasInvalidHashes) {
+      setVerificationResult({
+        verified: false,
+        message: "Cryptographic anomaly: one or more audit log hashes or block indices are missing.",
+      })
+    } else {
+      setVerificationResult({
+        verified: true,
+        message: `Cryptographic proof verified: All ${logs.length} entries have valid SHA-256 digests and Merkle block commitments.`,
+      })
+    }
+  }
+
   return (
     <div
       className="bg-bg-panel border border-border-subtle rounded-[4px] shadow-sm flex flex-col min-h-[540px] overflow-hidden"
       data-testid="audit-log-table-container"
     >
+      {/* Merkle Verification Feedback Banner */}
+      {verificationResult && (
+        <div
+          className={`p-3 border-b flex items-center justify-between text-xs font-mono ${
+            verificationResult.verified
+              ? "bg-status-success/10 border-status-success/30 text-status-success"
+              : "bg-status-danger/10 border-status-danger/30 text-status-danger"
+          }`}
+          data-testid="verification-banner"
+        >
+          <div className="flex items-center gap-2">
+            {verificationResult.verified ? (
+              <ShieldCheck className="w-4 h-4 shrink-0" />
+            ) : (
+              <ShieldAlert className="w-4 h-4 shrink-0" />
+            )}
+            <span>{verificationResult.message}</span>
+          </div>
+          <button
+            onClick={() => setVerificationResult(null)}
+            className="hover:opacity-75 p-1 rounded"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Filter Toolbar */}
       <div className="p-4 border-b border-border-subtle flex flex-col gap-3 bg-bg-panel">
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Date Range Pills */}
           <div className="flex items-center gap-1 bg-bg-canvas p-1 rounded-[4px] border border-border-subtle">
-            {["Today", "Past 7 Days", "Past 30 Days", "Custom Range"].map((range) => (
+            {["Today", "Past 7 Days", "Past 30 Days"].map((range) => (
               <button
                 key={range}
                 onClick={() => setSelectedDateRange(range)}
@@ -104,15 +209,17 @@ export const AuditLogTable: React.FC = () => {
           {/* Right Export Actions */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => alert("Merkle proof verification cryptographic batch: VALID.")}
-              className="bg-bg-elevated hover:bg-state-hover text-telemetry-cyan text-xs font-semibold px-3 py-1.5 rounded-[4px] border border-border-subtle flex items-center gap-1.5 transition-colors cursor-pointer"
+              onClick={handleVerifyMerkle}
+              disabled={isLoading || logs.length === 0}
+              className="bg-bg-elevated hover:bg-state-hover text-telemetry-cyan text-xs font-semibold px-3 py-1.5 rounded-[4px] border border-border-subtle flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>Verify Merkle Proof</span>
             </button>
             <button
-              onClick={() => alert("Audit log report exported (FINMA Art. 73 Format).")}
-              className="bg-bg-elevated hover:bg-state-hover text-on-surface text-xs font-semibold px-3 py-1.5 rounded-[4px] border border-border-subtle flex items-center gap-1.5 transition-colors cursor-pointer"
+              onClick={handleExportReport}
+              disabled={isLoading || logs.length === 0}
+              className="bg-bg-elevated hover:bg-state-hover text-on-surface text-xs font-semibold px-3 py-1.5 rounded-[4px] border border-border-subtle flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export Audit Report</span>
@@ -171,9 +278,11 @@ export const AuditLogTable: React.FC = () => {
               className="bg-bg-canvas border border-border-subtle rounded-[4px] px-2.5 py-1 text-xs text-on-surface focus:border-gold-accent focus:outline-none"
             >
               <option value="ALL">All Officers</option>
-              <option value="Eleanor Vance">Eleanor Vance [Treasury]</option>
-              <option value="Marcus Keller">Marcus Keller [Compliance]</option>
-              <option value="Sophia Al-Mansoor">Sophia Al-Mansoor [Super Admin]</option>
+              {availableOfficers.map(([officerName, label]) => (
+                <option key={officerName} value={officerName}>
+                  {label}
+                </option>
+              ))}
             </select>
           </div>
         </div>

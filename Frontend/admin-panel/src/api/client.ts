@@ -31,10 +31,17 @@ export async function apiClient<T>(
     headers.set("Authorization", `Bearer ${token}`)
   }
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  })
+  let response: Response
+  try {
+    response = await fetch(`${BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+      credentials: options.credentials || "include",
+    })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Network error"
+    throw new ApiError(0, message)
+  }
 
   if (response.status === 401) {
     localStorage.removeItem("wavy_admin_token")
@@ -54,6 +61,10 @@ export async function apiClient<T>(
       // ignore json parse error
     }
     throw new ApiError(response.status, errorMsg, errorCode)
+  }
+
+  if (response.status === 204) {
+    return undefined as unknown as T
   }
 
   const json: ApiResponse<T> = await response.json()

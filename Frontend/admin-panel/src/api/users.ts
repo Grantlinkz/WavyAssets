@@ -67,7 +67,7 @@ export async function fetchUsers(params?: {
 }
 
 export async function fetchUserById(id: string): Promise<SovereignUser> {
-  return apiClient<SovereignUser>(`/users/${id}`)
+  return apiClient<SovereignUser>(`/users/${encodeURIComponent(id)}`)
 }
 
 export async function createUser(payload: CreateUserPayload): Promise<SovereignUser> {
@@ -81,7 +81,7 @@ export async function suspendUser(
   payload: SuspendUserPayload
 ): Promise<{ success: boolean; user: SovereignUser; message: string }> {
   return apiClient<{ success: boolean; user: SovereignUser; message: string }>(
-    `/users/${payload.userId}/suspend`,
+    `/users/${encodeURIComponent(payload.userId)}/suspend`,
     {
       method: "PATCH",
       body: JSON.stringify(payload),
@@ -93,7 +93,7 @@ export async function directFundUser(
   payload: DirectFundingPayload
 ): Promise<{ success: boolean; user: SovereignUser; transactionId: string; message: string }> {
   return apiClient<{ success: boolean; user: SovereignUser; transactionId: string; message: string }>(
-    `/users/${payload.userId}/fund`,
+    `/users/${encodeURIComponent(payload.userId)}/fund`,
     {
       method: "POST",
       body: JSON.stringify(payload),

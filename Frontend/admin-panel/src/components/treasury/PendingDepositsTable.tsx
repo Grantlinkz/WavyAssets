@@ -21,7 +21,6 @@ export const PendingDepositsTable: React.FC = () => {
   const queryClient = useQueryClient()
   const { railFilter, searchQuery, openReceiptModal } = useTreasuryStore()
   const [actionError, setActionError] = useState<string | null>(null)
-  const [processingId, setProcessingId] = useState<string | null>(null)
 
   const {
     data: deposits,
@@ -40,7 +39,6 @@ export const PendingDepositsTable: React.FC = () => {
 
   const approveMutation = useMutation({
     mutationFn: (transactionId: string) => {
-      setProcessingId(transactionId)
       return approveDeposit({ transactionId })
     },
     onSuccess: () => {
@@ -48,17 +46,14 @@ export const PendingDepositsTable: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["settlement-ledger"] })
       queryClient.invalidateQueries({ queryKey: ["overview-metrics"] })
       setActionError(null)
-      setProcessingId(null)
     },
     onError: (err: Error) => {
       setActionError(err.message || "Failed to credit deposit balance.")
-      setProcessingId(null)
     },
   })
 
   const rejectMutation = useMutation({
     mutationFn: (transactionId: string) => {
-      setProcessingId(transactionId)
       return rejectDeposit({
         transactionId,
         reason: "Rejected by treasury operator due to receipt/memo discrepancy",
@@ -67,11 +62,9 @@ export const PendingDepositsTable: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pending-deposits"] })
       setActionError(null)
-      setProcessingId(null)
     },
     onError: (err: Error) => {
       setActionError(err.message || "Failed to reject deposit.")
-      setProcessingId(null)
     },
   })
 
@@ -180,7 +173,9 @@ export const PendingDepositsTable: React.FC = () => {
               </tr>
             ) : (
               items.map((item) => {
-                const isItemProcessing = processingId === item.id
+                const isRowApproving = approveMutation.isPending && approveMutation.variables === item.id
+                const isRowRejecting = rejectMutation.isPending && rejectMutation.variables === item.id
+                const isAnyMutationPending = approveMutation.isPending || rejectMutation.isPending
                 return (
                   <tr
                     key={item.id}
@@ -252,21 +247,23 @@ export const PendingDepositsTable: React.FC = () => {
                       <div className="inline-flex items-center gap-2">
                         <button
                           type="button"
-                          disabled={isItemProcessing}
+                          disabled={isAnyMutationPending}
                           onClick={() => rejectMutation.mutate(item.id)}
-                          className="px-2 py-1 bg-bg-canvas hover:bg-status-danger/10 border border-border-subtle hover:border-status-danger text-secondary hover:text-status-danger text-body-sm rounded transition-colors"
+                          className="px-2 py-1 bg-bg-canvas hover:bg-status-danger/10 border border-border-subtle hover:border-status-danger text-secondary hover:text-status-danger text-body-sm rounded transition-colors disabled:opacity-50"
                           title="Reject Inbound Deposit"
                         >
                           <XCircle className="w-4 h-4" />
                         </button>
                         <button
                           type="button"
-                          disabled={isItemProcessing}
+                          disabled={isAnyMutationPending}
                           onClick={() => approveMutation.mutate(item.id)}
                           className="px-2.5 py-1 bg-status-success hover:bg-status-success/90 text-on-surface font-title-sm text-body-sm rounded flex items-center gap-1 font-semibold transition-colors disabled:opacity-50"
                         >
                           <CheckCheck className="w-3.5 h-3.5" />
-                          <span>{isItemProcessing ? "Crediting..." : "Approve & Credit"}</span>
+                          <span>
+                            {isRowApproving ? "Crediting..." : isRowRejecting ? "Rejecting..." : "Approve & Credit"}
+                          </span>
                         </button>
                       </div>
                     </td>

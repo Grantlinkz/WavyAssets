@@ -11,6 +11,9 @@ describe("formatters", () => {
   it("formats currency accurately with USD symbol and commas", () => {
     expect(formatCurrency(142890420)).toContain("142,890,420.00")
     expect(formatCurrency(0)).toContain("0.00")
+    expect(formatCurrency(NaN, "EUR")).toContain("0.00")
+    expect(formatCurrency(NaN, "EUR")).toMatch(/€|EUR/)
+    expect(formatCurrency(500, "INVALID_CODE")).toBe("500.00 INVALID_CODE")
   })
 
   it("formats compact currency values correctly", () => {

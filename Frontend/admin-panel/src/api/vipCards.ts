@@ -72,7 +72,7 @@ export async function toggleVipCardFreeze(
   isFrozen: boolean,
   reason?: string
 ): Promise<VipCardItem> {
-  return apiClient<VipCardItem>(`/vip-cards/${id}/toggle-freeze`, {
+  return apiClient<VipCardItem>(`/vip-cards/${encodeURIComponent(id)}/toggle-freeze`, {
     method: "PATCH",
     body: JSON.stringify({ isFrozen, reason }),
   })
@@ -82,7 +82,7 @@ export async function updateVipCardLimit(
   id: string,
   dailySpendLimit: number
 ): Promise<VipCardItem> {
-  return apiClient<VipCardItem>(`/vip-cards/${id}/limit`, {
+  return apiClient<VipCardItem>(`/vip-cards/${encodeURIComponent(id)}/limit`, {
     method: "PATCH",
     body: JSON.stringify({ dailySpendLimit }),
   })

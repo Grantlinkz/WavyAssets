@@ -68,14 +68,14 @@ export async function fetchKycQueue(status?: string): Promise<KycDossier[]> {
 }
 
 export async function fetchDossierById(dossierId: string): Promise<KycDossier> {
-  return apiClient<KycDossier>(`/compliance/dossiers/${dossierId}`)
+  return apiClient<KycDossier>(`/compliance/dossiers/${encodeURIComponent(dossierId)}`)
 }
 
 export async function elevateUserTier(
   payload: TierElevationPayload
 ): Promise<{ success: boolean; dossier: KycDossier; message: string }> {
   return apiClient<{ success: boolean; dossier: KycDossier; message: string }>(
-    `/compliance/dossiers/${payload.dossierId}/elevate`,
+    `/compliance/dossiers/${encodeURIComponent(payload.dossierId)}/elevate`,
     {
       method: "POST",
       body: JSON.stringify(payload),
@@ -87,7 +87,7 @@ export async function rejectKycDossier(
   payload: DossierRejectionPayload
 ): Promise<{ success: boolean; dossier: KycDossier; message: string }> {
   return apiClient<{ success: boolean; dossier: KycDossier; message: string }>(
-    `/compliance/dossiers/${payload.dossierId}/reject`,
+    `/compliance/dossiers/${encodeURIComponent(payload.dossierId)}/reject`,
     {
       method: "POST",
       body: JSON.stringify(payload),
@@ -100,7 +100,7 @@ export async function updateFinmaChecklist(
   checklist: Partial<FinmaChecklist>
 ): Promise<{ success: boolean; checklist: FinmaChecklist }> {
   return apiClient<{ success: boolean; checklist: FinmaChecklist }>(
-    `/compliance/dossiers/${dossierId}/checklist`,
+    `/compliance/dossiers/${encodeURIComponent(dossierId)}/checklist`,
     {
       method: "PATCH",
       body: JSON.stringify({ checklist }),

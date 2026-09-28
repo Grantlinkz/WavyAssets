@@ -24,9 +24,9 @@ export const DirectFundingModal: React.FC = () => {
   React.useEffect(() => {
     if (selectedUser) {
       setCurrency(selectedUser.balances.currency || "USD")
-      setAmount("500000")
+      setAmount("")
       setAuditJustification("")
-      setComplianceReferenceId(`REF-FINMA-${Math.floor(100000 + Math.random() * 900000)}`)
+      setComplianceReferenceId("")
       setErrorMsg(null)
       setSuccessMsg(null)
     }
@@ -81,6 +81,8 @@ export const DirectFundingModal: React.FC = () => {
     mutation.mutate()
   }
 
+  const userCurrency = selectedUser.balances.currency || "USD"
+  const isCurrencyMatching = currency === userCurrency
   const currentAvailable = selectedUser.balances.availableCash
   const currentInvested = selectedUser.balances.investedCapital
   const parsedAmount = parseFloat(amount) || 0
@@ -124,37 +126,55 @@ export const DirectFundingModal: React.FC = () => {
         {/* Current vs Projected Segregated Balances */}
         <div className="p-3 bg-bg-canvas border border-border-subtle rounded-[4px] mb-4 text-xs">
           <div className="text-[10px] font-mono uppercase text-secondary mb-2 tracking-wider">
-            Ledger Segregation Telemetry
+            Ledger Segregation Telemetry ({userCurrency})
           </div>
           <div className="grid grid-cols-2 gap-3 mb-2">
             <div className="p-2 bg-bg-panel rounded-[2px] border border-border-subtle">
               <div className="text-[10px] text-secondary">Available Cash (Liquid)</div>
               <div className="font-mono tabular-nums text-sm font-bold text-on-surface">
-                {formatCurrency(currentAvailable, currency)}
+                {formatCurrency(currentAvailable, userCurrency)}
               </div>
-              <div className="text-[10px] text-gold-accent flex items-center gap-1 mt-0.5">
-                <ArrowRight className="w-2.5 h-2.5" />
-                <span className="font-mono tabular-nums">{formatCurrency(projectedAvailable, currency)}</span>
-              </div>
+              {isCurrencyMatching ? (
+                <div className="text-[10px] text-gold-accent flex items-center gap-1 mt-0.5">
+                  <ArrowRight className="w-2.5 h-2.5" />
+                  <span className="font-mono tabular-nums">{formatCurrency(projectedAvailable, userCurrency)}</span>
+                </div>
+              ) : (
+                <div className="text-[10px] text-secondary italic mt-0.5">
+                  Conversion required
+                </div>
+              )}
             </div>
 
             <div className="p-2 bg-bg-panel rounded-[2px] border border-border-subtle">
               <div className="text-[10px] text-secondary">Invested Capital (Vault)</div>
               <div className="font-mono tabular-nums text-sm font-bold text-on-surface">
-                {formatCurrency(currentInvested, currency)}
+                {formatCurrency(currentInvested, userCurrency)}
               </div>
-              <div className="text-[10px] text-telemetry-cyan flex items-center gap-1 mt-0.5">
-                <ArrowRight className="w-2.5 h-2.5" />
-                <span className="font-mono tabular-nums">{formatCurrency(projectedInvested, currency)}</span>
-              </div>
+              {isCurrencyMatching ? (
+                <div className="text-[10px] text-telemetry-cyan flex items-center gap-1 mt-0.5">
+                  <ArrowRight className="w-2.5 h-2.5" />
+                  <span className="font-mono tabular-nums">{formatCurrency(projectedInvested, userCurrency)}</span>
+                </div>
+              ) : (
+                <div className="text-[10px] text-secondary italic mt-0.5">
+                  Conversion required
+                </div>
+              )}
             </div>
           </div>
 
           <div className="flex justify-between items-center pt-2 border-t border-border-subtle text-[11px]">
             <span className="text-secondary">Projected Total Balance:</span>
-            <span className="font-mono tabular-nums text-gold-accent font-bold">
-              {formatCurrency(projectedTotal, currency)}
-            </span>
+            {isCurrencyMatching ? (
+              <span className="font-mono tabular-nums text-gold-accent font-bold">
+                {formatCurrency(projectedTotal, userCurrency)}
+              </span>
+            ) : (
+              <span className="font-mono text-status-warning text-[11px]">
+                Cross-currency ({currency} into {userCurrency})
+              </span>
+            )}
           </div>
         </div>
 

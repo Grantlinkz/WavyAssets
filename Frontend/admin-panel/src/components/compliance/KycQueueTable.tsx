@@ -2,6 +2,7 @@ import React, { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import {
   ShieldCheck,
+  ShieldAlert,
   Search,
   Eye,
   RefreshCw,
@@ -274,10 +275,23 @@ export const KycQueueTable: React.FC = () => {
 
                     {/* PEP / Sanctions */}
                     <td className="py-2 px-3">
-                      <span className="inline-flex items-center gap-1 text-[11px] font-mono text-status-success">
-                        <ShieldCheck className="w-3 h-3 text-status-success" />
-                        <span>Clear</span>
-                      </span>
+                      {dossier.pepCheckPassed && dossier.sanctionListClear ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-mono text-status-success">
+                          <ShieldCheck className="w-3 h-3 text-status-success" />
+                          <span>Clear</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-mono text-status-danger bg-status-danger/10 px-1.5 py-0.5 rounded border border-status-danger/30">
+                          <ShieldAlert className="w-3 h-3 text-status-danger" />
+                          <span>
+                            {!dossier.pepCheckPassed && !dossier.sanctionListClear
+                              ? "PEP/Sanctions Hit"
+                              : !dossier.pepCheckPassed
+                              ? "PEP Hit"
+                              : "Sanctions Hit"}
+                          </span>
+                        </span>
+                      )}
                     </td>
 
                     {/* Action */}

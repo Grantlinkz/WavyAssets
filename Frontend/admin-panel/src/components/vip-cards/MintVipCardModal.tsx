@@ -19,6 +19,7 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
 
   const [formError, setFormError] = useState<string | null>(null)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [secondaryOfficerToken, setSecondaryOfficerToken] = useState("")
 
   const mutation = useMutation({
     mutationFn: mintVipCard,
@@ -29,6 +30,7 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
       setTimeout(() => {
         setIsSuccess(false)
         setIsMintModalOpen(false)
+        setSecondaryOfficerToken("")
         resetDraftMint()
       }, 1200)
     },
@@ -58,6 +60,18 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
       return
     }
 
+    if (draftMint.dailySpendLimit > 500000 && !secondaryOfficerToken.trim()) {
+      setFormError(
+        "Daily spend limits exceeding $500,000 USD strictly require Secondary Officer authorization."
+      )
+      return
+    }
+
+    const combinedNotes = [
+      draftMint.operatorNotes?.trim(),
+      draftMint.dailySpendLimit > 500000 ? `Secondary Officer Sign-off: ${secondaryOfficerToken.trim()}` : null,
+    ].filter(Boolean).join(" | ")
+
     mutation.mutate({
       userId: draftMint.userId || "USR-3104-CH",
       cardholderName: draftMint.cardholderName.trim(),
@@ -66,7 +80,7 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
       dailySpendLimit: draftMint.dailySpendLimit,
       cardType: draftMint.cardType,
       destination: draftMint.destination,
-      operatorNotes: draftMint.operatorNotes,
+      operatorNotes: combinedNotes || undefined,
     })
   }
 
@@ -260,9 +274,19 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
                   <span>$1,000,000 Max</span>
                 </div>
                 {draftMint.dailySpendLimit > 500000 && (
-                  <div className="flex items-center gap-1.5 text-[10px] text-status-warning pt-1 border-t border-border-subtle">
-                    <Info className="w-3.5 h-3.5 shrink-0" />
-                    <span>Requires Secondary Officer sign-off if set above $500,000 USD.</span>
+                  <div className="flex flex-col gap-1.5 pt-2 border-t border-border-subtle">
+                    <div className="flex items-center gap-1.5 text-[10px] text-status-warning">
+                      <Info className="w-3.5 h-3.5 shrink-0" />
+                      <span>Requires Secondary Officer sign-off if set above $500,000 USD.</span>
+                    </div>
+                    <input
+                      type="password"
+                      value={secondaryOfficerToken}
+                      onChange={(e) => setSecondaryOfficerToken(e.target.value)}
+                      placeholder="Enter Secondary Officer authorization PIN / token..."
+                      className="w-full bg-bg-canvas border border-status-warning/40 rounded-[4px] px-2.5 py-1.5 font-mono text-xs text-on-surface focus:border-gold-accent focus:outline-none"
+                      data-testid="secondary-officer-token-input"
+                    />
                   </div>
                 )}
               </div>

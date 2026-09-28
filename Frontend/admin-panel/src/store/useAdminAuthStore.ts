@@ -1,4 +1,5 @@
 import { create } from "zustand"
+import { getOperatorSession } from "../api/auth"
 
 export type AdminRole =
   | "SUPER_ADMIN"
@@ -22,10 +23,11 @@ export interface AdminAuthState {
   isLoginModalOpen: boolean
   
   // Actions
-  login: (operator: Operator, token: string) => void
+  login: (operator: Operator, token?: string) => void
   logout: () => void
   setLoginModalOpen: (open: boolean) => void
   hasPermission: (permission: AdminPermission) => boolean
+  rehydrateSession: () => Promise<void>
 }
 
 export type AdminPermission =
@@ -70,51 +72,41 @@ const ROLE_PERMISSIONS: Record<AdminRole, AdminPermission[]> = {
   ],
 }
 
-// Default Operator session for staging / instant verification
-const DEFAULT_OPERATOR: Operator = {
-  id: "op-eleanor-vance-01",
-  name: "Eleanor Vance",
-  initials: "EV",
-  email: "e.vance@wavyassets.ch",
-  role: "TREASURY_OFFICER",
-}
-
 export const useAdminAuthStore = create<AdminAuthState>((set, get) => {
-  // Initialize from storage or default institutional session
-  let storedOperator: Operator | null = DEFAULT_OPERATOR
-  let storedToken: string | null = "jwt_live_session_token_ch_zurich_enclave"
+  let storedOperator: Operator | null = null
 
   try {
-    const rawOp = localStorage.getItem("wavy_admin_operator")
-    const rawToken = localStorage.getItem("wavy_admin_token")
-    if (rawOp && rawToken) {
+    const rawOp = typeof localStorage !== "undefined" ? localStorage.getItem("wavy_admin_operator") : null
+    if (rawOp) {
       storedOperator = JSON.parse(rawOp)
-      storedToken = rawToken
     }
   } catch {
-    // Keep DEFAULT_OPERATOR on storage parse failure
+    storedOperator = null
   }
 
-  return {
+  const store: AdminAuthState = {
     operator: storedOperator,
-    token: storedToken,
-    isAuthenticated: Boolean(storedOperator && storedToken),
+    token: null,
+    isAuthenticated: Boolean(storedOperator),
     isLoginModalOpen: false,
 
-    login: (operator: Operator, token: string) => {
-      localStorage.setItem("wavy_admin_operator", JSON.stringify(operator))
-      localStorage.setItem("wavy_admin_token", token)
+    login: (operator: Operator, token?: string) => {
+      if (typeof localStorage !== "undefined") {
+        localStorage.setItem("wavy_admin_operator", JSON.stringify(operator))
+      }
       set({
         operator,
-        token,
+        token: token || null,
         isAuthenticated: true,
         isLoginModalOpen: false,
       })
     },
 
     logout: () => {
-      localStorage.removeItem("wavy_admin_operator")
-      localStorage.removeItem("wavy_admin_token")
+      if (typeof localStorage !== "undefined") {
+        localStorage.removeItem("wavy_admin_operator")
+        localStorage.removeItem("wavy_admin_token")
+      }
       set({
         operator: null,
         token: null,
@@ -129,5 +121,31 @@ export const useAdminAuthStore = create<AdminAuthState>((set, get) => {
       if (!operator) return false
       return ROLE_PERMISSIONS[operator.role]?.includes(permission) ?? false
     },
+
+    rehydrateSession: async () => {
+      try {
+        const res = await getOperatorSession()
+        if (res?.operator) {
+          set({
+            operator: res.operator,
+            isAuthenticated: true,
+          })
+          if (typeof localStorage !== "undefined") {
+            localStorage.setItem("wavy_admin_operator", JSON.stringify(res.operator))
+          }
+        }
+      } catch {
+        // Keep unauthenticated
+      }
+    },
   }
+
+  // Rehydrate operator from /auth/me when the store loads in browser
+  if (typeof window !== "undefined") {
+    store.rehydrateSession().catch(() => {
+      // Ignore initial rehydrate failure
+    })
+  }
+
+  return store
 })

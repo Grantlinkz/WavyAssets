@@ -71,7 +71,6 @@ export const EmergencyFreezeModal: React.FC<EmergencyFreezeModalProps> = ({ isOp
     freezeMutation.mutate({
       verificationPhrase: verificationInput.trim(),
       justification: justificationInput.trim(),
-      officerToken: "0x9AF4...89B1",
     })
   }
 

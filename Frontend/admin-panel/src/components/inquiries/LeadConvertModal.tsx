@@ -12,7 +12,7 @@ export const LeadConvertModal: React.FC = () => {
   const [email, setEmail] = useState(selectedInquiry?.email || "")
   const [accessTier, setAccessTier] = useState("INSTITUTIONAL")
   const [initialKycTier, setInitialKycTier] = useState("TIER_3")
-  const [startingBalance, setStartingBalance] = useState("15000000")
+  const [startingBalance, setStartingBalance] = useState("")
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -20,8 +20,8 @@ export const LeadConvertModal: React.FC = () => {
     if (selectedInquiry) {
       setFullName(selectedInquiry.contactName)
       setEmail(selectedInquiry.email)
-      const numMatch = selectedInquiry.declaredCapital.replace(/[^0-9]/g, "")
-      setStartingBalance(numMatch || "10000000")
+      const verifiedCash = (selectedInquiry as unknown as { verifiedCashAmount?: number })?.verifiedCashAmount
+      setStartingBalance(verifiedCash !== undefined ? String(verifiedCash) : "")
       setSuccessMsg(null)
       setErrorMsg(null)
     }
@@ -39,7 +39,11 @@ export const LeadConvertModal: React.FC = () => {
       })
     },
     onSuccess: (data) => {
-      setSuccessMsg(`Sovereign user provisioned successfully with ID: ${data.userId || "USR-GENEVA-99"}`)
+      if (!data?.success || !data?.userId) {
+        setErrorMsg(data?.message || "Failed to provision sovereign user: User ID omitted from response.")
+        return
+      }
+      setSuccessMsg(`Sovereign user provisioned successfully with ID: ${data.userId}`)
       queryClient.invalidateQueries({ queryKey: ["inquiries"] })
       queryClient.invalidateQueries({ queryKey: ["users"] })
       setTimeout(() => {
@@ -180,6 +184,7 @@ export const LeadConvertModal: React.FC = () => {
                 type="number"
                 min="0"
                 step="1000"
+                placeholder="0.00"
                 value={startingBalance}
                 onChange={(e) => setStartingBalance(e.target.value)}
                 className="w-full bg-bg-canvas border border-border-subtle rounded-[4px] pl-8 pr-3 py-1.5 font-mono text-on-surface focus:border-gold-accent focus:outline-none tabular-nums"
@@ -197,11 +202,11 @@ export const LeadConvertModal: React.FC = () => {
             </button>
             <button
               type="submit"
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || !!successMsg || mutation.isSuccess}
               className="px-4 py-1.5 rounded-[4px] bg-gold-accent hover:bg-[#C5A028] text-bg-canvas font-semibold transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <UserCheck className="w-3.5 h-3.5" />
-              <span>{mutation.isPending ? "Provisioning..." : "Provision Client Account"}</span>
+              <span>{mutation.isPending ? "Provisioning..." : successMsg ? "Provisioned" : "Provision Client Account"}</span>
             </button>
           </div>
         </form>

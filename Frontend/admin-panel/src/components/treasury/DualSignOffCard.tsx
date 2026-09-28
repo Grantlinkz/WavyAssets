@@ -5,12 +5,12 @@ import {
   CheckCircle2,
   Unlock,
   Key,
-  Usb,
   Copy,
   Check,
   X,
   AlertTriangle,
   Ban,
+  Clock,
 } from "lucide-react"
 import {
   signOffWithdrawal,
@@ -37,10 +37,10 @@ export const DualSignOffCard: React.FC<DualSignOffCardProps> = ({
   const { operator } = useAdminAuthStore()
 
   // Form states
-  const [attestation1, setAttestation1] = useState(true)
-  const [attestation2, setAttestation2] = useState(true)
+  const [attestation1, setAttestation1] = useState(false)
+  const [attestation2, setAttestation2] = useState(false)
   const [attestation3, setAttestation3] = useState(false)
-  const [passcode, setPasscode] = useState("794102")
+  const [passcode, setPasscode] = useState("")
   const [copied, setCopied] = useState(false)
   const [rejectReason, setRejectReason] = useState("")
   const [isRejecting, setIsRejecting] = useState(false)
@@ -213,12 +213,14 @@ export const DualSignOffCard: React.FC<DualSignOffCardProps> = ({
           </div>
 
           {/* Whitelisted Destination Pill */}
-          <div className="flex items-center gap-2 p-2 bg-status-success/10 border border-status-success/30 rounded">
-            <CheckCircle2 className="w-4 h-4 text-status-success shrink-0" />
-            <span className="font-title-sm text-body-sm text-status-success">
-              Whitelisted Destination: Matches mandate file. Zero sanctions hit.
-            </span>
-          </div>
+          {selectedWithdrawal.isWhitelistedDestination && (
+            <div className="flex items-center gap-2 p-2 bg-status-success/10 border border-status-success/30 rounded">
+              <CheckCircle2 className="w-4 h-4 text-status-success shrink-0" />
+              <span className="font-title-sm text-body-sm text-status-success">
+                Whitelisted Destination: Matches mandate file. Zero sanctions hit.
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Co-Signers Status Matrix */}
@@ -230,27 +232,55 @@ export const DualSignOffCard: React.FC<DualSignOffCardProps> = ({
           {/* Officer 1 */}
           <div className="flex items-center justify-between p-2 rounded bg-bg-panel border border-border-subtle">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded bg-status-success/20 text-status-success flex items-center justify-center shrink-0">
-                <Check className="w-3.5 h-3.5" />
+              <div
+                className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${
+                  selectedWithdrawal.firstOfficerSignOff
+                    ? "bg-status-success/20 text-status-success"
+                    : "bg-bg-elevated text-secondary"
+                }`}
+              >
+                {selectedWithdrawal.firstOfficerSignOff ? (
+                  <Check className="w-3.5 h-3.5" />
+                ) : (
+                  <Clock className="w-3.5 h-3.5" />
+                )}
               </div>
               <div className="flex flex-col">
                 <span className="font-title-sm text-body-sm text-on-surface">
-                  Officer 1: {selectedWithdrawal.firstOfficerSignOff?.officerName || "Marcus Keller"}
+                  Officer 1:{" "}
+                  {selectedWithdrawal.firstOfficerSignOff
+                    ? selectedWithdrawal.firstOfficerSignOff.officerName
+                    : "Awaiting First Officer"}
                 </span>
-                <span className="font-mono text-[11px] text-secondary">
-                  {selectedWithdrawal.firstOfficerSignOff?.officerRole || "Treasury Lead"} • {selectedWithdrawal.firstOfficerSignOff?.tokenType || "YubiKey FIPS Token #YK-8820"}
-                </span>
+                {selectedWithdrawal.firstOfficerSignOff ? (
+                  <span className="font-mono text-[11px] text-secondary">
+                    {selectedWithdrawal.firstOfficerSignOff.officerRole} •{" "}
+                    {selectedWithdrawal.firstOfficerSignOff.tokenType}
+                  </span>
+                ) : (
+                  <span className="font-mono text-[11px] text-secondary">
+                    Primary compliance review pending
+                  </span>
+                )}
               </div>
             </div>
             <div className="flex flex-col text-right">
-              <span className="font-label-caps text-[10px] text-status-success uppercase font-semibold">
-                Signed &amp; Approved
+              <span
+                className={`font-label-caps text-[10px] uppercase font-semibold ${
+                  selectedWithdrawal.firstOfficerSignOff
+                    ? "text-status-success"
+                    : "text-status-warning"
+                }`}
+              >
+                {selectedWithdrawal.firstOfficerSignOff
+                  ? "Signed & Approved"
+                  : "Pending Sign-Off"}
               </span>
-              <span className="font-mono tabular-nums text-[11px] text-secondary">
-                {selectedWithdrawal.firstOfficerSignOff?.signedAt
-                  ? formatTimestamp(selectedWithdrawal.firstOfficerSignOff.signedAt).split(" ")[1]
-                  : "13:30 UTC"}
-              </span>
+              {selectedWithdrawal.firstOfficerSignOff?.signedAt && (
+                <span className="font-mono tabular-nums text-[11px] text-secondary">
+                  {formatTimestamp(selectedWithdrawal.firstOfficerSignOff.signedAt).split(" ")[1]}
+                </span>
+              )}
             </div>
           </div>
 
@@ -336,26 +366,16 @@ export const DualSignOffCard: React.FC<DualSignOffCardProps> = ({
             <span>Officer FIPS Security Key / Token Passcode</span>
             <span className="text-gold-accent font-mono text-[11px]">Required for Release</span>
           </label>
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Key className="w-4 h-4 text-secondary absolute left-2.5 top-2.5" />
-              <input
-                type="password"
-                maxLength={8}
-                value={passcode}
-                onChange={(e) => setPasscode(e.target.value)}
-                placeholder="Enter 6-digit PIN"
-                className="w-full bg-bg-canvas border border-border-subtle rounded pl-8 pr-3 py-1.5 font-mono text-body-md text-on-surface tracking-widest focus:border-gold-accent focus:outline-none"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => setPasscode("794102")}
-              className="bg-bg-canvas hover:bg-state-hover border border-border-subtle text-secondary hover:text-on-surface font-title-sm text-body-sm px-3 py-1.5 rounded flex items-center gap-1.5 shrink-0 transition-colors"
-            >
-              <Usb className="w-4 h-4 text-secondary" />
-              <span>Tap Key</span>
-            </button>
+          <div className="relative w-full">
+            <Key className="w-4 h-4 text-secondary absolute left-2.5 top-2.5" />
+            <input
+              type="password"
+              maxLength={8}
+              value={passcode}
+              onChange={(e) => setPasscode(e.target.value)}
+              placeholder="Enter 6-digit PIN"
+              className="w-full bg-bg-canvas border border-border-subtle rounded pl-8 pr-3 py-1.5 font-mono text-body-md text-on-surface tracking-widest focus:border-gold-accent focus:outline-none"
+            />
           </div>
         </div>
 

@@ -78,10 +78,6 @@ export const SettlementLedger: React.FC<SettlementLedgerProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[2px] bg-status-success/10 border border-status-success/30 text-status-success font-mono text-[11px]">
-            <span className="w-1.5 h-1.5 rounded-full bg-status-success animate-pulse" />
-            <span>SIX SIS Rail: Synchronized</span>
-          </span>
           {isFetching && (
             <RefreshCw className="w-3.5 h-3.5 text-telemetry-cyan animate-spin" />
           )}
@@ -151,7 +147,7 @@ export const SettlementLedger: React.FC<SettlementLedgerProps> = ({
                             {record.id}
                           </span>
                           <span className="text-[10px] text-secondary">
-                            {record.type.replace("_", " ")}
+                            {record.type.replaceAll("_", " ")}
                           </span>
                         </div>
                       </div>

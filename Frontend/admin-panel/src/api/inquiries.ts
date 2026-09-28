@@ -43,7 +43,7 @@ export async function updateInquiryStatus(
   status: InquiryStatus,
   notes?: string
 ): Promise<LeadInquiry> {
-  return apiClient<LeadInquiry>(`/inquiries/${id}/status`, {
+  return apiClient<LeadInquiry>(`/inquiries/${encodeURIComponent(id)}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status, notes }),
   })

@@ -29,10 +29,6 @@ export const SkeletonTable: React.FC<SkeletonTableProps> = ({
           </span>
           <span className="text-xs font-mono text-secondary/60">• Hydrating Shards</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-telemetry-cyan animate-pulse" />
-          <span className="text-xs font-mono text-telemetry-cyan">14ms RTT</span>
-        </div>
       </div>
 
       {/* Table Structure */}
