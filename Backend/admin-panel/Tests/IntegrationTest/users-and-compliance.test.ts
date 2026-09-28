@@ -65,11 +65,44 @@ describe('Users & Compliance Modules (Integration)', () => {
       });
 
     superAdminToken = loginRes.body.data.accessToken;
+
+    // Helper to cascade delete test user fixture
+    const cascadeDeleteUser = async (userEmail: string) => {
+      const u = await prisma.user.findUnique({
+        where: { email: userEmail },
+        include: { ledgerAccounts: true },
+      });
+      if (u) {
+        for (const acc of u.ledgerAccounts) {
+          await prisma.ledgerEntry.deleteMany({ where: { accountId: acc.id } }).catch(() => {});
+        }
+        await prisma.ledgerAccount.deleteMany({ where: { userId: u.id } }).catch(() => {});
+        await prisma.kycDocument.deleteMany({ where: { userId: u.id } }).catch(() => {});
+        await prisma.vipCard.deleteMany({ where: { userId: u.id } }).catch(() => {});
+        await prisma.session.deleteMany({ where: { userId: u.id } }).catch(() => {});
+        await prisma.user.delete({ where: { id: u.id } }).catch(() => {});
+      }
+    };
+
+    await cascadeDeleteUser('founder.integration@alpine-wealth.ch');
   }, 90000);
 
   afterAll(async () => {
     if (createdUserId) {
-      await prisma.user.delete({ where: { id: createdUserId } }).catch(() => {});
+      const u = await prisma.user.findUnique({
+        where: { id: createdUserId },
+        include: { ledgerAccounts: true },
+      });
+      if (u) {
+        for (const acc of u.ledgerAccounts) {
+          await prisma.ledgerEntry.deleteMany({ where: { accountId: acc.id } }).catch(() => {});
+        }
+        await prisma.ledgerAccount.deleteMany({ where: { userId: u.id } }).catch(() => {});
+        await prisma.kycDocument.deleteMany({ where: { userId: u.id } }).catch(() => {});
+        await prisma.vipCard.deleteMany({ where: { userId: u.id } }).catch(() => {});
+        await prisma.session.deleteMany({ where: { userId: u.id } }).catch(() => {});
+        await prisma.user.delete({ where: { id: u.id } }).catch(() => {});
+      }
     }
     await prisma.adminUser.delete({ where: { email: 'superadmin.sprint2@wavyassets.ch' } }).catch(() => {});
     if (app) {

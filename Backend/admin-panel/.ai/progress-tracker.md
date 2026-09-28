@@ -24,10 +24,10 @@
 - [x] `ComplianceModule` KYC Queue, Document Signing & Tier Upgrade Engine (`TIER_1` -> `INSTITUTIONAL`)
 
 ### Sprint 3: Treasury Operations & Global Deposit Rails
-- [ ] Inbound Deposits Verification & 1-Click Credit Engine
-- [ ] Outbound Withdrawals & FINMA AMLA Article 14 Dual-Sign-Off Engine (> $100k)
-- [ ] `DepositRailsModule` Fiat Wire (Swiss IBAN, BIC/SWIFT) & Crypto MPC Matrix
-- [ ] WebSocket Real-Time Event Gateway (`/ws/admin`)
+- [x] Inbound Deposits Verification & 1-Click Credit Engine
+- [x] Outbound Withdrawals & FINMA AMLA Article 14 Dual-Sign-Off Engine (> $100k)
+- [x] `DepositRailsModule` Fiat Wire (Swiss IBAN, BIC/SWIFT) & Crypto MPC Matrix
+- [x] WebSocket Real-Time Event Gateway (`/ws/admin`)
 
 ### Sprint 4: VIP Cards, Emergency Platform Freeze, Audit Trail & Hardening
 - [ ] `VipCardsModule` Minting Engine & 1-Click Freeze Toggle
