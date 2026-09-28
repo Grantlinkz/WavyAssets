@@ -18,6 +18,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal sovereign enclave error';
+    let errorCode: string | undefined = undefined;
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
@@ -29,6 +30,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         message = Array.isArray(anyRes.message)
           ? anyRes.message.join(', ')
           : anyRes.message || anyRes.error || message;
+        errorCode = anyRes.errorCode;
       }
     } else if (exception instanceof Error) {
       this.logger.error(`Unhandled system exception: ${exception.message}`, exception.stack);
@@ -36,6 +38,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     response.status(status).json({
       success: false,
+      statusCode: status,
+      ...(errorCode ? { errorCode } : {}),
       error: message,
       message,
       timestamp: new Date().toISOString(),

@@ -146,6 +146,24 @@ export class EventsGateway
   }
 
   /**
+   * Broadcast VIP card frozen state toggle (<50ms SLA)
+   */
+  emitVipCardFrozenStateChanged(payload: any) {
+    if (!this.server) return;
+    this.logger.log(
+      `Broadcasting vip_card:frozen_state_changed for card ${payload?.cardId} (isFrozen=${payload?.isFrozen})`,
+    );
+    this.server.emit('vip_card:frozen_state_changed', {
+      type: 'vip_card:frozen_state_changed',
+      ...payload,
+      timestamp: new Date().toISOString(),
+    });
+    if (payload?.userId) {
+      this.server.to(`user:${payload.userId}`).emit('vip_card:frozen_state_changed', payload);
+    }
+  }
+
+  /**
    * Broadcast platform emergency freeze
    */
   emitEmergencyFreeze(payload: any) {
