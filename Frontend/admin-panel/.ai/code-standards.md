@@ -2,8 +2,8 @@
 
 **Subsystem**: `Frontend/admin-panel`  
 **Mandatory Git Branch**: `frontend-admin-panel`  
-**Design Reference**: [`tools/UI/institutional_vault_capital/DESIGN.md`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/admin-panel/tools/UI/institutional_vault_capital/DESIGN.md)  
-**Official Branding**: [`Frontend/landing-page/src/components/common/BrandLogo.tsx`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/landing-page/src/components/common/BrandLogo.tsx) & [`Frontend/landing-page/public/favicon.svg`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/landing-page/public/favicon.svg)  
+**Design Reference**: [`tools/UI/institutional_vault_capital/DESIGN.md`](../tools/UI/institutional_vault_capital/DESIGN.md)  
+**Official Branding**: [`Frontend/landing-page/src/components/common/BrandLogo.tsx`](../../landing-page/src/components/common/BrandLogo.tsx) & [`Frontend/landing-page/public/favicon.svg`](../../landing-page/public/favicon.svg)  
 
 ---
 

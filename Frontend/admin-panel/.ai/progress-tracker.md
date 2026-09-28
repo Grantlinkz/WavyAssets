@@ -40,3 +40,13 @@
 - [x] Immutable Audit Log Viewer (`/audit`) & Side-by-Side JSON Diff Modal (`DiffModal`)
 - [x] Vitest Component & Store Test Suites (`Tests/UnitTest/`, `Tests/IntegrationTest/` - 77/77 tests passing)
 - [x] Final Zero-CLS Verification & Micro-Chamfer Token Audit
+
+### Code Quality & Hardening Remediation
+- [x] Dependency Alignment: Fixed `@eslint/js` to `^9.20.0` to resolve peer dependency conflict; installed `qrcode` & `@types/qrcode`.
+- [x] Platform Freeze & Lockdown: Replaced hardcoded unfreeze passcodes with authenticated operator dual-key prompt and error handling in `PlatformLockdownBanner.tsx` and `EmergencyFreezeModal.tsx`.
+- [x] Dual Sign-Off Security: Cleared static attestations & passcodes, eliminated fake "Tap Key", and strictly bound officer approval in `DualSignOffCard.tsx`.
+- [x] Zero Static Mock Data Invariant: Eliminated hardcoded telemetry cards from `UserDirectoryView.tsx` and `ComplianceView.tsx`; wired live endpoints and rigid skeleton loaders.
+- [x] QR Code Dynamic Generation: Replaced static SVG mock QR with real scannable QR data URLs via `qrcode` in `DepositQrModal.tsx`.
+- [x] API URL Encoding: Ensured all dynamic path parameters in `compliance.ts`, `users.ts`, and `vipCards.ts` are safely encoded via `encodeURIComponent`.
+- [x] CSV Export & Audit Merkle Integrity: Wired real CSV export generators in `AuditLogTable.tsx` and `TreasuryView.tsx`, and verified cryptographic digests in `DiffModal.tsx` and `AuditLogTable.tsx`.
+- [x] Quality Gates Verified: 100% clean TypeScript check (`npx tsc --noEmit`), 0 ESLint errors/warnings (`npm run lint`), 77/77 Vitest tests passing (`npx vitest run`), and successful production build (`npm run build`).

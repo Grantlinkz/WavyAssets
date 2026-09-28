@@ -27,7 +27,7 @@
 The admin console UI strictly integrates the official WavyAssets brand assets sourced from `Frontend/landing-page`:
 
 - **Official Brand Logo Component**:
-  - Source: [`Frontend/landing-page/src/components/common/BrandLogo.tsx`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/landing-page/src/components/common/BrandLogo.tsx)
+  - Source: [`Frontend/landing-page/src/components/common/BrandLogo.tsx`](../../landing-page/src/components/common/BrandLogo.tsx)
   - Visual Elements:
     - Vault Squircle Frame (`rx="6"`, `stroke-primary/80`)
     - Ambient Radial Glow (`#D4AF37`, 12% opacity)
@@ -37,7 +37,7 @@ The admin console UI strictly integrates the official WavyAssets brand assets so
     - Typography: `WAVY` (font-sans font-bold tracking-[0.12em] fill-on-surface), `ASSETS` (fill="#D4AF37" font-sans font-medium tracking-[0.12em])
     - Institutional Proof Indicator: `SECURED` badge in `#00C288` font-mono font-semibold tracking-wider with animated pulsing green dot (`<circle r="1.5" fill="#00C288" className="animate-pulse" />`).
 - **Official Favicon**:
-  - Source: [`Frontend/landing-page/public/favicon.svg`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/landing-page/public/favicon.svg)
+  - Source: [`Frontend/landing-page/public/favicon.svg`](../../landing-page/public/favicon.svg)
   - Obsidian Vault Squircle (`#08090B`, rx=14, stroke `#D4AF37`), dual wave in Global Gold (`#D4AF37`) and Emerald Accent (`#00C288`), and apex spark at (32, 17).
 
 ---

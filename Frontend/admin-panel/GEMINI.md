@@ -92,8 +92,8 @@ Before writing any code, creating components, or making architectural decisions,
 Additionally, consult the authoritative design system, UI blueprints, and architectural blueprints:
 - [`tools/UI/institutional_vault_capital/DESIGN.md`](tools/UI/institutional_vault_capital/DESIGN.md) — Master design system: color tokens, typography scales, elevation levels, buttons, status chips, tables, and modal specifications.
 - [`tools/UI/`](tools/UI/) — 12 Google Stitch screen prototypes (`code.html` + `screen.png`) defining the visual, layout, and component benchmarks.
-- [`Frontend/landing-page/src/components/common/BrandLogo.tsx`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/landing-page/src/components/common/BrandLogo.tsx) — Official WavyAssets institutional brand logo component.
-- [`Frontend/landing-page/public/favicon.svg`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/landing-page/public/favicon.svg) — Official WavyAssets favicon asset.
+- [`Frontend/landing-page/src/components/common/BrandLogo.tsx`](../landing-page/src/components/common/BrandLogo.tsx) — Official WavyAssets institutional brand logo component.
+- [`Frontend/landing-page/public/favicon.svg`](../landing-page/public/favicon.svg) — Official WavyAssets favicon asset.
 - [`tools/STITCH_UI_PROMPTS.md`](tools/STITCH_UI_PROMPTS.md) — Detailed UI design prompts and layout requirements.
 - [`tools/IMPLEMENTATION_STRATEGY.md`](tools/IMPLEMENTATION_STRATEGY.md) — Authoritative frontend implementation blueprint and component specifications.
 - [`tools/requirements_document.md`](tools/requirements_document.md) — Product requirements and institutional operating system framing.

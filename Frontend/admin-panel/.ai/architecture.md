@@ -4,8 +4,8 @@
 **Port**: `5175`  
 **Mandatory Git Branch**: `frontend-admin-panel`  
 **Runtime**: React 19.2 + TypeScript (strict mode) + Vite 8.2  
-**Design Reference**: [`tools/UI/institutional_vault_capital/DESIGN.md`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/admin-panel/tools/UI/institutional_vault_capital/DESIGN.md) & [`tools/UI/`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/admin-panel/tools/UI/)  
-**Official Branding**: [`Frontend/landing-page/src/components/common/BrandLogo.tsx`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/landing-page/src/components/common/BrandLogo.tsx) & [`Frontend/landing-page/public/favicon.svg`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/landing-page/public/favicon.svg)  
+**Design Reference**: [`tools/UI/institutional_vault_capital/DESIGN.md`](../tools/UI/institutional_vault_capital/DESIGN.md) & [`tools/UI/`](../tools/UI/)  
+**Official Branding**: [`Frontend/landing-page/src/components/common/BrandLogo.tsx`](../../landing-page/src/components/common/BrandLogo.tsx) & [`Frontend/landing-page/public/favicon.svg`](../../landing-page/public/favicon.svg)  
 
 ---
 

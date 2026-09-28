@@ -4,8 +4,8 @@
 **Port**: `5175`  
 **Mandatory Git Branch**: `frontend-admin-panel`  
 **Operational Target**: Air-gapped sovereign administration deck with sub-50ms interaction SLA  
-**Visual & UI Reference**: [`tools/UI/`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/admin-panel/tools/UI/) & [`tools/UI/institutional_vault_capital/DESIGN.md`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/admin-panel/tools/UI/institutional_vault_capital/DESIGN.md)  
-**Official Branding**: [`Frontend/landing-page/src/components/common/BrandLogo.tsx`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/landing-page/src/components/common/BrandLogo.tsx) & [`Frontend/landing-page/public/favicon.svg`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/landing-page/public/favicon.svg)  
+**Visual & UI Reference**: [`tools/UI/`](../tools/UI/) & [`tools/UI/institutional_vault_capital/DESIGN.md`](../tools/UI/institutional_vault_capital/DESIGN.md)  
+**Official Branding**: [`Frontend/landing-page/src/components/common/BrandLogo.tsx`](../../landing-page/src/components/common/BrandLogo.tsx) & [`Frontend/landing-page/public/favicon.svg`](../../landing-page/public/favicon.svg)  
 
 ---
 

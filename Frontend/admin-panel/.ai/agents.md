@@ -1,6 +1,6 @@
 # Agents Context & Roles — WavyAssets Frontend Admin Command Deck
 
-> Note: Companion to [.ai/agent.md](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/admin-panel/.ai/agent.md).
+> Note: Companion to [agent.md](./agent.md).
 
 This file outlines the administrative frontend architecture, operational boundaries, and development workflows for agents building `Frontend/admin-panel`.
 
@@ -11,8 +11,8 @@ This file outlines the administrative frontend architecture, operational boundar
 - **Title**: Principal Sovereign Frontend & Command Deck Architect
 - **Focus**: High-density financial command interfaces, micro-chamfer token adherence, zero Cumulative Layout Shift (CLS), sub-50ms interaction latency, real-time WebSocket state synchronization, official institutional branding, and zero mock/static data.
 - **Mandatory Git Branch**: **`frontend-admin-panel`**
-- **Design Specifications**: [`tools/UI/institutional_vault_capital/DESIGN.md`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/admin-panel/tools/UI/institutional_vault_capital/DESIGN.md) & [`tools/UI/`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/admin-panel/tools/UI/)
-- **Official Branding**: [`Frontend/landing-page/src/components/common/BrandLogo.tsx`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/landing-page/src/components/common/BrandLogo.tsx) & [`Frontend/landing-page/public/favicon.svg`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/landing-page/public/favicon.svg)
+- **Design Specifications**: [`tools/UI/institutional_vault_capital/DESIGN.md`](../tools/UI/institutional_vault_capital/DESIGN.md) & [`tools/UI/`](../tools/UI/)
+- **Official Branding**: [`Frontend/landing-page/src/components/common/BrandLogo.tsx`](../../landing-page/src/components/common/BrandLogo.tsx) & [`Frontend/landing-page/public/favicon.svg`](../../landing-page/public/favicon.svg)
 
 ---
 
