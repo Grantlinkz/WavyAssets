@@ -9,7 +9,8 @@ import { UserDirectoryView } from "./views/UserDirectoryView"
 import { ComplianceView } from "./views/ComplianceView"
 import { TreasuryView } from "./views/TreasuryView"
 import { DepositRailsView } from "./views/DepositRailsView"
-import { PlaceholderView } from "./views/PlaceholderView"
+import { VipCardsView } from "./views/VipCardsView"
+import { AuditLogView } from "./views/AuditLogView"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,23 +39,9 @@ export const AppContent: React.FC = () => {
       case "deposit-rails":
         return <DepositRailsView />
       case "vip-cards":
-        return (
-          <PlaceholderView
-            route="vip-cards"
-            title="Obsidian VIP Metal Cards"
-            sprintPhase="Sprint 4"
-            description="3D card minting engine, spending limit adjustment, and instant 1-click lock/unlock toggle syncing in real time."
-          />
-        )
+        return <VipCardsView />
       case "audit-log":
-        return (
-          <PlaceholderView
-            route="audit-log"
-            title="Immutable Audit Trail"
-            sprintPhase="Sprint 4"
-            description="Searchable chronological activity log with side-by-side JSON diff inspection."
-          />
-        )
+        return <AuditLogView />
       default:
         return <OverviewView />
     }

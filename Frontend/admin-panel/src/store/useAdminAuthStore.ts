@@ -81,22 +81,18 @@ const DEFAULT_OPERATOR: Operator = {
 
 export const useAdminAuthStore = create<AdminAuthState>((set, get) => {
   // Initialize from storage or default institutional session
-  let storedOperator: Operator | null = null
-  let storedToken: string | null = null
+  let storedOperator: Operator | null = DEFAULT_OPERATOR
+  let storedToken: string | null = "jwt_live_session_token_ch_zurich_enclave"
 
   try {
     const rawOp = localStorage.getItem("wavy_admin_operator")
-    storedToken = localStorage.getItem("wavy_admin_token")
-    if (rawOp) {
+    const rawToken = localStorage.getItem("wavy_admin_token")
+    if (rawOp && rawToken) {
       storedOperator = JSON.parse(rawOp)
-    } else {
-      // Default institutional session for immediate operational readiness
-      storedOperator = DEFAULT_OPERATOR
-      storedToken = "jwt_live_session_token_ch_zurich_enclave"
+      storedToken = rawToken
     }
   } catch {
-    storedOperator = DEFAULT_OPERATOR
-    storedToken = "jwt_live_session_token_ch_zurich_enclave"
+    // Keep DEFAULT_OPERATOR on storage parse failure
   }
 
   return {

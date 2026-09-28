@@ -3,6 +3,8 @@ import { TopBar } from "./TopBar"
 import { AdminSidebar } from "./AdminSidebar"
 import { CommandPalette } from "../common/CommandPalette"
 import { AdminLoginModal } from "../auth/AdminLoginModal"
+import { EmergencyFreezeModal } from "../emergency/EmergencyFreezeModal"
+import { PlatformLockdownBanner } from "../emergency/PlatformLockdownBanner"
 
 interface AdminLayoutProps {
   children: ReactNode
@@ -11,6 +13,7 @@ interface AdminLayoutProps {
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen w-full bg-bg-canvas text-on-surface flex flex-col">
+      <PlatformLockdownBanner />
       <TopBar />
       <AdminSidebar />
       <div className="pl-[260px] pt-[90px] min-h-screen w-full flex flex-col flex-1">
@@ -20,6 +23,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       </div>
       <CommandPalette />
       <AdminLoginModal />
+      <EmergencyFreezeModal />
     </div>
   )
 }
+
