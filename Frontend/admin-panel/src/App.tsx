@@ -7,6 +7,8 @@ import { OverviewView } from "./views/OverviewView"
 import { InquiriesView } from "./views/InquiriesView"
 import { UserDirectoryView } from "./views/UserDirectoryView"
 import { ComplianceView } from "./views/ComplianceView"
+import { TreasuryView } from "./views/TreasuryView"
+import { DepositRailsView } from "./views/DepositRailsView"
 import { PlaceholderView } from "./views/PlaceholderView"
 
 const queryClient = new QueryClient({
@@ -32,23 +34,9 @@ export const AppContent: React.FC = () => {
       case "compliance":
         return <ComplianceView />
       case "treasury":
-        return (
-          <PlaceholderView
-            route="treasury"
-            title="Treasury Operations Hub"
-            sprintPhase="Sprint 3"
-            description="Inbound bank wire/crypto deposit matching, wire memo verification, and FINMA Article 14 dual-sign-off approval for withdrawals > $100k."
-          />
-        )
+        return <TreasuryView />
       case "deposit-rails":
-        return (
-          <PlaceholderView
-            route="deposit-rails"
-            title="Global Deposit Rails"
-            sprintPhase="Sprint 3"
-            description="Dynamic live editing of Swiss IBAN, BIC/SWIFT, Memo format, and crypto MPC vault matrix with real-time client sync."
-          />
-        )
+        return <DepositRailsView />
       case "vip-cards":
         return (
           <PlaceholderView

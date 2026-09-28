@@ -28,10 +28,10 @@
 - [x] Split-Screen Document Inspector & 1-Click FINMA Tier Upgrade Engine (`TIER_1` -> `INSTITUTIONAL`)
 
 ### Sprint 3: Treasury Operations Hub & Global Deposit Rails
-- [ ] Pending Deposits Table with Wire Proof Receipt Viewer & 1-Click Credit
-- [ ] Pending Withdrawals Table with FINMA AMLA Article 14 Dual-Sign-Off Card
-- [ ] Global Deposit Rail Form (Swiss IBAN, BIC/SWIFT, Memo format & Crypto MPC Vault Matrix)
-- [ ] Real-Time Socket.IO Listener (`useSocketSync`) & Broadcast Verification
+- [x] Pending Deposits Table with Wire Proof Receipt Viewer & 1-Click Credit
+- [x] Pending Withdrawals Table with FINMA AMLA Article 14 Dual-Sign-Off Card
+- [x] Global Deposit Rail Form (Swiss IBAN, BIC/SWIFT, Memo format & Crypto MPC Vault Matrix)
+- [x] Real-Time Socket.IO Listener (`useSocketSync`) & Broadcast Verification
 
 ### Sprint 4: VIP Card Minting, Emergency Freeze, Audit Log & Hardening
 - [ ] Obsidian VIP Card Minting Engine & 3D Interactive Preview (`MintVipCardModal`)

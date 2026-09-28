@@ -52,6 +52,14 @@ export function useAdminWebSocket() {
               queryClient.invalidateQueries({ queryKey: ["overview-metrics"] })
             } else if (data.type === "INQUIRY_RECEIVED") {
               queryClient.invalidateQueries({ queryKey: ["inquiries"] })
+            } else if (data.type === "DEPOSIT_UPDATE" || data.type === "treasury:deposit_pending") {
+              queryClient.invalidateQueries({ queryKey: ["pending-deposits"] })
+              queryClient.invalidateQueries({ queryKey: ["overview-metrics"] })
+            } else if (data.type === "WITHDRAWAL_UPDATE" || data.type === "treasury:withdrawal_pending") {
+              queryClient.invalidateQueries({ queryKey: ["pending-withdrawals"] })
+              queryClient.invalidateQueries({ queryKey: ["overview-metrics"] })
+            } else if (data.type === "RAILS_UPDATE" || data.type === "deposit_rails:updated") {
+              queryClient.invalidateQueries({ queryKey: ["deposit-rails"] })
             }
           } catch {
             // non-JSON heartbeat or message
