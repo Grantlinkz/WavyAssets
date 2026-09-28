@@ -2,6 +2,7 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
 export interface CurrentAdminPayload {
   id: string;
+  sub: string;
   email: string;
   fullName: string;
   role: string;

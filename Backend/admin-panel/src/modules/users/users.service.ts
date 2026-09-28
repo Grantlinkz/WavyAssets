@@ -366,6 +366,7 @@ export class UsersService {
         email: user.email,
         isActive: false,
         status: 'Locked',
+        revokedSessionsCount: 0,
         message: 'Account is already suspended.',
       };
     }

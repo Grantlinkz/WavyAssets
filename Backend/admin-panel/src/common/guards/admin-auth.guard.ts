@@ -56,6 +56,7 @@ export class AdminAuthGuard implements CanActivate {
 
       request.admin = {
         id: admin.id,
+        sub: admin.id,
         email: admin.email,
         fullName: admin.fullName,
         role: admin.role,
