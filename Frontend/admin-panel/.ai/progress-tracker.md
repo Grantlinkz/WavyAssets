@@ -1,0 +1,52 @@
+# Progress Tracker — WavyAssets Frontend Admin Command Deck
+
+**Subsystem**: `Frontend/admin-panel`  
+**Current Phase**: Architecture, UI Blueprints & Design System Specifications Complete  
+**Mandatory Git Branch**: `frontend-admin-panel`  
+
+---
+
+## Sprint Checklist
+
+### Sprint 1: Deck Foundation, Admin Auth & Mandate Intake
+- [x] Architecture & Implementation Strategy (`tools/IMPLEMENTATION_STRATEGY.md`)
+- [x] Context & Governance Files (`GEMINI.md`, `.ai.md`, `.ai/*`)
+- [x] UI Blueprints & Stitch Screen Generation (`tools/UI/`, 12 screen prototypes)
+- [x] Official Brand Identity & Favicon Integration (`BrandLogo.tsx`, `favicon.svg`)
+- [x] Vite + React 19 + Tailwind CSS v4 Setup & Micro-Chamfer Design Tokens (`DESIGN.md`)
+- [x] Air-gapped `TopBar` (with `BrandLogo`, search, live sync, emergency stop) & `AdminSidebar` Navigation
+- [x] Rigid Table Skeleton Loaders (`SkeletonTable.tsx`) with `.wavy-skeleton` shimmer animation (zero CLS)
+- [x] Operator Auth & RBAC State (`useAdminAuthStore`)
+- [x] Executive Overview & Telemetry Deck (`/` or `/overview`)
+- [x] Mandate Inquiries Table, `LeadDetailDrawer` & Lead Conversion Modal (Live API)
+- [x] Vitest Component & Integration Test Suite (23/23 tests passing)
+
+### Sprint 2: User Directory & KYC Compliance Deck
+- [x] User & Ledger Directory Table (`/users`) with Segregated Balance Breakdown (`AVAILABLE_CASH` vs `INVESTED_CAPITAL`)
+- [x] `CreateUserModal`, `SuspendUserModal` & `DirectFundingModal` with Mandatory Audit Justification
+- [x] KYC & AML Queue Table (`/compliance`)
+- [x] Split-Screen Document Inspector & 1-Click FINMA Tier Upgrade Engine (`TIER_1` -> `INSTITUTIONAL`)
+
+### Sprint 3: Treasury Operations Hub & Global Deposit Rails
+- [x] Pending Deposits Table with Wire Proof Receipt Viewer & 1-Click Credit
+- [x] Pending Withdrawals Table with FINMA AMLA Article 14 Dual-Sign-Off Card
+- [x] Global Deposit Rail Form (Swiss IBAN, BIC/SWIFT, Memo format & Crypto MPC Vault Matrix)
+- [x] Real-Time Socket.IO Listener (`useSocketSync`) & Broadcast Verification
+
+### Sprint 4: VIP Card Minting, Emergency Freeze, Audit Log & Hardening
+- [x] Obsidian VIP Card Minting Engine & 3D Interactive Preview (`MintVipCardModal`)
+- [x] Instant 1-Click Lock/Unlock Toggle Synchronizer (<50ms Latency)
+- [x] Emergency Platform Freeze Modal & Lockdown Overlay (`EmergencyFreezeModal`)
+- [x] Immutable Audit Log Viewer (`/audit`) & Side-by-Side JSON Diff Modal (`DiffModal`)
+- [x] Vitest Component & Store Test Suites (`Tests/UnitTest/`, `Tests/IntegrationTest/` - 77/77 tests passing)
+- [x] Final Zero-CLS Verification & Micro-Chamfer Token Audit
+
+### Code Quality & Hardening Remediation
+- [x] Dependency Alignment: Fixed `@eslint/js` to `^9.20.0` to resolve peer dependency conflict; installed `qrcode` & `@types/qrcode`.
+- [x] Platform Freeze & Lockdown: Replaced hardcoded unfreeze passcodes with authenticated operator dual-key prompt and error handling in `PlatformLockdownBanner.tsx` and `EmergencyFreezeModal.tsx`.
+- [x] Dual Sign-Off Security: Cleared static attestations & passcodes, eliminated fake "Tap Key", and strictly bound officer approval in `DualSignOffCard.tsx`.
+- [x] Zero Static Mock Data Invariant: Eliminated hardcoded telemetry cards from `UserDirectoryView.tsx` and `ComplianceView.tsx`; wired live endpoints and rigid skeleton loaders.
+- [x] QR Code Dynamic Generation: Replaced static SVG mock QR with real scannable QR data URLs via `qrcode` in `DepositQrModal.tsx`.
+- [x] API URL Encoding: Ensured all dynamic path parameters in `compliance.ts`, `users.ts`, and `vipCards.ts` are safely encoded via `encodeURIComponent`.
+- [x] CSV Export & Audit Merkle Integrity: Wired real CSV export generators in `AuditLogTable.tsx` and `TreasuryView.tsx`, and verified cryptographic digests in `DiffModal.tsx` and `AuditLogTable.tsx`.
+- [x] Quality Gates Verified: 100% clean TypeScript check (`npx tsc --noEmit`), 0 ESLint errors/warnings (`npm run lint`), 77/77 Vitest tests passing (`npx vitest run`), and successful production build (`npm run build`).

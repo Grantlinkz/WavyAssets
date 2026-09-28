@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-canvas: #090D14;
+  --color-bg-panel: #0F141F;
+  --color-bg-elevated: #141B29;
+  --color-state-hover: #1D2232;
+  --color-border-subtle: #1E293B;
+  --color-gold-accent: #D4AF37;
+  --color-status-success: #10B981;
+  --color-status-warning: #F59E0B;
+  --color-status-danger: #EF4444;
+  --color-telemetry-cyan: #06B6D4;
+  
+  --color-surface: #0e131e;
+  --color-surface-dim: #0e131e;
+  --color-surface-bright: #343945;
+  --color-surface-container-lowest: #090e19;
+  --color-surface-container-low: #171b27;
+  --color-surface-container: #1b202b;
+  --color-surface-container-high: #252a36;
+  --color-surface-container-highest: #303541;
+  --color-on-surface: #dee2f2;
+  --color-on-surface-variant: #d0c5af;
+  --color-secondary: #bcc7de;
+  --color-primary: #f2ca50;
+  --color-primary-container: #d4af37;
+  --color-outline: #99907c;
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius-sm: 0.125rem;
+  --radius-DEFAULT: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+}
+
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--color-bg-canvas);
+    color: var(--color-on-surface);
+    font-family: var(--font-sans);
+  }
+
+  body {
+    overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #090D14;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1E293B;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #303541;
+  }
+}
+
+/* Rigid Skeleton Shimmer Animation */
+@keyframes skeletonShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.wavy-skeleton {
+  background: linear-gradient(90deg, #141B29 25%, #1D2232 50%, #141B29 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* OpenType Tabular Numerics for Invariant Financial Legibility */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" on, "zero" on, "cv01" on;
+}
