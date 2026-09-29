@@ -9,7 +9,9 @@ import {
   Query,
   UseGuards,
   Headers,
+  Req,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { FundBalanceDto } from './dto/fund-balance.dto';
@@ -54,8 +56,9 @@ export class UsersController {
   async createUser(
     @Body() dto: CreateUserDto,
     @CurrentAdmin() admin: CurrentAdminPayload,
+    @Req() req: Request,
   ) {
-    return this.usersService.create(dto, admin?.sub);
+    return this.usersService.create(dto, admin?.id, req.ip);
   }
 
   @Patch(':id/suspend')
@@ -63,8 +66,9 @@ export class UsersController {
   async suspendUser(
     @Param('id') id: string,
     @CurrentAdmin() admin: CurrentAdminPayload,
+    @Req() req: Request,
   ) {
-    return this.usersService.suspend(id, admin?.sub);
+    return this.usersService.suspend(id, admin?.id, req.ip);
   }
 
   @Patch(':id/unsuspend')
@@ -72,20 +76,20 @@ export class UsersController {
   async unsuspendUser(
     @Param('id') id: string,
     @CurrentAdmin() admin: CurrentAdminPayload,
+    @Req() req: Request,
   ) {
-    return this.usersService.unsuspend(id, admin?.sub);
+    return this.usersService.unsuspend(id, admin?.id, req.ip);
   }
 
   @Delete(':id')
   @Roles(AdminRole.SUPER_ADMIN)
   async deleteUser(
     @Param('id') id: string,
-    @Query('confirmationKey') queryKey: string,
-    @Headers('x-confirmation-key') headerKey: string,
+    @Headers('x-confirmation-key') confirmationKey: string,
     @CurrentAdmin() admin: CurrentAdminPayload,
+    @Req() req: Request,
   ) {
-    const confirmationKey = queryKey || headerKey;
-    return this.usersService.deleteUser(id, confirmationKey, admin?.sub);
+    return this.usersService.deleteUser(id, confirmationKey, admin?.id, req.ip);
   }
 
   @Post(':id/fund-balance')
@@ -94,7 +98,8 @@ export class UsersController {
     @Param('id') id: string,
     @Body() dto: FundBalanceDto,
     @CurrentAdmin() admin: CurrentAdminPayload,
+    @Req() req: Request,
   ) {
-    return this.usersService.fundBalance(id, dto, admin?.sub);
+    return this.usersService.fundBalance(id, dto, admin?.id, req.ip);
   }
 }

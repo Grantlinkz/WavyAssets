@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { InquiriesService } from '../../src/modules/inquiries/inquiries.service';
+import { InquiryStatus } from '../../src/modules/inquiries/dto/update-status.dto';
+import { UserTier, KycTier } from '../../src/modules/users/dto/create-user.dto';
 
 describe('InquiriesService', () => {
   let inquiriesService: InquiriesService;
@@ -94,7 +96,7 @@ describe('InquiriesService', () => {
 
       const updated = await inquiriesService.updateStatus(
         'inq-lead-02',
-        { status: 'IN_REVIEW', notes: 'Operator reviewing KYC documentation' },
+        { status: InquiryStatus.IN_REVIEW, notes: 'Operator reviewing KYC documentation' },
         'Alexander Wright',
       );
 
@@ -122,8 +124,8 @@ describe('InquiriesService', () => {
         {
           fullName: 'Lars Von Essen',
           email: 'l.essen@nordic.se',
-          accessTier: 'INSTITUTIONAL',
-          initialKycTier: 'TIER_3',
+          accessTier: UserTier.INSTITUTIONAL,
+          initialKycTier: KycTier.TIER_3,
           startingCashBalance: 1000000.0,
         },
         'inq-lead-01',

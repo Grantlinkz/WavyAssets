@@ -6,6 +6,7 @@ import {
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
+import * as crypto from 'crypto';
 import { PrismaService } from '../../common/services/prisma.service';
 import { CryptoService } from '../../common/services/crypto.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -238,7 +239,7 @@ export class UsersService {
   /**
    * Creates a new sovereign client account with default ledger accounts
    */
-  async create(dto: CreateUserDto, adminId?: string) {
+  async create(dto: CreateUserDto, adminId?: string, ipAddress?: string) {
     const normalizedEmail = dto.email.toLowerCase().trim();
 
     const existingUser = await this.prisma.user.findUnique({
@@ -249,7 +250,9 @@ export class UsersService {
       throw new ConflictException(`User with email '${normalizedEmail}' already exists.`);
     }
 
-    const rawPassword = dto.passphrase || `WavySovereign!${Math.floor(100000 + Math.random() * 900000)}`;
+    const isGeneratedPassphrase = !dto.passphrase;
+    const rawPassword =
+      dto.passphrase || `WavySovereign!${crypto.randomBytes(16).toString('hex')}`;
     const passphraseHash = await this.cryptoService.hashPassword(rawPassword);
 
     const startingCash = Number(dto.startingCashBalance) || 0;
@@ -327,7 +330,7 @@ export class UsersService {
             startingCash,
           }),
           reason: 'Administrator provisioned new sovereign client dossier',
-          ipAddressHash: this.cryptoService.hashIpAddress('127.0.0.1'),
+          ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
         },
       });
 
@@ -340,6 +343,7 @@ export class UsersService {
         isCorporate: user.isCorporate,
         isActive: user.isActive,
         startingCashBalance: startingCash,
+        temporaryPassphrase: isGeneratedPassphrase ? rawPassword : undefined,
         createdAt: user.createdAt,
       };
     });
@@ -351,7 +355,7 @@ export class UsersService {
   /**
    * Suspends a client account: sets isActive=false and purges all active JWT sessions
    */
-  async suspend(id: string, adminId?: string) {
+  async suspend(id: string, adminId?: string, ipAddress?: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
     });
@@ -393,7 +397,7 @@ export class UsersService {
           diffBefore: JSON.stringify({ isActive: true }),
           diffAfter: JSON.stringify({ isActive: false, revokedSessions: deletedSessions.count }),
           reason: 'Emergency or Compliance account kill-switch triggered by administrator',
-          ipAddressHash: this.cryptoService.hashIpAddress('127.0.0.1'),
+          ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
         },
       });
 
@@ -414,7 +418,7 @@ export class UsersService {
   /**
    * Unsuspends a client account: restores isActive=true
    */
-  async unsuspend(id: string, adminId?: string) {
+  async unsuspend(id: string, adminId?: string, ipAddress?: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
     });
@@ -448,7 +452,7 @@ export class UsersService {
           diffBefore: JSON.stringify({ isActive: false }),
           diffAfter: JSON.stringify({ isActive: true }),
           reason: 'Account reinstated to operational status by administrator',
-          ipAddressHash: this.cryptoService.hashIpAddress('127.0.0.1'),
+          ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
         },
       });
 
@@ -468,7 +472,7 @@ export class UsersService {
   /**
    * Cascading deletion of a client account guarded by email confirmation
    */
-  async deleteUser(id: string, confirmationKey: string, adminId?: string) {
+  async deleteUser(id: string, confirmationKey: string, adminId?: string, ipAddress?: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: {
@@ -481,9 +485,7 @@ export class UsersService {
     }
 
     if (!confirmationKey || confirmationKey.trim().toLowerCase() !== user.email.toLowerCase()) {
-      throw new BadRequestException(
-        `Confirmation key '${confirmationKey}' does not match client email '${user.email}'. Deletion aborted for safety.`,
-      );
+      throw new BadRequestException('Confirmation key does not match client record. Deletion aborted for safety.');
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -514,7 +516,7 @@ export class UsersService {
             tier: user.tier,
           }),
           reason: 'Cascading deletion of client account executed by authorized Super Admin',
-          ipAddressHash: this.cryptoService.hashIpAddress('127.0.0.1'),
+          ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
         },
       });
     });
@@ -531,7 +533,7 @@ export class UsersService {
   /**
    * Atomic direct capital funding / debit with double-entry ledger bookkeeping
    */
-  async fundBalance(userId: string, dto: FundBalanceDto, adminId?: string) {
+  async fundBalance(userId: string, dto: FundBalanceDto, adminId?: string, ipAddress?: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -553,125 +555,146 @@ export class UsersService {
       throw new BadRequestException('Funding amount must be a positive finite number.');
     }
 
-    return await this.prisma.$transaction(async (tx) => {
-      // 1. Idempotency Check on referenceId
-      const existingTx = await tx.ledgerTransaction.findUnique({
-        where: { referenceId: dto.referenceId },
-      });
+    const maxRetries = 3;
+    let attempt = 0;
+    while (true) {
+      try {
+        return await this.prisma.$transaction(async (tx) => {
+          // 1. Idempotency Check on referenceId
+          const existingTx = await tx.ledgerTransaction.findUnique({
+            where: { referenceId: dto.referenceId },
+          });
 
-      if (existingTx) {
-        throw new ConflictException(
-          `A ledger transaction with referenceId '${dto.referenceId}' already exists. Idempotency check failed.`,
-        );
+          if (existingTx) {
+            throw new ConflictException(
+              `A ledger transaction with referenceId '${dto.referenceId}' already exists. Idempotency check failed.`,
+            );
+          }
+
+          // 2. Fetch or create targeted LedgerAccount
+          let account = await tx.ledgerAccount.findUnique({
+            where: {
+              userId_accountType_currency: {
+                userId,
+                accountType: dto.accountType,
+                currency,
+              },
+            },
+          });
+
+          if (!account) {
+            account = await tx.ledgerAccount.create({
+              data: {
+                userId,
+                accountType: dto.accountType,
+                currency,
+                balance: 0.0,
+              },
+            });
+          }
+
+          const currentBalance = Number(account.balance);
+
+          // 3. For debit, enforce balance conservation (no negative balances)
+          if (dto.direction === BalanceFundDirection.DEBIT && currentBalance < amount) {
+            throw new BadRequestException(
+              `Insufficient ${dto.accountType} balance for debit adjustment. Current balance is $${currentBalance.toLocaleString()} ${currency}, attempted debit is $${amount.toLocaleString()} ${currency}.`,
+            );
+          }
+
+          const newBalance =
+            dto.direction === BalanceFundDirection.CREDIT
+              ? currentBalance + amount
+              : currentBalance - amount;
+
+          // 4. Update account balance
+          const updatedAccount = await tx.ledgerAccount.update({
+            where: { id: account.id },
+            data: { balance: newBalance },
+          });
+
+          // 5. Create LedgerTransaction
+          const txType = dto.direction === BalanceFundDirection.CREDIT ? 'DEPOSIT' : 'ADJUSTMENT';
+          const ledgerTx = await tx.ledgerTransaction.create({
+            data: {
+              referenceId: dto.referenceId,
+              type: txType,
+              status: 'SETTLED',
+              description: dto.auditReason,
+              amount: amount,
+              currency: currency,
+              rail: 'SWISS_SIC',
+              counterparty: 'Treasury Admin Adjustment',
+            },
+          });
+
+          // 6. Create LedgerEntry
+          const entryAmount = dto.direction === BalanceFundDirection.CREDIT ? amount : -amount;
+          const entry = await tx.ledgerEntry.create({
+            data: {
+              transactionId: ledgerTx.id,
+              accountId: account.id,
+              amount: entryAmount,
+            },
+          });
+
+          // 7. Structured Immutable Audit Trail
+          await tx.adminAuditLog.create({
+            data: {
+              adminId: adminId || null,
+              action: dto.direction === BalanceFundDirection.CREDIT ? 'BALANCE_CREDIT' : 'BALANCE_DEBIT',
+              targetEntity: 'LedgerAccount',
+              targetId: account.id,
+              diffBefore: JSON.stringify({
+                balance: currentBalance,
+                accountType: dto.accountType,
+                currency,
+              }),
+              diffAfter: JSON.stringify({
+                balance: newBalance,
+                accountType: dto.accountType,
+                currency,
+                delta: entryAmount,
+                referenceId: dto.referenceId,
+              }),
+              reason: dto.auditReason,
+              ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
+            },
+          });
+
+          this.logger.log(
+            `Funded account ${account.id} for user ${userId}: ${dto.direction} ${amount} ${currency}. New Balance: ${newBalance}`,
+          );
+
+          return {
+            transactionId: ledgerTx.id,
+            referenceId: ledgerTx.referenceId,
+            accountType: dto.accountType,
+            currency,
+            direction: dto.direction,
+            amount,
+            previousBalance: currentBalance,
+            newBalance: Number(updatedAccount.balance),
+            settledAt: ledgerTx.createdAt,
+            auditReason: dto.auditReason,
+          };
+        }, { maxWait: 5000, timeout: 10000 });
+      } catch (err: any) {
+        attempt++;
+        const isTransient =
+          err?.code === 'P2034' ||
+          (typeof err?.message === 'string' &&
+            (err.message.includes('SQLITE_BUSY') ||
+              err.message.includes('database is locked') ||
+              err.message.includes('write conflict')));
+
+        if (isTransient && attempt < maxRetries) {
+          const backoffMs = attempt * 50;
+          await new Promise((resolve) => setTimeout(resolve, backoffMs));
+          continue;
+        }
+        throw err;
       }
-
-      // 2. Fetch or create targeted LedgerAccount
-      let account = await tx.ledgerAccount.findUnique({
-        where: {
-          userId_accountType_currency: {
-            userId,
-            accountType: dto.accountType,
-            currency,
-          },
-        },
-      });
-
-      if (!account) {
-        account = await tx.ledgerAccount.create({
-          data: {
-            userId,
-            accountType: dto.accountType,
-            currency,
-            balance: 0.0,
-          },
-        });
-      }
-
-      const currentBalance = Number(account.balance);
-
-      // 3. For debit, enforce balance conservation (no negative balances)
-      if (dto.direction === BalanceFundDirection.DEBIT && currentBalance < amount) {
-        throw new BadRequestException(
-          `Insufficient ${dto.accountType} balance for debit adjustment. Current balance is $${currentBalance.toLocaleString()} ${currency}, attempted debit is $${amount.toLocaleString()} ${currency}.`,
-        );
-      }
-
-      const newBalance =
-        dto.direction === BalanceFundDirection.CREDIT
-          ? currentBalance + amount
-          : currentBalance - amount;
-
-      // 4. Update account balance
-      const updatedAccount = await tx.ledgerAccount.update({
-        where: { id: account.id },
-        data: { balance: newBalance },
-      });
-
-      // 5. Create LedgerTransaction
-      const txType = dto.direction === BalanceFundDirection.CREDIT ? 'DEPOSIT' : 'ADJUSTMENT';
-      const ledgerTx = await tx.ledgerTransaction.create({
-        data: {
-          referenceId: dto.referenceId,
-          type: txType,
-          status: 'SETTLED',
-          description: dto.auditReason,
-          amount: amount,
-          currency: currency,
-          rail: 'SWISS_SIC',
-          counterparty: 'Treasury Admin Adjustment',
-        },
-      });
-
-      // 6. Create LedgerEntry
-      const entryAmount = dto.direction === BalanceFundDirection.CREDIT ? amount : -amount;
-      const entry = await tx.ledgerEntry.create({
-        data: {
-          transactionId: ledgerTx.id,
-          accountId: account.id,
-          amount: entryAmount,
-        },
-      });
-
-      // 7. Structured Immutable Audit Trail
-      await tx.adminAuditLog.create({
-        data: {
-          adminId: adminId || null,
-          action: dto.direction === BalanceFundDirection.CREDIT ? 'BALANCE_CREDIT' : 'BALANCE_DEBIT',
-          targetEntity: 'LedgerAccount',
-          targetId: account.id,
-          diffBefore: JSON.stringify({
-            balance: currentBalance,
-            accountType: dto.accountType,
-            currency,
-          }),
-          diffAfter: JSON.stringify({
-            balance: newBalance,
-            accountType: dto.accountType,
-            currency,
-            delta: entryAmount,
-            referenceId: dto.referenceId,
-          }),
-          reason: dto.auditReason,
-          ipAddressHash: this.cryptoService.hashIpAddress('127.0.0.1'),
-        },
-      });
-
-      this.logger.log(
-        `Funded account ${account.id} for user ${userId}: ${dto.direction} ${amount} ${currency}. New Balance: ${newBalance}`,
-      );
-
-      return {
-        transactionId: ledgerTx.id,
-        referenceId: ledgerTx.referenceId,
-        accountType: dto.accountType,
-        currency,
-        direction: dto.direction,
-        amount,
-        previousBalance: currentBalance,
-        newBalance: Number(updatedAccount.balance),
-        settledAt: ledgerTx.createdAt,
-        auditReason: dto.auditReason,
-      };
-    });
+    }
   }
 }

@@ -15,6 +15,7 @@ describe('Users & Compliance Modules (Integration)', () => {
   let cryptoService: CryptoService;
   let superAdminToken: string;
   let createdUserId: string;
+  let cascadeDeleteUser: (filter: { email?: string; id?: string }) => Promise<void>;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -67,9 +68,9 @@ describe('Users & Compliance Modules (Integration)', () => {
     superAdminToken = loginRes.body.data.accessToken;
 
     // Helper to cascade delete test user fixture
-    const cascadeDeleteUser = async (userEmail: string) => {
-      const u = await prisma.user.findUnique({
-        where: { email: userEmail },
+    cascadeDeleteUser = async (filter: { email?: string; id?: string }) => {
+      const u = await prisma.user.findFirst({
+        where: filter.email ? { email: filter.email } : { id: filter.id },
         include: { ledgerAccounts: true },
       });
       if (u) {
@@ -80,29 +81,16 @@ describe('Users & Compliance Modules (Integration)', () => {
         await prisma.kycDocument.deleteMany({ where: { userId: u.id } }).catch(() => {});
         await prisma.vipCard.deleteMany({ where: { userId: u.id } }).catch(() => {});
         await prisma.session.deleteMany({ where: { userId: u.id } }).catch(() => {});
-        await prisma.user.delete({ where: { id: u.id } }).catch(() => {});
+        await prisma.user.delete({ where: { id: u.id } });
       }
     };
 
-    await cascadeDeleteUser('founder.integration@alpine-wealth.ch');
+    await cascadeDeleteUser({ email: 'founder.integration@alpine-wealth.ch' });
   }, 90000);
 
   afterAll(async () => {
     if (createdUserId) {
-      const u = await prisma.user.findUnique({
-        where: { id: createdUserId },
-        include: { ledgerAccounts: true },
-      });
-      if (u) {
-        for (const acc of u.ledgerAccounts) {
-          await prisma.ledgerEntry.deleteMany({ where: { accountId: acc.id } }).catch(() => {});
-        }
-        await prisma.ledgerAccount.deleteMany({ where: { userId: u.id } }).catch(() => {});
-        await prisma.kycDocument.deleteMany({ where: { userId: u.id } }).catch(() => {});
-        await prisma.vipCard.deleteMany({ where: { userId: u.id } }).catch(() => {});
-        await prisma.session.deleteMany({ where: { userId: u.id } }).catch(() => {});
-        await prisma.user.delete({ where: { id: u.id } }).catch(() => {});
-      }
+      await cascadeDeleteUser({ id: createdUserId });
     }
     await prisma.adminUser.delete({ where: { email: 'superadmin.sprint2@wavyassets.ch' } }).catch(() => {});
     if (app) {

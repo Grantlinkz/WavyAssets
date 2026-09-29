@@ -63,10 +63,10 @@ export class AdminAuthService {
       type: 'ADMIN',
     };
 
-    const accessTokenSecret =
-      process.env.JWT_ACCESS_SECRET ||
-      process.env.JWT_SECRET ||
-      'wavy_admin_jwt_access_super_secret_sovereign_enclave_2026';
+    const accessTokenSecret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
+    if (!accessTokenSecret) {
+      throw new UnauthorizedException('JWT access secret is not configured on the server');
+    }
 
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: accessTokenSecret,
@@ -136,13 +136,20 @@ export class AdminAuthService {
     const newRefreshTokenHash = crypto.createHash('sha256').update(newRawRefreshToken).digest('hex');
     const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    await this.prisma.adminSession.update({
-      where: { id: session.id },
+    const updateResult = await this.prisma.adminSession.updateMany({
+      where: {
+        id: session.id,
+        refreshTokenHash,
+      },
       data: {
         refreshTokenHash: newRefreshTokenHash,
         expiresAt: newExpiresAt,
       },
     });
+
+    if (updateResult.count === 0) {
+      throw new UnauthorizedException('Refresh session expired or already rotated');
+    }
 
     const payload = {
       sub: session.admin.id,
@@ -151,10 +158,10 @@ export class AdminAuthService {
       type: 'ADMIN',
     };
 
-    const accessTokenSecret =
-      process.env.JWT_ACCESS_SECRET ||
-      process.env.JWT_SECRET ||
-      'wavy_admin_jwt_access_super_secret_sovereign_enclave_2026';
+    const accessTokenSecret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
+    if (!accessTokenSecret) {
+      throw new UnauthorizedException('JWT access secret is not configured on the server');
+    }
 
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: accessTokenSecret,

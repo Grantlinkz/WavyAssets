@@ -21,7 +21,7 @@ import { EmergencyLockdownGuard } from './common/guards/emergency-lockdown.guard
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env', '.env.example'],
+      envFilePath: '.env',
     }),
     AdminAuthModule,
     OverviewModule,

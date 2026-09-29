@@ -5,6 +5,7 @@ import {
   Min,
   MinLength,
   IsOptional,
+  IsIn,
 } from 'class-validator';
 
 export enum LedgerAccountType {
@@ -26,7 +27,9 @@ export class FundBalanceDto {
   accountType!: LedgerAccountType;
 
   @IsOptional()
-  @IsString()
+  @IsIn(['USD', 'EUR', 'CHF', 'USDC', 'BTC', 'ETH'], {
+    message: 'currency must be one of: USD, EUR, CHF, USDC, BTC, ETH',
+  })
   currency: string = 'USD';
 
   @IsNumber({}, { message: 'amount must be a valid number' })

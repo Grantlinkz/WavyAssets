@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { UsersService } from '../../src/modules/users/users.service';
 import { BalanceFundDirection, LedgerAccountType } from '../../src/modules/users/dto/fund-balance.dto';
 import { BadRequestException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { UserTier, KycTier } from '../../src/modules/users/dto/create-user.dto';
 
 describe('UsersService (Unit)', () => {
   let service: UsersService;
@@ -113,8 +114,8 @@ describe('UsersService (Unit)', () => {
       const dto = {
         email: 'founder@zpc.ch',
         fullName: 'ZPC Founder',
-        tier: 'INSTITUTIONAL',
-        kycTier: 'TIER_1',
+        tier: UserTier.INSTITUTIONAL,
+        kycTier: KycTier.TIER_1,
         isCorporate: true,
         startingCashBalance: 100000,
       };

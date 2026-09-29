@@ -165,25 +165,29 @@ export class ComplianceService {
       throw new NotFoundException(`KYC Document with ID '${dto.documentId}' was not found.`);
     }
 
-    const updated = await this.prisma.kycDocument.update({
-      where: { id: dto.documentId },
-      data: { isVerified: dto.isVerified },
-    });
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const updatedDoc = await tx.kycDocument.update({
+        where: { id: dto.documentId },
+        data: { isVerified: dto.isVerified },
+      });
 
-    await this.prisma.adminAuditLog.create({
-      data: {
-        adminId: adminId || null,
-        action: dto.isVerified ? 'KYC_DOC_VERIFIED' : 'KYC_DOC_REJECTED',
-        targetEntity: 'KycDocument',
-        targetId: doc.id,
-        diffBefore: JSON.stringify({ isVerified: doc.isVerified }),
-        diffAfter: JSON.stringify({
-          isVerified: dto.isVerified,
-          rejectionReason: dto.rejectionReason || null,
-        }),
-        reason: dto.rejectionReason || 'Compliance Officer identity document review',
-        ipAddressHash: this.cryptoService.hashIpAddress('127.0.0.1'),
-      },
+      await tx.adminAuditLog.create({
+        data: {
+          adminId: adminId || null,
+          action: dto.isVerified ? 'KYC_DOC_VERIFIED' : 'KYC_DOC_REJECTED',
+          targetEntity: 'KycDocument',
+          targetId: doc.id,
+          diffBefore: JSON.stringify({ isVerified: doc.isVerified }),
+          diffAfter: JSON.stringify({
+            isVerified: dto.isVerified,
+            rejectionReason: dto.rejectionReason || null,
+          }),
+          reason: dto.rejectionReason || 'Compliance Officer identity document review',
+          ipAddressHash: this.cryptoService.hashIpAddress('127.0.0.1'),
+        },
+      });
+
+      return updatedDoc;
     });
 
     this.logger.log(

@@ -8,14 +8,18 @@ export class CryptoService {
   private readonly hmacSecret: string;
 
   constructor() {
-    const rawKey =
-      process.env.FIELD_ENCRYPTION_KEY ||
-      process.env.CIPHER_KEY_HEX ||
-      '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+    const rawKey = process.env.FIELD_ENCRYPTION_KEY || process.env.CIPHER_KEY_HEX;
+    if (!rawKey || !/^[0-9a-fA-F]{64}$/.test(rawKey)) {
+      throw new Error(
+        'FIELD_ENCRYPTION_KEY or CIPHER_KEY_HEX environment variable is required and must be exactly 64 hexadecimal characters.',
+      );
+    }
 
-    this.encryptionKey = Buffer.from(rawKey.padEnd(64, '0').slice(0, 64), 'hex');
+    this.encryptionKey = Buffer.from(rawKey, 'hex');
     this.hmacSecret =
-      process.env.JWT_SECRET || 'wavy_admin_jwt_access_super_secret_sovereign_enclave_2026';
+      process.env.JWT_ACCESS_SECRET ||
+      process.env.JWT_SECRET ||
+      'wavy_admin_jwt_access_super_secret_sovereign_enclave_2026';
   }
 
   /**

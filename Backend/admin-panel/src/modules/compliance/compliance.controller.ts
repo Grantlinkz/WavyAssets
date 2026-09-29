@@ -43,7 +43,7 @@ export class ComplianceController {
     @Body() dto: VerifyDocumentDto,
     @CurrentAdmin() admin: CurrentAdminPayload,
   ) {
-    return this.complianceService.verifyDocument(dto, admin?.sub);
+    return this.complianceService.verifyDocument(dto, admin?.id);
   }
 
   @Post('upgrade-tier')
@@ -55,7 +55,7 @@ export class ComplianceController {
     if (!dto.userId) {
       throw new BadRequestException('userId is required in payload');
     }
-    return this.complianceService.upgradeTier(dto.userId, dto, admin?.sub);
+    return this.complianceService.upgradeTier(dto.userId, dto, admin?.id);
   }
 
   @Post(':id/upgrade-tier')
@@ -65,6 +65,6 @@ export class ComplianceController {
     @Body() dto: UpgradeKycTierDto,
     @CurrentAdmin() admin: CurrentAdminPayload,
   ) {
-    return this.complianceService.upgradeTier(userId, dto, admin?.sub);
+    return this.complianceService.upgradeTier(userId, dto, admin?.id);
   }
 }

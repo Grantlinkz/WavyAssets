@@ -30,7 +30,7 @@ export class AdminAuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const ipAddress = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress;
+    const ipAddress = req.ip || req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];
 
     const result = await this.authService.login(dto, ipAddress, userAgent);

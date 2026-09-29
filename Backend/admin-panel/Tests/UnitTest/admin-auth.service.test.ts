@@ -19,6 +19,7 @@ describe('AdminAuthService', () => {
         create: vi.fn().mockResolvedValue({ id: 'sess-1' }),
         findUnique: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         delete: vi.fn(),
         deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
@@ -149,13 +150,13 @@ describe('AdminAuthService', () => {
       };
 
       mockPrisma.adminSession.findUnique.mockResolvedValue(mockSession);
-      mockPrisma.adminSession.update.mockResolvedValue({});
+      mockPrisma.adminSession.updateMany.mockResolvedValue({ count: 1 });
 
       const result = await authService.refresh('raw_refresh_token_sample');
 
       expect(result.accessToken).toBe('mock_jwt_access_token');
       expect(result.refreshToken).toBeDefined();
-      expect(mockPrisma.adminSession.update).toHaveBeenCalled();
+      expect(mockPrisma.adminSession.updateMany).toHaveBeenCalled();
     });
   });
 

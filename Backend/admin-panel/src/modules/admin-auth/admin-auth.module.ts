@@ -8,14 +8,16 @@ import { PrismaService } from '../../common/services/prisma.service';
 import { AdminAuthGuard } from '../../common/guards/admin-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 
+const jwtSecret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
+if (!jwtSecret) {
+  throw new Error('JWT_ACCESS_SECRET or JWT_SECRET must be configured');
+}
+
 @Module({
   imports: [
     JwtModule.register({
       global: true,
-      secret:
-        process.env.JWT_ACCESS_SECRET ||
-        process.env.JWT_SECRET ||
-        'wavy_admin_jwt_access_super_secret_sovereign_enclave_2026',
+      secret: jwtSecret,
       signOptions: { expiresIn: '15m' },
     }),
   ],

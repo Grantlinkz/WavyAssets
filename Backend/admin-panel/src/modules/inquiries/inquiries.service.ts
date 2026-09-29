@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/services/prisma.service';
 import { CryptoService } from '../../common/services/crypto.service';
@@ -128,31 +129,33 @@ export class InquiriesService {
     );
 
     const user = await this.prisma.$transaction(async (tx) => {
-      let createdUser = await tx.user.findUnique({ where: { email } });
-
-      if (!createdUser) {
-        createdUser = await tx.user.create({
-          data: {
-            email,
-            fullName: dto.fullName,
-            passphraseHash: defaultPassphraseHash,
-            tier: accessTier,
-            kycTier: initialKycTier,
-            isActive: true,
-          },
+      let inquiryRecord: any = null;
+      if (effectiveInquiryId) {
+        inquiryRecord = await tx.leadInquiry.findUnique({
+          where: { id: effectiveInquiryId },
         });
-      } else {
-        createdUser = await tx.user.update({
-          where: { id: createdUser.id },
-          data: {
-            fullName: dto.fullName || createdUser.fullName,
-            tier: accessTier,
-            kycTier: initialKycTier,
-          },
-        });
+        if (!inquiryRecord) {
+          throw new NotFoundException(`Lead inquiry not found: ${effectiveInquiryId}`);
+        }
       }
 
-      // Initialize AVAILABLE_CASH LedgerAccount
+      const existingUser = await tx.user.findUnique({ where: { email } });
+      if (existingUser) {
+        throw new ConflictException(`User with email '${email}' already exists.`);
+      }
+
+      const createdUser = await tx.user.create({
+        data: {
+          email,
+          fullName: dto.fullName,
+          passphraseHash: defaultPassphraseHash,
+          tier: accessTier,
+          kycTier: initialKycTier,
+          isActive: true,
+        },
+      });
+
+      // Initialize AVAILABLE_CASH LedgerAccount (preserve existing balance on upsert)
       await tx.ledgerAccount.upsert({
         where: {
           userId_accountType_currency: {
@@ -161,9 +164,7 @@ export class InquiriesService {
             currency: 'USD',
           },
         },
-        update: {
-          balance: initialCash,
-        },
+        update: {},
         create: {
           userId: createdUser.id,
           accountType: 'AVAILABLE_CASH',
@@ -191,20 +192,15 @@ export class InquiriesService {
       });
 
       // If inquiryId is provided, mark inquiry as converted / mandate issued
-      if (effectiveInquiryId) {
-        const inq = await tx.leadInquiry.findUnique({
-          where: { id: effectiveInquiryId },
+      if (inquiryRecord) {
+        const conversionNote = `[SYSTEM - ${new Date().toISOString()}]: Converted to sovereign account ${createdUser.id}`;
+        await tx.leadInquiry.update({
+          where: { id: inquiryRecord.id },
+          data: {
+            status: 'MANDATE_SENT',
+            notes: inquiryRecord.notes ? `${inquiryRecord.notes}\n${conversionNote}` : conversionNote,
+          },
         });
-        if (inq) {
-          const conversionNote = `[SYSTEM - ${new Date().toISOString()}]: Converted to sovereign account ${createdUser.id}`;
-          await tx.leadInquiry.update({
-            where: { id: inq.id },
-            data: {
-              status: 'MANDATE_SENT',
-              notes: inq.notes ? `${inq.notes}\n${conversionNote}` : conversionNote,
-            },
-          });
-        }
       }
 
       return createdUser;

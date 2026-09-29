@@ -3,8 +3,8 @@
 **Subsystem:** `Backend/admin-panel`  
 **Internal Port:** `4002`  
 **Mandatory Git Branch:** `backend-admin-panel`  
-**Reference Strategy:** [`tools/IMPLEMENTATION_STRATEGY.md`](file:///c:/Users/ANIK/Desktop/WavyAssets/Backend/admin-panel/tools/IMPLEMENTATION_STRATEGY.md)  
-**UI Contracts Reference:** [`Frontend/admin-panel/tools/UI/wavyassets_admin_panel_user_directory_governance/`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/admin-panel/tools/UI/wavyassets_admin_panel_user_directory_governance/) & [`Frontend/admin-panel/tools/UI/wavyassets_admin_panel_compliance_aml_review/`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/admin-panel/tools/UI/wavyassets_admin_panel_compliance_aml_review/)
+**Reference Strategy:** [`tools/IMPLEMENTATION_STRATEGY.md`](../tools/IMPLEMENTATION_STRATEGY.md)  
+**UI Contracts Reference:** [`Frontend/admin-panel/tools/UI/wavyassets_admin_panel_user_directory_governance/`](../../Frontend/admin-panel/tools/UI/wavyassets_admin_panel_user_directory_governance/) & [`Frontend/admin-panel/tools/UI/wavyassets_admin_panel_compliance_aml_review/`](../../Frontend/admin-panel/tools/UI/wavyassets_admin_panel_compliance_aml_review/)
 
 ---
 

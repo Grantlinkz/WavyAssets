@@ -34,12 +34,12 @@ export class AdminAuthGuard implements CanActivate {
       throw new UnauthorizedException('Session expired or unauthorized');
     }
 
-    try {
-      const secret =
-        process.env.JWT_ACCESS_SECRET ||
-        process.env.JWT_SECRET ||
-        'wavy_admin_jwt_access_super_secret_sovereign_enclave_2026';
+    const secret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
+    if (!secret) {
+      throw new UnauthorizedException('JWT access secret is not configured on the server');
+    }
 
+    try {
       const payload = await this.jwtService.verifyAsync(token, { secret });
 
       if (payload.type && payload.type !== 'ADMIN') {

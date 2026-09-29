@@ -12,6 +12,10 @@ async function bootstrap() {
     logger: ['error', 'warn', 'log'],
   });
 
+  // Trust proxy for accurate req.ip behind reverse proxies
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.set('trust proxy', 1);
+
   // Security Headers
   app.use(helmet());
 
@@ -30,7 +34,7 @@ async function bootstrap() {
       if (frontendOrigins.includes(origin) || frontendOrigins.includes('*')) {
         return callback(null, true);
       }
-      return callback(null, true); // Dev permissiveness
+      return callback(new Error('Origin not allowed by CORS policy'), false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -50,7 +54,7 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
-      forbidNonWhitelisted: false,
+      forbidNonWhitelisted: true,
       transform: true,
     }),
   );

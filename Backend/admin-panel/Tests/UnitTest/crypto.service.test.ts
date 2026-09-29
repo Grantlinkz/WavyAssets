@@ -5,6 +5,8 @@ describe('CryptoService', () => {
   let service: CryptoService;
 
   beforeEach(() => {
+    process.env.FIELD_ENCRYPTION_KEY =
+      '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
     service = new CryptoService();
   });
 

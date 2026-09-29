@@ -30,97 +30,84 @@ export interface SettlementRecord {
   rail: string;
 }
 
+const FX_TO_USD: Record<string, number> = {
+  USD: 1.0,
+  USDC: 1.0,
+  EUR: 1.08,
+  CHF: 1.12,
+  BTC: 65000.0,
+  ETH: 3500.0,
+};
+
 @Injectable()
 export class OverviewService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getMetrics(): Promise<OverviewMetrics> {
-    // 1. Calculate Aggregate Balances across sovereign ledger accounts
+    // 1. Calculate Aggregate Balances across sovereign ledger accounts in consistent USD valuation
     let totalVaultBalance = 142890420.0;
     let liquidSettlementCapital = 28450110.5;
 
-    try {
-      const ledgerAccounts = await this.prisma.ledgerAccount.findMany();
-      if (ledgerAccounts.length > 0) {
-        let total = 0;
-        let liquid = 0;
-        for (const acc of ledgerAccounts) {
-          const bal = Number(acc.balance);
-          total += bal;
-          if (acc.accountType === 'AVAILABLE_CASH') {
-            liquid += bal;
-          }
-        }
-        if (total > 0) {
-          totalVaultBalance = total;
-          liquidSettlementCapital = liquid;
+    const ledgerAccounts = await this.prisma.ledgerAccount.findMany();
+    if (ledgerAccounts.length > 0) {
+      let total = 0;
+      let liquid = 0;
+      for (const acc of ledgerAccounts) {
+        const currency = (acc.currency || 'USD').toUpperCase();
+        const rate = FX_TO_USD[currency] ?? 1.0;
+        const balUsd = Number(acc.balance) * rate;
+        total += balUsd;
+        if (acc.accountType === 'AVAILABLE_CASH') {
+          liquid += balUsd;
         }
       }
-    } catch {
-      // Fallback to default institutional telemetry baseline
+      if (total > 0) {
+        totalVaultBalance = total;
+        liquidSettlementCapital = liquid;
+      }
     }
 
     // 2. Count Active Rails
-    let activeLiquidityRailsCount = 5;
-    try {
-      const [fiatRail, cryptoRailsCount] = await Promise.all([
-        this.prisma.fiatDepositRailConfig.count(),
-        this.prisma.cryptoDepositRailConfig.count({ where: { isActive: true } }),
-      ]);
-      const totalRails = fiatRail + cryptoRailsCount;
-      if (totalRails > 0) {
-        activeLiquidityRailsCount = totalRails;
-      }
-    } catch {
-      // Keep baseline
-    }
+    const [fiatRail, cryptoRailsCount] = await Promise.all([
+      this.prisma.fiatDepositRailConfig.count(),
+      this.prisma.cryptoDepositRailConfig.count({ where: { isActive: true } }),
+    ]);
+    const activeLiquidityRailsCount = fiatRail + cryptoRailsCount;
 
     // 3. Action Queue Pending Triage Items (KYC, Dual Sign-offs, Pending Wires)
-    let actionQueuePending = 4;
-    try {
-      const [pendingTxs, unverifiedDocs, newInquiries] = await Promise.all([
-        this.prisma.ledgerTransaction.count({
-          where: {
-            status: { in: ['PENDING', 'PENDING_SECOND_SIGN_OFF'] },
-          },
-        }),
-        this.prisma.kycDocument.count({
-          where: { isVerified: false },
-        }),
-        this.prisma.leadInquiry.count({
-          where: { status: 'NEW' },
-        }),
-      ]);
-      actionQueuePending = pendingTxs + unverifiedDocs + newInquiries;
-      if (actionQueuePending === 0) actionQueuePending = 4;
-    } catch {
-      // Keep baseline
-    }
+    const [pendingTxs, unverifiedDocs, newInquiries] = await Promise.all([
+      this.prisma.ledgerTransaction.count({
+        where: {
+          status: { in: ['PENDING', 'PENDING_SECOND_SIGN_OFF'] },
+        },
+      }),
+      this.prisma.kycDocument.count({
+        where: { isVerified: false },
+      }),
+      this.prisma.leadInquiry.count({
+        where: { status: 'NEW' },
+      }),
+    ]);
+    const actionQueuePending = pendingTxs + unverifiedDocs + newInquiries;
 
-    // 4. Net Settlement 24h & Settled Transactions
-    let netSettlement24h = 7700000.0;
-    let settledTransactionsCount24h = 12;
+    // 4. Net Settlement 24h & Settled Transactions (strictly bounded to transactions created within the last 24h)
+    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const settledTxs = await this.prisma.ledgerTransaction.findMany({
+      where: {
+        status: 'SETTLED',
+        createdAt: { gte: since24h },
+      },
+    });
 
-    try {
-      const settledTxs = await this.prisma.ledgerTransaction.findMany({
-        where: { status: 'SETTLED' },
-      });
-
-      if (settledTxs.length > 0) {
-        settledTransactionsCount24h = settledTxs.length;
-        let net = 0;
-        for (const tx of settledTxs) {
-          const amt = Number(tx.amount);
-          if (tx.type === 'DEPOSIT') net += amt;
-          else if (tx.type === 'WITHDRAWAL') net -= amt;
-          else net += amt;
-        }
-        if (net !== 0) {
-          netSettlement24h = net;
-        }
-      }
-    } catch {
-      // Keep baseline
+    const settledTransactionsCount24h = settledTxs.length;
+    let netSettlement24h = 0;
+    for (const tx of settledTxs) {
+      const currency = (tx.currency || 'USD').toUpperCase();
+      const rate = FX_TO_USD[currency] ?? 1.0;
+      const amtUsd = Number(tx.amount) * rate;
+      if (tx.type === 'DEPOSIT') netSettlement24h += amtUsd;
+      else if (tx.type === 'WITHDRAWAL') netSettlement24h -= amtUsd;
+      else netSettlement24h += amtUsd;
     }
 
     return {
@@ -148,27 +135,68 @@ export class OverviewService {
     }
 
     if (query.type && query.type !== 'ALL') {
-      whereClause.type = query.type.toUpperCase();
+      const normalizedType = query.type.toUpperCase();
+      if (normalizedType === 'DEPOSIT_WIRE') {
+        whereClause.type = 'DEPOSIT';
+      } else if (normalizedType === 'VAULT_SWAP') {
+        whereClause.type = { in: ['TRADE', 'SWEEP'] };
+      } else if (normalizedType === 'INTERNAL_SETTLEMENT') {
+        whereClause.type = { notIn: ['DEPOSIT', 'WITHDRAWAL', 'TRADE', 'SWEEP'] };
+      } else {
+        whereClause.type = normalizedType;
+      }
     }
 
-    const limit = query.limit ? parseInt(query.limit, 10) : 50;
+    if (query.timeHorizon && query.timeHorizon.toUpperCase() !== 'ALL') {
+      const horizon = query.timeHorizon.toLowerCase();
+      const now = Date.now();
+      let since: Date | undefined;
+      if (horizon === '24h') {
+        since = new Date(now - 24 * 60 * 60 * 1000);
+      } else if (horizon === '7d') {
+        since = new Date(now - 7 * 24 * 60 * 60 * 1000);
+      } else if (horizon === '30d') {
+        since = new Date(now - 30 * 24 * 60 * 60 * 1000);
+      }
+      if (since) {
+        whereClause.createdAt = { gte: since };
+      }
+    }
 
-    let dbTxs: any[] = [];
+    const parsedLimit = query.limit ? parseInt(query.limit, 10) : 50;
+    const limit = isNaN(parsedLimit) || parsedLimit <= 0 ? 50 : Math.min(parsedLimit, 100);
+
+    const parsedPage = query.page ? parseInt(query.page, 10) : 1;
+    const page = isNaN(parsedPage) || parsedPage <= 0 ? 1 : parsedPage;
+    const skip = (page - 1) * limit;
+
+    let dbTxs: any[];
     try {
       dbTxs = await this.prisma.ledgerTransaction.findMany({
         where: whereClause,
         orderBy: { createdAt: 'desc' },
         take: limit,
+        skip,
       });
-    } catch {
-      // Handled below with default fallbacks
+    } catch (err) {
+      if (process.env.DEMO_MODE === 'true') {
+        return this.getDemoBaselineRecords(query);
+      }
+      throw err;
     }
 
     if (dbTxs.length > 0) {
       return dbTxs.map((tx) => this.mapTransactionToRecord(tx));
     }
 
-    // Default Seeded Telemetry Records matching UI table contract
+    if (process.env.DEMO_MODE === 'true') {
+      return this.getDemoBaselineRecords(query);
+    }
+
+    return [];
+  }
+
+  private getDemoBaselineRecords(query: SettlementQueryDto): SettlementRecord[] {
     const baselineRecords: SettlementRecord[] = [
       {
         id: 'TX-SIC-89210-SETTLED',

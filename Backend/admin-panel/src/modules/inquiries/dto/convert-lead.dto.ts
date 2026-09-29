@@ -1,4 +1,7 @@
-import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, Min, IsEnum } from 'class-validator';
+import { UserTier, KycTier } from '../../users/dto/create-user.dto';
+
+export { UserTier, KycTier };
 
 export class ConvertLeadDto {
   @IsString()
@@ -10,12 +13,12 @@ export class ConvertLeadDto {
   email!: string;
 
   @IsOptional()
-  @IsString()
-  accessTier?: string; // RETAIL | PRIVATE_WEALTH | INSTITUTIONAL
+  @IsEnum(UserTier, { message: 'accessTier must be RETAIL, PRIVATE_WEALTH, or INSTITUTIONAL' })
+  accessTier?: UserTier;
 
   @IsOptional()
-  @IsString()
-  initialKycTier?: string; // TIER_1 | TIER_2 | TIER_3
+  @IsEnum(KycTier, { message: 'initialKycTier must be TIER_1, TIER_2, or TIER_3' })
+  initialKycTier?: KycTier;
 
   @IsOptional()
   @IsNumber()
