@@ -26,12 +26,12 @@ interface VipCardsState {
 
 const initialDraftMint: VipCardsState["draftMint"] = {
   userId: "",
-  cardholderName: "HELENE VON BERNSTORFF",
+  cardholderName: "",
   tier: "OBSIDIAN",
   substrate: "Obsidian 42g Tungsten",
   dailySpendLimit: 500000,
   cardType: "PHYSICAL",
-  destination: "Registered Address (Seestrasse 142, Zurich)",
+  destination: "",
   operatorNotes: "",
 }
 

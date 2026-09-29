@@ -1,5 +1,6 @@
 import { create } from "zustand"
-import { getOperatorSession } from "../api/auth"
+import { getOperatorSession, refreshAdminToken } from "../api/auth"
+import { setAuthToken } from "../api/client"
 
 export type AdminRole =
   | "SUPER_ADMIN"
@@ -73,40 +74,25 @@ const ROLE_PERMISSIONS: Record<AdminRole, AdminPermission[]> = {
 }
 
 export const useAdminAuthStore = create<AdminAuthState>((set, get) => {
-  let storedOperator: Operator | null = null
-
-  try {
-    const rawOp = typeof localStorage !== "undefined" ? localStorage.getItem("wavy_admin_operator") : null
-    if (rawOp) {
-      storedOperator = JSON.parse(rawOp)
-    }
-  } catch {
-    storedOperator = null
-  }
-
   const store: AdminAuthState = {
-    operator: storedOperator,
+    operator: null,
     token: null,
-    isAuthenticated: Boolean(storedOperator),
+    isAuthenticated: false,
     isLoginModalOpen: false,
 
     login: (operator: Operator, token?: string) => {
-      if (typeof localStorage !== "undefined") {
-        localStorage.setItem("wavy_admin_operator", JSON.stringify(operator))
-      }
+      const activeToken = token || null
+      setAuthToken(activeToken)
       set({
         operator,
-        token: token || null,
+        token: activeToken,
         isAuthenticated: true,
         isLoginModalOpen: false,
       })
     },
 
     logout: () => {
-      if (typeof localStorage !== "undefined") {
-        localStorage.removeItem("wavy_admin_operator")
-        localStorage.removeItem("wavy_admin_token")
-      }
+      setAuthToken(null)
       set({
         operator: null,
         token: null,
@@ -130,21 +116,43 @@ export const useAdminAuthStore = create<AdminAuthState>((set, get) => {
             operator: res.operator,
             isAuthenticated: true,
           })
-          if (typeof localStorage !== "undefined") {
-            localStorage.setItem("wavy_admin_operator", JSON.stringify(res.operator))
-          }
         }
       } catch {
-        // Keep unauthenticated
+        // If getting current session failed, attempt refresh rotation via HttpOnly cookie
+        try {
+          const refreshRes = await refreshAdminToken()
+          if (refreshRes?.accessToken) {
+            setAuthToken(refreshRes.accessToken)
+            const op = refreshRes.operator || get().operator
+            if (op) {
+              set({
+                operator: op,
+                token: refreshRes.accessToken,
+                isAuthenticated: true,
+              })
+            } else {
+              const profileRes = await getOperatorSession()
+              if (profileRes?.operator) {
+                set({
+                  operator: profileRes.operator,
+                  token: refreshRes.accessToken,
+                  isAuthenticated: true,
+                })
+              }
+            }
+          }
+        } catch {
+          // If refresh also failed, only reset if no active session exists
+          if (!get().token) {
+            set({
+              operator: null,
+              token: null,
+              isAuthenticated: false,
+            })
+          }
+        }
       }
     },
-  }
-
-  // Rehydrate operator from /auth/me when the store loads in browser
-  if (typeof window !== "undefined") {
-    store.rehydrateSession().catch(() => {
-      // Ignore initial rehydrate failure
-    })
   }
 
   return store

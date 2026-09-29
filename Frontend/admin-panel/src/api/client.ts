@@ -17,17 +17,29 @@ export class ApiError extends Error {
   }
 }
 
+let inMemoryToken: string | null = null
+
+export function setAuthToken(token: string | null) {
+  inMemoryToken = token
+}
+
+export function getAuthToken(): string | null {
+  return inMemoryToken
+}
+
 const BASE_URL = "/api/v1"
 
 export async function apiClient<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = localStorage.getItem("wavy_admin_token")
+  const token = getAuthToken()
   const headers = new Headers(options.headers || {})
-  headers.set("Content-Type", "application/json")
+  if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json")
+  }
   
-  if (token) {
+  if (token && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${token}`)
   }
 
@@ -44,8 +56,7 @@ export async function apiClient<T>(
   }
 
   if (response.status === 401) {
-    localStorage.removeItem("wavy_admin_token")
-    localStorage.removeItem("wavy_admin_operator")
+    inMemoryToken = null
     window.dispatchEvent(new CustomEvent("wavy:session_expired"))
     throw new ApiError(401, "Session expired or unauthorized")
   }

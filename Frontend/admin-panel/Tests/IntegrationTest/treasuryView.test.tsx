@@ -120,6 +120,14 @@ describe("Treasury Operations & Dual Sign-Off Integration", () => {
       isSignOffOpen: true,
     })
 
+    useAdminAuthStore.getState().login({
+      id: "op-treasury-test",
+      name: "Eleanor Vance",
+      initials: "EV",
+      email: "e.vance@wavyassets.ch",
+      role: "TREASURY_OFFICER",
+    }, "mock_token")
+
     const queryClient = createQueryClient()
     const html = renderToString(
       <QueryClientProvider client={queryClient}>

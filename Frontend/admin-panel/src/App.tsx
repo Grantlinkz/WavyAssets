@@ -24,7 +24,17 @@ const queryClient = new QueryClient({
 
 export const AppContent: React.FC = () => {
   const { activeRoute } = useAdminNavStore()
-  const { logout, setLoginModalOpen } = useAdminAuthStore()
+  const { isAuthenticated, logout, setLoginModalOpen, rehydrateSession } = useAdminAuthStore()
+
+  useEffect(() => {
+    rehydrateSession().catch(() => {})
+  }, [rehydrateSession])
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setLoginModalOpen(true)
+    }
+  }, [isAuthenticated, setLoginModalOpen])
 
   useEffect(() => {
     const handleSessionExpired = () => {

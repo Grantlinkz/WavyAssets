@@ -214,7 +214,7 @@ export const PendingDepositsTable: React.FC = () => {
                             {item.railType}
                           </span>
                           <span className="font-body-sm text-on-surface font-medium truncate max-w-[160px]">
-                            {item.senderBank || "Direct Inbound"}
+                            {item.senderBank}
                           </span>
                         </div>
                         <span className="font-mono text-[11px] text-secondary mt-0.5">

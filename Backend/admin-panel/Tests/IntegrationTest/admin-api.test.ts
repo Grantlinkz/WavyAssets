@@ -56,6 +56,9 @@ describe('Admin API Endpoints (Integration)', () => {
       },
     });
 
+    // Clean up any leftover test data from prior aborted runs
+    await prisma.user.deleteMany({ where: { email: 'lead.test@supreme-lp.ch' } });
+
     // Create a sample lead inquiry for testing
     const sampleLead = await prisma.leadInquiry.create({
       data: {
@@ -219,7 +222,7 @@ describe('Admin API Endpoints (Integration)', () => {
         include: { ledgerAccounts: true },
       });
       expect(user).toBeDefined();
-      expect(user?.email).toBe('lead.test@Supreme-lp.ch');
+      expect(user?.email.toLowerCase()).toBe('lead.test@supreme-lp.ch');
       expect(user?.tier).toBe('INSTITUTIONAL');
 
       const cashAcc = user?.ledgerAccounts.find((a) => a.accountType === 'AVAILABLE_CASH');

@@ -110,7 +110,7 @@ export const DepositRailsView: React.FC = () => {
                 </span>
               </div>
               <span className="font-mono text-body-sm text-secondary bg-bg-elevated px-2 py-0.5 rounded-sm border border-border-subtle">
-                Config: {railsData?.telemetry?.configVersion || "v4.88.2-CH"}
+                Config: {railsData?.telemetry?.configVersion}
               </span>
             </div>
             <p className="font-body-md text-body-md text-secondary max-w-4xl">
@@ -216,7 +216,7 @@ export const DepositRailsView: React.FC = () => {
                   Ledger Verification HSM
                 </span>
                 <span className="font-title-sm text-body-sm text-on-surface">
-                  {railsData?.telemetry?.hsmStatus || "Gemalto SafeNet Luna 7"}
+                  {railsData?.telemetry?.hsmStatus}
                 </span>
               </div>
             </div>

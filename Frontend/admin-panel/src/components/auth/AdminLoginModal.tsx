@@ -1,10 +1,12 @@
 import React, { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { ShieldCheck, Key, Mail, ShieldAlert } from "lucide-react"
 import { useAdminAuthStore } from "../../store/useAdminAuthStore"
 import { BrandLogo } from "../common/BrandLogo"
 import { loginAdmin } from "../../api/auth"
 
 export const AdminLoginModal: React.FC = () => {
+  const queryClient = useQueryClient()
   const { isLoginModalOpen, setLoginModalOpen, login } = useAdminAuthStore()
   const [email, setEmail] = useState("")
   const [passcode, setPasscode] = useState("")
@@ -24,8 +26,10 @@ export const AdminLoginModal: React.FC = () => {
         password: passcode,
       })
       if (res && res.operator) {
-        login(res.operator, res.accessToken)
+        const token = res.accessToken || (res as { token?: string }).token
+        login(res.operator, token)
         setLoginModalOpen(false)
+        queryClient.invalidateQueries()
       } else {
         setAuthError("Authentication succeeded but operator payload was missing.")
       }

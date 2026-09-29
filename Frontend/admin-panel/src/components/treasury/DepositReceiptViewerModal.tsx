@@ -130,7 +130,7 @@ export const DepositReceiptViewerModal: React.FC<DepositReceiptViewerModalProps>
                   Originating Bank
                 </span>
                 <span className="text-on-surface font-semibold">
-                  {selectedDeposit.senderBank || "UBS Switzerland AG"}
+                  {selectedDeposit.senderBank}
                 </span>
               </div>
               <div>

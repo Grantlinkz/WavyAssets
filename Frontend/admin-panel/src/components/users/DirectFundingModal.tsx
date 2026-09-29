@@ -11,7 +11,7 @@ export const DirectFundingModal: React.FC = () => {
   const { hasPermission } = useAdminAuthStore()
   const queryClient = useQueryClient()
 
-  const [amount, setAmount] = useState("500000")
+  const [amount, setAmount] = useState("")
   const [targetBalance, setTargetBalance] = useState<BalanceType>("AVAILABLE_CASH")
   const [currency, setCurrency] = useState("USD")
   const [auditJustification, setAuditJustification] = useState("")

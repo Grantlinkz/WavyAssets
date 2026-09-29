@@ -3,7 +3,6 @@ import { useAdminAuthStore, type Operator } from "../../src/store/useAdminAuthSt
 
 describe("useAdminAuthStore", () => {
   beforeEach(() => {
-    localStorage.clear()
     const { logout } = useAdminAuthStore.getState()
     logout()
   })

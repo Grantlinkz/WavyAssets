@@ -43,6 +43,14 @@ export class AdminAuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
+    // Set cookie for access token (supports cookie-based auth in AdminAuthGuard)
+    res.cookie('wavy_admin_token', result.accessToken, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000,
+    });
+
     return result;
   }
 
@@ -64,6 +72,13 @@ export class AdminAuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
+    res.cookie('wavy_admin_token', result.accessToken, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000,
+    });
+
     return result;
   }
 
@@ -76,6 +91,7 @@ export class AdminAuthController {
   ) {
     const refreshToken = req.cookies?.wavy_admin_refresh_token;
     res.clearCookie('wavy_admin_refresh_token');
+    res.clearCookie('wavy_admin_token');
     return this.authService.logout(admin?.id, refreshToken);
   }
 

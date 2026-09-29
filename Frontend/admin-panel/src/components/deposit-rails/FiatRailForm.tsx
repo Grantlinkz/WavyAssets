@@ -23,22 +23,22 @@ export const FiatRailForm: React.FC<FiatRailFormProps> = ({ initialConfig }) => 
   const queryClient = useQueryClient()
 
   const [beneficiaryName, setBeneficiaryName] = useState(
-    initialConfig?.beneficiaryName || "WavyAssets Supreme Custody AG"
+    initialConfig?.beneficiaryName || ""
   )
   const [depositoryBank, setDepositoryBank] = useState(
-    initialConfig?.depositoryBank || "UBS Switzerland AG, Zurich Paradeplatz"
+    initialConfig?.depositoryBank || ""
   )
   const [clearingRail, setClearingRail] = useState(
-    initialConfig?.clearingRail || "Swiss SIC RTGS or Fedwire DvP (Gross Instantaneous)"
+    initialConfig?.clearingRail || ""
   )
   const [swissIban, setSwissIban] = useState(
-    initialConfig?.swissIban || "CH93 0023 8812 4019 8821 0"
+    initialConfig?.swissIban || ""
   )
   const [bicSwift, setBicSwift] = useState(
-    initialConfig?.bicSwift || "UBSWCHZH80A"
+    initialConfig?.bicSwift || ""
   )
   const [memoFormat, setMemoFormat] = useState(
-    initialConfig?.memoFormat || "WY-{USER_REF}-TREASURY-03"
+    initialConfig?.memoFormat || ""
   )
   const [copiedIban, setCopiedIban] = useState(false)
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
@@ -108,12 +108,12 @@ export const FiatRailForm: React.FC<FiatRailFormProps> = ({ initialConfig }) => 
   }
 
   const handleReset = () => {
-    setBeneficiaryName("WavyAssets Supreme Custody AG")
-    setDepositoryBank("UBS Switzerland AG, Zurich Paradeplatz")
-    setClearingRail("Swiss SIC RTGS or Fedwire DvP (Gross Instantaneous)")
-    setSwissIban("CH93 0023 8812 4019 8821 0")
-    setBicSwift("UBSWCHZH80A")
-    setMemoFormat("WY-{USER_REF}-TREASURY-03")
+    setBeneficiaryName(initialConfig?.beneficiaryName || "")
+    setDepositoryBank(initialConfig?.depositoryBank || "")
+    setClearingRail(initialConfig?.clearingRail || "")
+    setSwissIban(initialConfig?.swissIban || "")
+    setBicSwift(initialConfig?.bicSwift || "")
+    setMemoFormat(initialConfig?.memoFormat || "")
   }
 
   return (
