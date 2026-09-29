@@ -39,7 +39,7 @@ export const CreateUserModal: React.FC = () => {
       })
     },
     onSuccess: (data) => {
-      setSuccessMsg(`Sovereign entity ${data.fullLegalName} provisioned successfully with ID ${data.id}`)
+      setSuccessMsg(`Supreme entity ${data.fullLegalName} provisioned successfully with ID ${data.id}`)
       queryClient.invalidateQueries({ queryKey: ["users"] })
       setTimeout(() => {
         closeCreateUserModal()
@@ -54,7 +54,7 @@ export const CreateUserModal: React.FC = () => {
       }, 1400)
     },
     onError: (err: Error) => {
-      setErrorMsg(err.message || "Failed to create sovereign user.")
+      setErrorMsg(err.message || "Failed to create Supreme user.")
     },
   })
 
@@ -83,7 +83,7 @@ export const CreateUserModal: React.FC = () => {
             </div>
             <div>
               <h2 className="text-sm font-semibold text-on-surface">
-                Provision Sovereign Client Entity
+                Provision Supreme Client Entity
               </h2>
               <p className="text-xs text-secondary">
                 Direct onboarding to segregated ledger custody
@@ -247,7 +247,7 @@ export const CreateUserModal: React.FC = () => {
               className="px-4 py-1.5 rounded-[4px] bg-gold-accent hover:bg-[#C5A028] text-bg-canvas font-semibold transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <UserPlus className="w-3.5 h-3.5" />
-              <span>{mutation.isPending ? "Provisioning..." : "Provision Sovereign User"}</span>
+              <span>{mutation.isPending ? "Provisioning..." : "Provision Supreme User"}</span>
             </button>
           </div>
         </form>

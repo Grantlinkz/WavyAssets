@@ -29,7 +29,7 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('Institutional role undetermined');
     }
 
-    // SUPER_ADMIN has supreme sovereign clearance across all operational domains
+    // SUPER_ADMIN has supreme Supreme clearance across all operational domains
     if (admin.role === AdminRole.SUPER_ADMIN || admin.role === 'SUPER_ADMIN') {
       return true;
     }

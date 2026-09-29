@@ -17,7 +17,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = 'Internal sovereign enclave error';
+    let message = 'Internal Supreme enclave error';
     let errorCode: string | undefined = undefined;
 
     if (exception instanceof HttpException) {

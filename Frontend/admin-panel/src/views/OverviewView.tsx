@@ -85,7 +85,7 @@ export const OverviewView: React.FC = () => {
             >
               <option value="ALL" className="bg-bg-panel text-on-surface">Multi-Asset Consolidated</option>
               <option value="USD" className="bg-bg-panel text-on-surface">USD Fiat</option>
-              <option value="CHF" className="bg-bg-panel text-on-surface">CHF Sovereign</option>
+              <option value="CHF" className="bg-bg-panel text-on-surface">CHF Supreme</option>
               <option value="EUR" className="bg-bg-panel text-on-surface">EUR Reserve</option>
             </select>
           </div>

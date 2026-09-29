@@ -180,7 +180,7 @@ export class AuditService {
         id: log.id,
         timestamp: log.createdAt.toISOString(),
         operatorId: log.adminId || 'SYSTEM_DAEMON',
-        operatorName: log.admin?.fullName || 'Sovereign Core System',
+        operatorName: log.admin?.fullName || 'Supreme Core System',
         operatorEmail: log.admin?.email || 'core@wavyassets.internal',
         action: log.action,
         targetEntity: log.targetEntity,

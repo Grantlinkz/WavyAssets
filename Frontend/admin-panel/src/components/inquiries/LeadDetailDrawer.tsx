@@ -266,7 +266,7 @@ export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({ isDecrypted 
               data-testid="convert-lead-btn"
             >
               <UserCheck className="w-4 h-4" />
-              <span>Convert to Sovereign Client Account</span>
+              <span>Convert to Supreme Client Account</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           ) : (

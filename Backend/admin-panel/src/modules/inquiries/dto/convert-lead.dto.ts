@@ -5,10 +5,10 @@ export { UserTier, KycTier };
 
 export class ConvertLeadDto {
   @IsString()
-  @IsNotEmpty({ message: 'Full sovereign name is required' })
+  @IsNotEmpty({ message: 'Full Supreme name is required' })
   fullName!: string;
 
-  @IsEmail({}, { message: 'A valid sovereign user email address is required' })
+  @IsEmail({}, { message: 'A valid Supreme user email address is required' })
   @IsNotEmpty()
   email!: string;
 

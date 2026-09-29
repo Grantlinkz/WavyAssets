@@ -1,12 +1,12 @@
 // Vitest globals enabled
 import { useUserRegistryStore } from "../../src/store/useUserRegistryStore"
 import { useAdminAuthStore, type Operator } from "../../src/store/useAdminAuthStore"
-import type { SovereignUser } from "../../src/api/users"
+import type { SupremeUser } from "../../src/api/users"
 import { formatCurrency } from "../../src/lib/formatters"
 
-const mockSovereignUser: SovereignUser = {
+const mockSupremeUser: SupremeUser = {
   id: "USR-ZURICH-8801",
-  fullLegalName: "St. Gotthard Sovereign Vault SA",
+  fullLegalName: "St. Gotthard Supreme Vault SA",
   email: "treasury@st-gotthard.ch",
   institutionName: "Gotthard Multi-Family Office",
   accessTier: "INSTITUTIONAL",
@@ -38,7 +38,7 @@ describe("User Directory & Ledger Governance Integration", () => {
   })
 
   it("formats segregated balances with tabular lining figures accurately", () => {
-    const { availableCash, investedCapital, totalVaultBalance, currency } = mockSovereignUser.balances
+    const { availableCash, investedCapital, totalVaultBalance, currency } = mockSupremeUser.balances
     
     expect(formatCurrency(availableCash, currency)).toBe("CHF 12,500,000.00")
     expect(formatCurrency(investedCapital, currency)).toBe("CHF 45,000,000.00")
@@ -46,11 +46,11 @@ describe("User Directory & Ledger Governance Integration", () => {
     expect(availableCash + investedCapital).toBe(totalVaultBalance)
   })
 
-  it("manages DirectFundingModal workflow and selects sovereign entity", () => {
+  it("manages DirectFundingModal workflow and selects Supreme entity", () => {
     expect(useUserRegistryStore.getState().isDirectFundingModalOpen).toBe(false)
     expect(useUserRegistryStore.getState().selectedUser).toBeNull()
 
-    useUserRegistryStore.getState().openFundingModal(mockSovereignUser)
+    useUserRegistryStore.getState().openFundingModal(mockSupremeUser)
     expect(useUserRegistryStore.getState().isDirectFundingModalOpen).toBe(true)
     expect(useUserRegistryStore.getState().selectedUser?.id).toBe("USR-ZURICH-8801")
     expect(useUserRegistryStore.getState().selectedUser?.balances.availableCash).toBe(12500000)
@@ -60,10 +60,10 @@ describe("User Directory & Ledger Governance Integration", () => {
     expect(useUserRegistryStore.getState().selectedUser).toBeNull()
   })
 
-  it("manages SuspendUserModal workflow and toggles sovereign kill-switch", () => {
+  it("manages SuspendUserModal workflow and toggles Supreme kill-switch", () => {
     expect(useUserRegistryStore.getState().isSuspendUserModalOpen).toBe(false)
 
-    useUserRegistryStore.getState().openSuspendModal(mockSovereignUser)
+    useUserRegistryStore.getState().openSuspendModal(mockSupremeUser)
     expect(useUserRegistryStore.getState().isSuspendUserModalOpen).toBe(true)
     expect(useUserRegistryStore.getState().selectedUser?.status).toBe("ACTIVE")
 

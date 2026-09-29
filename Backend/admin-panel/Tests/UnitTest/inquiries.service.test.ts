@@ -47,9 +47,9 @@ describe('InquiriesService', () => {
       const mockDbLead = {
         id: 'inq-lead-01',
         fullNameEncrypted: 'enc:Lars Von Essen',
-        workEmailEncrypted: 'enc:l.essen@nordic-sovereign.se',
+        workEmailEncrypted: 'enc:l.essen@nordic-Supreme.se',
         telegramEncrypted: 'enc:@nordic_lars',
-        companyName: 'Nordic Sovereign Fund',
+        companyName: 'Nordic Supreme Fund',
         service: 'AI_FUNDS',
         allocationRange: '$10M+',
         domainScore: 98.0,
@@ -68,9 +68,9 @@ describe('InquiriesService', () => {
       expect(lead.id).toBe('inq-lead-01');
       expect(lead.dossierId).toBe('INQ-INQ-LEAD');
       expect(lead.contactName).toBe('Lars Von Essen');
-      expect(lead.email).toBe('l.essen@nordic-sovereign.se');
+      expect(lead.email).toBe('l.essen@nordic-Supreme.se');
       expect(lead.telegram).toBe('@nordic_lars');
-      expect(lead.company).toBe('Nordic Sovereign Fund');
+      expect(lead.company).toBe('Nordic Supreme Fund');
       expect(lead.trustScore).toBe(98);
       expect(lead.isDomainVerified).toBe(true);
       expect(lead.status).toBe('NEW');

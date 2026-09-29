@@ -39,7 +39,7 @@ describe('Admin API Endpoints (Integration)', () => {
     cryptoService = moduleFixture.get<CryptoService>(CryptoService);
 
     // Setup an integration test operator in database
-    const passwordHash = await cryptoService.hashPassword('Sovereign2026!#Vault');
+    const passwordHash = await cryptoService.hashPassword('Supreme2026!#Vault');
     await prisma.adminUser.upsert({
       where: { email: 'superadmin.test@wavyassets.ch' },
       update: {
@@ -60,9 +60,9 @@ describe('Admin API Endpoints (Integration)', () => {
     const sampleLead = await prisma.leadInquiry.create({
       data: {
         fullNameEncrypted: cryptoService.encrypt('Test Lead Person'),
-        workEmailEncrypted: cryptoService.encrypt('lead.test@sovereign-lp.ch'),
-        workEmailHash: cryptoService.hashBlindIndex('lead.test@sovereign-lp.ch'),
-        companyName: 'Alpine Sovereign Wealth',
+        workEmailEncrypted: cryptoService.encrypt('lead.test@Supreme-lp.ch'),
+        workEmailHash: cryptoService.hashBlindIndex('lead.test@Supreme-lp.ch'),
+        companyName: 'Alpine Supreme Wealth',
         service: 'CRYPTO',
         allocationRange: '$10M+',
         domainScore: 95.0,
@@ -106,7 +106,7 @@ describe('Admin API Endpoints (Integration)', () => {
         .post('/api/v1/admin/auth/login')
         .send({
           email: 'superadmin.test@wavyassets.ch',
-          password: 'Sovereign2026!#Vault',
+          password: 'Supreme2026!#Vault',
         });
 
       expect(res.status).toBe(200);
@@ -177,7 +177,7 @@ describe('Admin API Endpoints (Integration)', () => {
       const created = res.body.data.find((i: any) => i.id === testLeadId);
       expect(created).toBeDefined();
       expect(created.contactName).toBe('Test Lead Person');
-      expect(created.email).toBe('lead.test@sovereign-lp.ch');
+      expect(created.email).toBe('lead.test@Supreme-lp.ch');
       expect(created.status).toBe('NEW');
     });
 
@@ -202,7 +202,7 @@ describe('Admin API Endpoints (Integration)', () => {
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
           fullName: 'Test Lead Person',
-          email: 'lead.test@sovereign-lp.ch',
+          email: 'lead.test@Supreme-lp.ch',
           accessTier: 'INSTITUTIONAL',
           initialKycTier: 'TIER_2',
           startingCashBalance: 500000.0,
@@ -219,7 +219,7 @@ describe('Admin API Endpoints (Integration)', () => {
         include: { ledgerAccounts: true },
       });
       expect(user).toBeDefined();
-      expect(user?.email).toBe('lead.test@sovereign-lp.ch');
+      expect(user?.email).toBe('lead.test@Supreme-lp.ch');
       expect(user?.tier).toBe('INSTITUTIONAL');
 
       const cashAcc = user?.ledgerAccounts.find((a) => a.accountType === 'AVAILABLE_CASH');

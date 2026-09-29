@@ -43,7 +43,7 @@ export const SettlementLedger: React.FC<SettlementLedgerProps> = ({
           Settlement Rail Ledger Ingestion Error
         </h3>
         <p className="text-xs text-secondary max-w-md mb-4 font-mono">
-          {error?.message || "Failed to synchronize clearing buffer from sovereign depository shard."}
+          {error?.message || "Failed to synchronize clearing buffer from Supreme depository shard."}
         </p>
         <button
           onClick={() => refetch()}

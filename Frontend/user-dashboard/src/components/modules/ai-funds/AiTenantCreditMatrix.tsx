@@ -32,7 +32,7 @@ export const AiTenantCreditMatrix: React.FC = () => {
             </div>
 
             <div className="flex justify-between text-on-surface">
-              <span className="text-secondary font-medium">A / BBB+ Sovereign &amp; Enterprise</span>
+              <span className="text-secondary font-medium">A / BBB+ Supreme &amp; Enterprise</span>
               <span className="tabular-nums font-semibold">12.0%</span>
             </div>
             <div className="h-1.5 bg-surface rounded overflow-hidden">

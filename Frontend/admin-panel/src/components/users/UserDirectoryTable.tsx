@@ -12,7 +12,7 @@ import {
   Shield,
   Filter,
 } from "lucide-react"
-import { fetchUsers, type SovereignUser, type UserTier, type UserStatus } from "../../api/users"
+import { fetchUsers, type SupremeUser, type UserTier, type UserStatus } from "../../api/users"
 import { useUserRegistryStore } from "../../store/useUserRegistryStore"
 import { SkeletonTable } from "../common/SkeletonTable"
 import { formatCurrency, formatTimestamp } from "../../lib/formatters"
@@ -52,7 +52,7 @@ export const UserDirectoryTable: React.FC = () => {
     error,
     refetch,
     isFetching,
-  } = useQuery<SovereignUser[], Error>({
+  } = useQuery<SupremeUser[], Error>({
     queryKey: ["users", selectedTier, selectedStatus, searchQuery],
     queryFn: () =>
       fetchUsers({
@@ -161,7 +161,7 @@ export const UserDirectoryTable: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search sovereign entities, emails, or IDs..."
+            placeholder="Search Supreme entities, emails, or IDs..."
             className="w-full bg-bg-canvas border border-border-subtle rounded-[4px] pl-8 pr-3 py-1.5 text-xs text-on-surface focus:border-gold-accent focus:outline-none"
             data-testid="user-search-input"
           />
@@ -218,7 +218,7 @@ export const UserDirectoryTable: React.FC = () => {
             data-testid="new-user-button"
           >
             <UserPlus className="w-3.5 h-3.5" />
-            <span>Provision Sovereign Entity</span>
+            <span>Provision Supreme Entity</span>
           </button>
         </div>
       </div>
@@ -238,7 +238,7 @@ export const UserDirectoryTable: React.FC = () => {
             User Directory Ingestion Error
           </h3>
           <p className="text-xs text-secondary max-w-md mb-4 font-mono">
-            {error?.message || "Failed to query sovereign user accounts from primary database shard."}
+            {error?.message || "Failed to query Supreme user accounts from primary database shard."}
           </p>
           <button
             onClick={() => refetch()}
@@ -257,7 +257,7 @@ export const UserDirectoryTable: React.FC = () => {
             <Building className="w-6 h-6" />
           </div>
           <h3 className="text-base font-semibold text-on-surface mb-1">
-            No Sovereign Entities Match Query
+            No Supreme Entities Match Query
           </h3>
           <p className="text-xs text-secondary max-w-md mb-4">
             Adjust active filters or provision a new institutional entity to begin ledger management.
@@ -267,7 +267,7 @@ export const UserDirectoryTable: React.FC = () => {
             className="px-4 py-1.5 rounded-[4px] bg-gold-accent hover:bg-[#C5A028] text-xs text-bg-canvas font-semibold flex items-center gap-1.5 cursor-pointer"
           >
             <UserPlus className="w-3.5 h-3.5" />
-            <span>Provision Sovereign Entity</span>
+            <span>Provision Supreme Entity</span>
           </button>
         </div>
       ) : (
@@ -276,7 +276,7 @@ export const UserDirectoryTable: React.FC = () => {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-bg-canvas/60 border-b border-border-subtle text-secondary font-mono uppercase text-[10px] tracking-wider">
-                  <th className="py-2.5 px-3">Sovereign Entity / Principal</th>
+                  <th className="py-2.5 px-3">Supreme Entity / Principal</th>
                   <th className="py-2.5 px-3">Corporate Contact</th>
                   <th className="py-2.5 px-3">Access Tier</th>
                   <th className="py-2.5 px-3">Status</th>

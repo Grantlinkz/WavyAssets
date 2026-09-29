@@ -179,7 +179,7 @@ export const DepositReceiptViewerModal: React.FC<DepositReceiptViewerModalProps>
                 <br />
                 :50K: ORDERING CUSTOMER: {selectedDeposit.senderName}
                 <br />
-                :59: BENEFICIARY CUSTOMER: WavyAssets Sovereign Custody AG a/c {selectedDeposit.userCif}
+                :59: BENEFICIARY CUSTOMER: WavyAssets Supreme Custody AG a/c {selectedDeposit.userCif}
                 <br />
                 :70: REMITTANCE INFORMATION: {selectedDeposit.wireMemo}
                 <br />

@@ -137,7 +137,7 @@ export class VipCardsService {
   }
 
   /**
-   * Provisions and mints a new sovereign VIP metal card
+   * Provisions and mints a new Supreme VIP metal card
    */
   async mintCard(adminId: string, dto: MintCardDto) {
     const user = await this.prisma.user.findUnique({
@@ -154,7 +154,7 @@ export class VipCardsService {
 
     if (existingCard) {
       throw new ConflictException(
-        `User '${dto.userId}' already holds an active sovereign card (ID: ${existingCard.id})`,
+        `User '${dto.userId}' already holds an active Supreme card (ID: ${existingCard.id})`,
       );
     }
 
@@ -209,7 +209,7 @@ export class VipCardsService {
           dailySpendLimit: card.dailySpendLimit,
           shippingStatus: card.shippingStatus,
         }),
-        reason: `Minted sovereign VIP card for user ${user.email}`,
+        reason: `Minted Supreme VIP card for user ${user.email}`,
         ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(adminId).slice(0, 16),
       },
     });

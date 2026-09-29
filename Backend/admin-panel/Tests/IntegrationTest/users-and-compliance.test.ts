@@ -40,7 +40,7 @@ describe('Users & Compliance Modules (Integration)', () => {
     cryptoService = moduleFixture.get<CryptoService>(CryptoService);
 
     // Setup an integration test operator in database
-    const passwordHash = await cryptoService.hashPassword('Sovereign2026!#Vault');
+    const passwordHash = await cryptoService.hashPassword('Supreme2026!#Vault');
     await prisma.adminUser.upsert({
       where: { email: 'superadmin.sprint2@wavyassets.ch' },
       update: {
@@ -62,7 +62,7 @@ describe('Users & Compliance Modules (Integration)', () => {
       .post('/api/v1/admin/auth/login')
       .send({
         email: 'superadmin.sprint2@wavyassets.ch',
-        password: 'Sovereign2026!#Vault',
+        password: 'Supreme2026!#Vault',
       });
 
     superAdminToken = loginRes.body.data.accessToken;
@@ -99,7 +99,7 @@ describe('Users & Compliance Modules (Integration)', () => {
   });
 
   describe('User Lifecycle & Directory (/api/v1/admin/users)', () => {
-    it('POST / — should create a new sovereign client account with initial cash balance', async () => {
+    it('POST / — should create a new Supreme client account with initial cash balance', async () => {
       const res = await request(app.getHttpServer())
         .post('/api/v1/admin/users')
         .set('Authorization', `Bearer ${superAdminToken}`)

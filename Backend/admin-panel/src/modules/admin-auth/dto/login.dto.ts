@@ -1,7 +1,7 @@
 import { IsEmail, IsNotEmpty, IsOptional, IsString, Length } from 'class-validator';
 
 export class AdminLoginDto {
-  @IsEmail({}, { message: 'A valid sovereign operator email address is required' })
+  @IsEmail({}, { message: 'A valid Supreme operator email address is required' })
   @IsNotEmpty()
   email!: string;
 

@@ -49,7 +49,7 @@ export const AdminLoginModal: React.FC = () => {
             Institutional Operator Enclave
           </h2>
           <p className="text-xs text-secondary mt-1">
-            Authenticate operator session credentials to access sovereign command deck privilege.
+            Authenticate operator session credentials to access Supreme command deck privilege.
           </p>
         </div>
 
@@ -63,7 +63,7 @@ export const AdminLoginModal: React.FC = () => {
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div>
             <label className="block text-xs font-mono uppercase text-secondary mb-1.5 tracking-wider">
-              Operator Email Address
+              Admin Email Address
             </label>
             <div className="relative flex items-center">
               <Mail className="w-4 h-4 text-secondary absolute left-3 pointer-events-none" />
@@ -80,7 +80,7 @@ export const AdminLoginModal: React.FC = () => {
 
           <div>
             <label className="block text-xs font-mono uppercase text-secondary mb-1.5 tracking-wider">
-              Hardware Key / Enclave Passcode
+              Admin Password
             </label>
             <div className="relative flex items-center">
               <Key className="w-4 h-4 text-secondary absolute left-3 pointer-events-none" />

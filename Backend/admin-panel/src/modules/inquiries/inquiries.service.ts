@@ -125,7 +125,7 @@ export class InquiriesService {
     const initialKycTier = dto.initialKycTier || 'TIER_2';
 
     const defaultPassphraseHash = await this.cryptoService.hashPassword(
-      'SovereignUser2026!#Mandate',
+      'SupremeUser2026!#Mandate',
     );
 
     const user = await this.prisma.$transaction(async (tx) => {
@@ -193,7 +193,7 @@ export class InquiriesService {
 
       // If inquiryId is provided, mark inquiry as converted / mandate issued
       if (inquiryRecord) {
-        const conversionNote = `[SYSTEM - ${new Date().toISOString()}]: Converted to sovereign account ${createdUser.id}`;
+        const conversionNote = `[SYSTEM - ${new Date().toISOString()}]: Converted to Supreme account ${createdUser.id}`;
         await tx.leadInquiry.update({
           where: { id: inquiryRecord.id },
           data: {
@@ -209,7 +209,7 @@ export class InquiriesService {
     return {
       success: true,
       userId: user.id,
-      message: `Successfully onboarded ${dto.fullName} to sovereign account.`,
+      message: `Successfully onboarded ${dto.fullName} to Supreme account.`,
     };
   }
 
@@ -227,7 +227,7 @@ export class InquiriesService {
       id: lead.id,
       dossierId: `INQ-${lead.id.slice(0, 8).toUpperCase()}`,
       receivedAt: lead.createdAt ? lead.createdAt.toISOString() : new Date().toISOString(),
-      company: lead.companyName || 'Sovereign Institutional Entity',
+      company: lead.companyName || 'Supreme Institutional Entity',
       trustScore,
       isDomainVerified: trustScore >= 80,
       contactName,

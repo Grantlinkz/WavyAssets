@@ -56,7 +56,7 @@ describe('Treasury & Deposit Rails Modules (Integration)', () => {
     });
 
     // Setup integration test operators
-    const passwordHash = await cryptoService.hashPassword('Sovereign2026!#Vault');
+    const passwordHash = await cryptoService.hashPassword('Supreme2026!#Vault');
 
     await prisma.adminUser.upsert({
       where: { email: 'superadmin.sprint3@wavyassets.ch' },
@@ -89,7 +89,7 @@ describe('Treasury & Deposit Rails Modules (Integration)', () => {
       .post('/api/v1/admin/auth/login')
       .send({
         email: 'superadmin.sprint3@wavyassets.ch',
-        password: 'Sovereign2026!#Vault',
+        password: 'Supreme2026!#Vault',
       });
     superAdminToken = login1.body.data.accessToken;
 
@@ -97,7 +97,7 @@ describe('Treasury & Deposit Rails Modules (Integration)', () => {
       .post('/api/v1/admin/auth/login')
       .send({
         email: 'treasury2.sprint3@wavyassets.ch',
-        password: 'Sovereign2026!#Vault',
+        password: 'Supreme2026!#Vault',
       });
     treasuryOfficerToken = login2.body.data.accessToken;
 
@@ -105,7 +105,7 @@ describe('Treasury & Deposit Rails Modules (Integration)', () => {
     const userPassHash = await cryptoService.hashPassword('ClientVault2026!');
     const clientUser = await prisma.user.create({
       data: {
-        email: 'treasury.client@sovereign-vault.ch',
+        email: 'treasury.client@Supreme-vault.ch',
         fullName: 'Geneva Treasury Client',
         passphraseHash: userPassHash,
         tier: 'INSTITUTIONAL',

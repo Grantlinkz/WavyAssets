@@ -23,7 +23,7 @@ export class UsersService {
   ) {}
 
   /**
-   * Retrieves paginated directory of sovereign users with aggregated balances
+   * Retrieves paginated directory of Supreme users with aggregated balances
    */
   async findAll(query: UserQueryDto) {
     const page = Math.max(1, query.page || 1);
@@ -237,7 +237,7 @@ export class UsersService {
   }
 
   /**
-   * Creates a new sovereign client account with default ledger accounts
+   * Creates a new Supreme client account with default ledger accounts
    */
   async create(dto: CreateUserDto, adminId?: string, ipAddress?: string) {
     const normalizedEmail = dto.email.toLowerCase().trim();
@@ -252,7 +252,7 @@ export class UsersService {
 
     const isGeneratedPassphrase = !dto.passphrase;
     const rawPassword =
-      dto.passphrase || `WavySovereign!${crypto.randomBytes(16).toString('hex')}`;
+      dto.passphrase || `WavySupreme!${crypto.randomBytes(16).toString('hex')}`;
     const passphraseHash = await this.cryptoService.hashPassword(rawPassword);
 
     const startingCash = Number(dto.startingCashBalance) || 0;
@@ -299,7 +299,7 @@ export class UsersService {
             referenceId: refId,
             type: 'DEPOSIT',
             status: 'SETTLED',
-            description: 'Initial Sovereign Capital Allocation',
+            description: 'Initial Supreme Capital Allocation',
             amount: startingCash,
             currency: 'USD',
             rail: 'SWISS_SIC',
@@ -329,7 +329,7 @@ export class UsersService {
             tier: user.tier,
             startingCash,
           }),
-          reason: 'Administrator provisioned new sovereign client dossier',
+          reason: 'Administrator provisioned new Supreme client dossier',
           ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
         },
       });

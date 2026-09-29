@@ -117,7 +117,7 @@ export const SplitScreenDocInspector: React.FC = () => {
     },
     onSuccess: (data) => {
       setSuccessMsg(
-        `Dossier elevated to ${data.dossier.requestedTier}. Sovereign ledger access elevated.`
+        `Dossier elevated to ${data.dossier.requestedTier}. Supreme ledger access elevated.`
       )
       queryClient.invalidateQueries({ queryKey: ["compliance"] })
       queryClient.invalidateQueries({ queryKey: ["users"] })
@@ -242,7 +242,7 @@ export const SplitScreenDocInspector: React.FC = () => {
             {/* Applicant Profile Card */}
             <div className="p-3 bg-bg-canvas border border-border-subtle rounded-[4px]">
               <div className="text-[10px] font-mono uppercase text-secondary mb-2 tracking-wider">
-                Sovereign Applicant Profile
+                Supreme Applicant Profile
               </div>
               <div className="flex flex-col gap-1.5">
                 <div className="flex justify-between">
@@ -373,7 +373,7 @@ export const SplitScreenDocInspector: React.FC = () => {
                     <Square className="w-4 h-4 text-secondary shrink-0" />
                   )}
                   <span className={checklist.riskCategorizationSigned ? "text-on-surface" : "text-secondary"}>
-                    5. Sovereign Risk Categorization Attested by Officer
+                    5. Supreme Risk Categorization Attested by Officer
                   </span>
                 </div>
               </div>
@@ -475,7 +475,7 @@ export const SplitScreenDocInspector: React.FC = () => {
                 <FileCheck className="w-10 h-10 text-secondary mb-3 opacity-40" />
                 <span className="font-semibold text-on-surface text-sm">No Documents Uploaded</span>
                 <span className="text-xs text-secondary mt-1 max-w-sm">
-                  This sovereign dossier does not contain any uploaded identification documents or corporate registry filings.
+                  This Supreme dossier does not contain any uploaded identification documents or corporate registry filings.
                 </span>
               </div>
             ) : (
@@ -550,7 +550,7 @@ export const SplitScreenDocInspector: React.FC = () => {
                         </div>
                         <div>
                           <div className="font-mono text-[10px] font-bold text-gold-accent uppercase tracking-wider">
-                            Sovereign Vault Archive Encrypted Record
+                            Supreme Vault Archive Encrypted Record
                           </div>
                           <div className="text-[9px] text-secondary">
                             FINMA Verification Enclave Zurich Shard #04

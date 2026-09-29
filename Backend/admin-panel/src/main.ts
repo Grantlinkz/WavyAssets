@@ -7,7 +7,7 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 import { ResponseEnvelopeInterceptor } from './common/interceptors/response-envelope.interceptor';
 
 async function bootstrap() {
-  const logger = new Logger('SovereignAdminBootstrap');
+  const logger = new Logger('SupremeAdminBootstrap');
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log'],
   });
@@ -61,7 +61,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 4002;
   await app.listen(port);
-  logger.log(`WavyAssets Sovereign Admin Panel running on internal port :${port} [api/v1]`);
+  logger.log(`WavyAssets Supreme Admin Panel running on internal port :${port} [api/v1]`);
 }
 
 bootstrap();

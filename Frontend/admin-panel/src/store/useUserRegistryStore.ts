@@ -1,11 +1,11 @@
 import { create } from "zustand"
-import type { SovereignUser } from "../api/users"
+import type { SupremeUser } from "../api/users"
 
 export interface UserRegistryState {
   searchQuery: string
   selectedTier: string
   selectedStatus: string
-  selectedUser: SovereignUser | null
+  selectedUser: SupremeUser | null
   
   // Modals
   isCreateUserModalOpen: boolean
@@ -16,15 +16,15 @@ export interface UserRegistryState {
   setSearchQuery: (query: string) => void
   setSelectedTier: (tier: string) => void
   setSelectedStatus: (status: string) => void
-  setSelectedUser: (user: SovereignUser | null) => void
+  setSelectedUser: (user: SupremeUser | null) => void
   
   openCreateUserModal: () => void
   closeCreateUserModal: () => void
   
-  openSuspendModal: (user: SovereignUser) => void
+  openSuspendModal: (user: SupremeUser) => void
   closeSuspendModal: () => void
   
-  openFundingModal: (user: SovereignUser) => void
+  openFundingModal: (user: SupremeUser) => void
   closeFundingModal: () => void
 }
 

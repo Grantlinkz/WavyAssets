@@ -138,7 +138,7 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
               {/* Client Selection */}
               <div className="space-y-1">
                 <label className="block font-mono text-[10px] uppercase tracking-wider text-secondary">
-                  Client &amp; Sovereign Entity <span className="text-status-danger">*</span>
+                  Client &amp; Supreme Entity <span className="text-status-danger">*</span>
                 </label>
                 <select
                   value={draftMint.userId || "USR-3104-CH"}
@@ -148,7 +148,7 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
                 >
                   <option value="USR-3104-CH">Countess Helene von Bernstorff (USR-3104-CH • Swiss Private Wealth)</option>
                   <option value="USR-9942-CH">Baron Philippe de Rothschild (USR-9942-CH • Family Office Tier)</option>
-                  <option value="USR-8849-CH">Dr. Henrik Von Berg (USR-8849-CH • Geneva Sovereign Trust)</option>
+                  <option value="USR-8849-CH">Dr. Henrik Von Berg (USR-8849-CH • Geneva Supreme Trust)</option>
                   <option value="USR-3801-LI">St. Moritz Quantum Capital (USR-3801-LI • Institutional Multi-Sig)</option>
                 </select>
               </div>
@@ -200,20 +200,20 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
                     <span className="text-secondary text-[9px] leading-tight mt-0.5">Deep black PVD DLC</span>
                   </label>
 
-                  {/* Option 2: Sovereign Stainless */}
+                  {/* Option 2: Supreme Stainless */}
                   <label
-                    onClick={() => handleSubstrateSelect("Black Sovereign Stainless", "SOVEREIGN", 250000)}
+                    onClick={() => handleSubstrateSelect("Black Supreme Stainless", "Supreme", 250000)}
                     className={`relative flex flex-col p-2.5 rounded-[4px] cursor-pointer transition-colors ${
-                      draftMint.substrate === "Black Sovereign Stainless"
+                      draftMint.substrate === "Black Supreme Stainless"
                         ? "border-2 border-gold-accent bg-bg-elevated"
                         : "border border-border-subtle bg-bg-canvas hover:bg-state-hover"
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-on-surface">Sovereign 28g</span>
+                      <span className="text-xs font-semibold text-on-surface">Supreme 28g</span>
                       <span
                         className={`w-2 h-2 rounded-full ${
-                          draftMint.substrate === "Black Sovereign Stainless"
+                          draftMint.substrate === "Black Supreme Stainless"
                             ? "bg-gold-accent"
                             : "border border-border-subtle"
                         }`}

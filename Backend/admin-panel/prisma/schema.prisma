@@ -67,7 +67,7 @@ model AdminAuditLog {
 
 model FiatDepositRailConfig {
   id              String   @id @default("GLOBAL_FIAT_RAIL")
-  beneficiaryName String   @default("WavyAssets Sovereign Custody AG")
+  beneficiaryName String   @default("WavyAssets Supreme Custody AG")
   swissIban       String   @default("CH93 0023 8812 4019 8821 0")
   bicSwift        String   @default("UBSWCHZH80A")
   clearingRail    String   @default("Swiss SIC RTGS / Fedwire DvP")

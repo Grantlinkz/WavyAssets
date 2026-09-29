@@ -109,7 +109,7 @@ export const DirectFundingModal: React.FC = () => {
             </div>
             <div>
               <h2 className="text-sm font-semibold text-on-surface">
-                Direct Sovereign Ledger Funding
+                Direct Supreme Ledger Funding
               </h2>
               <p className="text-xs text-secondary font-mono">{selectedUser.fullLegalName}</p>
             </div>
@@ -295,7 +295,7 @@ export const DirectFundingModal: React.FC = () => {
               className="px-4 py-1.5 rounded-[4px] bg-gold-accent hover:bg-[#C5A028] text-bg-canvas font-semibold transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <DollarSign className="w-3.5 h-3.5" />
-              <span>{mutation.isPending ? "Executing Credit..." : "Credit Sovereign Ledger"}</span>
+              <span>{mutation.isPending ? "Executing Credit..." : "Credit Supreme Ledger"}</span>
             </button>
           </div>
         </form>

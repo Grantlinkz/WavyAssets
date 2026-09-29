@@ -10,7 +10,7 @@ import type { DepositRailsData } from "../../src/api/depositRails"
 
 const mockRailsData: DepositRailsData = {
   fiatRail: {
-    beneficiaryName: "WavyAssets Sovereign Custody AG",
+    beneficiaryName: "WavyAssets Supreme Custody AG",
     depositoryBank: "UBS Switzerland AG, Zurich Paradeplatz",
     clearingRail: "Swiss SIC RTGS or Fedwire DvP (Gross Instantaneous)",
     swissIban: "CH93 0023 8812 4019 8821 0",
@@ -101,7 +101,7 @@ describe("Global Deposit Rails Command Integration", () => {
 
     expect(html).toContain("data-testid=\"fiat-rail-form\"")
     expect(html).toContain("Institutional Fiat Wire Coordinates (Swiss SIC / Fedwire)")
-    expect(html).toContain("WavyAssets Sovereign Custody AG")
+    expect(html).toContain("WavyAssets Supreme Custody AG")
     expect(html).toContain("CH93 0023 8812 4019 8821 0")
     expect(html).toContain("UBSWCHZH80A")
     expect(html).toContain("Valid Checksum (Mod 97)")

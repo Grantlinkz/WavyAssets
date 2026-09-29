@@ -12,7 +12,7 @@ describe('CryptoService', () => {
 
   describe('Argon2 Password Hashing & Verification', () => {
     it('should hash a password and verify it successfully', async () => {
-      const password = 'SovereignMasterKey2026!#';
+      const password = 'SupremeMasterKey2026!#';
       const hash = await service.hashPassword(password);
 
       expect(hash).toBeDefined();
@@ -33,7 +33,7 @@ describe('CryptoService', () => {
 
   describe('AES-256-GCM Field-Level Authenticated Encryption', () => {
     it('should encrypt and decrypt plaintext accurately', () => {
-      const sensitiveData = 'eleanor.vance@geneva-sovereign.ch';
+      const sensitiveData = 'eleanor.vance@geneva-Supreme.ch';
       const encrypted = service.encrypt(sensitiveData);
 
       expect(encrypted).toBeDefined();

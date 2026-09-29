@@ -10,7 +10,7 @@ import { CryptoUtils } from '../../../src/common/utils/crypto.utils';
 describe('E2E Integration — Monorepo Cross-Domain Authentication & Multi-Asset Handoff', () => {
   let app: INestApplication;
 
-  const handoffSecret = process.env.HANDOFF_TICKET_SECRET || 'wavy_sovereign_cross_domain_handoff_ticket_secret_key_2026';
+  const handoffSecret = process.env.HANDOFF_TICKET_SECRET || 'wavy_Supreme_cross_domain_handoff_ticket_secret_key_2026';
   const rawTicket = 'a9f7d2e4b8c105634827164928374619a9f7d2e4b8c105634827164928374619';
   const ticketHash = CryptoUtils.hashHmacSha256(rawTicket, handoffSecret);
 

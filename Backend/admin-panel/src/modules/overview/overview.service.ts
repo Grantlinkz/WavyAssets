@@ -44,7 +44,7 @@ export class OverviewService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getMetrics(): Promise<OverviewMetrics> {
-    // 1. Calculate Aggregate Balances across sovereign ledger accounts in consistent USD valuation
+    // 1. Calculate Aggregate Balances across Supreme ledger accounts in consistent USD valuation
     let totalVaultBalance = 142890420.0;
     let liquidSettlementCapital = 28450110.5;
 
@@ -275,7 +275,7 @@ export class OverviewService {
       timestamp: tx.createdAt ? tx.createdAt.toISOString() : new Date().toISOString(),
       type,
       entity: tx.counterparty || tx.description || 'WavyAssets Treasury',
-      accountNumber: tx.accountNumber || (tx.rail ? `Rail: ${tx.rail}` : 'Sovereign Account'),
+      accountNumber: tx.accountNumber || (tx.rail ? `Rail: ${tx.rail}` : 'Supreme Account'),
       amount: Number(tx.amount),
       currency: tx.currency || 'USD',
       status,

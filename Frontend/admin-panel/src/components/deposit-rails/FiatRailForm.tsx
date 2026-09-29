@@ -23,7 +23,7 @@ export const FiatRailForm: React.FC<FiatRailFormProps> = ({ initialConfig }) => 
   const queryClient = useQueryClient()
 
   const [beneficiaryName, setBeneficiaryName] = useState(
-    initialConfig?.beneficiaryName || "WavyAssets Sovereign Custody AG"
+    initialConfig?.beneficiaryName || "WavyAssets Supreme Custody AG"
   )
   const [depositoryBank, setDepositoryBank] = useState(
     initialConfig?.depositoryBank || "UBS Switzerland AG, Zurich Paradeplatz"
@@ -108,7 +108,7 @@ export const FiatRailForm: React.FC<FiatRailFormProps> = ({ initialConfig }) => 
   }
 
   const handleReset = () => {
-    setBeneficiaryName("WavyAssets Sovereign Custody AG")
+    setBeneficiaryName("WavyAssets Supreme Custody AG")
     setDepositoryBank("UBS Switzerland AG, Zurich Paradeplatz")
     setClearingRail("Swiss SIC RTGS or Fedwire DvP (Gross Instantaneous)")
     setSwissIban("CH93 0023 8812 4019 8821 0")

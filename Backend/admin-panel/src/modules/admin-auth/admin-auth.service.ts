@@ -83,7 +83,7 @@ export class AdminAuthService {
         adminId: admin.id,
         refreshTokenHash,
         ipAddress: ipAddress || '127.0.0.1',
-        userAgent: userAgent || 'Sovereign Console',
+        userAgent: userAgent || 'Supreme Console',
         expiresAt,
       },
     });

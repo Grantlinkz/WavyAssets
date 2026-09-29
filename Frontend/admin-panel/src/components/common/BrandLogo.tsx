@@ -15,7 +15,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
     <div
       onClick={onClick}
       role="banner"
-      aria-label="WavyAssets Sovereign Institutional Admin Command Deck"
+      aria-label="WavyAssets Supreme Institutional Admin Command Deck"
       className={`inline-flex items-center select-none cursor-pointer group rounded-sm transition-opacity hover:opacity-90 ${className}`}
       data-testid="brand-logo"
     >
