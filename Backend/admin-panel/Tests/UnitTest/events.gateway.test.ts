@@ -5,9 +5,13 @@ describe('EventsGateway', () => {
   let gateway: EventsGateway;
   let mockServer: any;
   let mockSocket: any;
+  let mockJwtService: any;
 
   beforeEach(() => {
-    gateway = new EventsGateway();
+    mockJwtService = {
+      verifyAsync: vi.fn().mockResolvedValue({ id: 'admin-1', role: 'SUPER_ADMIN', email: 'admin@wavy.ch' }),
+    };
+    gateway = new EventsGateway(mockJwtService);
     mockServer = {
       emit: vi.fn(),
     };
@@ -16,12 +20,17 @@ describe('EventsGateway', () => {
     mockSocket = {
       id: 'sock-12345',
       emit: vi.fn(),
+      disconnect: vi.fn(),
+      handshake: {
+        auth: { token: 'valid-token' },
+      },
     };
   });
 
-  it('handleConnection should emit connection_established event', () => {
-    gateway.handleConnection(mockSocket);
+  it('handleConnection should emit connection_established event when authenticated', async () => {
+    await gateway.handleConnection(mockSocket);
 
+    expect(mockJwtService.verifyAsync).toHaveBeenCalledWith('valid-token');
     expect(mockSocket.emit).toHaveBeenCalledWith(
       'connection_established',
       expect.objectContaining({
@@ -29,6 +38,28 @@ describe('EventsGateway', () => {
         status: 'connected',
       }),
     );
+  });
+
+  it('handleConnection should disconnect client when token is missing', async () => {
+    const unauthSocket = {
+      id: 'sock-unauth',
+      emit: vi.fn(),
+      disconnect: vi.fn(),
+      handshake: { auth: {} },
+    };
+
+    await gateway.handleConnection(unauthSocket as any);
+
+    expect(unauthSocket.disconnect).toHaveBeenCalledWith(true);
+    expect(unauthSocket.emit).not.toHaveBeenCalled();
+  });
+
+  it('handleConnection should disconnect client when token is invalid', async () => {
+    mockJwtService.verifyAsync.mockRejectedValueOnce(new Error('Invalid token'));
+
+    await gateway.handleConnection(mockSocket);
+
+    expect(mockSocket.disconnect).toHaveBeenCalledWith(true);
   });
 
   it('handlePing should respond with pong', () => {

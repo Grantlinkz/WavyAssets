@@ -77,7 +77,7 @@ describe('DepositRailsService', () => {
       const result = await service.getAllRails();
 
       expect(result.fiat).toBeDefined();
-      expect(result.fiat.beneficiaryName).toBe('WavyAssets Custody AG');
+      expect(result.fiat?.beneficiaryName).toBe('WavyAssets Custody AG');
       expect(result.crypto).toHaveLength(2);
       expect(result.groupedCrypto['USDC']).toBeDefined();
       expect(result.metadata.totalCryptoRails).toBe(2);
@@ -178,7 +178,7 @@ describe('DepositRailsService', () => {
       const result = await service.getPublicRails();
 
       expect(result.fiat).toBeDefined();
-      expect(result.fiat.beneficiaryName).toBe('WavyAssets Sovereign Custody AG');
+      expect(result.fiat?.beneficiaryName).toBe('WavyAssets Sovereign Custody AG');
       expect(result.crypto).toHaveLength(1);
       expect(result.crypto[0].asset).toBe('USDC');
     });

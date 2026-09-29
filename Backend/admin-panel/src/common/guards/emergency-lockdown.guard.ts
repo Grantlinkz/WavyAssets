@@ -23,22 +23,30 @@ export class EmergencyLockdownGuard implements CanActivate {
       return true;
     }
 
-    const url = request.url || '';
+    const rawPath =
+      (request.path || request.url?.split('?')[0] || '').replace(/\/+$/, '') || '/';
 
     // Allow emergency unfreeze and authentication operations
-    const whitelistedPaths = [
+    const whitelistedExactPaths = new Set([
       '/emergency/unfreeze',
       '/admin/emergency/unfreeze',
+      '/api/v1/emergency/unfreeze',
+      '/api/v1/admin/emergency/unfreeze',
       '/auth/login',
       '/auth/refresh',
       '/auth/logout',
       '/admin/auth/login',
       '/admin/auth/refresh',
       '/admin/auth/logout',
-    ];
+      '/api/v1/auth/login',
+      '/api/v1/auth/refresh',
+      '/api/v1/auth/logout',
+      '/api/v1/admin/auth/login',
+      '/api/v1/admin/auth/refresh',
+      '/api/v1/admin/auth/logout',
+    ]);
 
-    const isWhitelisted = whitelistedPaths.some((path) => url.includes(path));
-    if (isWhitelisted) {
+    if (whitelistedExactPaths.has(rawPath)) {
       return true;
     }
 

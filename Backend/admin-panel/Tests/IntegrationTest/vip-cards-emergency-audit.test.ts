@@ -98,6 +98,7 @@ describe('VIP Cards, Emergency Freeze & Audit Modules (Integration)', () => {
     await prisma.user.deleteMany({ where: { id: testUserId } });
     await prisma.adminAuditLog.deleteMany({
       where: {
+        adminId: 'op-superadmin-sprint4',
         action: { in: ['PLATFORM_EMERGENCY_FREEZE', 'PLATFORM_EMERGENCY_UNFREEZE'] },
       },
     });

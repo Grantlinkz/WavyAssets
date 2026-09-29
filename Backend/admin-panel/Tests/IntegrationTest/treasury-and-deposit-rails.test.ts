@@ -18,6 +18,8 @@ describe('Treasury & Deposit Rails Modules (Integration)', () => {
   let superAdminToken: string;
   let treasuryOfficerToken: string;
 
+  let originalFiatRail: any = null;
+
   let testUserId: string;
   let testAccountId: string;
 
@@ -48,6 +50,10 @@ describe('Treasury & Deposit Rails Modules (Integration)', () => {
 
     prisma = moduleFixture.get<PrismaService>(PrismaService);
     cryptoService = moduleFixture.get<CryptoService>(CryptoService);
+
+    originalFiatRail = await prisma.fiatDepositRailConfig.findUnique({
+      where: { id: 'GLOBAL_FIAT_RAIL' },
+    });
 
     // Setup integration test operators
     const passwordHash = await cryptoService.hashPassword('Sovereign2026!#Vault');
@@ -248,6 +254,24 @@ describe('Treasury & Deposit Rails Modules (Integration)', () => {
       where: { email: { in: ['superadmin.sprint3@wavyassets.ch', 'treasury2.sprint3@wavyassets.ch'] } },
     }).catch(() => {});
 
+    // Restore original GLOBAL_FIAT_RAIL and delete test USDC/Arbitrum rail
+    if (originalFiatRail) {
+      await prisma.fiatDepositRailConfig.update({
+        where: { id: 'GLOBAL_FIAT_RAIL' },
+        data: {
+          beneficiaryName: originalFiatRail.beneficiaryName,
+          swissIban: originalFiatRail.swissIban,
+          bicSwift: originalFiatRail.bicSwift,
+          clearingRail: originalFiatRail.clearingRail,
+          memoFormat: originalFiatRail.memoFormat,
+          updatedBy: originalFiatRail.updatedBy,
+        },
+      }).catch(() => {});
+    }
+    await prisma.cryptoDepositRailConfig.deleteMany({
+      where: { asset: 'USDC', network: 'Arbitrum' },
+    }).catch(() => {});
+
     if (app) {
       await app.close();
     }
@@ -281,7 +305,7 @@ describe('Treasury & Deposit Rails Modules (Integration)', () => {
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
           beneficiaryName: 'WavyAssets Custody Zurich AG',
-          swissIban: 'CH93 0023 8812 4019 8821 0',
+          swissIban: 'CH81 0023 8812 4019 8821 0',
           bicSwift: 'UBSWCHZH80A',
           clearingRail: 'Swiss SIC RTGS / Fedwire DvP',
           memoFormat: 'WY-{USER_REF}-TREASURY-03',

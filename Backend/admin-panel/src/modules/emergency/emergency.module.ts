@@ -13,8 +13,6 @@ import { EmergencyLockdownGuard } from '../../common/guards/emergency-lockdown.g
   controllers: [EmergencyController],
   providers: [
     EmergencyService,
-    PrismaService,
-    CryptoService,
     EmergencyLockdownGuard,
   ],
   exports: [EmergencyService, EmergencyLockdownGuard],

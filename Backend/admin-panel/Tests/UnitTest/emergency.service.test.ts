@@ -10,12 +10,14 @@ describe('EmergencyService (Unit)', () => {
 
   beforeEach(() => {
     mockPrisma = {
+      $transaction: vi.fn(async (cb) => cb(mockPrisma)),
       session: {
         count: vi.fn().mockResolvedValue(1429),
       },
       vipCard: {
         count: vi.fn().mockResolvedValue(38),
-        updateMany: vi.fn().mockResolvedValue({ count: 38 }),
+        findMany: vi.fn().mockResolvedValue([{ id: 'card-1' }, { id: 'card-2' }]),
+        updateMany: vi.fn().mockResolvedValue({ count: 2 }),
       },
       ledgerTransaction: {
         findMany: vi.fn().mockResolvedValue([
@@ -77,7 +79,7 @@ describe('EmergencyService (Unit)', () => {
 
       // Verify active cards locked
       expect(mockPrisma.vipCard.updateMany).toHaveBeenCalledWith({
-        where: { isFrozen: false },
+        where: { id: { in: ['card-1', 'card-2'] } },
         data: { isFrozen: true },
       });
 

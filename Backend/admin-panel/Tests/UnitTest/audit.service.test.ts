@@ -9,7 +9,7 @@ describe('AuditService (Unit)', () => {
   beforeEach(() => {
     mockPrisma = {
       adminAuditLog: {
-        count: vi.fn(),
+        count: vi.fn().mockResolvedValue(2),
         findMany: vi.fn(),
         findUnique: vi.fn(),
         groupBy: vi.fn(),
@@ -141,6 +141,7 @@ describe('AuditService (Unit)', () => {
           },
         },
       ]);
+      mockPrisma.adminAuditLog.count.mockResolvedValueOnce(1);
 
       const exportData = await service.generateComplianceExport({
         action: 'BALANCE_CREDIT',

@@ -6,14 +6,41 @@ import {
   OnGatewayDisconnect,
   SubscribeMessage,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
+import { Logger, Optional } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { Server, Socket } from 'socket.io';
+
+const ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
+  'http://127.0.0.1:5175',
+  'https://admin.wavyassets.ch',
+  'https://wavyassets.ch',
+  'https://app.wavyassets.ch',
+];
 
 @WebSocketGateway({
   namespace: '/ws/admin',
   cors: {
-    origin: '*',
+    origin: (origin, callback) => {
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Origin not allowed by WebSocket CORS'));
+      }
+    },
     credentials: true,
+  },
+  allowRequest: (req, callback) => {
+    const origin = req.headers?.origin;
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
   },
   transports: ['websocket', 'polling'],
 })
@@ -27,11 +54,36 @@ export class EventsGateway
 
   private connectedClientsCount = 0;
 
+  constructor(@Optional() private readonly jwtService?: JwtService) {}
+
   afterInit(server: Server) {
     this.logger.log('EventsGateway initialized on namespace /ws/admin');
   }
 
-  handleConnection(client: Socket) {
+  async handleConnection(client: Socket) {
+    const token =
+      client.handshake?.auth?.token ||
+      (client.handshake?.headers?.authorization?.startsWith('Bearer ')
+        ? client.handshake.headers.authorization.slice(7)
+        : null);
+
+    if (!token) {
+      this.logger.warn(`Unauthorized WebSocket connection rejected: ${client.id}`);
+      client.disconnect(true);
+      return;
+    }
+
+    if (this.jwtService) {
+      try {
+        const payload = await this.jwtService.verifyAsync(token);
+        (client as any).admin = payload;
+      } catch {
+        this.logger.warn(`Invalid JWT for WebSocket connection: ${client.id}`);
+        client.disconnect(true);
+        return;
+      }
+    }
+
     this.connectedClientsCount++;
     this.logger.log(
       `Client connected: ${client.id} (Total: ${this.connectedClientsCount})`,

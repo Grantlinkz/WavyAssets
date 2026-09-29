@@ -3,8 +3,8 @@
 **Subsystem:** `Backend/admin-panel`  
 **Internal Port:** `4002`  
 **Mandatory Git Branch:** `backend-admin-panel`  
-**Reference Strategy:** [`tools/IMPLEMENTATION_STRATEGY.md`](file:///c:/Users/ANIK/Desktop/WavyAssets/Backend/admin-panel/tools/IMPLEMENTATION_STRATEGY.md)  
-**UI Contracts Reference:** [`Frontend/admin-panel/tools/UI/wavyassets_admin_panel_treasury_settlements/`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/admin-panel/tools/UI/wavyassets_admin_panel_treasury_settlements/) & [`Frontend/admin-panel/tools/UI/wavyassets_admin_panel_global_deposit_coordinates/`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/admin-panel/tools/UI/wavyassets_admin_panel_global_deposit_coordinates/)
+**Reference Strategy:** [`tools/IMPLEMENTATION_STRATEGY.md`](tools/IMPLEMENTATION_STRATEGY.md)  
+**UI Contracts Reference:** [`Frontend/admin-panel/tools/UI/wavyassets_admin_panel_treasury_settlements/`](../../Frontend/admin-panel/tools/UI/wavyassets_admin_panel_treasury_settlements/) & [`Frontend/admin-panel/tools/UI/wavyassets_admin_panel_global_deposit_coordinates/`](../../Frontend/admin-panel/tools/UI/wavyassets_admin_panel_global_deposit_coordinates/)
 
 ---
 
@@ -57,7 +57,7 @@ Sprint 3 implements the sovereign financial settlement engine, multi-rail liquid
 ### Unit 3.1: `EventsModule` & WebSocket Gateway
 - **Path**: `src/modules/events/`
   - `events.gateway.ts`:
-    - `@WebSocketGateway({ namespace: '/ws/admin', cors: { origin: '*' } })`
+    - `@WebSocketGateway({ namespace: '/ws/admin', cors: { origin: allowlist }, allowRequest: originCheck })` with JWT verification during handshake
     - In-memory client connection tracking with ping/pong latency measurement.
     - Methods:
       - `emitSettlementUpdate(payload)`

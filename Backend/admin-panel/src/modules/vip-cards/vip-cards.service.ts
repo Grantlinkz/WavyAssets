@@ -246,25 +246,58 @@ export class VipCardsService {
     const previousFrozenState = card.isFrozen;
     const nextFrozenState = !previousFrozenState;
 
-    const updatedCard = await this.prisma.vipCard.update({
-      where: { id: cardId },
-      data: {
-        isFrozen: nextFrozenState,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
-            tier: true,
-            kycTier: true,
+    const updatedCard = await this.prisma.$transaction(async (tx) => {
+      const updateResult = await tx.vipCard.updateMany({
+        where: {
+          id: cardId,
+          isFrozen: previousFrozenState,
+        },
+        data: {
+          isFrozen: nextFrozenState,
+        },
+      });
+
+      if (updateResult.count !== 1) {
+        throw new ConflictException(
+          `VIP Card '${cardId}' state has changed concurrently.`,
+        );
+      }
+
+      const refreshedCard = await tx.vipCard.findUniqueOrThrow({
+        where: { id: cardId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              tier: true,
+              kycTier: true,
+            },
           },
         },
-      },
+      });
+
+      // Record Immutable Differential Audit Log
+      await tx.adminAuditLog.create({
+        data: {
+          adminId,
+          action: 'VIP_CARD_FREEZE_TOGGLE',
+          targetEntity: 'VipCard',
+          targetId: card.id,
+          diffBefore: JSON.stringify({ isFrozen: previousFrozenState }),
+          diffAfter: JSON.stringify({ isFrozen: nextFrozenState }),
+          reason:
+            reason ||
+            `Toggled VIP card freeze state to ${nextFrozenState ? 'LOCKED' : 'ACTIVE'}`,
+          ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(adminId).slice(0, 16),
+        },
+      });
+
+      return refreshedCard;
     });
 
-    // Broadcast WebSocket event immediately
+    // Broadcast WebSocket event only after transaction commits
     this.eventsGateway.emitVipCardFrozenStateChanged({
       cardId: updatedCard.id,
       userId: updatedCard.userId,
@@ -272,22 +305,6 @@ export class VipCardsService {
       cardNumberLast4: updatedCard.cardNumberLast4,
       tier: updatedCard.tier,
       adminId,
-    });
-
-    // Record Immutable Differential Audit Log
-    await this.prisma.adminAuditLog.create({
-      data: {
-        adminId,
-        action: 'VIP_CARD_FREEZE_TOGGLE',
-        targetEntity: 'VipCard',
-        targetId: card.id,
-        diffBefore: JSON.stringify({ isFrozen: previousFrozenState }),
-        diffAfter: JSON.stringify({ isFrozen: nextFrozenState }),
-        reason:
-          reason ||
-          `Toggled VIP card freeze state to ${nextFrozenState ? 'LOCKED' : 'ACTIVE'}`,
-        ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(adminId).slice(0, 16),
-      },
     });
 
     this.logger.log(

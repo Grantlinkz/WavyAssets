@@ -3,8 +3,10 @@ import {
   Get,
   Put,
   Body,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { DepositRailsService } from './deposit-rails.service';
 import { UpdateFiatRailDto } from './dto/update-fiat-rail.dto';
 import { UpdateCryptoRailDto } from './dto/update-crypto-rail.dto';
@@ -37,9 +39,10 @@ export class DepositRailsController {
   async updateFiatRail(
     @Body() dto: UpdateFiatRailDto,
     @CurrentAdmin() admin: CurrentAdminPayload,
+    @Req() req: Request,
   ) {
     const adminId = admin?.id || (admin as any)?.sub;
-    return this.depositRailsService.updateFiatRail(dto, adminId);
+    return this.depositRailsService.updateFiatRail(dto, adminId, req.ip);
   }
 
   @Put('crypto')
@@ -47,9 +50,10 @@ export class DepositRailsController {
   async upsertCryptoRail(
     @Body() dto: UpdateCryptoRailDto,
     @CurrentAdmin() admin: CurrentAdminPayload,
+    @Req() req: Request,
   ) {
     const adminId = admin?.id || (admin as any)?.sub;
-    return this.depositRailsService.upsertCryptoRail(dto, adminId);
+    return this.depositRailsService.upsertCryptoRail(dto, adminId, req.ip);
   }
 }
 

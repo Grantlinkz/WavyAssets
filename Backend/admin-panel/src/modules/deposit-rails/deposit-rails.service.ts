@@ -19,22 +19,9 @@ export class DepositRailsService {
    * Retrieves all fiat and crypto deposit rail configurations
    */
   async getAllRails() {
-    let fiatRail = await this.prisma.fiatDepositRailConfig.findUnique({
+    const fiatRail = await this.prisma.fiatDepositRailConfig.findUnique({
       where: { id: 'GLOBAL_FIAT_RAIL' },
     });
-
-    if (!fiatRail) {
-      fiatRail = await this.prisma.fiatDepositRailConfig.create({
-        data: {
-          id: 'GLOBAL_FIAT_RAIL',
-          beneficiaryName: 'WavyAssets Sovereign Custody AG',
-          swissIban: 'CH93 0023 8812 4019 8821 0',
-          bicSwift: 'UBSWCHZH80A',
-          clearingRail: 'Swiss SIC RTGS / Fedwire DvP',
-          memoFormat: 'WY-{USER_REF}-TREASURY-03',
-        },
-      });
-    }
 
     const cryptoRails = await this.prisma.cryptoDepositRailConfig.findMany({
       orderBy: [{ asset: 'asc' }, { network: 'asc' }],
@@ -50,16 +37,18 @@ export class DepositRailsService {
     }
 
     return {
-      fiat: {
-        id: fiatRail.id,
-        beneficiaryName: fiatRail.beneficiaryName,
-        swissIban: fiatRail.swissIban,
-        bicSwift: fiatRail.bicSwift,
-        clearingRail: fiatRail.clearingRail,
-        memoFormat: fiatRail.memoFormat,
-        updatedAt: fiatRail.updatedAt,
-        updatedBy: fiatRail.updatedBy,
-      },
+      fiat: fiatRail
+        ? {
+            id: fiatRail.id,
+            beneficiaryName: fiatRail.beneficiaryName,
+            swissIban: fiatRail.swissIban,
+            bicSwift: fiatRail.bicSwift,
+            clearingRail: fiatRail.clearingRail,
+            memoFormat: fiatRail.memoFormat,
+            updatedAt: fiatRail.updatedAt,
+            updatedBy: fiatRail.updatedBy,
+          }
+        : null,
       crypto: cryptoRails,
       groupedCrypto,
       metadata: {
@@ -72,7 +61,11 @@ export class DepositRailsService {
   /**
    * Updates global fiat deposit rail parameters
    */
-  async updateFiatRail(dto: UpdateFiatRailDto, adminId?: string) {
+  async updateFiatRail(
+    dto: UpdateFiatRailDto,
+    adminId?: string,
+    ipAddress?: string,
+  ) {
     const existing = await this.prisma.fiatDepositRailConfig.findUnique({
       where: { id: 'GLOBAL_FIAT_RAIL' },
     });
@@ -108,7 +101,7 @@ export class DepositRailsService {
           diffBefore: existing ? JSON.stringify(existing) : null,
           diffAfter: JSON.stringify(dto),
           reason: 'Global fiat deposit rail coordinates updated by treasury administration',
-          ipAddressHash: this.cryptoService.hashIpAddress('127.0.0.1'),
+          ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
         },
       });
 
@@ -128,7 +121,11 @@ export class DepositRailsService {
   /**
    * Upserts crypto deposit rail vault address and network coordinates
    */
-  async upsertCryptoRail(dto: UpdateCryptoRailDto, adminId?: string) {
+  async upsertCryptoRail(
+    dto: UpdateCryptoRailDto,
+    adminId?: string,
+    ipAddress?: string,
+  ) {
     const asset = dto.asset.toUpperCase().trim();
     const network = dto.network.trim();
 
@@ -176,7 +173,7 @@ export class DepositRailsService {
           diffBefore: existing ? JSON.stringify(existing) : null,
           diffAfter: JSON.stringify(dto),
           reason: `Crypto deposit rail ${asset}-${network} coordinates updated by treasury administration`,
-          ipAddressHash: this.cryptoService.hashIpAddress('127.0.0.1'),
+          ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
         },
       });
 
@@ -204,6 +201,13 @@ export class DepositRailsService {
     const [fiatRail, activeCryptoRails] = await Promise.all([
       this.prisma.fiatDepositRailConfig.findUnique({
         where: { id: 'GLOBAL_FIAT_RAIL' },
+        select: {
+          beneficiaryName: true,
+          swissIban: true,
+          bicSwift: true,
+          clearingRail: true,
+          memoFormat: true,
+        },
       }),
       this.prisma.cryptoDepositRailConfig.findMany({
         where: { isActive: true },
@@ -220,14 +224,9 @@ export class DepositRailsService {
     ]);
 
     return {
-      fiat: fiatRail || {
-        beneficiaryName: 'WavyAssets Sovereign Custody AG',
-        swissIban: 'CH93 0023 8812 4019 8821 0',
-        bicSwift: 'UBSWCHZH80A',
-        clearingRail: 'Swiss SIC RTGS / Fedwire DvP',
-        memoFormat: 'WY-{USER_REF}-TREASURY-03',
-      },
+      fiat: fiatRail || null,
       crypto: activeCryptoRails,
     };
   }
 }
+

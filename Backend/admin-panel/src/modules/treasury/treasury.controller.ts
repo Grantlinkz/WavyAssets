@@ -5,8 +5,10 @@ import {
   Param,
   Body,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { TreasuryService } from './treasury.service';
 import { ApproveDepositDto } from './dto/approve-deposit.dto';
 import { RejectDepositDto } from './dto/reject-deposit.dto';
@@ -41,9 +43,10 @@ export class TreasuryController {
     @Param('id') id: string,
     @Body() dto: ApproveDepositDto,
     @CurrentAdmin() admin: CurrentAdminPayload,
+    @Req() req: Request,
   ) {
     const adminId = admin?.id || (admin as any)?.sub;
-    return this.treasuryService.approveDeposit(id, adminId, dto);
+    return this.treasuryService.approveDeposit(id, adminId, dto, req.ip);
   }
 
   @Post('deposits/:id/reject')
@@ -52,9 +55,10 @@ export class TreasuryController {
     @Param('id') id: string,
     @Body() dto: RejectDepositDto,
     @CurrentAdmin() admin: CurrentAdminPayload,
+    @Req() req: Request,
   ) {
     const adminId = admin?.id || (admin as any)?.sub;
-    return this.treasuryService.rejectDeposit(id, adminId, dto);
+    return this.treasuryService.rejectDeposit(id, adminId, dto, req.ip);
   }
 
   @Get('pending-withdrawals')
@@ -74,9 +78,10 @@ export class TreasuryController {
     @Param('id') id: string,
     @Body() dto: SignOffWithdrawalDto,
     @CurrentAdmin() admin: CurrentAdminPayload,
+    @Req() req: Request,
   ) {
     const adminId = admin?.id || (admin as any)?.sub;
-    return this.treasuryService.signOffWithdrawal(id, adminId, dto);
+    return this.treasuryService.signOffWithdrawal(id, adminId, dto, req.ip);
   }
 
   @Post('withdrawals/:id/reject-and-refund')
@@ -85,8 +90,9 @@ export class TreasuryController {
     @Param('id') id: string,
     @Body() dto: RejectWithdrawalDto,
     @CurrentAdmin() admin: CurrentAdminPayload,
+    @Req() req: Request,
   ) {
     const adminId = admin?.id || (admin as any)?.sub;
-    return this.treasuryService.rejectAndRefundWithdrawal(id, adminId, dto);
+    return this.treasuryService.rejectAndRefundWithdrawal(id, adminId, dto, req.ip);
   }
 }

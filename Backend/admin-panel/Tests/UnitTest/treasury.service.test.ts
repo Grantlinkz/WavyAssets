@@ -16,6 +16,7 @@ describe('TreasuryService', () => {
         findMany: vi.fn(),
         findUnique: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       ledgerAccount: {
         findUnique: vi.fn(),
@@ -166,6 +167,7 @@ describe('TreasuryService', () => {
     it('should mark deposit as FAILED and record mandatory operator reason', async () => {
       mockPrisma.ledgerTransaction.findUnique.mockResolvedValue({
         id: 'tx-dep-rej',
+        type: 'DEPOSIT',
         status: 'PENDING',
       });
       mockPrisma.ledgerTransaction.update.mockResolvedValue({
@@ -317,6 +319,42 @@ describe('TreasuryService', () => {
       expect(res.status).toBe('SETTLED');
       expect(res.signOffCount).toBe(2);
     });
+
+    it('should route rejection to rejectAndRefundWithdrawal and not settle withdrawal', async () => {
+      mockPrisma.ledgerTransaction.findUnique.mockResolvedValue({
+        id: 'tx-wd-reject',
+        referenceId: 'WD-REJECT',
+        type: 'WITHDRAWAL',
+        status: 'PENDING',
+        amount: 50000,
+        currency: 'USD',
+        entries: [
+          {
+            account: {
+              id: 'acc-1',
+              balance: 100000,
+            },
+          },
+        ],
+      });
+      mockPrisma.ledgerAccount.update.mockResolvedValue({
+        id: 'acc-1',
+        balance: 150000,
+      });
+
+      const res = await service.signOffWithdrawal('tx-wd-reject', 'op-officer-1', {
+        action: SignOffAction.REJECT,
+        notes: 'Compliance flags beneficiary',
+      });
+
+      expect(res.status).toBe('FAILED');
+      expect(res.isFullySettled).toBe(false);
+      expect(mockEventsGateway.emitSettlementUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'FAILED',
+        }),
+      );
+    });
   });
 
   describe('rejectAndRefundWithdrawal', () => {
@@ -324,6 +362,7 @@ describe('TreasuryService', () => {
       mockPrisma.ledgerTransaction.findUnique.mockResolvedValue({
         id: 'tx-wd-refund',
         referenceId: 'REF-WD-REFUND',
+        type: 'WITHDRAWAL',
         status: 'PENDING',
         amount: 150000,
         currency: 'USD',

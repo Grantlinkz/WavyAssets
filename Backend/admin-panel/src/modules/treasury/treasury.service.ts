@@ -16,6 +16,15 @@ import { TreasuryQueryDto } from './dto/treasury-query.dto';
 
 const FINMA_DUAL_SIGNOFF_THRESHOLD = 100000.0;
 
+const FX_TO_USD: Record<string, number> = {
+  USD: 1.0,
+  EUR: 1.08,
+  CHF: 1.12,
+  USDC: 1.0,
+  BTC: 88500.0,
+  ETH: 3150.0,
+};
+
 @Injectable()
 export class TreasuryService {
   private readonly logger = new Logger(TreasuryService.name);
@@ -53,8 +62,15 @@ export class TreasuryService {
       ];
     }
 
-    const [total, transactions] = await Promise.all([
+    const [total, pendingGrouped, transactions] = await Promise.all([
       this.prisma.ledgerTransaction.count({ where }),
+      this.prisma.ledgerTransaction.groupBy
+        ? this.prisma.ledgerTransaction.groupBy({
+            by: ['currency'],
+            where,
+            _sum: { amount: true },
+          })
+        : Promise.resolve([]),
       this.prisma.ledgerTransaction.findMany({
         where,
         skip,
@@ -83,9 +99,28 @@ export class TreasuryService {
     ]);
 
     let totalPendingAmountUsd = 0;
+    const pendingByCurrency: Record<string, number> = {};
+
+    if (pendingGrouped.length > 0) {
+      for (const group of pendingGrouped) {
+        const cur = (group.currency || 'USD').toUpperCase();
+        const sum = Number(group._sum.amount || 0);
+        pendingByCurrency[cur] = sum;
+        const rate = FX_TO_USD[cur] ?? 1.0;
+        totalPendingAmountUsd += sum * rate;
+      }
+    } else {
+      for (const tx of transactions) {
+        const amt = Number(tx.amount || 0);
+        const cur = (tx.currency || 'USD').toUpperCase();
+        pendingByCurrency[cur] = (pendingByCurrency[cur] || 0) + amt;
+        const rate = FX_TO_USD[cur] ?? 1.0;
+        totalPendingAmountUsd += amt * rate;
+      }
+    }
+
     const items = transactions.map((tx) => {
       const amt = Number(tx.amount);
-      totalPendingAmountUsd += amt;
 
       const userEntry = tx.entries.find((e) => e.account?.user);
       const user = userEntry?.account?.user || null;
@@ -124,6 +159,7 @@ export class TreasuryService {
       summary: {
         totalPendingCount: total,
         totalPendingAmountUsd,
+        pendingByCurrency,
       },
     };
   }
@@ -131,7 +167,12 @@ export class TreasuryService {
   /**
    * 1-Click Approve & Credit Balance for inbound deposit
    */
-  async approveDeposit(txId: string, adminId?: string, dto?: ApproveDepositDto) {
+  async approveDeposit(
+    txId: string,
+    adminId?: string,
+    dto?: ApproveDepositDto,
+    ipAddress?: string,
+  ) {
     const tx = await this.prisma.ledgerTransaction.findUnique({
       where: { id: txId },
       include: {
@@ -161,32 +202,36 @@ export class TreasuryService {
     const currency = (tx.currency || 'USD').toUpperCase();
 
     const result = await this.prisma.$transaction(async (prismaTx) => {
-      // 1. Resolve recipient user
+      // 1. Transition transaction status to SETTLED conditionally before balance credit
+      const updatedTx = await prismaTx.ledgerTransaction.updateMany({
+        where: { id: tx.id, type: 'DEPOSIT', status: 'PENDING' },
+        data: {
+          status: 'SETTLED',
+        },
+      });
+
+      if (updatedTx.count !== 1) {
+        throw new ConflictException(
+          `Deposit transaction '${txId}' is no longer in PENDING status or has been modified.`,
+        );
+      }
+
+      // 2. Resolve recipient user
       let userId: string | null = null;
-      let existingAccount = tx.entries.find((e) => e.account)?.account || null;
+      const existingAccount = tx.entries.find((e) => e.account)?.account || null;
 
       if (existingAccount) {
         userId = existingAccount.userId;
-      } else {
-        // Look up by account number or fallback to user matching reference or first active user
-        if (tx.accountNumber) {
-          const matchedUser = await prismaTx.user.findFirst({
-            where: {
-              OR: [
-                { id: tx.accountNumber },
-                { email: tx.accountNumber },
-              ],
-            },
-          });
-          if (matchedUser) userId = matchedUser.id;
-        }
-        if (!userId) {
-          const fallbackUser = await prismaTx.user.findFirst({
-            where: { isActive: true },
-            orderBy: { createdAt: 'asc' },
-          });
-          if (fallbackUser) userId = fallbackUser.id;
-        }
+      } else if (tx.accountNumber) {
+        const matchedUser = await prismaTx.user.findFirst({
+          where: {
+            OR: [
+              { id: tx.accountNumber },
+              { email: tx.accountNumber },
+            ],
+          },
+        });
+        if (matchedUser) userId = matchedUser.id;
       }
 
       if (!userId) {
@@ -195,7 +240,7 @@ export class TreasuryService {
         );
       }
 
-      // 2. Fetch or create user's AVAILABLE_CASH ledger account
+      // 3. Fetch or create user's AVAILABLE_CASH ledger account
       let userAccount = await prismaTx.ledgerAccount.findUnique({
         where: {
           userId_accountType_currency: {
@@ -218,15 +263,17 @@ export class TreasuryService {
       }
 
       const previousBalance = Number(userAccount.balance);
-      const newBalance = previousBalance + amount;
 
-      // 3. Update account balance
+      // 4. Update account balance atomically
       const updatedAccount = await prismaTx.ledgerAccount.update({
         where: { id: userAccount.id },
-        data: { balance: newBalance },
+        data: {
+          balance: { increment: amount },
+        },
       });
+      const newBalance = Number(updatedAccount.balance);
 
-      // 4. Create LedgerEntry credit if not present
+      // 5. Create LedgerEntry credit if not present
       if (tx.entries.length === 0) {
         await prismaTx.ledgerEntry.create({
           data: {
@@ -236,12 +283,6 @@ export class TreasuryService {
           },
         });
       }
-
-      // 5. Transition transaction status to SETTLED
-      const settledTx = await prismaTx.ledgerTransaction.update({
-        where: { id: tx.id },
-        data: { status: 'SETTLED' },
-      });
 
       // 6. Record Audit Log
       await prismaTx.adminAuditLog.create({
@@ -258,14 +299,14 @@ export class TreasuryService {
             notes: dto?.notes || null,
           }),
           reason: dto?.notes || 'Inbound wire/crypto receipt confirmed and credited by treasury officer',
-          ipAddressHash: this.cryptoService.hashIpAddress('127.0.0.1'),
+          ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
         },
       });
 
       return {
-        id: settledTx.id,
-        referenceId: settledTx.referenceId,
-        status: settledTx.status,
+        id: tx.id,
+        referenceId: tx.referenceId,
+        status: 'SETTLED',
         amount,
         currency,
         creditedAccountId: updatedAccount.id,
@@ -295,13 +336,22 @@ export class TreasuryService {
   /**
    * Rejects an unverified inbound deposit
    */
-  async rejectDeposit(txId: string, adminId?: string, dto?: RejectDepositDto) {
+  async rejectDeposit(
+    txId: string,
+    adminId?: string,
+    dto?: RejectDepositDto,
+    ipAddress?: string,
+  ) {
     const tx = await this.prisma.ledgerTransaction.findUnique({
       where: { id: txId },
     });
 
     if (!tx) {
       throw new NotFoundException(`Deposit transaction '${txId}' was not found.`);
+    }
+
+    if (tx.type !== 'DEPOSIT') {
+      throw new BadRequestException(`Transaction '${txId}' is not a deposit transaction (type: ${tx.type}).`);
     }
 
     if (tx.status !== 'PENDING') {
@@ -311,10 +361,16 @@ export class TreasuryService {
     }
 
     const result = await this.prisma.$transaction(async (prismaTx) => {
-      const updatedTx = await prismaTx.ledgerTransaction.update({
-        where: { id: txId },
+      const updatedTx = await prismaTx.ledgerTransaction.updateMany({
+        where: { id: txId, type: 'DEPOSIT', status: 'PENDING' },
         data: { status: 'FAILED' },
       });
+
+      if (updatedTx.count !== 1) {
+        throw new ConflictException(
+          `Transaction '${txId}' is in status '${tx.status}' and cannot be rejected.`,
+        );
+      }
 
       await prismaTx.adminAuditLog.create({
         data: {
@@ -325,14 +381,14 @@ export class TreasuryService {
           diffBefore: JSON.stringify({ status: 'PENDING' }),
           diffAfter: JSON.stringify({ status: 'FAILED', reason: dto?.reason }),
           reason: dto?.reason || 'Deposit rejected due to unverified receipt or mismatching memo',
-          ipAddressHash: this.cryptoService.hashIpAddress('127.0.0.1'),
+          ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
         },
       });
 
       return {
-        id: updatedTx.id,
-        referenceId: updatedTx.referenceId,
-        status: updatedTx.status,
+        id: tx.id,
+        referenceId: tx.referenceId,
+        status: 'FAILED',
         reason: dto?.reason,
       };
     });
@@ -375,8 +431,15 @@ export class TreasuryService {
       ];
     }
 
-    const [total, transactions] = await Promise.all([
+    const [total, pendingGrouped, transactions] = await Promise.all([
       this.prisma.ledgerTransaction.count({ where }),
+      this.prisma.ledgerTransaction.groupBy
+        ? this.prisma.ledgerTransaction.groupBy({
+            by: ['currency'],
+            where,
+            _sum: { amount: true },
+          })
+        : Promise.resolve([]),
       this.prisma.ledgerTransaction.findMany({
         where,
         skip,
@@ -429,14 +492,36 @@ export class TreasuryService {
     }
 
     let totalPendingWithdrawalsAmountUsd = 0;
+    const pendingWithdrawalsByCurrency: Record<string, number> = {};
+
+    if (pendingGrouped.length > 0) {
+      for (const group of pendingGrouped) {
+        const cur = (group.currency || 'USD').toUpperCase();
+        const sum = Number(group._sum.amount || 0);
+        pendingWithdrawalsByCurrency[cur] = sum;
+        const rate = FX_TO_USD[cur] ?? 1.0;
+        totalPendingWithdrawalsAmountUsd += sum * rate;
+      }
+    } else {
+      for (const tx of transactions) {
+        const amt = Number(tx.amount || 0);
+        const cur = (tx.currency || 'USD').toUpperCase();
+        pendingWithdrawalsByCurrency[cur] = (pendingWithdrawalsByCurrency[cur] || 0) + amt;
+        const rate = FX_TO_USD[cur] ?? 1.0;
+        totalPendingWithdrawalsAmountUsd += amt * rate;
+      }
+    }
+
     const items = transactions.map((tx) => {
       const amt = Number(tx.amount);
-      totalPendingWithdrawalsAmountUsd += amt;
 
       const userEntry = tx.entries.find((e) => e.account?.user);
       const user = userEntry?.account?.user || null;
       const txSignOffs = signOffsByTx.get(tx.id) || [];
-      const requiresDualSignOff = amt > FINMA_DUAL_SIGNOFF_THRESHOLD;
+      const cur = (tx.currency || 'USD').toUpperCase();
+      const rate = cur === 'USD' ? 1.0 : FX_TO_USD[cur];
+      const amtInUsd = rate !== undefined ? amt * rate : Infinity;
+      const requiresDualSignOff = amtInUsd > FINMA_DUAL_SIGNOFF_THRESHOLD;
 
       return {
         id: tx.id,
@@ -484,6 +569,7 @@ export class TreasuryService {
       summary: {
         totalPendingWithdrawalsCount: total,
         totalPendingWithdrawalsAmountUsd,
+        pendingByCurrency: pendingWithdrawalsByCurrency,
       },
     };
   }
@@ -495,6 +581,7 @@ export class TreasuryService {
     txId: string,
     adminId: string,
     dto: SignOffWithdrawalDto,
+    ipAddress?: string,
   ) {
     if (!adminId) {
       throw new BadRequestException('Officer ID is mandatory for treasury sign-off.');
@@ -518,22 +605,55 @@ export class TreasuryService {
       );
     }
 
-    // Check existing sign-offs for this withdrawal
-    const existingSignOffs = await this.prisma.treasurySignOff.findMany({
-      where: { withdrawalId: txId },
-    });
+    const cur = (tx.currency || 'USD').toUpperCase();
+    const rate = cur === 'USD' ? 1.0 : FX_TO_USD[cur];
+    const amountInUsd = rate !== undefined ? Number(tx.amount) * rate : Infinity;
+    const requiresDualSignOff = amountInUsd > FINMA_DUAL_SIGNOFF_THRESHOLD;
 
-    const alreadySigned = existingSignOffs.some((so) => so.officerId === adminId);
-    if (alreadySigned) {
-      throw new ConflictException(
-        'Officer has already signed off on this withdrawal. FINMA AMLA Article 14 strictly mandates sign-off from a distinct authorized officer.',
+    // Handle rejection before sign-off creation so rejected requests cannot settle
+    if (dto?.action === SignOffAction.REJECT) {
+      await this.rejectAndRefundWithdrawal(
+        txId,
+        adminId,
+        { reason: dto.notes || 'Withdrawal rejected during sign-off' },
+        ipAddress,
       );
+      return {
+        withdrawalId: tx.id,
+        referenceId: tx.referenceId,
+        amount: Number(tx.amount),
+        currency: tx.currency,
+        status: 'FAILED',
+        requiresDualSignOff,
+        signOffCount: 0,
+        requiredSignOffsCount: requiresDualSignOff ? 2 : 1,
+        isFullySettled: false,
+        currentSignOff: {
+          id: `so-rej-${tx.id}`,
+          officerId: adminId,
+          signedAt: new Date(),
+          notes: dto.notes || null,
+        },
+      };
     }
 
-    const amount = Number(tx.amount);
-    const requiresDualSignOff = amount > FINMA_DUAL_SIGNOFF_THRESHOLD;
+    const result = await this.prisma.$transaction(async (prismaTx) => {
+      // Check existing sign-offs for this withdrawal inside transaction
+      const existingSignOffs = await prismaTx.treasurySignOff.findMany({
+        where: { withdrawalId: txId },
+      });
 
-    return await this.prisma.$transaction(async (prismaTx) => {
+      const alreadySigned = existingSignOffs.some((so) => so.officerId === adminId);
+      if (alreadySigned) {
+        throw new ConflictException(
+          'Officer has already signed off on this withdrawal. FINMA AMLA Article 14 strictly mandates sign-off from a distinct authorized officer.',
+        );
+      }
+
+      const approveSignOffs = existingSignOffs.filter(
+        (so) => so.action === SignOffAction.APPROVE || !so.action,
+      );
+
       // 1. Create TreasurySignOff record
       const signOff = await prismaTx.treasurySignOff.create({
         data: {
@@ -553,7 +673,7 @@ export class TreasuryService {
         isFullySettled = true;
       } else {
         // Large withdrawal (> $100k): FINMA AMLA Article 14 dual sign-off
-        if (existingSignOffs.length === 0) {
+        if (approveSignOffs.length === 0) {
           // First sign-off recorded
           nextStatus = 'PENDING_SECOND_SIGN_OFF';
           isFullySettled = false;
@@ -564,11 +684,21 @@ export class TreasuryService {
         }
       }
 
-      // 2. Update transaction status
-      const updatedTx = await prismaTx.ledgerTransaction.update({
-        where: { id: tx.id },
+      // 2. Conditionally update transaction status
+      const updatedTx = await prismaTx.ledgerTransaction.updateMany({
+        where: {
+          id: tx.id,
+          type: 'WITHDRAWAL',
+          status: tx.status,
+        },
         data: { status: nextStatus },
       });
+
+      if (updatedTx.count !== 1) {
+        throw new ConflictException(
+          `Withdrawal '${txId}' status has changed concurrently.`,
+        );
+      }
 
       // 3. Record Audit Log
       await prismaTx.adminAuditLog.create({
@@ -577,40 +707,26 @@ export class TreasuryService {
           action: 'WITHDRAWAL_SIGNOFF',
           targetEntity: 'LedgerTransaction',
           targetId: tx.id,
-          diffBefore: JSON.stringify({ status: tx.status, signOffCount: existingSignOffs.length }),
+          diffBefore: JSON.stringify({ status: tx.status, signOffCount: approveSignOffs.length }),
           diffAfter: JSON.stringify({
             status: nextStatus,
-            signOffCount: existingSignOffs.length + 1,
+            signOffCount: approveSignOffs.length + 1,
             isFullySettled,
             notes: dto.notes,
           }),
           reason: `FINMA AMLA sign-off recorded by officer. Status transitioned to ${nextStatus}`,
-          ipAddressHash: this.cryptoService.hashIpAddress('127.0.0.1'),
+          ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
         },
       });
 
-      this.logger.log(
-        `Withdrawal '${txId}' sign-off by officer ${adminId}: status=${nextStatus} (Sign-offs: ${existingSignOffs.length + 1}/${requiresDualSignOff ? 2 : 1})`,
-      );
-
-      // Broadcast update
-      this.eventsGateway.emitSettlementUpdate({
-        txId: tx.id,
-        type: 'WITHDRAWAL_SIGNOFF',
-        status: nextStatus,
-        isFullySettled,
-        amount,
-        currency: tx.currency,
-      });
-
       return {
-        id: updatedTx.id,
-        referenceId: updatedTx.referenceId,
-        amount,
-        currency: updatedTx.currency,
-        status: updatedTx.status,
+        withdrawalId: tx.id,
+        referenceId: tx.referenceId,
+        amount: Number(tx.amount),
+        currency: tx.currency,
+        status: nextStatus,
         requiresDualSignOff,
-        signOffCount: existingSignOffs.length + 1,
+        signOffCount: approveSignOffs.length + 1,
         requiredSignOffsCount: requiresDualSignOff ? 2 : 1,
         isFullySettled,
         currentSignOff: {
@@ -621,6 +737,22 @@ export class TreasuryService {
         },
       };
     });
+
+    this.logger.log(
+      `Withdrawal '${txId}' sign-off by officer ${adminId}: status=${result.status} (Sign-offs: ${result.signOffCount}/${result.requiredSignOffsCount})`,
+    );
+
+    // Broadcast update only after commit
+    this.eventsGateway.emitSettlementUpdate({
+      txId: result.withdrawalId,
+      type: 'WITHDRAWAL_SIGNOFF',
+      status: result.status,
+      isFullySettled: result.isFullySettled,
+      amount: result.amount,
+      currency: result.currency,
+    });
+
+    return result;
   }
 
   /**
@@ -630,6 +762,7 @@ export class TreasuryService {
     txId: string,
     adminId?: string,
     dto?: RejectWithdrawalDto,
+    ipAddress?: string,
   ) {
     const tx = await this.prisma.ledgerTransaction.findUnique({
       where: { id: txId },
@@ -646,6 +779,10 @@ export class TreasuryService {
       throw new NotFoundException(`Withdrawal transaction '${txId}' was not found.`);
     }
 
+    if (tx.type !== 'WITHDRAWAL') {
+      throw new BadRequestException(`Transaction '${txId}' is not a withdrawal (type: ${tx.type}).`);
+    }
+
     if (tx.status !== 'PENDING' && tx.status !== 'PENDING_SECOND_SIGN_OFF') {
       throw new ConflictException(
         `Withdrawal '${txId}' is in status '${tx.status}' and cannot be rejected or refunded.`,
@@ -656,11 +793,21 @@ export class TreasuryService {
     const currency = (tx.currency || 'USD').toUpperCase();
 
     const result = await this.prisma.$transaction(async (prismaTx) => {
-      // 1. Mark transaction as FAILED
-      const updatedTx = await prismaTx.ledgerTransaction.update({
-        where: { id: tx.id },
+      // 1. Conditionally mark transaction as FAILED
+      const updatedTx = await prismaTx.ledgerTransaction.updateMany({
+        where: {
+          id: tx.id,
+          type: 'WITHDRAWAL',
+          status: { in: ['PENDING', 'PENDING_SECOND_SIGN_OFF'] },
+        },
         data: { status: 'FAILED' },
       });
+
+      if (updatedTx.count !== 1) {
+        throw new ConflictException(
+          `Withdrawal '${txId}' is in status '${tx.status}' and cannot be rejected or refunded.`,
+        );
+      }
 
       // 2. Locate user's debit entry or account to refund
       let userAccount = tx.entries.find((e) => e.account)?.account || null;
@@ -680,31 +827,31 @@ export class TreasuryService {
         });
       }
 
-      let refunded = false;
-      let newBalance = 0;
-
-      if (userAccount) {
-        const prevBal = Number(userAccount.balance);
-        newBalance = prevBal + amount;
-
-        await prismaTx.ledgerAccount.update({
-          where: { id: userAccount.id },
-          data: { balance: newBalance },
-        });
-
-        // Create compensatory credit entry
-        await prismaTx.ledgerEntry.create({
-          data: {
-            transactionId: tx.id,
-            accountId: userAccount.id,
-            amount: amount,
-          },
-        });
-
-        refunded = true;
+      if (!userAccount) {
+        throw new BadRequestException(
+          `Unable to resolve user ledger account to refund withdrawal '${txId}'.`,
+        );
       }
 
-      // 3. Record Audit Log
+      // 3. Atomically refund reserved capital
+      const updatedAccount = await prismaTx.ledgerAccount.update({
+        where: { id: userAccount.id },
+        data: {
+          balance: { increment: amount },
+        },
+      });
+      const newBalance = Number(updatedAccount.balance);
+
+      // Create compensatory credit entry
+      await prismaTx.ledgerEntry.create({
+        data: {
+          transactionId: tx.id,
+          accountId: userAccount.id,
+          amount: amount,
+        },
+      });
+
+      // 4. Record Audit Log
       await prismaTx.adminAuditLog.create({
         data: {
           adminId: adminId || null,
@@ -714,21 +861,21 @@ export class TreasuryService {
           diffBefore: JSON.stringify({ status: tx.status }),
           diffAfter: JSON.stringify({
             status: 'FAILED',
-            refunded,
+            refunded: true,
             refundedAmount: amount,
             newBalance,
             reason: dto?.reason,
           }),
           reason: dto?.reason || 'Withdrawal rejected and reserved capital refunded by compliance officer',
-          ipAddressHash: this.cryptoService.hashIpAddress('127.0.0.1'),
+          ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
         },
       });
 
       return {
-        id: updatedTx.id,
-        referenceId: updatedTx.referenceId,
-        status: updatedTx.status,
-        refunded,
+        id: tx.id,
+        referenceId: tx.referenceId,
+        status: 'FAILED',
+        refunded: true,
         refundedAmount: amount,
         currency,
         newBalance,
@@ -750,3 +897,4 @@ export class TreasuryService {
     return result;
   }
 }
+

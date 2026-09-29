@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, IsIBAN, IsBIC } from 'class-validator';
 
 export class UpdateFiatRailDto {
   @IsNotEmpty()
@@ -7,10 +7,12 @@ export class UpdateFiatRailDto {
 
   @IsNotEmpty()
   @IsString()
+  @IsIBAN()
   swissIban!: string;
 
   @IsNotEmpty()
   @IsString()
+  @IsBIC()
   bicSwift!: string;
 
   @IsNotEmpty()
@@ -20,4 +22,4 @@ export class UpdateFiatRailDto {
   @IsNotEmpty()
   @IsString()
   memoFormat!: string;
-}
+}

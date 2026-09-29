@@ -18,6 +18,7 @@ export class EmergencyService implements OnModuleInit {
   private _frozenAt: string | null = null;
   private _frozenBy: string | null = null;
   private _freezeReason: string | null = null;
+  private _affectedCardIds: string[] = [];
 
   constructor(
     private readonly prisma: PrismaService,
@@ -26,9 +27,6 @@ export class EmergencyService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    if (process.env.NODE_ENV === 'test') {
-      return;
-    }
     try {
       // Recover last emergency state from persistent audit logs on boot
       const lastAudit = await this.prisma.adminAuditLog.findFirst({
@@ -45,6 +43,14 @@ export class EmergencyService implements OnModuleInit {
         this._frozenAt = lastAudit.createdAt.toISOString();
         this._frozenBy = lastAudit.adminId;
         this._freezeReason = lastAudit.reason;
+        if (lastAudit.diffAfter) {
+          try {
+            const parsed = JSON.parse(lastAudit.diffAfter);
+            this._affectedCardIds = Array.isArray(parsed.affectedCardIds)
+              ? parsed.affectedCardIds
+              : [];
+          } catch {}
+        }
         this.logger.warn(
           `System booted into EMERGENCY FREEZE state from log ${lastAudit.id}`,
         );
@@ -59,6 +65,7 @@ export class EmergencyService implements OnModuleInit {
     this._frozenAt = null;
     this._frozenBy = null;
     this._freezeReason = null;
+    this._affectedCardIds = [];
   }
 
   isPlatformFrozen(): boolean {
@@ -115,35 +122,53 @@ export class EmergencyService implements OnModuleInit {
       );
     }
 
+    const frozenAt = new Date().toISOString();
+
+    const { affectedCardIds } = await this.prisma.$transaction(async (tx) => {
+      // Find cards currently active (unfrozen) to lock
+      const activeCards = await tx.vipCard.findMany({
+        where: { isFrozen: false },
+        select: { id: true },
+      });
+      const ids = activeCards.map((c) => c.id);
+
+      // Halt active VIP cards immediately
+      if (ids.length > 0) {
+        await tx.vipCard.updateMany({
+          where: { id: { in: ids } },
+          data: { isFrozen: true },
+        });
+      }
+
+      // Record Immutable Differential Audit Log
+      await tx.adminAuditLog.create({
+        data: {
+          adminId,
+          action: 'PLATFORM_EMERGENCY_FREEZE',
+          targetEntity: 'Platform',
+          targetId: 'GLOBAL_PLATFORM',
+          diffBefore: JSON.stringify({ isFrozen: false, defconLevel: 5 }),
+          diffAfter: JSON.stringify({
+            isFrozen: true,
+            defconLevel: 1,
+            protocol: 'HALT-ZERO-TIER1',
+            secondaryOfficerId: dto.secondaryOfficerId || null,
+            affectedCardIds: ids,
+          }),
+          reason: dto.reason,
+          ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(adminId).slice(0, 16),
+        },
+      });
+
+      return { affectedCardIds: ids };
+    });
+
+    // Update in-memory state only after transaction commits
     this._isFrozen = true;
-    this._frozenAt = new Date().toISOString();
+    this._frozenAt = frozenAt;
     this._frozenBy = adminId;
     this._freezeReason = dto.reason;
-
-    // Halt active VIP cards immediately
-    await this.prisma.vipCard.updateMany({
-      where: { isFrozen: false },
-      data: { isFrozen: true },
-    });
-
-    // Record Immutable Differential Audit Log
-    await this.prisma.adminAuditLog.create({
-      data: {
-        adminId,
-        action: 'PLATFORM_EMERGENCY_FREEZE',
-        targetEntity: 'Platform',
-        targetId: 'GLOBAL_PLATFORM',
-        diffBefore: JSON.stringify({ isFrozen: false, defconLevel: 5 }),
-        diffAfter: JSON.stringify({
-          isFrozen: true,
-          defconLevel: 1,
-          protocol: 'HALT-ZERO-TIER1',
-          secondaryOfficerId: dto.secondaryOfficerId || null,
-        }),
-        reason: dto.reason,
-        ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(adminId).slice(0, 16),
-      },
-    });
+    this._affectedCardIds = affectedCardIds;
 
     // Broadcast system-wide freeze over WebSocket namespace /ws/admin
     this.eventsGateway.emitEmergencyFreeze({
@@ -171,32 +196,47 @@ export class EmergencyService implements OnModuleInit {
     }
 
     const previousReason = this._freezeReason;
+    const cardsToUnlock = [...this._affectedCardIds];
+
+    await this.prisma.$transaction(async (tx) => {
+      // Unlock only those cards that were locked by the platform freeze
+      if (cardsToUnlock.length > 0) {
+        await tx.vipCard.updateMany({
+          where: { id: { in: cardsToUnlock } },
+          data: { isFrozen: false },
+        });
+      }
+
+      // Record Immutable Differential Audit Log
+      await tx.adminAuditLog.create({
+        data: {
+          adminId,
+          action: 'PLATFORM_EMERGENCY_UNFREEZE',
+          targetEntity: 'Platform',
+          targetId: 'GLOBAL_PLATFORM',
+          diffBefore: JSON.stringify({
+            isFrozen: true,
+            defconLevel: 1,
+            previousReason,
+            affectedCardIds: cardsToUnlock,
+          }),
+          diffAfter: JSON.stringify({
+            isFrozen: false,
+            defconLevel: 5,
+            secondaryOfficerId: dto.secondaryOfficerId || null,
+          }),
+          reason: dto.reason,
+          ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(adminId).slice(0, 16),
+        },
+      });
+    });
+
+    // Update in-memory state only after transaction commits
     this._isFrozen = false;
     this._frozenAt = null;
     this._frozenBy = null;
     this._freezeReason = null;
-
-    // Record Immutable Differential Audit Log
-    await this.prisma.adminAuditLog.create({
-      data: {
-        adminId,
-        action: 'PLATFORM_EMERGENCY_UNFREEZE',
-        targetEntity: 'Platform',
-        targetId: 'GLOBAL_PLATFORM',
-        diffBefore: JSON.stringify({
-          isFrozen: true,
-          defconLevel: 1,
-          previousReason,
-        }),
-        diffAfter: JSON.stringify({
-          isFrozen: false,
-          defconLevel: 5,
-          secondaryOfficerId: dto.secondaryOfficerId || null,
-        }),
-        reason: dto.reason,
-        ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(adminId).slice(0, 16),
-      },
-    });
+    this._affectedCardIds = [];
 
     // Broadcast system-wide unfreeze
     this.eventsGateway.emitEmergencyUnfreeze({

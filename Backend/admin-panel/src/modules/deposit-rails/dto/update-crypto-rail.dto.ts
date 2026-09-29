@@ -5,17 +5,33 @@ import {
   IsOptional,
   IsBoolean,
   IsInt,
+  IsPositive,
+  IsIn,
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
+export const SUPPORTED_CRYPTO_ASSETS = ['USDC', 'USDT', 'BTC', 'ETH', 'SOL'] as const;
+export const SUPPORTED_CRYPTO_NETWORKS = [
+  'ERC-20',
+  'BEP-20',
+  'Polygon',
+  'TRC-20',
+  'Bitcoin Native',
+  'Arbitrum',
+  'Optimism',
+  'Solana Native',
+] as const;
+
 export class UpdateCryptoRailDto {
   @IsNotEmpty()
   @IsString()
+  @IsIn(SUPPORTED_CRYPTO_ASSETS)
   asset!: string;
 
   @IsNotEmpty()
   @IsString()
+  @IsIn(SUPPORTED_CRYPTO_NETWORKS)
   network!: string;
 
   @IsNotEmpty()
@@ -25,7 +41,7 @@ export class UpdateCryptoRailDto {
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  @Min(0)
+  @IsPositive()
   minDepositUsd?: number = 500.0;
 
   @IsOptional()

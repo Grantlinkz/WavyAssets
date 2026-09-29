@@ -15,12 +15,15 @@ describe('VipCardsService (Unit)', () => {
 
   beforeEach(() => {
     mockPrisma = {
+      $transaction: vi.fn(async (cb) => cb(mockPrisma)),
       vipCard: {
         count: vi.fn(),
         findMany: vi.fn(),
         findUnique: vi.fn(),
+        findUniqueOrThrow: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       user: {
         findUnique: vi.fn(),
@@ -205,7 +208,7 @@ describe('VipCardsService (Unit)', () => {
         user: { id: 'usr-1', email: 'alice@vault.ch' },
       });
 
-      mockPrisma.vipCard.update.mockResolvedValueOnce({
+      mockPrisma.vipCard.findUniqueOrThrow.mockResolvedValueOnce({
         id: 'card-1',
         userId: 'usr-1',
         cardNumberLast4: '8821',
@@ -247,7 +250,7 @@ describe('VipCardsService (Unit)', () => {
         user: { id: 'usr-1', email: 'alice@vault.ch' },
       });
 
-      mockPrisma.vipCard.update.mockResolvedValueOnce({
+      mockPrisma.vipCard.findUniqueOrThrow.mockResolvedValueOnce({
         id: 'card-1',
         userId: 'usr-1',
         cardNumberLast4: '8821',

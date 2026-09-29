@@ -145,27 +145,35 @@ export class AuditService {
       }
     }
 
-    const logs = await this.prisma.adminAuditLog.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: 1000,
-      include: {
-        admin: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
-            role: true,
+    const [totalCount, logs] = await Promise.all([
+      this.prisma.adminAuditLog.count({ where }).catch(() => null),
+      this.prisma.adminAuditLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: 1000,
+        include: {
+          admin: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              role: true,
+            },
           },
         },
-      },
-    });
+      }),
+    ]);
+
+    const totalRecords = totalCount !== null ? totalCount : logs.length;
+    const isTruncated = totalRecords > logs.length;
 
     return {
       exportMetadata: {
         regulatorStandard: 'FINMA AMLA Art. 14 / SEC Rule 17a-4 Immutable Journal',
         generatedAt: new Date().toISOString(),
-        totalRecords: logs.length,
+        totalRecords,
+        exportedRecords: logs.length,
+        isTruncated,
         hashIntegrity: 'SHA-256-VERIFIED',
       },
       records: logs.map((log) => ({
