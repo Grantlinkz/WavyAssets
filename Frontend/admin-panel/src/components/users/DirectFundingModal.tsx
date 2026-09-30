@@ -26,7 +26,6 @@ export const DirectFundingModal: React.FC = () => {
     useState<BalanceType>("AVAILABLE_CASH");
   const [currency, setCurrency] = useState("USD");
   const [auditJustification, setAuditJustification] = useState("");
-  const [complianceReferenceId, setComplianceReferenceId] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -37,7 +36,6 @@ export const DirectFundingModal: React.FC = () => {
       setCurrency(selectedUser.balances.currency || "USD");
       setAmount("");
       setAuditJustification("");
-      setComplianceReferenceId("");
       setErrorMsg(null);
       setSuccessMsg(null);
       setDirection("CREDIT");
@@ -47,17 +45,15 @@ export const DirectFundingModal: React.FC = () => {
   const mutation = useMutation({
     mutationFn: async () => {
       if (!selectedUser) throw new Error("No user selected for funding.");
-      const parsedAmount = parseFloat(amount);
+      const cleanAmount = amount.replace(/,/g, "").trim();
+      const parsedAmount = parseFloat(cleanAmount);
       if (isNaN(parsedAmount) || parsedAmount <= 0) {
         throw new Error("Amount must be a positive number greater than 0.");
       }
       if (!auditJustification.trim()) {
         throw new Error(
-          "Mandatory audit justification required for ledger capital adjustment.",
+          "Mandatory regulatory reason required for ledger capital adjustment.",
         );
-      }
-      if (!complianceReferenceId.trim()) {
-        throw new Error("Mandatory compliance / wire reference ID required.");
       }
 
       return directFundUser({
@@ -67,12 +63,12 @@ export const DirectFundingModal: React.FC = () => {
         targetBalance,
         currency,
         auditJustification: auditJustification.trim(),
-        complianceReferenceId: complianceReferenceId.trim(),
       });
     },
     onSuccess: (data) => {
+      const cleanAmount = parseFloat(amount.replace(/,/g, "")) || 0;
       setSuccessMsg(
-        `Successfully ${direction === "CREDIT" ? "credited" : "debited"} ${formatCurrency(parseFloat(amount), currency)} ${direction === "CREDIT" ? "to" : "from"} ${
+        `Successfully ${direction === "CREDIT" ? "credited" : "debited"} ${formatCurrency(cleanAmount, currency)} ${direction === "CREDIT" ? "to" : "from"} ${
           targetBalance === "AVAILABLE_CASH"
             ? "Available Cash"
             : "Invested Capital"
@@ -102,7 +98,7 @@ export const DirectFundingModal: React.FC = () => {
   const isCurrencyMatching = currency === userCurrency;
   const currentAvailable = selectedUser.balances.availableCash;
   const currentInvested = selectedUser.balances.investedCapital;
-  const parsedAmount = parseFloat(amount) || 0;
+  const parsedAmount = parseFloat(amount.replace(/,/g, "")) || 0;
 
   const projectedAvailable =
     direction === "CREDIT"
@@ -320,12 +316,17 @@ export const DirectFundingModal: React.FC = () => {
             <div className="relative flex items-center">
               <DollarSign className="w-3.5 h-3.5 text-gold-accent absolute left-3 pointer-events-none" />
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 required
-                min="1"
-                step="1000"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "" || /^[0-9,]*\.?[0-9]*$/.test(val)) {
+                    setAmount(val);
+                  }
+                }}
+                placeholder="e.g. 50000"
                 className="w-full bg-bg-canvas border border-border-subtle rounded-[4px] pl-8 pr-3 py-1.5 font-mono text-on-surface focus:border-gold-accent focus:outline-none tabular-nums"
               />
             </div>
@@ -333,21 +334,7 @@ export const DirectFundingModal: React.FC = () => {
 
           <div>
             <label className="block font-mono uppercase text-secondary mb-1">
-              Compliance / Wire Reference ID *
-            </label>
-            <input
-              type="text"
-              required
-              value={complianceReferenceId}
-              onChange={(e) => setComplianceReferenceId(e.target.value)}
-              placeholder="e.g. SWIFT-CH9300000000000-09"
-              className="w-full bg-bg-canvas border border-border-subtle rounded-[4px] px-3 py-1.5 font-mono text-on-surface focus:border-gold-accent focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block font-mono uppercase text-secondary mb-1">
-              Mandatory Audit Justification *
+              Mandatory Regulatory Reason *
             </label>
             <div className="relative">
               <FileText className="w-3.5 h-3.5 text-secondary absolute left-3 top-2.5 pointer-events-none" />
@@ -357,7 +344,7 @@ export const DirectFundingModal: React.FC = () => {
                 disabled={!canDirectFund}
                 value={auditJustification}
                 onChange={(e) => setAuditJustification(e.target.value)}
-                placeholder="State wire origin, treasury confirmation number, or dual-sign-off ticket reference..."
+                placeholder="State regulatory reason, wire origin, treasury confirmation number, or dual-sign-off ticket reference..."
                 className="w-full bg-bg-canvas border border-border-subtle rounded-[4px] pl-8 pr-3 py-2 text-on-surface focus:border-gold-accent focus:outline-none resize-none disabled:opacity-50"
               />
             </div>

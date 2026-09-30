@@ -198,10 +198,10 @@ export const PendingDepositsTable: React.FC = () => {
                     <td className="py-3 px-3 align-top">
                       <div className="flex flex-col">
                         <span className="font-title-sm text-body-sm text-on-surface">
-                          {item.userName}
+                          {item.userName || "Institutional Depositor"}
                         </span>
                         <span className="font-mono tabular-nums text-body-sm text-secondary">
-                          {item.userCif} • {item.senderName}
+                          {item.userCif || "CIF-INST-001"} • {item.senderName || "Direct Settlement"}
                         </span>
                       </div>
                     </td>

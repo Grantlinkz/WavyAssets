@@ -11,7 +11,6 @@ import {
   Eye,
   EyeOff,
   Building,
-  Shield,
   Save,
 } from "lucide-react"
 import { useUserRegistryStore } from "../../store/useUserRegistryStore"
@@ -36,8 +35,10 @@ export const EditUserModal: React.FC = () => {
     if (selectedUser) {
       setFullName(selectedUser.fullLegalName || "")
       setEmail(selectedUser.email || "")
-      setTier(selectedUser.accessTier || "PRIVATE_WEALTH")
-      setKycTier(selectedUser.kycStatus === "APPROVED" ? "TIER_3" : "TIER_1")
+      const resolvedTier: UserTier =
+        selectedUser.accessTier === "INSTITUTIONAL" ? "INSTITUTIONAL" : "PRIVATE_WEALTH"
+      setTier(resolvedTier)
+      setKycTier(selectedUser.kycTier || (selectedUser.kycStatus === "APPROVED" ? "TIER_3" : "TIER_1"))
       setIsCorporate(!!selectedUser.institutionName)
       setPassphrase("")
       setErrorMsg(null)
@@ -184,9 +185,6 @@ export const EditUserModal: React.FC = () => {
               >
                 <option value="PRIVATE_WEALTH">Private Wealth</option>
                 <option value="INSTITUTIONAL">Institutional</option>
-                <option value="TIER_3">Tier 3</option>
-                <option value="TIER_2">Tier 2</option>
-                <option value="TIER_1">Tier 1</option>
               </select>
             </div>
 

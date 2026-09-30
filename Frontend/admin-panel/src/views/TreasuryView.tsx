@@ -65,177 +65,162 @@ export const TreasuryView: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col w-full gap-5" data-testid="treasury-view">
+    <div className="flex flex-col w-full gap-4" data-testid="treasury-view">
       {/* Breadcrumb & Real-time Settlement Ticker */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border-subtle pb-2">
-        <div className="flex items-center gap-1.5 font-mono text-body-sm text-secondary">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-1">
+        <div className="flex items-center gap-1.5 font-mono text-xs text-secondary flex-wrap">
           <span className="text-secondary/70">Institutional Desk</span>
           <span className="text-secondary/40">/</span>
           <span className="text-secondary/70">Treasury Ops</span>
           <span className="text-secondary/40">/</span>
-          <span className="text-gold-accent font-title-sm">Liquidity Rails &amp; Co-Sign Settlements</span>
+          <span className="text-gold-accent font-semibold">Liquidity Rails &amp; Co-Sign Settlements</span>
         </div>
-        <div className="flex items-center gap-3 shrink-0 flex-wrap">
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-bg-panel border border-border-subtle">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] bg-bg-panel border border-border-subtle text-[11px] font-mono">
             <span className="w-1.5 h-1.5 rounded-full bg-status-success animate-pulse" />
-            <span className="font-mono text-body-sm text-secondary">
-              SIC RTGS: <span className="text-status-success">11ms</span>
-            </span>
+            <span className="text-secondary">SIC RTGS:</span>
+            <span className="text-status-success font-medium">11ms</span>
           </div>
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-bg-panel border border-border-subtle">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] bg-bg-panel border border-border-subtle text-[11px] font-mono">
             <span className="w-1.5 h-1.5 rounded-full bg-status-success" />
-            <span className="font-mono text-body-sm text-secondary">
-              Fedwire: <span className="text-status-success">Online</span>
-            </span>
+            <span className="text-secondary">Fedwire:</span>
+            <span className="text-status-success font-medium">Online</span>
           </div>
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-bg-panel border border-border-subtle">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] bg-bg-panel border border-border-subtle text-[11px] font-mono">
             <span className="w-1.5 h-1.5 rounded-full bg-telemetry-cyan" />
-            <span className="font-mono text-body-sm text-secondary">
-              ERC-20 Treasury: <span className="text-telemetry-cyan">Gas 14 Gwei</span>
-            </span>
+            <span className="text-secondary">ERC-20 Treasury:</span>
+            <span className="text-telemetry-cyan font-medium">Gas 14 Gwei</span>
           </div>
         </div>
       </div>
 
-      {/* Top Title & Controls Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-bg-panel p-4 rounded-lg border border-border-subtle">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">
+      {/* Top Title & Telemetry Header */}
+      <div className="flex flex-col gap-3.5 bg-bg-panel p-4 sm:p-5 rounded-[4px] border border-border-subtle">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-base font-bold text-on-surface tracking-tight">
               Treasury Settlements &amp; Liquidity Rails
             </h1>
-            <span className="bg-gold-accent/10 text-gold-accent border border-gold-accent/30 font-label-caps text-label-caps px-2 py-0.5 rounded uppercase tracking-wider">
+            <span className="bg-gold-accent/10 text-gold-accent border border-gold-accent/30 font-mono text-[10px] px-2 py-0.5 rounded-[2px] uppercase tracking-wider font-semibold">
               Dual-Control Enforcement Active
             </span>
           </div>
-          <p className="font-body-sm text-body-sm text-secondary">
-            Direct settlement bridge between Swiss Interbank Clearing (SIC), Federal Reserve Fedwire, Target2 SEPA, and Institutional Multisig Custody.
-          </p>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 bg-bg-canvas px-3 py-1 rounded-[3px] border border-border-subtle">
+              <span className="w-2 h-2 rounded-full bg-status-success" />
+              <span className="font-mono text-xs text-on-surface">
+                Settlement Rails: <span className="text-status-success font-semibold">4/4 Operational</span>
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="bg-bg-elevated hover:bg-state-hover border border-border-subtle text-on-surface font-medium text-xs px-3 py-1.5 rounded-[3px] flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5 text-secondary" />
+              <span>Export Treasury Log (CSV)</span>
+            </button>
+          </div>
         </div>
 
-        {/* Right Controls Block */}
-        <div className="flex items-center flex-wrap gap-3 shrink-0">
-          <div className="flex flex-col text-right px-2 border-r border-border-subtle hidden xl:flex">
-            <span className="font-label-caps text-[10px] text-secondary uppercase tracking-wider">
-              Main Vault Liquidity
-            </span>
-            <span className="font-mono text-title-sm text-status-success tabular-nums">
-              $318,450,000.00 USD{" "}
-              <span className="text-secondary text-body-sm font-normal">(99.98% Allocated)</span>
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            className="bg-bg-elevated hover:bg-state-hover border border-border-subtle text-on-surface font-title-sm text-body-sm px-3 py-1.5 rounded flex items-center gap-1.5 transition-colors"
-          >
-            <Download className="w-4 h-4 text-secondary" />
-            <span>Export Treasury Log (CSV)</span>
-          </button>
-          <div className="flex items-center gap-1.5 bg-bg-elevated px-2.5 py-1.5 rounded border border-border-subtle">
-            <span className="w-2 h-2 rounded-full bg-status-success" />
-            <span className="font-mono text-body-sm text-on-surface">
-              Settlement Rails: <span className="text-status-success font-semibold">4/4 Operational</span>
-            </span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 border-t border-border-subtle/60 text-xs">
+          <p className="text-secondary text-xs max-w-2xl font-sans">
+            Direct settlement bridge between Swiss Interbank Clearing (SIC), Federal Reserve Fedwire, Target2 SEPA, and Institutional Multisig Custody.
+          </p>
+          <div className="flex items-center gap-2 shrink-0 font-mono text-xs">
+            <span className="text-secondary uppercase text-[10px]">Main Vault Liquidity:</span>
+            <span className="text-status-success font-semibold tabular-nums">$318,450,000.00 USD</span>
+            <span className="text-secondary/70 text-[11px]">(99.98% Allocated)</span>
           </div>
         </div>
       </div>
 
       {/* FINMA Mandatory Dual-Control Policy Banner */}
-      <div className="bg-status-warning/5 border border-status-warning/40 rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded bg-status-warning/10 border border-status-warning/30 flex items-center justify-center shrink-0 mt-0.5">
-            <ShieldAlert className="w-5 h-5 text-status-warning" />
+      <div className="bg-status-warning/5 border border-status-warning/30 rounded-[4px] p-3 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-[2px] bg-status-warning/10 border border-status-warning/30 flex items-center justify-center shrink-0 text-status-warning">
+            <ShieldAlert className="w-4 h-4" />
           </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <span className="font-title-sm text-body-md text-status-warning tracking-tight">
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-status-warning">
                 Mandatory Security Rule: High-Value Dual-Signature Threshold
               </span>
-              <span className="font-label-caps text-[10px] text-status-warning bg-status-warning/20 border border-status-warning/40 px-1.5 py-0.5 rounded">
+              <span className="font-mono text-[9px] text-status-warning bg-status-warning/20 border border-status-warning/40 px-1.5 py-0.2 rounded-[2px]">
                 Art. 72b FINMA Compliant
               </span>
             </div>
-            <p className="font-body-sm text-body-sm text-on-surface/80 mt-0.5">
-              Every outgoing client withdrawal exceeding{" "}
-              <strong className="text-on-surface font-mono font-semibold">$100,000.00 USD</strong> requires
-              cryptographic two-officer co-signature verification before message execution to SWIFT/SIC or multisig broadcast.
+            <p className="text-secondary text-[11px] mt-0.5 font-sans">
+              Every outgoing client withdrawal exceeding <strong className="text-on-surface font-mono">$100,000.00 USD</strong> requires cryptographic two-officer co-signature verification before message execution.
             </p>
           </div>
         </div>
       </div>
 
       {/* Filter & Segment Bar */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-bg-panel p-2 rounded-lg border border-border-subtle">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-bg-panel p-2.5 rounded-[4px] border border-border-subtle">
         {/* Tab Controls */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0" id="settlement-tabs">
+        <div className="flex items-center gap-1.5 flex-wrap" id="settlement-tabs">
           <button
             type="button"
             onClick={() => setActiveTab("withdrawals")}
-            className={`px-3 py-1.5 rounded font-title-sm text-body-sm flex items-center gap-2 transition-all ${
+            className={`px-3 py-1.5 rounded-[3px] text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
               activeTab === "withdrawals"
-                ? "bg-bg-elevated text-on-surface border border-gold-accent shadow-sm"
+                ? "bg-bg-elevated text-gold-accent border border-gold-accent/50 shadow-xs font-semibold"
                 : "bg-bg-canvas hover:bg-state-hover text-secondary border border-border-subtle"
             }`}
           >
-            <ArrowUpRight
-              className={`w-4 h-4 ${
-                activeTab === "withdrawals" ? "text-gold-accent" : "text-secondary"
-              }`}
-            />
+            <ArrowUpRight className="w-3.5 h-3.5 text-gold-accent" />
             <span>Outgoing Withdrawals</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("deposits")}
-            className={`px-3 py-1.5 rounded font-title-sm text-body-sm flex items-center gap-2 transition-all ${
+            className={`px-3 py-1.5 rounded-[3px] text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
               activeTab === "deposits"
-                ? "bg-bg-elevated text-on-surface border border-telemetry-cyan shadow-sm"
+                ? "bg-bg-elevated text-telemetry-cyan border border-telemetry-cyan/50 shadow-xs font-semibold"
                 : "bg-bg-canvas hover:bg-state-hover text-secondary border border-border-subtle"
             }`}
           >
-            <ArrowDownLeft
-              className={`w-4 h-4 ${
-                activeTab === "deposits" ? "text-telemetry-cyan" : "text-secondary"
-              }`}
-            />
+            <ArrowDownLeft className="w-3.5 h-3.5 text-telemetry-cyan" />
             <span>Incoming Deposits</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("both")}
-            className={`px-3 py-1.5 rounded font-title-sm text-body-sm flex items-center gap-1.5 transition-all ${
+            className={`px-3 py-1.5 rounded-[3px] text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
               activeTab === "both"
-                ? "bg-bg-elevated text-on-surface border border-gold-accent shadow-sm"
+                ? "bg-bg-elevated text-on-surface border border-gold-accent/50 shadow-xs font-semibold"
                 : "bg-bg-canvas hover:bg-state-hover text-secondary border border-border-subtle"
             }`}
           >
-            <Columns2 className="w-4 h-4 text-secondary" />
+            <Columns2 className="w-3.5 h-3.5 text-secondary" />
             <span>Split Console View</span>
           </button>
         </div>
 
         {/* Search & Rail Filtering */}
-        <div className="flex items-center gap-3 shrink-0 flex-wrap sm:flex-nowrap">
-          <div className="relative w-full sm:w-64">
-            <Search className="w-4 h-4 text-secondary absolute left-2.5 top-2.5 pointer-events-none" />
+        <div className="flex items-center gap-2.5 flex-1 justify-end flex-wrap sm:flex-nowrap">
+          <div className="relative w-full sm:w-60">
+            <Search className="w-3.5 h-3.5 text-secondary absolute left-2.5 top-2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filter by client, hash, memo..."
-              className="w-full bg-bg-canvas border border-border-subtle rounded pl-8 pr-3 py-1 font-mono text-body-sm text-on-surface placeholder:text-secondary focus:border-gold-accent focus:outline-none"
+              placeholder="Filter by client, hash..."
+              className="w-full bg-bg-canvas border border-border-subtle rounded-[3px] pl-8 pr-3 py-1 font-mono text-xs text-on-surface placeholder:text-secondary focus:border-gold-accent focus:outline-none"
             />
           </div>
-          <div className="flex items-center gap-1 bg-bg-canvas border border-border-subtle rounded p-0.5">
+          <div className="flex items-center gap-1 bg-bg-canvas border border-border-subtle rounded-[3px] p-0.5 shrink-0">
             {RAILS.map((rail) => (
               <button
                 key={rail.value}
                 type="button"
                 onClick={() => setRailFilter(rail.value)}
-                className={`px-2 py-0.5 rounded text-body-sm font-label-caps uppercase transition-colors ${
+                className={`px-2 py-0.5 rounded-[2px] text-[11px] font-mono uppercase transition-colors cursor-pointer ${
                   railFilter === rail.value
-                    ? "bg-state-hover text-gold-accent font-semibold"
+                    ? "bg-bg-elevated text-gold-accent font-semibold border border-gold-accent/30"
                     : "text-secondary hover:text-on-surface"
                 }`}
               >

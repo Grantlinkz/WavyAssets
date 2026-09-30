@@ -9,7 +9,6 @@ import {
   AlertCircle,
   RefreshCw,
   Building,
-  Shield,
   Filter,
   Pencil,
   Mail,
@@ -71,6 +70,29 @@ export const UserDirectoryTable: React.FC = () => {
   })
 
   const users: SupremeUser[] = Array.isArray(rawUsers) ? rawUsers : []
+
+  const getKycLevelBadge = (kycTier?: string, kycStatus?: string) => {
+    const tier = (kycTier || (kycStatus === "APPROVED" ? "TIER_3" : "TIER_1")).toUpperCase()
+    if (tier.includes("3")) {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-[2px] font-mono text-[10px] font-bold bg-telemetry-cyan/15 text-telemetry-cyan border border-telemetry-cyan/30 tracking-wider">
+          TIER 3
+        </span>
+      )
+    }
+    if (tier.includes("2")) {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-[2px] font-mono text-[10px] font-bold bg-purple-500/15 text-purple-400 border border-purple-500/30 tracking-wider">
+          TIER 2
+        </span>
+      )
+    }
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-[2px] font-mono text-[10px] font-bold bg-secondary/15 text-secondary border border-border-subtle tracking-wider">
+        TIER 1
+      </span>
+    )
+  }
 
   const getTierBadge = (tier: UserTier) => {
     switch (tier) {
@@ -146,31 +168,6 @@ export const UserDirectoryTable: React.FC = () => {
           </span>
         )
     }
-  }
-
-  const getRiskChip = (riskScore: number) => {
-    if (riskScore < 25) {
-      return (
-        <span className="font-mono text-[11px] text-status-success flex items-center gap-1">
-          <Shield className="w-3 h-3 text-status-success" />
-          <span>{riskScore} (Low)</span>
-        </span>
-      )
-    }
-    if (riskScore < 60) {
-      return (
-        <span className="font-mono text-[11px] text-amber-400 flex items-center gap-1">
-          <Shield className="w-3 h-3 text-amber-400" />
-          <span>{riskScore} (Med)</span>
-        </span>
-      )
-    }
-    return (
-      <span className="font-mono text-[11px] text-status-danger flex items-center gap-1 font-bold">
-        <Shield className="w-3 h-3 text-status-danger" />
-        <span>{riskScore} (High)</span>
-      </span>
-    )
   }
 
   return (
@@ -301,11 +298,11 @@ export const UserDirectoryTable: React.FC = () => {
                   <th className="py-2.5 px-3">Supreme Entity / Principal</th>
                   <th className="py-2.5 px-3">Corporate Contact</th>
                   <th className="py-2.5 px-3">Account Type</th>
+                  <th className="py-2.5 px-3">KYC Level</th>
                   <th className="py-2.5 px-3">Status</th>
                   <th className="py-2.5 px-3 text-right">Available Cash</th>
                   <th className="py-2.5 px-3 text-right">Invested Capital</th>
                   <th className="py-2.5 px-3 text-right">Total Vault Balance</th>
-                  <th className="py-2.5 px-3">Risk Rating</th>
                   <th className="py-2.5 px-3 text-right">Ledger Actions</th>
                 </tr>
               </thead>
@@ -348,8 +345,11 @@ export const UserDirectoryTable: React.FC = () => {
                       </div>
                     </td>
 
-                    {/* Tier */}
+                    {/* Account Type */}
                     <td className="py-2 px-3">{getTierBadge(user.accessTier)}</td>
+
+                    {/* KYC Level */}
+                    <td className="py-2 px-3">{getKycLevelBadge(user.kycTier, user.kycStatus)}</td>
 
                     {/* Status */}
                     <td className="py-2 px-3">{getStatusChip(user.status)}</td>
@@ -368,9 +368,6 @@ export const UserDirectoryTable: React.FC = () => {
                     <td className="py-2 px-3 text-right font-mono tabular-nums text-gold-accent font-bold">
                       {formatCurrency(user.balances.totalVaultBalance, user.balances.currency)}
                     </td>
-
-                    {/* Risk Rating */}
-                    <td className="py-2 px-3">{getRiskChip(user.riskScore)}</td>
 
                     {/* Actions */}
                     <td className="py-2 px-3 text-right">

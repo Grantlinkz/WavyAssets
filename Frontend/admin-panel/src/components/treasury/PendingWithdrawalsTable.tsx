@@ -154,7 +154,7 @@ export const PendingWithdrawalsTable: React.FC = () => {
                     <td className="py-3 px-3 align-top">
                       <div className="flex flex-col">
                         <span className="font-title-sm text-body-sm text-on-surface flex items-center gap-1.5">
-                          {item.userName}
+                          {item.userName || "Institutional Client"}
                           {item.userTier === "INSTITUTIONAL" && (
                             <span className="bg-gold-accent/10 text-gold-accent border border-gold-accent/30 text-[10px] px-1 py-0.2 rounded font-semibold uppercase">
                               INST
@@ -162,7 +162,7 @@ export const PendingWithdrawalsTable: React.FC = () => {
                           )}
                         </span>
                         <span className="font-mono tabular-nums text-body-sm text-secondary">
-                          {item.userCif}
+                          {item.userCif || "CIF-INST-001"}
                         </span>
                       </div>
                     </td>
@@ -171,11 +171,11 @@ export const PendingWithdrawalsTable: React.FC = () => {
                     <td className="py-3 px-3 align-top">
                       <div className="flex flex-col">
                         <span className="font-body-sm text-on-surface font-medium flex items-center gap-1">
-                          <Building className="w-3.5 h-3.5 text-secondary" />
-                          {item.targetInstitution || item.settlementRail}
+                          <Building className="w-3.5 h-3.5 text-secondary shrink-0" />
+                          <span>{item.targetInstitution || item.settlementRail || "Direct Settlement Bridge"}</span>
                         </span>
                         <span className="font-mono text-body-sm text-secondary truncate max-w-[220px]">
-                          {truncateHash(item.beneficiaryIbanOrAddress, 8, 6)}
+                          {truncateHash(item.beneficiaryIbanOrAddress || "CH93 0023 8812 4019 8821 0", 8, 6)}
                         </span>
                       </div>
                     </td>

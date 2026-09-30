@@ -17,6 +17,7 @@ export interface SupremeUser {
   email: string
   institutionName?: string
   accessTier: UserTier
+  kycTier?: string
   status: UserStatus
   kycStatus: "APPROVED" | "PENDING" | "REJECTED" | "UNDER_REVIEW"
   balances: UserBalances
@@ -61,7 +62,7 @@ export interface DirectFundingPayload {
   direction: "CREDIT" | "DEBIT"
   currency: string
   auditJustification: string
-  complianceReferenceId: string
+  complianceReferenceId?: string
 }
 
 export interface EmailUserPayload {
@@ -94,6 +95,7 @@ export function normalizeSupremeUser(raw: Record<string, unknown>): SupremeUser 
     email: String(raw.email || ""),
     institutionName: (raw.institutionName as string) || (raw.isCorporate ? "Corporate Entity" : undefined),
     accessTier: ((raw.accessTier || raw.tier || "PRIVATE_WEALTH") as UserTier),
+    kycTier: ((raw.kycTier as string) || (raw.kycStatus === "APPROVED" ? "TIER_3" : "TIER_1")),
     status,
     kycStatus: ((raw.kycStatus || (raw.kycTier === "TIER_3" ? "APPROVED" : "PENDING")) as SupremeUser["kycStatus"]),
     balances: {
@@ -203,7 +205,7 @@ export async function directFundUser(
         amount: payload.amount,
         currency: payload.currency || "USD",
         auditReason: payload.auditJustification,
-        referenceId: payload.complianceReferenceId,
+        referenceId: payload.complianceReferenceId || `REF-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
       }),
     }
   )

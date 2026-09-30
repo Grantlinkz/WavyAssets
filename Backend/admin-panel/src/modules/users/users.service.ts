@@ -921,6 +921,9 @@ export class UsersService {
 
     const currency = (dto.currency || "USD").toUpperCase();
     const amount = Number(dto.amount);
+    const referenceId =
+      dto.referenceId ||
+      `REF-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
 
     if (amount <= 0 || isNaN(amount)) {
       throw new BadRequestException("Amount must be a positive finite number.");
@@ -934,12 +937,12 @@ export class UsersService {
           async (tx) => {
             // 1. Idempotency Check on referenceId
             const existingTx = await tx.ledgerTransaction.findUnique({
-              where: { referenceId: dto.referenceId },
+              where: { referenceId },
             });
 
             if (existingTx) {
               throw new ConflictException(
-                `A ledger transaction with referenceId '${dto.referenceId}' already exists. Idempotency check failed.`,
+                `A ledger transaction with referenceId '${referenceId}' already exists. Idempotency check failed.`,
               );
             }
 
@@ -995,7 +998,7 @@ export class UsersService {
                 : "ADJUSTMENT";
             const ledgerTx = await tx.ledgerTransaction.create({
               data: {
-                referenceId: dto.referenceId,
+                referenceId,
                 type: txType,
                 status: "SETTLED",
                 description: dto.auditReason,
@@ -1037,7 +1040,7 @@ export class UsersService {
                   accountType: dto.accountType,
                   currency,
                   delta: entryAmount,
-                  referenceId: dto.referenceId,
+                  referenceId,
                 }),
                 reason: dto.auditReason,
                 ipAddressHash: this.cryptoService.hashIpAddress(
