@@ -11,6 +11,9 @@ import {
   Building,
   Shield,
   Filter,
+  Pencil,
+  Mail,
+  Trash2,
 } from "lucide-react"
 import { fetchUsers, type SupremeUser, type UserTier, type UserStatus } from "../../api/users"
 import { useUserRegistryStore } from "../../store/useUserRegistryStore"
@@ -19,7 +22,9 @@ import { formatCurrency, formatTimestamp } from "../../lib/formatters"
 
 const TIERS: { label: string; value: string }[] = [
   { label: "All Tiers", value: "ALL" },
+  { label: "Private Wealth", value: "PRIVATE_WEALTH" },
   { label: "Institutional", value: "INSTITUTIONAL" },
+  { label: "Retail", value: "RETAIL" },
   { label: "Tier 3", value: "TIER_3" },
   { label: "Tier 2", value: "TIER_2" },
   { label: "Tier 1", value: "TIER_1" },
@@ -43,6 +48,9 @@ export const UserDirectoryTable: React.FC = () => {
     openCreateUserModal,
     openSuspendModal,
     openFundingModal,
+    openEditUserModal,
+    openDeleteUserModal,
+    openEmailUserModal,
   } = useUserRegistryStore()
 
   const {
@@ -70,6 +78,18 @@ export const UserDirectoryTable: React.FC = () => {
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-[2px] font-mono text-[10px] font-bold bg-gold-accent/15 text-gold-accent border border-gold-accent/30 tracking-wider">
             INSTITUTIONAL
+          </span>
+        )
+      case "PRIVATE_WEALTH":
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-[2px] font-mono text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 tracking-wider">
+            PRIVATE WEALTH
+          </span>
+        )
+      case "RETAIL":
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-[2px] font-mono text-[10px] font-bold bg-blue-500/15 text-blue-300 border border-blue-500/30 tracking-wider">
+            RETAIL
           </span>
         )
       case "TIER_3":
@@ -163,7 +183,7 @@ export const UserDirectoryTable: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search Supreme entities, emails, or IDs..."
+            placeholder="Search Users, emails, or IDs..."
             className="w-full bg-bg-canvas border border-border-subtle rounded-[4px] pl-8 pr-3 py-1.5 text-xs text-on-surface focus:border-gold-accent focus:outline-none"
             data-testid="user-search-input"
           />
@@ -220,7 +240,7 @@ export const UserDirectoryTable: React.FC = () => {
             data-testid="new-user-button"
           >
             <UserPlus className="w-3.5 h-3.5" />
-            <span>Provision Supreme Entity</span>
+            <span>Create New User</span>
           </button>
         </div>
       </div>
@@ -259,7 +279,7 @@ export const UserDirectoryTable: React.FC = () => {
             <Building className="w-6 h-6" />
           </div>
           <h3 className="text-base font-semibold text-on-surface mb-1">
-            No Supreme Entities Match Query
+            No Users Match Query
           </h3>
           <p className="text-xs text-secondary max-w-md mb-4">
             Adjust active filters or provision a new institutional entity to begin ledger management.
@@ -269,7 +289,7 @@ export const UserDirectoryTable: React.FC = () => {
             className="px-4 py-1.5 rounded-[4px] bg-gold-accent hover:bg-[#C5A028] text-xs text-bg-canvas font-semibold flex items-center gap-1.5 cursor-pointer"
           >
             <UserPlus className="w-3.5 h-3.5" />
-            <span>Provision Supreme Entity</span>
+            <span>Create New User</span>
           </button>
         </div>
       ) : (
@@ -354,22 +374,47 @@ export const UserDirectoryTable: React.FC = () => {
 
                     {/* Actions */}
                     <td className="py-2 px-3 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
+                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                        {/* Edit details */}
+                        <button
+                          onClick={() => openEditUserModal(user)}
+                          className="px-2 py-1 rounded-[2px] bg-bg-elevated hover:bg-state-hover border border-border-subtle text-secondary hover:text-on-surface font-mono text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Edit User Details"
+                          data-testid={`edit-user-${user.id}`}
+                        >
+                          <Pencil className="w-3 h-3 text-secondary" />
+                          <span>Edit</span>
+                        </button>
+
+                        {/* Direct Funding (Credit/Debit) */}
                         <button
                           onClick={() => openFundingModal(user)}
                           className="px-2 py-1 rounded-[2px] bg-bg-elevated hover:bg-state-hover border border-border-subtle text-gold-accent hover:border-gold-accent/40 font-mono text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
-                          title="Direct Ledger Capital Funding"
+                          title="Fund User (Credit / Debit)"
                           data-testid={`fund-user-${user.id}`}
                         >
                           <DollarSign className="w-3 h-3" />
                           <span>Fund</span>
                         </button>
+
+                        {/* Email user */}
+                        <button
+                          onClick={() => openEmailUserModal(user)}
+                          className="px-2 py-1 rounded-[2px] bg-bg-elevated hover:bg-state-hover border border-border-subtle text-telemetry-cyan hover:border-telemetry-cyan/40 font-mono text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Send Email to User"
+                          data-testid={`email-user-${user.id}`}
+                        >
+                          <Mail className="w-3 h-3" />
+                          <span>Email</span>
+                        </button>
+
+                        {/* Suspend / Reactivate */}
                         <button
                           onClick={() => openSuspendModal(user)}
                           className={`px-2 py-1 rounded-[2px] font-mono text-[11px] flex items-center gap-1 transition-colors cursor-pointer border ${
                             user.status === "SUSPENDED"
                               ? "bg-status-success/10 hover:bg-status-success/20 text-status-success border-status-success/30"
-                              : "bg-status-danger/10 hover:bg-status-danger/20 text-status-danger border-status-danger/30"
+                              : "bg-status-warning/10 hover:bg-status-warning/20 text-amber-300 border-status-warning/30"
                           }`}
                           title={user.status === "SUSPENDED" ? "Re-activate Account" : "Enact Account Suspension"}
                           data-testid={`suspend-user-${user.id}`}
@@ -385,6 +430,17 @@ export const UserDirectoryTable: React.FC = () => {
                               <span>Suspend</span>
                             </>
                           )}
+                        </button>
+
+                        {/* Delete user */}
+                        <button
+                          onClick={() => openDeleteUserModal(user)}
+                          className="px-2 py-1 rounded-[2px] bg-status-danger/10 hover:bg-status-danger/20 border border-status-danger/30 text-status-danger font-mono text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Delete User and All Database Records"
+                          data-testid={`delete-user-${user.id}`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Delete</span>
                         </button>
                       </div>
                     </td>

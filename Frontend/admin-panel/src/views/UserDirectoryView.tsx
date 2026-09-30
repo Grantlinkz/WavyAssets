@@ -4,6 +4,9 @@ import { UserDirectoryTable } from "../components/users/UserDirectoryTable"
 import { CreateUserModal } from "../components/users/CreateUserModal"
 import { SuspendUserModal } from "../components/users/SuspendUserModal"
 import { DirectFundingModal } from "../components/users/DirectFundingModal"
+import { EditUserModal } from "../components/users/EditUserModal"
+import { DeleteUserModal } from "../components/users/DeleteUserModal"
+import { EmailUserModal } from "../components/users/EmailUserModal"
 
 export const UserDirectoryView: React.FC = () => {
   return (
@@ -28,6 +31,9 @@ export const UserDirectoryView: React.FC = () => {
       <CreateUserModal />
       <SuspendUserModal />
       <DirectFundingModal />
+      <EditUserModal />
+      <DeleteUserModal />
+      <EmailUserModal />
     </div>
   )
 }

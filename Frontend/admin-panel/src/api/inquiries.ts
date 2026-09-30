@@ -63,3 +63,26 @@ export async function convertInquiryToUser(
     body: JSON.stringify(payload),
   })
 }
+
+export interface NewsletterSubscriber {
+  id: string
+  email: string
+  isConfirmed: boolean
+  confirmedAt: string | null
+  createdAt: string
+}
+
+export async function fetchSubscribers(): Promise<NewsletterSubscriber[]> {
+  const res = await apiClient<NewsletterSubscriber[] | { subscribers?: NewsletterSubscriber[] }>("/inquiries/subscribers")
+  if (Array.isArray(res)) return res
+  if (res && typeof res === "object" && "subscribers" in res && Array.isArray(res.subscribers)) {
+    return res.subscribers
+  }
+  return []
+}
+
+export async function deleteSubscriber(id: string): Promise<{ success: boolean; message: string }> {
+  return apiClient<{ success: boolean; message: string }>(`/inquiries/subscribers/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  })
+}

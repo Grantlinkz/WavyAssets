@@ -9,6 +9,7 @@ import {
   Mail,
   Send,
   Building,
+  MessageSquare,
 } from "lucide-react"
 import { fetchInquiries, type LeadInquiry, type InquiryStatus } from "../../api/inquiries"
 import { useAdminNavStore } from "../../store/useAdminNavStore"
@@ -216,6 +217,12 @@ export const InquiriesTable: React.FC<InquiriesTableProps> = ({
                           <span>{isDecrypted ? inquiry.telegram : "••••••••"}</span>
                         </span>
                       </div>
+                      {inquiry.notes && (
+                        <div className="flex items-center gap-1 text-[10px] text-gold-accent font-sans mt-1 max-w-[220px] truncate" title={inquiry.notes}>
+                          <MessageSquare className="w-3 h-3 shrink-0" />
+                          <span className="truncate italic">"{inquiry.notes}"</span>
+                        </div>
+                      )}
                     </td>
 
                     {/* Capital Interest */}

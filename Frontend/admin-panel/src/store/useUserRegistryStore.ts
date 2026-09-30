@@ -11,6 +11,9 @@ export interface UserRegistryState {
   isCreateUserModalOpen: boolean
   isSuspendUserModalOpen: boolean
   isDirectFundingModalOpen: boolean
+  isEditUserModalOpen: boolean
+  isDeleteUserModalOpen: boolean
+  isEmailUserModalOpen: boolean
 
   // Actions
   setSearchQuery: (query: string) => void
@@ -26,6 +29,15 @@ export interface UserRegistryState {
   
   openFundingModal: (user: SupremeUser) => void
   closeFundingModal: () => void
+
+  openEditUserModal: (user: SupremeUser) => void
+  closeEditUserModal: () => void
+
+  openDeleteUserModal: (user: SupremeUser) => void
+  closeDeleteUserModal: () => void
+
+  openEmailUserModal: (user: SupremeUser) => void
+  closeEmailUserModal: () => void
 }
 
 export const useUserRegistryStore = create<UserRegistryState>((set) => ({
@@ -37,6 +49,9 @@ export const useUserRegistryStore = create<UserRegistryState>((set) => ({
   isCreateUserModalOpen: false,
   isSuspendUserModalOpen: false,
   isDirectFundingModalOpen: false,
+  isEditUserModalOpen: false,
+  isDeleteUserModalOpen: false,
+  isEmailUserModalOpen: false,
 
   setSearchQuery: (query) => set({ searchQuery: query }),
   setSelectedTier: (tier) => set({ selectedTier: tier }),
@@ -51,4 +66,13 @@ export const useUserRegistryStore = create<UserRegistryState>((set) => ({
 
   openFundingModal: (user) => set({ selectedUser: user, isDirectFundingModalOpen: true }),
   closeFundingModal: () => set({ isDirectFundingModalOpen: false, selectedUser: null }),
+
+  openEditUserModal: (user) => set({ selectedUser: user, isEditUserModalOpen: true }),
+  closeEditUserModal: () => set({ isEditUserModalOpen: false, selectedUser: null }),
+
+  openDeleteUserModal: (user) => set({ selectedUser: user, isDeleteUserModalOpen: true }),
+  closeDeleteUserModal: () => set({ isDeleteUserModalOpen: false, selectedUser: null }),
+
+  openEmailUserModal: (user) => set({ selectedUser: user, isEmailUserModalOpen: true }),
+  closeEmailUserModal: () => set({ isEmailUserModalOpen: false, selectedUser: null }),
 }))

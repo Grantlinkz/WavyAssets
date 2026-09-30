@@ -11,6 +11,7 @@ export const DirectFundingModal: React.FC = () => {
   const { hasPermission } = useAdminAuthStore()
   const queryClient = useQueryClient()
 
+  const [direction, setDirection] = useState<"CREDIT" | "DEBIT">("CREDIT")
   const [amount, setAmount] = useState("")
   const [targetBalance, setTargetBalance] = useState<BalanceType>("AVAILABLE_CASH")
   const [currency, setCurrency] = useState("USD")
@@ -29,6 +30,7 @@ export const DirectFundingModal: React.FC = () => {
       setComplianceReferenceId("")
       setErrorMsg(null)
       setSuccessMsg(null)
+      setDirection("CREDIT")
     }
   }, [selectedUser])
 
@@ -40,7 +42,7 @@ export const DirectFundingModal: React.FC = () => {
         throw new Error("Funding amount must be a positive number greater than 0.")
       }
       if (!auditJustification.trim()) {
-        throw new Error("Mandatory audit justification required for ledger capital injection.")
+        throw new Error("Mandatory audit justification required for ledger capital adjustment.")
       }
       if (!complianceReferenceId.trim()) {
         throw new Error("Mandatory compliance / wire reference ID required.")
@@ -48,6 +50,7 @@ export const DirectFundingModal: React.FC = () => {
 
       return directFundUser({
         userId: selectedUser.id,
+        direction,
         amount: parsedAmount,
         targetBalance,
         currency,
@@ -57,9 +60,9 @@ export const DirectFundingModal: React.FC = () => {
     },
     onSuccess: (data) => {
       setSuccessMsg(
-        `Successfully credited ${formatCurrency(parseFloat(amount), currency)} to ${
+        `Successfully ${direction === "CREDIT" ? "credited" : "debited"} ${formatCurrency(parseFloat(amount), currency)} ${direction === "CREDIT" ? "to" : "from"} ${
           targetBalance === "AVAILABLE_CASH" ? "Available Cash" : "Invested Capital"
-        }. Transaction ID: ${data.transactionId}`
+        }. Transaction ID: ${data.transactionId || "Confirmed"}`
       )
       queryClient.invalidateQueries({ queryKey: ["users"] })
       setTimeout(() => {
@@ -86,10 +89,17 @@ export const DirectFundingModal: React.FC = () => {
   const currentAvailable = selectedUser.balances.availableCash
   const currentInvested = selectedUser.balances.investedCapital
   const parsedAmount = parseFloat(amount) || 0
+
   const projectedAvailable =
-    targetBalance === "AVAILABLE_CASH" ? currentAvailable + parsedAmount : currentAvailable
+    direction === "CREDIT"
+      ? (targetBalance === "AVAILABLE_CASH" ? currentAvailable + parsedAmount : currentAvailable)
+      : (targetBalance === "AVAILABLE_CASH" ? Math.max(0, currentAvailable - parsedAmount) : currentAvailable)
+
   const projectedInvested =
-    targetBalance === "INVESTED_CAPITAL" ? currentInvested + parsedAmount : currentInvested
+    direction === "CREDIT"
+      ? (targetBalance === "INVESTED_CAPITAL" ? currentInvested + parsedAmount : currentInvested)
+      : (targetBalance === "INVESTED_CAPITAL" ? Math.max(0, currentInvested - parsedAmount) : currentInvested)
+
   const projectedTotal = projectedAvailable + projectedInvested
 
   return (
@@ -200,6 +210,39 @@ export const DirectFundingModal: React.FC = () => {
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 text-xs">
+          {/* Operation Direction: Credit vs Debit */}
+          <div>
+            <label className="block font-mono uppercase text-secondary mb-1">
+              Operation Direction *
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setDirection("CREDIT")}
+                className={`py-2 px-3 rounded-[4px] border font-medium text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  direction === "CREDIT"
+                    ? "bg-status-success/20 border-status-success text-status-success font-semibold shadow-xs"
+                    : "bg-bg-canvas border-border-subtle text-secondary hover:text-on-surface"
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-status-success inline-block"></span>
+                Credit (Inject / Deposit)
+              </button>
+              <button
+                type="button"
+                onClick={() => setDirection("DEBIT")}
+                className={`py-2 px-3 rounded-[4px] border font-medium text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  direction === "DEBIT"
+                    ? "bg-status-danger/20 border-status-danger text-status-danger font-semibold shadow-xs"
+                    : "bg-bg-canvas border-border-subtle text-secondary hover:text-on-surface"
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-status-danger inline-block"></span>
+                Debit (Extract / Withdraw)
+              </button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-mono uppercase text-secondary mb-1">
@@ -292,10 +335,18 @@ export const DirectFundingModal: React.FC = () => {
             <button
               type="submit"
               disabled={mutation.isPending || !canDirectFund}
-              className="px-4 py-1.5 rounded-[4px] bg-gold-accent hover:bg-[#C5A028] text-bg-canvas font-semibold transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className={`px-4 py-1.5 rounded-[4px] font-semibold transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
+                direction === "CREDIT"
+                  ? "bg-gold-accent hover:bg-[#C5A028] text-bg-canvas"
+                  : "bg-status-danger hover:bg-red-700 text-white"
+              }`}
             >
               <DollarSign className="w-3.5 h-3.5" />
-              <span>{mutation.isPending ? "Executing Credit..." : "Credit Supreme Ledger"}</span>
+              <span>
+                {mutation.isPending
+                  ? `Executing ${direction === "CREDIT" ? "Credit" : "Debit"}...`
+                  : `${direction === "CREDIT" ? "Credit" : "Debit"} Supreme Ledger`}
+              </span>
             </button>
           </div>
         </form>

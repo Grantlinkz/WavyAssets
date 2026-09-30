@@ -3,6 +3,7 @@ import {
   Get,
   Patch,
   Post,
+  Delete,
   Param,
   Body,
   Query,
@@ -29,6 +30,18 @@ export class InquiriesController {
     @Query('search') search?: string,
   ) {
     return this.inquiriesService.findAll(statusFilter, search);
+  }
+
+  @Get('subscribers')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.DESK_LEAD, AdminRole.CONCIERGE, AdminRole.COMPLIANCE_OFFICER, AdminRole.TREASURY_OFFICER)
+  async getSubscribers() {
+    return this.inquiriesService.getSubscribers();
+  }
+
+  @Delete('subscribers/:id')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.DESK_LEAD)
+  async deleteSubscriber(@Param('id') id: string) {
+    return this.inquiriesService.deleteSubscriber(id);
   }
 
   @Get(':id')

@@ -67,6 +67,21 @@ export class InquiriesService {
     return decrypted;
   }
 
+  async getSubscribers() {
+    return this.prisma.newsletterSubscriber.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async deleteSubscriber(id: string) {
+    const subscriber = await this.prisma.newsletterSubscriber.findUnique({ where: { id } });
+    if (!subscriber) {
+      throw new NotFoundException(`Subscriber '${id}' not found`);
+    }
+    await this.prisma.newsletterSubscriber.delete({ where: { id } });
+    return { success: true, message: `Subscriber '${subscriber.email}' removed from list.` };
+  }
+
   async findById(id: string): Promise<LeadInquiryResponse> {
     const inquiry = await this.prisma.leadInquiry.findUnique({
       where: { id },

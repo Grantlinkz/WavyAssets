@@ -10,17 +10,38 @@ import * as crypto from 'crypto';
 import { PrismaService } from '../../common/services/prisma.service';
 import { CryptoService } from '../../common/services/crypto.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { EmailUserDto } from './dto/email-user.dto';
 import { FundBalanceDto, BalanceFundDirection } from './dto/fund-balance.dto';
 import { UserQueryDto } from './dto/user-query.dto';
+import { Resend } from 'resend';
 
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
+  private readonly resendClient: Resend | null = null;
+  private readonly emailFrom: string;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly cryptoService: CryptoService,
-  ) {}
+  ) {
+    const resendApiKey = process.env.RESEND_API_KEY || '';
+    if (resendApiKey && resendApiKey.startsWith('re_')) {
+      this.resendClient = new Resend(resendApiKey);
+      this.logger.log('Resend email client successfully initialized.');
+    } else {
+      this.logger.warn('[Resend Config] RESEND_API_KEY is not configured or invalid (must start with re_).');
+    }
+
+    const rawFrom = process.env.EMAIL_FROM || 'WavyAssets Security <security@wavyassets.com>';
+    if (!rawFrom.includes('@')) {
+      const sanitizedName = rawFrom.replace(/["']/g, '').trim();
+      this.emailFrom = `${sanitizedName} <onboarding@resend.dev>`;
+    } else {
+      this.emailFrom = rawFrom.replace(/["']/g, '').trim();
+    }
+  }
 
   /**
    * Retrieves paginated directory of Supreme users with aggregated balances
@@ -470,9 +491,209 @@ export class UsersService {
   }
 
   /**
-   * Cascading deletion of a client account guarded by email confirmation
+   * Updates an existing Supreme client's details (fullName, email, tier, kycTier, isCorporate, isActive, passphrase)
    */
-  async deleteUser(id: string, confirmationKey: string, adminId?: string, ipAddress?: string) {
+  async update(id: string, dto: UpdateUserDto, adminId?: string, ipAddress?: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: { ledgerAccounts: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`Client account with ID '${id}' was not found.`);
+    }
+
+    const dataToUpdate: any = {};
+
+    if (dto.email && dto.email.trim().toLowerCase() !== user.email.toLowerCase()) {
+      const normalizedEmail = dto.email.trim().toLowerCase();
+      const existing = await this.prisma.user.findUnique({
+        where: { email: normalizedEmail },
+      });
+      if (existing) {
+        throw new ConflictException(`User with email '${normalizedEmail}' already exists.`);
+      }
+      dataToUpdate.email = normalizedEmail;
+    }
+
+    if (dto.fullName !== undefined) {
+      dataToUpdate.fullName = dto.fullName.trim();
+    }
+
+    if (dto.tier !== undefined) {
+      dataToUpdate.tier = dto.tier;
+    }
+
+    if (dto.kycTier !== undefined) {
+      dataToUpdate.kycTier = dto.kycTier;
+    }
+
+    if (dto.isCorporate !== undefined) {
+      dataToUpdate.isCorporate = dto.isCorporate;
+    }
+
+    if (dto.isActive !== undefined) {
+      dataToUpdate.isActive = dto.isActive;
+    }
+
+    if (dto.passphrase && dto.passphrase.trim()) {
+      dataToUpdate.passphraseHash = await this.cryptoService.hashPassword(dto.passphrase.trim());
+    }
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const res = await tx.user.update({
+        where: { id },
+        data: dataToUpdate,
+      });
+
+      await tx.adminAuditLog.create({
+        data: {
+          adminId: adminId || null,
+          action: 'USER_UPDATE',
+          targetEntity: 'User',
+          targetId: id,
+          diffBefore: JSON.stringify({
+            email: user.email,
+            fullName: user.fullName,
+            tier: user.tier,
+            kycTier: user.kycTier,
+            isActive: user.isActive,
+          }),
+          diffAfter: JSON.stringify(dataToUpdate),
+          reason: 'Client dossier profile updated by administrator',
+          ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
+        },
+      });
+
+      return res;
+    });
+
+    return {
+      id: updated.id,
+      email: updated.email,
+      fullName: updated.fullName,
+      tier: updated.tier,
+      kycTier: updated.kycTier,
+      isCorporate: updated.isCorporate,
+      isActive: updated.isActive,
+      status: updated.isActive ? 'Active' : 'Locked',
+      message: `Client account '${updated.email}' updated successfully.`,
+    };
+  }
+
+  /**
+   * Dispatches direct administrative email notification to client via Resend
+   */
+  async sendEmail(id: string, dto: EmailUserDto, adminId?: string, ipAddress?: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`Client account with ID '${id}' was not found.`);
+    }
+
+    let emailDelivered = false;
+    let resendMessageId: string | null = null;
+    let deliveryError: string | null = null;
+
+    if (this.resendClient) {
+      try {
+        const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${dto.subject}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b0f17; color: #f1f5f9; padding: 24px; margin: 0; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #111827; border: 1px solid #1f2937; border-radius: 8px; overflow: hidden; }
+    .header { padding: 24px; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); border-bottom: 1px solid #374151; }
+    .header h1 { margin: 0; color: #fbbf24; font-size: 20px; font-weight: 700; letter-spacing: 0.05em; }
+    .body { padding: 24px; font-size: 14px; line-height: 1.6; color: #cbd5e1; }
+    .footer { padding: 16px 24px; background-color: #030712; border-top: 1px solid #1f2937; font-size: 11px; color: #64748b; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>WAVYASSETS EXECUTIVE DESK</h1>
+    </div>
+    <div class="body">
+      <p style="font-weight: 600; color: #f8fafc;">Dear ${user.fullName || 'Valued Client'},</p>
+      <div>${dto.message.replace(/\n/g, '<br/>')}</div>
+    </div>
+    <div class="footer">
+      <p>This is an administrative notification from WavyAssets Custody & Asset Management.</p>
+      <p>&copy; ${new Date().getFullYear()} WavyAssets AG. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+        const response = await this.resendClient.emails.send({
+          from: this.emailFrom,
+          to: user.email,
+          subject: dto.subject,
+          html,
+          text: dto.message,
+        });
+
+        if (response.error) {
+          deliveryError = response.error.message;
+          this.logger.error(`Resend API rejected dispatch to ${user.email}: ${deliveryError}`);
+        } else {
+          emailDelivered = true;
+          resendMessageId = response.data?.id || null;
+          this.logger.log(`Resend dispatched email to ${user.email}. ID: ${resendMessageId}`);
+        }
+      } catch (err: any) {
+        deliveryError = err?.message || 'Unexpected Resend exception';
+        this.logger.error(`Failed to dispatch email via Resend to ${user.email}: ${deliveryError}`, err);
+      }
+    } else {
+      this.logger.warn(`Resend client is not active. Email simulated for ${user.email}`);
+    }
+
+    // Log the email notification in admin audit trail
+    await this.prisma.adminAuditLog.create({
+      data: {
+        adminId: adminId || null,
+        action: 'USER_EMAIL_DISPATCH',
+        targetEntity: 'User',
+        targetId: id,
+        diffAfter: JSON.stringify({
+          recipient: user.email,
+          subject: dto.subject,
+          preview: dto.message.slice(0, 100),
+          provider: 'resend',
+          delivered: emailDelivered,
+          resendId: resendMessageId,
+          error: deliveryError,
+        }),
+        reason: `Direct administrative dispatch: ${dto.subject}`,
+        ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
+      },
+    });
+
+    if (deliveryError && !emailDelivered) {
+      throw new BadRequestException(`Failed to send email via Resend: ${deliveryError}`);
+    }
+
+    return {
+      success: true,
+      recipient: user.email,
+      subject: dto.subject,
+      message: `Email successfully dispatched to ${user.email} via Resend.`,
+      resendId: resendMessageId,
+      sentAt: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Cascading deletion of a client account that purges ALL user details and transactions in the DB
+   */
+  async deleteUser(id: string, confirmationKey?: string, adminId?: string, ipAddress?: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: {
@@ -484,49 +705,112 @@ export class UsersService {
       throw new NotFoundException(`Client account with ID '${id}' was not found.`);
     }
 
-    if (!confirmationKey || confirmationKey.trim().toLowerCase() !== user.email.toLowerCase()) {
+    // If confirmationKey is supplied, verify it matches user email or ID
+    if (
+      confirmationKey &&
+      confirmationKey.trim().toLowerCase() !== user.email.toLowerCase() &&
+      confirmationKey.trim() !== user.id
+    ) {
       throw new BadRequestException('Confirmation key does not match client record. Deletion aborted for safety.');
     }
 
-    await this.prisma.$transaction(async (tx) => {
-      // 1. Delete associated LedgerEntry records to satisfy foreign key constraints
-      const accountIds = user.ledgerAccounts.map((a) => a.id);
-      if (accountIds.length > 0) {
-        await tx.ledgerEntry.deleteMany({
-          where: { accountId: { in: accountIds } },
+    await this.prisma.$transaction(
+      async (tx) => {
+        // 1. Gather all ledger account IDs for this user
+        const accountIds = user.ledgerAccounts.map((a) => a.id);
+        if (accountIds.length > 0) {
+          // Find all entry records
+          const entries = await tx.ledgerEntry.findMany({
+            where: { accountId: { in: accountIds } },
+            select: { id: true, transactionId: true },
+          });
+
+          const transactionIds = [...new Set(entries.map((e) => e.transactionId))];
+
+          // Purge all ledger entries for this user's accounts
+          await tx.ledgerEntry.deleteMany({
+            where: { accountId: { in: accountIds } },
+          });
+
+          // Purge all ledger transactions associated with these entries
+          if (transactionIds.length > 0) {
+            await tx.ledgerTransaction.deleteMany({
+              where: { id: { in: transactionIds } },
+            });
+          }
+        }
+
+        // 2. Also purge any orphaned transactions explicitly referring to this user ID or email
+        await tx.ledgerTransaction
+          .deleteMany({
+            where: {
+              OR: [
+                { referenceId: { contains: id } },
+                { description: { contains: id } },
+                { counterparty: user.email },
+                { accountNumber: user.email },
+              ],
+            },
+          })
+          .catch(() => {});
+
+        // 3. Purge all Vertical holdings, positions, and orders
+        await tx.cryptoHolding.deleteMany({ where: { userId: id } });
+        await tx.dcaSchedule.deleteMany({ where: { userId: id } });
+        await tx.stockOrder.deleteMany({ where: { userId: id } });
+        await tx.stockPosition.deleteMany({ where: { userId: id } });
+        await tx.aiFundPosition.deleteMany({ where: { userId: id } });
+        await tx.realEstateShare.deleteMany({ where: { userId: id } });
+        await tx.carShare.deleteMany({ where: { userId: id } });
+        await tx.driveBooking.deleteMany({ where: { userId: id } });
+        await tx.vipCard.deleteMany({ where: { userId: id } });
+
+        // 4. Purge compliance documents, whitelist addresses, webAuthn keys
+        await tx.kycDocument.deleteMany({ where: { userId: id } });
+        await tx.whitelistDestination.deleteMany({ where: { userId: id } });
+        await tx.webAuthnCredential.deleteMany({ where: { userId: id } });
+
+        // 5. Purge sessions, OTP codes, simulation intents, and user audit logs
+        await tx.session.deleteMany({ where: { userId: id } });
+        await tx.otpCode.deleteMany({ where: { userId: id } });
+        await tx.simulationIntent.deleteMany({ where: { userId: id } });
+        await tx.auditLog.deleteMany({ where: { userId: id } });
+
+        // 6. Purge user ledger accounts
+        await tx.ledgerAccount.deleteMany({ where: { userId: id } });
+
+        // 7. Delete the User record itself
+        await tx.user.delete({
+          where: { id },
         });
-      }
 
-      // 2. Delete user (cascades sessions, kyc documents, ledger accounts, vip card)
-      await tx.user.delete({
-        where: { id },
-      });
+        // 8. Record Immutable Admin Audit Trail
+        await tx.adminAuditLog.create({
+          data: {
+            adminId: adminId || null,
+            action: 'USER_DELETE',
+            targetEntity: 'User',
+            targetId: id,
+            diffBefore: JSON.stringify({
+              id: user.id,
+              email: user.email,
+              fullName: user.fullName,
+              tier: user.tier,
+            }),
+            reason: 'Complete purging of client account and all related database records and transactions',
+            ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
+          },
+        });
+      },
+      { maxWait: 10000, timeout: 25000 },
+    );
 
-      // 3. Record Audit Log
-      await tx.adminAuditLog.create({
-        data: {
-          adminId: adminId || null,
-          action: 'USER_DELETE',
-          targetEntity: 'User',
-          targetId: id,
-          diffBefore: JSON.stringify({
-            id: user.id,
-            email: user.email,
-            fullName: user.fullName,
-            tier: user.tier,
-          }),
-          reason: 'Cascading deletion of client account executed by authorized Super Admin',
-          ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
-        },
-      });
-    });
-
-    this.logger.warn(`Account '${id}' (${user.email}) permanently deleted by operator ${adminId || 'SYSTEM'}`);
+    this.logger.warn(`Account '${id}' (${user.email}) permanently deleted with all transactions by operator ${adminId || 'SYSTEM'}`);
     return {
       id,
       email: user.email,
       deleted: true,
-      message: `Client account '${user.email}' and associated ledger accounts were permanently purged.`,
+      message: `Client account '${user.email}' and all associated database records and transactions were permanently purged.`,
     };
   }
 

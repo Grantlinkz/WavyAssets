@@ -50,6 +50,8 @@ export const ContactModal: React.FC<ContactModalProps> = ({
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [service, setService] = useState('PSP & Global Settlement');
   const [allocation, setAllocation] = useState('€500k - €3M');
+  const [message, setMessage] = useState('');
+  const [contactTab, setContactTab] = useState<'mandate' | 'message'>('mandate');
   const [agreeTerms, setAgreeTerms] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
@@ -127,6 +129,8 @@ export const ContactModal: React.FC<ContactModalProps> = ({
         telegram: telegram.trim() || undefined,
         service: mapServiceToBackend(service),
         allocationRange: mapAllocationToBackend(allocation),
+        message: message.trim() || undefined,
+        notes: message.trim() || undefined,
       });
 
       setSuccessMessage(
@@ -143,6 +147,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
         setTelegram('');
         setCompanyName('');
         setWebsiteUrl('');
+        setMessage('');
         setSuccessMessage('');
       }, 4000);
     } catch (err: unknown) {
@@ -271,6 +276,39 @@ export const ContactModal: React.FC<ContactModalProps> = ({
               </div>
             </div>
 
+            {/* Form Mode Switcher Tabs */}
+            <div className="flex items-center gap-1 p-0.5 bg-[#EEF2F6] dark:bg-[#12151B] rounded-sm border border-slate-200 dark:border-outline/20">
+              <button
+                type="button"
+                data-testid="contact-mandate-tab"
+                onClick={() => setContactTab('mandate')}
+                className={`flex-1 py-1 px-2.5 rounded-xs text-[11px] font-sans font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  contactTab === 'mandate'
+                    ? 'bg-white dark:bg-[#1E232D] text-slate-900 dark:text-on-surface shadow-xs font-semibold'
+                    : 'text-slate-500 dark:text-outline hover:text-slate-800 dark:hover:text-on-surface'
+                }`}
+              >
+                <Building className="w-3 h-3 text-slate-400 dark:text-[#A6FF00]" />
+                <span>Mandate Parameters</span>
+              </button>
+              <button
+                type="button"
+                data-testid="contact-message-tab"
+                onClick={() => setContactTab('message')}
+                className={`flex-1 py-1 px-2.5 rounded-xs text-[11px] font-sans font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  contactTab === 'message'
+                    ? 'bg-white dark:bg-[#1E232D] text-slate-900 dark:text-on-surface shadow-xs font-semibold'
+                    : 'text-slate-500 dark:text-outline hover:text-slate-800 dark:hover:text-on-surface'
+                }`}
+              >
+                <MessageSquare className="w-3 h-3 text-[#A6FF00]" />
+                <span>Message</span>
+                {message.trim().length > 0 && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#A6FF00]" />
+                )}
+              </button>
+            </div>
+
             {/* 3. Company Name */}
             <div className="space-y-1">
               <label className="font-sans text-[10px] text-slate-500 dark:text-outline uppercase tracking-wider block">
@@ -290,70 +328,101 @@ export const ContactModal: React.FC<ContactModalProps> = ({
               </div>
             </div>
 
-            {/* 4. Website / Company URL */}
-            <div className="space-y-1">
-              <label className="font-sans text-[10px] text-slate-500 dark:text-outline uppercase tracking-wider block">
-                Website / company URL
-              </label>
-              <div className="flex items-center gap-2 bg-[#F4F6FB] dark:bg-[#0F1115] px-2.5 py-1.5 rounded-sm border border-slate-200 dark:border-outline/30 focus-within:border-[#A6FF00] dark:focus-within:border-[#A6FF00]/70 transition-colors">
-                <Globe className="w-3.5 h-3.5 text-slate-400 dark:text-outline shrink-0" />
-                <input
-                  type="text"
-                  data-testid="contact-website-input"
-                  value={websiteUrl}
-                  onChange={(e) => setWebsiteUrl(e.target.value)}
-                  placeholder="https://alphacapital.ch"
-                  className="bg-transparent border-none outline-none font-mono text-xs text-slate-900 dark:text-on-surface w-full placeholder:text-slate-400 dark:placeholder:text-outline/70"
-                />
-              </div>
-            </div>
-
-            {/* 5. Two Dropdowns (Solution Focus & Allocation Range) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div className="space-y-1">
-                <label className="font-sans text-[10px] text-slate-500 dark:text-outline uppercase tracking-wider block">
-                  Service / Solution
-                </label>
-                <div className="relative">
-                  <select
-                    value={service}
-                    onChange={(e) => setService(e.target.value)}
-                    data-testid="contact-service-select"
-                    className="w-full bg-[#F4F6FB] dark:bg-[#0F1115] px-2.5 py-1.5 rounded-sm border border-slate-200 dark:border-outline/30 text-xs text-slate-900 dark:text-on-surface font-sans appearance-none focus:border-[#A6FF00] dark:focus:border-[#A6FF00]/70 outline-none pr-8 cursor-pointer"
-                  >
-                    <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="PSP & Global Settlement">PSP &amp; Global Settlement</option>
-                    <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="Institutional Custody & MPC">Institutional Custody &amp; MPC</option>
-                    <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="Crypto Yield Aggregation">Crypto Yield Aggregation</option>
-                    <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="Global Stocks DMA">Global Stocks DMA</option>
-                    <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="AI Systematic Funds">AI Systematic Funds</option>
-                    <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="Tokenized Real Estate">Tokenized Real Estate</option>
-                    <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="VIP Metal Cards">VIP Metal Cards</option>
-                  </select>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-outline absolute right-2 top-2 pointer-events-none" />
+            {contactTab === 'mandate' ? (
+              <>
+                {/* 4. Website / Company URL */}
+                <div className="space-y-1">
+                  <label className="font-sans text-[10px] text-slate-500 dark:text-outline uppercase tracking-wider block">
+                    Website / company URL
+                  </label>
+                  <div className="flex items-center gap-2 bg-[#F4F6FB] dark:bg-[#0F1115] px-2.5 py-1.5 rounded-sm border border-slate-200 dark:border-outline/30 focus-within:border-[#A6FF00] dark:focus-within:border-[#A6FF00]/70 transition-colors">
+                    <Globe className="w-3.5 h-3.5 text-slate-400 dark:text-outline shrink-0" />
+                    <input
+                      type="text"
+                      data-testid="contact-website-input"
+                      value={websiteUrl}
+                      onChange={(e) => setWebsiteUrl(e.target.value)}
+                      placeholder="https://alphacapital.ch"
+                      className="bg-transparent border-none outline-none font-mono text-xs text-slate-900 dark:text-on-surface w-full placeholder:text-slate-400 dark:placeholder:text-outline/70"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-1">
-                <label className="font-sans text-[10px] text-slate-500 dark:text-outline uppercase tracking-wider block">
-                  Allocation range
-                </label>
-                <div className="relative">
-                  <select
-                    value={allocation}
-                    onChange={(e) => setAllocation(e.target.value)}
-                    data-testid="contact-allocation-select"
-                    className="w-full bg-[#F4F6FB] dark:bg-[#0F1115] px-2.5 py-1.5 rounded-sm border border-slate-200 dark:border-outline/30 text-xs text-slate-900 dark:text-on-surface font-mono appearance-none focus:border-[#A6FF00] dark:focus:border-[#A6FF00]/70 outline-none pr-8 cursor-pointer"
-                  >
-                    <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="€500 - €3M">€500 - €3M</option>
-                    <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="€500k - €3M">€500k - €3M</option>
-                    <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="$3M - $10M">$3M - $10M</option>
-                    <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="$10M - $50M">$10M - $50M</option>
-                    <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value=">$50M Global">&gt;$50M Global</option>
-                  </select>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-outline absolute right-2 top-2 pointer-events-none" />
+                {/* 5. Two Dropdowns (Solution Focus & Allocation Range) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="space-y-1">
+                    <label className="font-sans text-[10px] text-slate-500 dark:text-outline uppercase tracking-wider block">
+                      Service / Solution
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={service}
+                        onChange={(e) => setService(e.target.value)}
+                        data-testid="contact-service-select"
+                        className="w-full bg-[#F4F6FB] dark:bg-[#0F1115] px-2.5 py-1.5 rounded-sm border border-slate-200 dark:border-outline/30 text-xs text-slate-900 dark:text-on-surface font-sans appearance-none focus:border-[#A6FF00] dark:focus:border-[#A6FF00]/70 outline-none pr-8 cursor-pointer"
+                      >
+                        <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="PSP & Global Settlement">PSP &amp; Global Settlement</option>
+                        <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="Institutional Custody & MPC">Institutional Custody &amp; MPC</option>
+                        <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="Crypto Yield Aggregation">Crypto Yield Aggregation</option>
+                        <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="Global Stocks DMA">Global Stocks DMA</option>
+                        <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="AI Systematic Funds">AI Systematic Funds</option>
+                        <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="Tokenized Real Estate">Tokenized Real Estate</option>
+                        <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="VIP Metal Cards">VIP Metal Cards</option>
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-outline absolute right-2 top-2 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-sans text-[10px] text-slate-500 dark:text-outline uppercase tracking-wider block">
+                      Allocation range
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={allocation}
+                        onChange={(e) => setAllocation(e.target.value)}
+                        data-testid="contact-allocation-select"
+                        className="w-full bg-[#F4F6FB] dark:bg-[#0F1115] px-2.5 py-1.5 rounded-sm border border-slate-200 dark:border-outline/30 text-xs text-slate-900 dark:text-on-surface font-mono appearance-none focus:border-[#A6FF00] dark:focus:border-[#A6FF00]/70 outline-none pr-8 cursor-pointer"
+                      >
+                        <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="€500 - €3M">€500 - €3M</option>
+                        <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="€500k - €3M">€500k - €3M</option>
+                        <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="$3M - $10M">$3M - $10M</option>
+                        <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value="$10M - $50M">$10M - $50M</option>
+                        <option className="bg-white dark:bg-[#0F1115] text-slate-900 dark:text-on-surface" value=">$50M Global">&gt;$50M Global</option>
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-outline absolute right-2 top-2 pointer-events-none" />
+                    </div>
+                  </div>
                 </div>
+              </>
+            ) : (
+              /* Message Tab Content */
+              <div className="space-y-1.5 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between">
+                  <label className="font-sans text-[10px] text-slate-500 dark:text-outline uppercase tracking-wider block">
+                    Inquiry Message &amp; Specific Requirements
+                  </label>
+                  <span className="font-mono text-[10px] text-slate-400 dark:text-outline">
+                    {message.length}/1000
+                  </span>
+                </div>
+                <div className="flex items-start gap-2 bg-[#F4F6FB] dark:bg-[#0F1115] p-2.5 rounded-sm border border-slate-200 dark:border-outline/30 focus-within:border-[#A6FF00] dark:focus-within:border-[#A6FF00]/70 transition-colors">
+                  <MessageSquare className="w-3.5 h-3.5 text-slate-400 dark:text-outline shrink-0 mt-1" />
+                  <textarea
+                    rows={4}
+                    maxLength={1000}
+                    data-testid="contact-message-input"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Describe your mandate specifics, custody architecture, or any questions for the WavyAssets executive desk..."
+                    className="bg-transparent border-none outline-none font-sans text-xs text-slate-900 dark:text-on-surface w-full placeholder:text-slate-400 dark:placeholder:text-outline/70 resize-none leading-relaxed"
+                  />
+                </div>
+                <p className="text-[10px] font-sans text-slate-500 dark:text-outline/80 leading-normal">
+                  Your message is encrypted in transit and routed directly to the authorized desk lead.
+                </p>
               </div>
-            </div>
+            )}
 
             {/* Error Message if Any */}
             {errorMsg && (

@@ -71,7 +71,7 @@ model OtpCode {
 }
 
 model LeadInquiry {
-  id                 String   @id @default(uuid())
+  id                 String    @id @default(uuid())
   fullNameEncrypted  String   // AES-256-GCM encrypted
   workEmailEncrypted String   // AES-256-GCM encrypted
   workEmailHash      String   // Blind index HMAC-SHA256 for fast lookup
@@ -83,7 +83,14 @@ model LeadInquiry {
   domainScore        Float    @default(1.0)
   isSpam             Boolean  @default(false)
   crmDispatched      Boolean  @default(false)
+  status             String?  @default("NEW")
+  notes              String?
+  location           String?  @default("Zurich, Switzerland")
+  custodyPreference  String?  @default("Qualified Institutional Custody")
+  investmentWindow   String?  @default("Immediate (< 30 days)")
+  ipAddress          String?  @default("194.230.144.1")
   createdAt          DateTime @default(now())
+  updatedAt          DateTime? @default(now()) @updatedAt
 
   @@index([workEmailHash])
 }

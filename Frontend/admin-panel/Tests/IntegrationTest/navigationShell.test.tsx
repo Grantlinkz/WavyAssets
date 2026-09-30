@@ -1,9 +1,12 @@
 // Vitest globals enabled
 import { renderToString } from "react-dom/server"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { AdminSidebar } from "../../src/components/layout/AdminSidebar"
 import { useAdminNavStore } from "../../src/store/useAdminNavStore"
 
 describe("Navigation Shell Integration", () => {
+  const queryClient = new QueryClient()
+
   beforeEach(() => {
     useAdminNavStore.setState({
       activeRoute: "overview",
@@ -13,7 +16,11 @@ describe("Navigation Shell Integration", () => {
   })
 
   it("renders admin sidebar with institutional nav links and enclave badge", () => {
-    const html = renderToString(<AdminSidebar />)
+    const html = renderToString(
+      <QueryClientProvider client={queryClient}>
+        <AdminSidebar />
+      </QueryClientProvider>
+    )
     expect(html).toContain('data-testid="admin-sidebar"')
     expect(html).toContain('data-testid="nav-overview"')
     expect(html).toContain('data-testid="nav-inquiries"')
