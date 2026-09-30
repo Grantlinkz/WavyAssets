@@ -11,7 +11,7 @@ const FIELD_ENCRYPTION_KEY = Buffer.from(
   'hex'
 );
 
-const HMAC_SECRET = process.env.JWT_SECRET || 'wavy_admin_jwt_access_super_secret_sovereign_enclave_2026';
+const HMAC_SECRET = process.env.JWT_SECRET || 'wavy_admin_jwt_access_super_secret_Supreme_enclave_2026';
 
 function encryptField(plaintext: string): string {
   const iv = crypto.randomBytes(12);
@@ -30,7 +30,7 @@ function hashBlindIndex(value: string): string {
 async function main() {
   console.log('Seeding WavyAssets Institutional Admin Database...');
 
-  const defaultPassword = 'Sovereign2026!#Vault';
+  const defaultPassword = 'Supreme2026!#Vault';
   const passphraseHash = await argon2.hash(defaultPassword, {
     type: argon2.argon2id,
     memoryCost: 65536,
@@ -91,13 +91,39 @@ async function main() {
       },
     });
   }
-  console.log(`Seeded ${operators.length} administrative operators.`);
+
+  // Seed Super Admin: Moses Alladin
+  const mosesPassphraseHash = await argon2.hash('MosesAlladin1@', {
+    type: argon2.argon2id,
+    memoryCost: 65536,
+    timeCost: 3,
+    parallelism: 4,
+  });
+
+  await prisma.adminUser.upsert({
+    where: { email: 'support@wavyassets.com' },
+    update: {
+      fullName: 'Moses Alladin',
+      role: 'SUPER_ADMIN',
+      passphraseHash: mosesPassphraseHash,
+      isActive: true,
+    },
+    create: {
+      email: 'support@wavyassets.com',
+      fullName: 'Moses Alladin',
+      role: 'SUPER_ADMIN',
+      passphraseHash: mosesPassphraseHash,
+      isActive: true,
+    },
+  });
+
+  console.log(`Seeded ${operators.length + 1} administrative operators (including Moses Alladin).`);
 
   // 2. Seed Fiat Deposit Rail Configuration
   await prisma.fiatDepositRailConfig.upsert({
     where: { id: 'GLOBAL_FIAT_RAIL' },
     update: {
-      beneficiaryName: 'WavyAssets Sovereign Custody AG',
+      beneficiaryName: 'WavyAssets Supreme Custody AG',
       swissIban: 'CH93 0023 8812 4019 8821 0',
       bicSwift: 'UBSWCHZH80A',
       clearingRail: 'Swiss SIC RTGS / Fedwire DvP',
@@ -106,7 +132,7 @@ async function main() {
     },
     create: {
       id: 'GLOBAL_FIAT_RAIL',
-      beneficiaryName: 'WavyAssets Sovereign Custody AG',
+      beneficiaryName: 'WavyAssets Supreme Custody AG',
       swissIban: 'CH93 0023 8812 4019 8821 0',
       bicSwift: 'UBSWCHZH80A',
       clearingRail: 'Swiss SIC RTGS / Fedwire DvP',
@@ -144,8 +170,8 @@ async function main() {
   const sampleLeads = [
     {
       fullName: 'Lars Von Essen',
-      email: 'l.essen@nordic-sovereign.se',
-      company: 'Nordic Sovereign Fund',
+      email: 'l.essen@nordic-Supreme.se',
+      company: 'Nordic Supreme Fund',
       telegram: '@nordic_lars',
       service: 'AI_FUNDS',
       allocation: '$10M+',
@@ -232,7 +258,7 @@ async function main() {
   }
   console.log(`Seeded ${sampleLeads.length} encrypted lead inquiries.`);
 
-  // 5. Seed Core Sovereign Users & Ledger Accounts
+  // 5. Seed Core Supreme Users & Ledger Accounts
   const clientUser = await prisma.user.upsert({
     where: { email: 'client@wavyassets.ch' },
     update: {},
@@ -400,7 +426,7 @@ async function main() {
     }
   }
 
-  // 7. Seed Additional Sovereign Clients for User Directory & Compliance
+  // 7. Seed Additional Supreme Clients for User Directory & Compliance
   const additionalClients = [
     {
       id: 'usr-wealth-002',

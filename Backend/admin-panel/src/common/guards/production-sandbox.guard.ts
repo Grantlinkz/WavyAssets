@@ -21,7 +21,7 @@ export class ProductionSandboxGuard implements CanActivate {
 
     if (isSandboxRequest) {
       throw new ForbiddenException(
-        'Sandbox execution is strictly prohibited within the sovereign production enclave.',
+        'Sandbox execution is strictly prohibited within the Supreme production enclave.',
       );
     }
 

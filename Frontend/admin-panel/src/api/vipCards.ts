@@ -1,7 +1,7 @@
 import { apiClient } from "./client"
 
-export type VipCardSubstrate = "Obsidian 42g Tungsten" | "Black Sovereign Stainless" | "Silver Titanium"
-export type VipCardTier = "OBSIDIAN" | "SOVEREIGN" | "TITANIUM"
+export type VipCardSubstrate = "Obsidian 42g Tungsten" | "Black Supreme Stainless" | "Silver Titanium"
+export type VipCardTier = "OBSIDIAN" | "Supreme" | "TITANIUM"
 export type VipCardType = "PHYSICAL" | "VIRTUAL"
 export type VipShippingStatus = "DELIVERED" | "IN_TRANSIT" | "VAULT_CUSTODY"
 
@@ -53,7 +53,10 @@ export async function fetchVipCards(params?: {
   if (params?.status && params.status !== "ALL") queryParts.push(`status=${encodeURIComponent(params.status)}`)
 
   const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : ""
-  return apiClient<VipCardItem[]>(`/vip-cards${queryString}`)
+  const res = await apiClient<VipCardItem[] | { cards?: VipCardItem[] }>(`/vip-cards${queryString}`)
+  if (Array.isArray(res)) return res
+  if (res && typeof res === "object" && "cards" in res && Array.isArray(res.cards)) return res.cards
+  return []
 }
 
 export async function fetchVipCardsTelemetry(): Promise<VipCardsTelemetry> {

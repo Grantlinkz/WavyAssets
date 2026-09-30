@@ -24,7 +24,7 @@ export const SuspendUserModal: React.FC = () => {
     mutationFn: async () => {
       if (!selectedUser) throw new Error("No user selected")
       if (!reason.trim()) {
-        throw new Error("Mandatory regulatory reason required for sovereign status modification.")
+        throw new Error("Mandatory regulatory reason required for Supreme status modification.")
       }
 
       return suspendUser({
@@ -80,7 +80,7 @@ export const SuspendUserModal: React.FC = () => {
             </div>
             <div>
               <h2 className="text-sm font-semibold text-on-surface">
-                {isCurrentlySuspended ? "Re-activate Sovereign Client Account" : "Sovereign Account Kill-Switch"}
+                {isCurrentlySuspended ? "Re-activate Supreme Client Account" : "Supreme Account Kill-Switch"}
               </h2>
               <p className="text-xs text-secondary font-mono">{selectedUser.id}</p>
             </div>
@@ -148,7 +148,7 @@ export const SuspendUserModal: React.FC = () => {
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 text-xs">
           <div>
             <label className="block font-mono uppercase text-secondary mb-1">
-              Mandatory Regulatory Reason / FINMA Reference *
+              Mandatory Regulatory Reason *
             </label>
             <textarea
               required

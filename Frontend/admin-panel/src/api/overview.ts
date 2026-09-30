@@ -39,3 +39,17 @@ export async function fetchSettlementLedger(
   const query = new URLSearchParams({ timeHorizon, currency }).toString()
   return apiClient<SettlementRecord[]>(`/overview/settlements?${query}`)
 }
+
+export interface BadgeCounts {
+  urgentActions: number
+  newInquiries: number
+  totalUsers: number
+  pendingCompliance: number
+  treasurySignOffs: number
+  activeCards: number
+}
+
+export async function fetchBadgeCounts(): Promise<BadgeCounts> {
+  return apiClient<BadgeCounts>("/overview/badge-counts")
+}
+

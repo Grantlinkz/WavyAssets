@@ -11,6 +11,7 @@ import {
   ArrowRight,
   CheckCircle2,
   AlertCircle,
+  MessageSquare,
 } from "lucide-react"
 import { useAdminNavStore } from "../../store/useAdminNavStore"
 import { useAdminAuthStore } from "../../store/useAdminAuthStore"
@@ -194,6 +195,19 @@ export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({ isDecrypted 
             </div>
           </div>
 
+          {/* Inbound Client Message / Notes */}
+          {selectedInquiry.notes && (
+            <div className="bg-bg-canvas border border-gold-accent/25 rounded-[4px] p-3 flex flex-col gap-2" data-testid="inbound-client-message">
+              <div className="flex items-center gap-1.5 text-gold-accent font-mono text-[11px] uppercase tracking-wider font-semibold">
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Inbound Client Message & Mandate Notes</span>
+              </div>
+              <div className="p-2.5 bg-bg-panel/70 border border-border-subtle rounded-[4px] text-xs text-on-surface whitespace-pre-wrap leading-relaxed font-sans select-text">
+                {selectedInquiry.notes}
+              </div>
+            </div>
+          )}
+
           {/* Workflow Stage Control */}
           <div className="flex flex-col gap-2">
             <label className="font-mono text-[11px] uppercase tracking-wider text-secondary font-medium">
@@ -266,7 +280,7 @@ export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({ isDecrypted 
               data-testid="convert-lead-btn"
             >
               <UserCheck className="w-4 h-4" />
-              <span>Convert to Sovereign Client Account</span>
+              <span>Convert to Supreme Client Account</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           ) : (

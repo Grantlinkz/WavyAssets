@@ -7,8 +7,8 @@ const mockComplianceDossier: KycDossier = {
   id: "dossier-finma-7712",
   dossierNumber: "FINMA-KYC-7712",
   userId: "usr-basel-02",
-  userName: "Picton Sovereign Trust Ltd",
-  userEmail: "fiduciary@picton-sovereign.ch",
+  userName: "Picton Supreme Trust Ltd",
+  userEmail: "fiduciary@picton-Supreme.ch",
   country: "CH",
   entityType: "INSTITUTIONAL_FUND",
   submittedAt: "2026-09-27T14:15:00Z",
@@ -74,7 +74,7 @@ describe("KYC Compliance Deck & Tier Elevation Integration", () => {
     const state = useComplianceStore.getState()
 
     expect(state.isSplitInspectorOpen).toBe(true)
-    expect(state.selectedDossier?.userName).toBe("Picton Sovereign Trust Ltd")
+    expect(state.selectedDossier?.userName).toBe("Picton Supreme Trust Ltd")
     expect(state.selectedDossier?.documents.length).toBe(2)
     expect(state.activeDocumentIndex).toBe(0)
 

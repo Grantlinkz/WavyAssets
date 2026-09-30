@@ -783,7 +783,7 @@ export const AI_STRATEGY_ASSETS: AiStrategyAsset[] = [
   },
   {
     "id": "ai-25",
-    "name": "Frankfurt Main-Cube AI Sovereign Center (FR5)",
+    "name": "Frankfurt Main-Cube AI Supreme Center (FR5)",
     "category": "Data Centers",
     "facility": "Frankfurt am Main Telecom Corridor, Germany",
     "hardwareCode": "DC-FR5-MAIN-CUBE",
@@ -796,7 +796,7 @@ export const AI_STRATEGY_ASSETS: AiStrategyAsset[] = [
     "leaseTermMonths": 24,
     "hourlyRate": 41.5,
     "specs": "Direct Peering into DE-CIX (Largest Global Internet Exchange), 100% Biometric Quorum",
-    "slaStandard": "BSI C5 & GDPR Sovereign European Data Protection Compliant",
+    "slaStandard": "BSI C5 & GDPR Supreme European Data Protection Compliant",
     "imageUrl": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80"
   },
   {
@@ -1071,7 +1071,7 @@ export const AI_STRATEGY_ASSETS: AiStrategyAsset[] = [
   },
   {
     "id": "ai-41",
-    "name": "Sovereign LLM InfiniBand Quantum-2 NDR Switch Fabric",
+    "name": "Supreme LLM InfiniBand Quantum-2 NDR Switch Fabric",
     "category": "Infrastructure",
     "facility": "Geneva Freeport Secured Interconnect #08, Switzerland",
     "hardwareCode": "NET-IB-NDR-64P",
@@ -1263,7 +1263,7 @@ export const AI_DISTRIBUTION_ITEMS: AiDistributionItem[] = [
 export const AI_TENANT_CREDIT_MATRIX: AiTenantCreditItem[] = [
   { id: 'tenant-1', tenantName: 'OpenAI API Compute Enclave', tier: 'Enterprise Tier-1', creditRating: 'AAA', allocatedCapacity: '35% Cluster VRAM', monthlyCommitment: 84000, status: 'CURRENT' },
   { id: 'tenant-2', tenantName: 'Anthropic Claude Model Hub', tier: 'Research Syndicate', creditRating: 'AAA', allocatedCapacity: '25% Cluster VRAM', monthlyCommitment: 62000, status: 'CURRENT' },
-  { id: 'tenant-3', tenantName: 'Mistral AI Sovereign Matrix', tier: 'European Core', creditRating: 'AA+', allocatedCapacity: '20% Cluster VRAM', monthlyCommitment: 49000, status: 'CURRENT' },
+  { id: 'tenant-3', tenantName: 'Mistral AI Supreme Matrix', tier: 'European Core', creditRating: 'AA+', allocatedCapacity: '20% Cluster VRAM', monthlyCommitment: 49000, status: 'CURRENT' },
   { id: 'tenant-4', tenantName: 'Swisscom Enterprise AI Labs', tier: 'Telco Tier-1', creditRating: 'AAA', allocatedCapacity: '12% Cluster VRAM', monthlyCommitment: 28500, status: 'CURRENT' },
   { id: 'tenant-5', tenantName: 'Roche AI Molecular Discovery', tier: 'BioPharma Global', creditRating: 'AAA', allocatedCapacity: '8% Cluster VRAM', monthlyCommitment: 19800, status: 'CURRENT' },
 ];
@@ -1273,7 +1273,7 @@ export const AI_SECONDARY_OTC_ORDERS: AiSecondaryOtcOrder[] = [
   { id: 'ai-otc-2', type: 'OFFER', assetName: 'NVIDIA B200 Blackwell NVL72 Rack', tokenCount: 150, pricePerToken: 1050, navPremiumDiscountPct: 5.0, counterpartyEnclave: 'Zurich Multi-Family Office', totalUsd: 157500 },
   { id: 'ai-otc-3', type: 'BID', assetName: 'Nordic Hydro AI Hyper-Facility', tokenCount: 300, pricePerToken: 1020, navPremiumDiscountPct: 2.0, counterpartyEnclave: 'Frankfurt Liquidity Provider', totalUsd: 306000 },
   { id: 'ai-otc-4', type: 'OFFER', assetName: 'Google Cloud TPU v5p Pod Slices', tokenCount: 250, pricePerToken: 990, navPremiumDiscountPct: -1.0, counterpartyEnclave: 'London Systematic Macro', totalUsd: 247500 },
-  { id: 'ai-otc-5', type: 'BID', assetName: 'Swarm Autonomous Guided Vehicle (AGV)', tokenCount: 400, pricePerToken: 510, navPremiumDiscountPct: 2.0, counterpartyEnclave: 'Singapore Sovereign SPV', totalUsd: 204000 },
+  { id: 'ai-otc-5', type: 'BID', assetName: 'Swarm Autonomous Guided Vehicle (AGV)', tokenCount: 400, pricePerToken: 510, navPremiumDiscountPct: 2.0, counterpartyEnclave: 'Singapore Supreme SPV', totalUsd: 204000 },
 ];
 
 // REAL ESTATE TELEMETRY

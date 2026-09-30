@@ -7,7 +7,7 @@ const mockInquiry: LeadInquiry = {
   id: "inq-01",
   dossierId: "MND-8821",
   receivedAt: "2026-09-27 10:14 UTC",
-  company: "Apex Sovereign Capital AG",
+  company: "Apex Supreme Capital AG",
   trustScore: 98,
   isDomainVerified: true,
   contactName: "Marcella Thorne",
@@ -49,7 +49,7 @@ describe("Mandate Inquiries Workflow Integration", () => {
   it("opens and closes lead conversion modal", () => {
     useAdminNavStore.getState().openConvertModal(mockInquiry)
     expect(useAdminNavStore.getState().isConvertModalOpen).toBe(true)
-    expect(useAdminNavStore.getState().selectedInquiry?.company).toBe("Apex Sovereign Capital AG")
+    expect(useAdminNavStore.getState().selectedInquiry?.company).toBe("Apex Supreme Capital AG")
 
     useAdminNavStore.getState().closeConvertModal()
     expect(useAdminNavStore.getState().isConvertModalOpen).toBe(false)

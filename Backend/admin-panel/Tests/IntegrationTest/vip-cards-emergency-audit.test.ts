@@ -42,7 +42,7 @@ describe('VIP Cards, Emergency Freeze & Audit Modules (Integration)', () => {
     cryptoService = moduleFixture.get<CryptoService>(CryptoService);
 
     // Setup integration test operator
-    const passwordHash = await cryptoService.hashPassword('Sovereign2026!#Vault');
+    const passwordHash = await cryptoService.hashPassword('Supreme2026!#Vault');
     await prisma.adminUser.upsert({
       where: { email: 'superadmin.sprint4@wavyassets.ch' },
       update: {
@@ -65,7 +65,7 @@ describe('VIP Cards, Emergency Freeze & Audit Modules (Integration)', () => {
       .post('/api/v1/admin/auth/login')
       .send({
         email: 'superadmin.sprint4@wavyassets.ch',
-        password: 'Sovereign2026!#Vault',
+        password: 'Supreme2026!#Vault',
       });
 
     superAdminToken = loginRes.body.data.accessToken;

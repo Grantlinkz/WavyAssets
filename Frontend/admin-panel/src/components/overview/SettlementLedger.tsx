@@ -4,6 +4,7 @@ import { Activity, AlertCircle, ArrowUpRight, ArrowDownLeft, RefreshCw, ShieldAl
 import { fetchSettlementLedger, type SettlementRecord } from "../../api/overview"
 import { SkeletonTable } from "../common/SkeletonTable"
 import { formatCurrency, formatTimestamp } from "../../lib/formatters"
+import { useAdminAuthStore } from "../../store/useAdminAuthStore"
 
 export interface SettlementLedgerProps {
   timeHorizon?: string
@@ -14,6 +15,8 @@ export const SettlementLedger: React.FC<SettlementLedgerProps> = ({
   timeHorizon = "24h",
   currency = "ALL",
 }) => {
+  const { isAuthenticated } = useAdminAuthStore()
+
   const {
     data: settlements,
     isLoading,
@@ -24,6 +27,7 @@ export const SettlementLedger: React.FC<SettlementLedgerProps> = ({
   } = useQuery<SettlementRecord[], Error>({
     queryKey: ["settlement-ledger", timeHorizon, currency],
     queryFn: () => fetchSettlementLedger(timeHorizon, currency),
+    enabled: isAuthenticated,
   })
 
   if (isLoading) {
@@ -43,7 +47,7 @@ export const SettlementLedger: React.FC<SettlementLedgerProps> = ({
           Settlement Rail Ledger Ingestion Error
         </h3>
         <p className="text-xs text-secondary max-w-md mb-4 font-mono">
-          {error?.message || "Failed to synchronize clearing buffer from sovereign depository shard."}
+          {error?.message || "Failed to synchronize clearing buffer from Supreme depository shard."}
         </p>
         <button
           onClick={() => refetch()}

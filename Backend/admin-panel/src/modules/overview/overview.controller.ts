@@ -22,4 +22,9 @@ export class OverviewController {
   async getSettlementLedger(@Query() query: SettlementQueryDto) {
     return this.overviewService.getSettlementLedger(query);
   }
+
+  @Get('badge-counts')
+  async getBadgeCounts() {
+    return this.overviewService.getBadgeCounts();
+  }
 }

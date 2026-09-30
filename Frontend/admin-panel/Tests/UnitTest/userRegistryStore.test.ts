@@ -1,8 +1,8 @@
 // Vitest globals enabled
 import { useUserRegistryStore } from "../../src/store/useUserRegistryStore"
-import type { SovereignUser } from "../../src/api/users"
+import type { SupremeUser } from "../../src/api/users"
 
-const mockUser: SovereignUser = {
+const mockUser: SupremeUser = {
   id: "USR-CH-ZURICH-01",
   fullLegalName: "Helvetia Vault Holding AG",
   email: "custody@helvetia-vault.ch",

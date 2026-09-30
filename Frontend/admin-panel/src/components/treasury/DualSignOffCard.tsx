@@ -18,23 +18,26 @@ import {
   type PendingWithdrawal,
 } from "../../api/treasury"
 import { useTreasuryStore } from "../../store/useTreasuryStore"
-import { useAdminAuthStore } from "../../store/useAdminAuthStore"
+import { useAdminAuthStore, type Operator } from "../../store/useAdminAuthStore"
 import { formatCurrency, formatTimestamp } from "../../lib/formatters"
 
 interface DualSignOffCardProps {
   withdrawal?: PendingWithdrawal | null
+  operator?: Operator | null
   onClose?: () => void
 }
 
 export const DualSignOffCard: React.FC<DualSignOffCardProps> = ({
   withdrawal: propWithdrawal,
+  operator: propOperator,
   onClose: propOnClose,
 }) => {
   const queryClient = useQueryClient()
   const store = useTreasuryStore()
-  const selectedWithdrawal = propWithdrawal !== undefined ? propWithdrawal : store.selectedWithdrawal
+  const selectedWithdrawal = propWithdrawal !== undefined ? propWithdrawal : (store.selectedWithdrawal ?? useTreasuryStore.getState().selectedWithdrawal)
   const closeSignOff = propOnClose ?? store.closeSignOff
-  const { operator } = useAdminAuthStore()
+  const authState = useAdminAuthStore()
+  const operator = propOperator ?? authState.operator ?? useAdminAuthStore.getState().operator
 
   // Form states
   const [attestation1, setAttestation1] = useState(false)
@@ -180,7 +183,7 @@ export const DualSignOffCard: React.FC<DualSignOffCardProps> = ({
               </span>
               <span className="text-status-success font-semibold flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-status-success" />
-                {selectedWithdrawal.routingMode || "Direct Central Clearing"}
+                {selectedWithdrawal.routingMode}
               </span>
             </div>
             <div className="col-span-2">
@@ -188,7 +191,7 @@ export const DualSignOffCard: React.FC<DualSignOffCardProps> = ({
                 Target Institution
               </span>
               <span className="text-on-surface font-semibold">
-                {selectedWithdrawal.targetInstitution || "UBS Switzerland AG"}
+                {selectedWithdrawal.targetInstitution}
               </span>
             </div>
             <div className="col-span-2">
@@ -292,13 +295,13 @@ export const DualSignOffCard: React.FC<DualSignOffCardProps> = ({
               </div>
               <div className="flex flex-col">
                 <span className="font-title-sm text-body-sm text-gold-accent flex items-center gap-1 font-bold">
-                  Officer 2: {operator?.name || "Eleanor Vance"} (You)
+                  Officer 2: {operator?.name} (You)
                   <span className="bg-gold-accent/20 text-gold-accent text-[9px] px-1 rounded uppercase font-label-caps">
                     Current
                   </span>
                 </span>
                 <span className="font-mono text-[11px] text-secondary">
-                  {operator?.role || "Treasury Officer"} • Session FIPS Active
+                  {operator?.role} • Session FIPS Active
                 </span>
               </div>
             </div>

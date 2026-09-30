@@ -83,7 +83,7 @@ describe("VIP Cards Store Logic", () => {
     store.resetDraftMint()
 
     const state = useVipCardsStore.getState()
-    expect(state.draftMint.cardholderName).toBe("HELENE VON BERNSTORFF")
+    expect(state.draftMint.cardholderName).toBe("")
     expect(state.draftMint.dailySpendLimit).toBe(500000)
     expect(state.draftMint.substrate).toBe("Obsidian 42g Tungsten")
   })

@@ -29,3 +29,10 @@ export async function logoutAdmin(): Promise<{ success: boolean }> {
     method: "POST",
   })
 }
+
+export async function refreshAdminToken(): Promise<LoginResponse> {
+  return apiClient<LoginResponse>("/auth/refresh", {
+    method: "POST",
+    body: JSON.stringify({}),
+  })
+}

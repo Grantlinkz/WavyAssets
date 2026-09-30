@@ -1,9 +1,10 @@
 import React, { useState } from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { X, CreditCard, ShieldCheck, Check, Loader2, Info } from "lucide-react"
 import { useVipCardsStore } from "../../store/useVipCardsStore"
 import { useAdminAuthStore } from "../../store/useAdminAuthStore"
 import { mintVipCard, type VipCardSubstrate, type VipCardTier } from "../../api/vipCards"
+import { fetchUsers } from "../../api/users"
 import { VipCard3DPreview } from "./VipCard3DPreview"
 import { formatCurrency } from "../../lib/formatters"
 
@@ -16,6 +17,11 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
   const { operator } = useAdminAuthStore()
   const { isMintModalOpen, setIsMintModalOpen, draftMint, setDraftMint, resetDraftMint } =
     useVipCardsStore()
+
+  const { data: usersList } = useQuery({
+    queryKey: ["users-mint-list"],
+    queryFn: () => fetchUsers(),
+  })
 
   const [formError, setFormError] = useState<string | null>(null)
   const [isSuccess, setIsSuccess] = useState(false)
@@ -55,6 +61,11 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
     e.preventDefault()
     setFormError(null)
 
+    if (!draftMint.userId || draftMint.userId.trim().length === 0) {
+      setFormError("Client account selection is required.")
+      return
+    }
+
     if (!draftMint.cardholderName || draftMint.cardholderName.trim().length === 0) {
       setFormError("Laser-engraved cardholder name is required.")
       return
@@ -73,7 +84,7 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
     ].filter(Boolean).join(" | ")
 
     mutation.mutate({
-      userId: draftMint.userId || "USR-3104-CH",
+      userId: draftMint.userId,
       cardholderName: draftMint.cardholderName.trim(),
       tier: draftMint.tier,
       substrate: draftMint.substrate,
@@ -138,18 +149,26 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
               {/* Client Selection */}
               <div className="space-y-1">
                 <label className="block font-mono text-[10px] uppercase tracking-wider text-secondary">
-                  Client &amp; Sovereign Entity <span className="text-status-danger">*</span>
+                  Client &amp; Supreme Entity <span className="text-status-danger">*</span>
                 </label>
                 <select
-                  value={draftMint.userId || "USR-3104-CH"}
-                  onChange={(e) => setDraftMint({ userId: e.target.value })}
+                  value={draftMint.userId}
+                  onChange={(e) => {
+                    const selected = usersList?.find((u) => u.id === e.target.value)
+                    setDraftMint({
+                      userId: e.target.value,
+                      cardholderName: selected?.fullLegalName ? selected.fullLegalName.toUpperCase() : draftMint.cardholderName,
+                    })
+                  }}
                   className="w-full bg-bg-canvas border border-border-subtle rounded-[4px] px-3 py-2 text-xs text-on-surface focus:border-gold-accent focus:outline-none"
                   data-testid="client-select"
                 >
-                  <option value="USR-3104-CH">Countess Helene von Bernstorff (USR-3104-CH • Swiss Private Wealth)</option>
-                  <option value="USR-9942-CH">Baron Philippe de Rothschild (USR-9942-CH • Family Office Tier)</option>
-                  <option value="USR-8849-CH">Dr. Henrik Von Berg (USR-8849-CH • Geneva Sovereign Trust)</option>
-                  <option value="USR-3801-LI">St. Moritz Quantum Capital (USR-3801-LI • Institutional Multi-Sig)</option>
+                  <option value="">Select verified client account...</option>
+                  {usersList?.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.fullLegalName} ({u.id} • {u.accessTier})
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -200,20 +219,20 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
                     <span className="text-secondary text-[9px] leading-tight mt-0.5">Deep black PVD DLC</span>
                   </label>
 
-                  {/* Option 2: Sovereign Stainless */}
+                  {/* Option 2: Supreme Stainless */}
                   <label
-                    onClick={() => handleSubstrateSelect("Black Sovereign Stainless", "SOVEREIGN", 250000)}
+                    onClick={() => handleSubstrateSelect("Black Supreme Stainless", "Supreme", 250000)}
                     className={`relative flex flex-col p-2.5 rounded-[4px] cursor-pointer transition-colors ${
-                      draftMint.substrate === "Black Sovereign Stainless"
+                      draftMint.substrate === "Black Supreme Stainless"
                         ? "border-2 border-gold-accent bg-bg-elevated"
                         : "border border-border-subtle bg-bg-canvas hover:bg-state-hover"
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-on-surface">Sovereign 28g</span>
+                      <span className="text-xs font-semibold text-on-surface">Supreme 28g</span>
                       <span
                         className={`w-2 h-2 rounded-full ${
-                          draftMint.substrate === "Black Sovereign Stainless"
+                          draftMint.substrate === "Black Supreme Stainless"
                             ? "bg-gold-accent"
                             : "border border-border-subtle"
                         }`}
@@ -328,7 +347,7 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
             <div className="flex items-center gap-2 text-xs text-secondary font-mono">
               <ShieldCheck className="w-4 h-4 text-status-success" />
               <span>
-                Officer: <strong className="text-on-surface">{operator?.name || "Eleanor Vance"}</strong> (Treasury &amp; VIP Desk)
+                Officer: <strong className="text-on-surface">{operator?.name || ""}</strong> {operator?.role ? `[${operator.role}]` : ""}
               </span>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">

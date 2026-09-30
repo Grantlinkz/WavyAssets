@@ -9,17 +9,21 @@ import {
   AlertCircle,
   RefreshCw,
   Building,
-  Shield,
   Filter,
+  Pencil,
+  Mail,
+  Trash2,
 } from "lucide-react"
-import { fetchUsers, type SovereignUser, type UserTier, type UserStatus } from "../../api/users"
+import { fetchUsers, type SupremeUser, type UserTier, type UserStatus } from "../../api/users"
 import { useUserRegistryStore } from "../../store/useUserRegistryStore"
 import { SkeletonTable } from "../common/SkeletonTable"
 import { formatCurrency, formatTimestamp } from "../../lib/formatters"
 
 const TIERS: { label: string; value: string }[] = [
   { label: "All Tiers", value: "ALL" },
+  { label: "Private Wealth", value: "PRIVATE_WEALTH" },
   { label: "Institutional", value: "INSTITUTIONAL" },
+  { label: "Retail", value: "RETAIL" },
   { label: "Tier 3", value: "TIER_3" },
   { label: "Tier 2", value: "TIER_2" },
   { label: "Tier 1", value: "TIER_1" },
@@ -43,16 +47,19 @@ export const UserDirectoryTable: React.FC = () => {
     openCreateUserModal,
     openSuspendModal,
     openFundingModal,
+    openEditUserModal,
+    openDeleteUserModal,
+    openEmailUserModal,
   } = useUserRegistryStore()
 
   const {
-    data: users,
+    data: rawUsers,
     isLoading,
     isError,
     error,
     refetch,
     isFetching,
-  } = useQuery<SovereignUser[], Error>({
+  } = useQuery<SupremeUser[], Error>({
     queryKey: ["users", selectedTier, selectedStatus, searchQuery],
     queryFn: () =>
       fetchUsers({
@@ -62,12 +69,49 @@ export const UserDirectoryTable: React.FC = () => {
       }),
   })
 
+  const users: SupremeUser[] = Array.isArray(rawUsers) ? rawUsers : []
+
+  const getKycLevelBadge = (kycTier?: string, kycStatus?: string) => {
+    const tier = (kycTier || (kycStatus === "APPROVED" ? "TIER_3" : "TIER_1")).toUpperCase()
+    if (tier.includes("3")) {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-[2px] font-mono text-[10px] font-bold bg-telemetry-cyan/15 text-telemetry-cyan border border-telemetry-cyan/30 tracking-wider">
+          TIER 3
+        </span>
+      )
+    }
+    if (tier.includes("2")) {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-[2px] font-mono text-[10px] font-bold bg-purple-500/15 text-purple-400 border border-purple-500/30 tracking-wider">
+          TIER 2
+        </span>
+      )
+    }
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-[2px] font-mono text-[10px] font-bold bg-secondary/15 text-secondary border border-border-subtle tracking-wider">
+        TIER 1
+      </span>
+    )
+  }
+
   const getTierBadge = (tier: UserTier) => {
     switch (tier) {
       case "INSTITUTIONAL":
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-[2px] font-mono text-[10px] font-bold bg-gold-accent/15 text-gold-accent border border-gold-accent/30 tracking-wider">
             INSTITUTIONAL
+          </span>
+        )
+      case "PRIVATE_WEALTH":
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-[2px] font-mono text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 tracking-wider">
+            PRIVATE WEALTH
+          </span>
+        )
+      case "RETAIL":
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-[2px] font-mono text-[10px] font-bold bg-blue-500/15 text-blue-300 border border-blue-500/30 tracking-wider">
+            RETAIL
           </span>
         )
       case "TIER_3":
@@ -126,31 +170,6 @@ export const UserDirectoryTable: React.FC = () => {
     }
   }
 
-  const getRiskChip = (riskScore: number) => {
-    if (riskScore < 25) {
-      return (
-        <span className="font-mono text-[11px] text-status-success flex items-center gap-1">
-          <Shield className="w-3 h-3 text-status-success" />
-          <span>{riskScore} (Low)</span>
-        </span>
-      )
-    }
-    if (riskScore < 60) {
-      return (
-        <span className="font-mono text-[11px] text-amber-400 flex items-center gap-1">
-          <Shield className="w-3 h-3 text-amber-400" />
-          <span>{riskScore} (Med)</span>
-        </span>
-      )
-    }
-    return (
-      <span className="font-mono text-[11px] text-status-danger flex items-center gap-1 font-bold">
-        <Shield className="w-3 h-3 text-status-danger" />
-        <span>{riskScore} (High)</span>
-      </span>
-    )
-  }
-
   return (
     <div className="flex flex-col gap-4" data-testid="user-directory-container">
       {/* Search and Action Bar */}
@@ -161,7 +180,7 @@ export const UserDirectoryTable: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search sovereign entities, emails, or IDs..."
+            placeholder="Search Users, emails, or IDs..."
             className="w-full bg-bg-canvas border border-border-subtle rounded-[4px] pl-8 pr-3 py-1.5 text-xs text-on-surface focus:border-gold-accent focus:outline-none"
             data-testid="user-search-input"
           />
@@ -218,7 +237,7 @@ export const UserDirectoryTable: React.FC = () => {
             data-testid="new-user-button"
           >
             <UserPlus className="w-3.5 h-3.5" />
-            <span>Provision Sovereign Entity</span>
+            <span>Create New User</span>
           </button>
         </div>
       </div>
@@ -238,7 +257,7 @@ export const UserDirectoryTable: React.FC = () => {
             User Directory Ingestion Error
           </h3>
           <p className="text-xs text-secondary max-w-md mb-4 font-mono">
-            {error?.message || "Failed to query sovereign user accounts from primary database shard."}
+            {error?.message || "Failed to query Supreme user accounts from primary database shard."}
           </p>
           <button
             onClick={() => refetch()}
@@ -257,7 +276,7 @@ export const UserDirectoryTable: React.FC = () => {
             <Building className="w-6 h-6" />
           </div>
           <h3 className="text-base font-semibold text-on-surface mb-1">
-            No Sovereign Entities Match Query
+            No Users Match Query
           </h3>
           <p className="text-xs text-secondary max-w-md mb-4">
             Adjust active filters or provision a new institutional entity to begin ledger management.
@@ -267,7 +286,7 @@ export const UserDirectoryTable: React.FC = () => {
             className="px-4 py-1.5 rounded-[4px] bg-gold-accent hover:bg-[#C5A028] text-xs text-bg-canvas font-semibold flex items-center gap-1.5 cursor-pointer"
           >
             <UserPlus className="w-3.5 h-3.5" />
-            <span>Provision Sovereign Entity</span>
+            <span>Create New User</span>
           </button>
         </div>
       ) : (
@@ -276,14 +295,14 @@ export const UserDirectoryTable: React.FC = () => {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-bg-canvas/60 border-b border-border-subtle text-secondary font-mono uppercase text-[10px] tracking-wider">
-                  <th className="py-2.5 px-3">Sovereign Entity / Principal</th>
+                  <th className="py-2.5 px-3">Supreme Entity / Principal</th>
                   <th className="py-2.5 px-3">Corporate Contact</th>
-                  <th className="py-2.5 px-3">Access Tier</th>
+                  <th className="py-2.5 px-3">Account Type</th>
+                  <th className="py-2.5 px-3">KYC Level</th>
                   <th className="py-2.5 px-3">Status</th>
                   <th className="py-2.5 px-3 text-right">Available Cash</th>
                   <th className="py-2.5 px-3 text-right">Invested Capital</th>
                   <th className="py-2.5 px-3 text-right">Total Vault Balance</th>
-                  <th className="py-2.5 px-3">Risk Rating</th>
                   <th className="py-2.5 px-3 text-right">Ledger Actions</th>
                 </tr>
               </thead>
@@ -326,8 +345,11 @@ export const UserDirectoryTable: React.FC = () => {
                       </div>
                     </td>
 
-                    {/* Tier */}
+                    {/* Account Type */}
                     <td className="py-2 px-3">{getTierBadge(user.accessTier)}</td>
+
+                    {/* KYC Level */}
+                    <td className="py-2 px-3">{getKycLevelBadge(user.kycTier, user.kycStatus)}</td>
 
                     {/* Status */}
                     <td className="py-2 px-3">{getStatusChip(user.status)}</td>
@@ -347,27 +369,49 @@ export const UserDirectoryTable: React.FC = () => {
                       {formatCurrency(user.balances.totalVaultBalance, user.balances.currency)}
                     </td>
 
-                    {/* Risk Rating */}
-                    <td className="py-2 px-3">{getRiskChip(user.riskScore)}</td>
-
                     {/* Actions */}
                     <td className="py-2 px-3 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
+                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                        {/* Edit details */}
+                        <button
+                          onClick={() => openEditUserModal(user)}
+                          className="px-2 py-1 rounded-[2px] bg-bg-elevated hover:bg-state-hover border border-border-subtle text-secondary hover:text-on-surface font-mono text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Edit User Details"
+                          data-testid={`edit-user-${user.id}`}
+                        >
+                          <Pencil className="w-3 h-3 text-secondary" />
+                          <span>Edit</span>
+                        </button>
+
+                        {/* Direct Funding (Credit/Debit) */}
                         <button
                           onClick={() => openFundingModal(user)}
                           className="px-2 py-1 rounded-[2px] bg-bg-elevated hover:bg-state-hover border border-border-subtle text-gold-accent hover:border-gold-accent/40 font-mono text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
-                          title="Direct Ledger Capital Funding"
+                          title="Fund User (Credit / Debit)"
                           data-testid={`fund-user-${user.id}`}
                         >
                           <DollarSign className="w-3 h-3" />
                           <span>Fund</span>
                         </button>
+
+                        {/* Email user */}
+                        <button
+                          onClick={() => openEmailUserModal(user)}
+                          className="px-2 py-1 rounded-[2px] bg-bg-elevated hover:bg-state-hover border border-border-subtle text-telemetry-cyan hover:border-telemetry-cyan/40 font-mono text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Send Email to User"
+                          data-testid={`email-user-${user.id}`}
+                        >
+                          <Mail className="w-3 h-3" />
+                          <span>Email</span>
+                        </button>
+
+                        {/* Suspend / Reactivate */}
                         <button
                           onClick={() => openSuspendModal(user)}
                           className={`px-2 py-1 rounded-[2px] font-mono text-[11px] flex items-center gap-1 transition-colors cursor-pointer border ${
                             user.status === "SUSPENDED"
                               ? "bg-status-success/10 hover:bg-status-success/20 text-status-success border-status-success/30"
-                              : "bg-status-danger/10 hover:bg-status-danger/20 text-status-danger border-status-danger/30"
+                              : "bg-status-warning/10 hover:bg-status-warning/20 text-amber-300 border-status-warning/30"
                           }`}
                           title={user.status === "SUSPENDED" ? "Re-activate Account" : "Enact Account Suspension"}
                           data-testid={`suspend-user-${user.id}`}
@@ -383,6 +427,17 @@ export const UserDirectoryTable: React.FC = () => {
                               <span>Suspend</span>
                             </>
                           )}
+                        </button>
+
+                        {/* Delete user */}
+                        <button
+                          onClick={() => openDeleteUserModal(user)}
+                          className="px-2 py-1 rounded-[2px] bg-status-danger/10 hover:bg-status-danger/20 border border-status-danger/30 text-status-danger font-mono text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Delete User and All Database Records"
+                          data-testid={`delete-user-${user.id}`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Delete</span>
                         </button>
                       </div>
                     </td>

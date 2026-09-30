@@ -89,7 +89,7 @@ export const TopHeader: React.FC = () => {
 
       {/* Right: Actions & Profile */}
       <div className="flex items-center space-x-2 sm:space-x-3">
-        {/* Client Access Tier Badge */}
+        {/* Client Account Type Badge */}
         <div
           data-testid="client-tier-badge"
           className="hidden sm:inline-flex items-center space-x-1 px-2 py-1 rounded-xs border border-secondary/40 bg-secondary/10 text-[10px] font-mono font-semibold text-secondary uppercase tracking-wider"

@@ -1,7 +1,7 @@
 {
   "name": "wavyassets-admin-panel-backend",
   "version": "1.0.0",
-  "description": "Sovereign Institutional Admin Panel Backend for WavyAssets — Multi-Asset Command Deck, RBAC, Lead Intake, & Treasury Operations",
+  "description": "Supreme Institutional Admin Panel Backend for WavyAssets — Multi-Asset Command Deck, RBAC, Lead Intake, & Treasury Operations",
   "author": "WavyAssets Global Platform Architecture Guild",
   "private": true,
   "license": "UNLICENSED",
@@ -38,6 +38,7 @@
     "cookie-parser": "^1.4.7",
     "helmet": "^8.0.0",
     "reflect-metadata": "^0.2.2",
+    "resend": "^4.1.2",
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.1"
   },

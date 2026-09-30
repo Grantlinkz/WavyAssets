@@ -157,7 +157,7 @@ describe('DepositRailsService', () => {
     it('should return active rails for client deposit modal ingestion', async () => {
       mockPrisma.fiatDepositRailConfig.findUnique.mockResolvedValue({
         id: 'GLOBAL_FIAT_RAIL',
-        beneficiaryName: 'WavyAssets Sovereign Custody AG',
+        beneficiaryName: 'WavyAssets Supreme Custody AG',
         swissIban: 'CH93 0023 8812 4019 8821 0',
         bicSwift: 'UBSWCHZH80A',
         clearingRail: 'Swiss SIC RTGS / Fedwire DvP',
@@ -178,7 +178,7 @@ describe('DepositRailsService', () => {
       const result = await service.getPublicRails();
 
       expect(result.fiat).toBeDefined();
-      expect(result.fiat?.beneficiaryName).toBe('WavyAssets Sovereign Custody AG');
+      expect(result.fiat?.beneficiaryName).toBe('WavyAssets Supreme Custody AG');
       expect(result.crypto).toHaveLength(1);
       expect(result.crypto[0].asset).toBe('USDC');
     });

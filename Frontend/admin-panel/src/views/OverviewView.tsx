@@ -5,11 +5,13 @@ import { MetricCard } from "../components/overview/MetricCard"
 import { SettlementLedger } from "../components/overview/SettlementLedger"
 import { fetchOverviewMetrics, type OverviewMetrics } from "../api/overview"
 import { formatCurrency, formatPercentage } from "../lib/formatters"
+import { useAdminAuthStore } from "../store/useAdminAuthStore"
 
 export const OverviewView: React.FC = () => {
   const [timeHorizon, setTimeHorizon] = useState("24h")
   const [currency, setCurrency] = useState("ALL")
   const queryClient = useQueryClient()
+  const { isAuthenticated } = useAdminAuthStore()
 
   const {
     data: metrics,
@@ -20,6 +22,7 @@ export const OverviewView: React.FC = () => {
   } = useQuery<OverviewMetrics, Error>({
     queryKey: ["overview-metrics"],
     queryFn: fetchOverviewMetrics,
+    enabled: isAuthenticated,
     retry: 2,
   })
 
@@ -47,9 +50,6 @@ export const OverviewView: React.FC = () => {
           <div>
             <h1 className="text-xl font-semibold text-gold-accent tracking-tight flex items-center gap-2.5">
               <span>Executive Overview & Settlement Ledger</span>
-              <span className="font-mono text-[10px] text-secondary uppercase bg-bg-panel px-2 py-0.5 rounded-[2px] border border-border-subtle tracking-widest font-normal">
-                CH-8400 Depository
-              </span>
             </h1>
             <p className="text-xs text-secondary mt-0.5">
               Real-time multi-asset liquidity, cold storage telemetry, and clearing rail ledger.
@@ -85,7 +85,7 @@ export const OverviewView: React.FC = () => {
             >
               <option value="ALL" className="bg-bg-panel text-on-surface">Multi-Asset Consolidated</option>
               <option value="USD" className="bg-bg-panel text-on-surface">USD Fiat</option>
-              <option value="CHF" className="bg-bg-panel text-on-surface">CHF Sovereign</option>
+              <option value="CHF" className="bg-bg-panel text-on-surface">CHF Supreme</option>
               <option value="EUR" className="bg-bg-panel text-on-surface">EUR Reserve</option>
             </select>
           </div>

@@ -19,7 +19,7 @@ export class CryptoService {
     this.hmacSecret =
       process.env.JWT_ACCESS_SECRET ||
       process.env.JWT_SECRET ||
-      'wavy_admin_jwt_access_super_secret_sovereign_enclave_2026';
+      'wavy_admin_jwt_access_super_secret_Supreme_enclave_2026';
   }
 
   /**

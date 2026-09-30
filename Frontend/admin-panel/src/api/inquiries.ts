@@ -35,7 +35,13 @@ export interface ConvertUserPayload {
 
 export async function fetchInquiries(statusFilter?: string): Promise<LeadInquiry[]> {
   const query = statusFilter && statusFilter !== "ALL" ? `?status=${statusFilter}` : ""
-  return apiClient<LeadInquiry[]>(`/inquiries${query}`)
+  const res = await apiClient<LeadInquiry[] | { inquiries?: LeadInquiry[]; items?: LeadInquiry[] }>(`/inquiries${query}`)
+  if (Array.isArray(res)) return res
+  if (res && typeof res === "object") {
+    if ("inquiries" in res && Array.isArray(res.inquiries)) return res.inquiries
+    if ("items" in res && Array.isArray(res.items)) return res.items
+  }
+  return []
 }
 
 export async function updateInquiryStatus(
@@ -55,5 +61,28 @@ export async function convertInquiryToUser(
   return apiClient<{ success: boolean; userId: string; message: string }>("/users/convert", {
     method: "POST",
     body: JSON.stringify(payload),
+  })
+}
+
+export interface NewsletterSubscriber {
+  id: string
+  email: string
+  isConfirmed: boolean
+  confirmedAt: string | null
+  createdAt: string
+}
+
+export async function fetchSubscribers(): Promise<NewsletterSubscriber[]> {
+  const res = await apiClient<NewsletterSubscriber[] | { subscribers?: NewsletterSubscriber[] }>("/inquiries/subscribers")
+  if (Array.isArray(res)) return res
+  if (res && typeof res === "object" && "subscribers" in res && Array.isArray(res.subscribers)) {
+    return res.subscribers
+  }
+  return []
+}
+
+export async function deleteSubscriber(id: string): Promise<{ success: boolean; message: string }> {
+  return apiClient<{ success: boolean; message: string }>(`/inquiries/subscribers/${encodeURIComponent(id)}`, {
+    method: "DELETE",
   })
 }

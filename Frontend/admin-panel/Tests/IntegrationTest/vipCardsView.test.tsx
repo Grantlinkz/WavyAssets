@@ -96,7 +96,7 @@ describe("VIP Cards & Metal Minting Integration", () => {
     expect(html).toContain("Laser-Engraved Name")
     expect(html).toContain("Substrate &amp; Metal Alloy Grade")
     expect(html).toContain("Obsidian 42g")
-    expect(html).toContain("Sovereign 28g")
+    expect(html).toContain("Supreme 28g")
     expect(html).toContain("Titanium 18g")
     expect(html).toContain("Authorized Daily Limit")
     expect(html).toContain("Secure Armored Destination")

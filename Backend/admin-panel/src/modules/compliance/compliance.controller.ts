@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Param,
   Body,
   Query,
@@ -22,13 +23,19 @@ import { CurrentAdmin, CurrentAdminPayload } from '../../common/decorators/curre
 export class ComplianceController {
   constructor(private readonly complianceService: ComplianceService) {}
 
-  @Get('queue')
+  @Get(['queue', 'dossiers'])
   @Roles(AdminRole.SUPER_ADMIN, AdminRole.COMPLIANCE_OFFICER, AdminRole.DESK_LEAD)
   async getQueue(
     @Query('search') search?: string,
     @Query('tier') tier?: string,
   ) {
     return this.complianceService.getQueue({ search, tier });
+  }
+
+  @Get('dossiers/:dossierId')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.COMPLIANCE_OFFICER, AdminRole.DESK_LEAD)
+  async getDossier(@Param('dossierId') dossierId: string) {
+    return this.complianceService.getDossierById(dossierId);
   }
 
   @Get('documents/:docId')
@@ -46,16 +53,28 @@ export class ComplianceController {
     return this.complianceService.verifyDocument(dto, admin?.id);
   }
 
-  @Post('upgrade-tier')
+  @Post(['dossiers/:dossierId/elevate', 'upgrade-tier'])
   @Roles(AdminRole.SUPER_ADMIN, AdminRole.COMPLIANCE_OFFICER)
   async upgradeTierBody(
-    @Body() dto: UpgradeKycTierDto,
+    @Param('dossierId') paramDossierId: string | undefined,
+    @Body() dto: any,
     @CurrentAdmin() admin: CurrentAdminPayload,
   ) {
-    if (!dto.userId) {
-      throw new BadRequestException('userId is required in payload');
+    const rawUserId = paramDossierId
+      ? paramDossierId.replace('dossier-', '')
+      : dto.userId || dto.dossierId?.replace('dossier-', '');
+    if (!rawUserId) {
+      throw new BadRequestException('userId or dossierId is required in payload');
     }
-    return this.complianceService.upgradeTier(dto.userId, dto, admin?.id);
+    return this.complianceService.upgradeTier(
+      rawUserId,
+      {
+        targetTier: dto.targetTier || 'INSTITUTIONAL',
+        approvalNotes: dto.approvalNotes || dto.finmaSignOffNotes || 'Compliance tier upgrade approved',
+        checklist: dto.checklist || [],
+      } as any,
+      admin?.id,
+    );
   }
 
   @Post(':id/upgrade-tier')
@@ -66,5 +85,24 @@ export class ComplianceController {
     @CurrentAdmin() admin: CurrentAdminPayload,
   ) {
     return this.complianceService.upgradeTier(userId, dto, admin?.id);
+  }
+
+  @Post('dossiers/:dossierId/reject')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.COMPLIANCE_OFFICER)
+  async rejectDossier(
+    @Param('dossierId') dossierId: string,
+    @Body() dto: any,
+    @CurrentAdmin() admin: CurrentAdminPayload,
+  ) {
+    return this.complianceService.rejectDossier(dossierId, dto, admin?.id);
+  }
+
+  @Patch('dossiers/:dossierId/checklist')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.COMPLIANCE_OFFICER)
+  async updateChecklist(
+    @Param('dossierId') dossierId: string,
+    @Body() dto: any,
+  ) {
+    return this.complianceService.updateChecklist(dossierId, dto);
   }
 }

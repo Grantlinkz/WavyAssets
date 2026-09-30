@@ -114,6 +114,8 @@ export class LeadsService {
         telegramEncrypted,
         service: dto.service,
         allocationRange: dto.allocationRange,
+        notes: (dto.notes || dto.message || '').trim() || null,
+        status: 'NEW',
         domainScore: domainEval.score,
         isSpam,
         crmDispatched: false,

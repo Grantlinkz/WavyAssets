@@ -16,7 +16,7 @@ export const VipCard3DPreview: React.FC<VipCard3DPreviewProps> = ({
 }) => {
   const getSubstrateDetails = (sub: VipCardSubstrate) => {
     switch (sub) {
-      case "Black Sovereign Stainless":
+      case "Black Supreme Stainless":
         return {
           weight: "28.00 grams",
           milling: "Laser Cut & Beveled",

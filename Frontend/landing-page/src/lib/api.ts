@@ -96,6 +96,7 @@ export interface LeadInquiryPayload {
   service: 'CRYPTO' | 'STOCKS' | 'AI_FUNDS' | 'REAL_ESTATE' | 'VIP_CARDS' | 'CARS' | 'WALLET';
   allocationRange: '$500K - $1M' | '$1M - $5M' | '$5M - $10M' | '$10M+' | 'CUSTOM';
   notes?: string;
+  message?: string;
   honeypot?: string;
 }
 

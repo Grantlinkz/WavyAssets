@@ -287,10 +287,10 @@ export const EmergencyFreezeModal: React.FC<EmergencyFreezeModalProps> = ({ isOp
               <ShieldCheck className="w-5 h-5 text-gold-accent shrink-0" />
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-semibold text-on-surface truncate">
-                  {operator?.name || "Eleanor Vance"} • Treasury &amp; Risk Lead
+                  {operator?.name} {operator?.role ? `• [${operator.role}]` : ""}
                 </span>
                 <span className="font-mono text-[10px] text-secondary truncate">
-                  Token: 0x9AF4...89B1 • Zurich FIPS-140-3 Hardware Key
+                  {operator?.email}
                 </span>
               </div>
             </div>

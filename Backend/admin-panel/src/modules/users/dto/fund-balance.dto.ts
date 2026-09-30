@@ -47,9 +47,7 @@ export class FundBalanceDto {
   })
   auditReason!: string;
 
+  @IsOptional()
   @IsString()
-  @MinLength(3, {
-    message: 'referenceId is required as a unique idempotency key',
-  })
-  referenceId!: string;
+  referenceId?: string;
 }

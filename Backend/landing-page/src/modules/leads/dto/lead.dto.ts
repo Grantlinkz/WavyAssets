@@ -112,6 +112,15 @@ export class LeadInquiryDto {
   notes?: string;
 
   @ApiPropertyOptional({
+    example: 'Inquiring regarding custom multi-signature custody integration.',
+    description: 'Message or mandate specifics submitted via contact form',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  message?: string;
+
+  @ApiPropertyOptional({
     description: 'Anti-bot honeypot field (must remain empty for human allocators)',
   })
   @IsOptional()

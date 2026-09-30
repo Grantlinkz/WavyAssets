@@ -40,10 +40,10 @@ export const LeadConvertModal: React.FC = () => {
     },
     onSuccess: (data) => {
       if (!data?.success || !data?.userId) {
-        setErrorMsg(data?.message || "Failed to provision sovereign user: User ID omitted from response.")
+        setErrorMsg(data?.message || "Failed to provision Supreme user: User ID omitted from response.")
         return
       }
-      setSuccessMsg(`Sovereign user provisioned successfully with ID: ${data.userId}`)
+      setSuccessMsg(`Supreme user provisioned successfully with ID: ${data.userId}`)
       queryClient.invalidateQueries({ queryKey: ["inquiries"] })
       queryClient.invalidateQueries({ queryKey: ["users"] })
       setTimeout(() => {
@@ -52,7 +52,7 @@ export const LeadConvertModal: React.FC = () => {
       }, 1500)
     },
     onError: (err: Error) => {
-      setErrorMsg(err.message || "Failed to convert lead to sovereign user.")
+      setErrorMsg(err.message || "Failed to convert lead to Supreme user.")
     },
   })
 
@@ -81,7 +81,7 @@ export const LeadConvertModal: React.FC = () => {
             </div>
             <div>
               <h2 className="text-sm font-semibold text-on-surface">
-                Convert Mandate to Sovereign Client Account
+                Convert Mandate to Supreme Client Account
               </h2>
               <p className="text-xs text-secondary">
                 Entity: <span className="text-gold-accent font-medium">{selectedInquiry.company}</span>
@@ -146,7 +146,7 @@ export const LeadConvertModal: React.FC = () => {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-mono uppercase text-secondary mb-1">
-                Access Tier
+                Account Type
               </label>
               <select
                 value={accessTier}

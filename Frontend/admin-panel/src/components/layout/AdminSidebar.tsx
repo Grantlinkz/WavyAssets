@@ -1,4 +1,5 @@
-import React from "react"
+import React, { useEffect } from "react"
+import { useQuery } from "@tanstack/react-query"
 import {
   Activity,
   FileText,
@@ -11,20 +12,49 @@ import {
   CheckCircle2,
 } from "lucide-react"
 import { useAdminNavStore, type AdminRoute } from "../../store/useAdminNavStore"
+import { fetchBadgeCounts } from "../../api/overview"
+import { useAdminAuthStore } from "../../store/useAdminAuthStore"
 
 interface NavItem {
   id: AdminRoute
   label: string
   icon: React.ComponentType<{ className?: string }>
   badge?: {
-    text?: string
+    text: string
     variant?: "warning" | "cyan" | "success" | "secondary"
-    isSkeleton?: boolean
   }
 }
 
 export const AdminSidebar: React.FC = () => {
-  const { activeRoute, setActiveRoute, badgeCounts } = useAdminNavStore()
+  const { activeRoute, setActiveRoute, badgeCounts, updateBadgeCount } = useAdminNavStore()
+  const { isAuthenticated } = useAdminAuthStore()
+
+  // Real-time telemetry query for live navigation badge counters
+  const { data: serverBadgeCounts } = useQuery({
+    queryKey: ["admin-badge-counts"],
+    queryFn: fetchBadgeCounts,
+    enabled: isAuthenticated,
+    refetchInterval: 10000,
+  })
+
+  // Synchronize incoming badge telemetry with global nav store
+  useEffect(() => {
+    if (serverBadgeCounts) {
+      updateBadgeCount("urgentActions", serverBadgeCounts.urgentActions)
+      updateBadgeCount("newInquiries", serverBadgeCounts.newInquiries)
+      updateBadgeCount("totalUsers", serverBadgeCounts.totalUsers)
+      updateBadgeCount("pendingCompliance", serverBadgeCounts.pendingCompliance)
+      updateBadgeCount("treasurySignOffs", serverBadgeCounts.treasurySignOffs)
+      updateBadgeCount("activeCards", serverBadgeCounts.activeCards)
+    }
+  }, [serverBadgeCounts, updateBadgeCount])
+
+  const urgentCount = serverBadgeCounts?.urgentActions ?? badgeCounts.urgentActions ?? 0
+  const inquiriesCount = serverBadgeCounts?.newInquiries ?? badgeCounts.newInquiries ?? 0
+  const usersCount = serverBadgeCounts?.totalUsers ?? badgeCounts.totalUsers ?? 0
+  const complianceCount = serverBadgeCounts?.pendingCompliance ?? badgeCounts.pendingCompliance ?? 0
+  const treasuryCount = serverBadgeCounts?.treasurySignOffs ?? badgeCounts.treasurySignOffs ?? 0
+  const cardsCount = serverBadgeCounts?.activeCards ?? badgeCounts.activeCards ?? 0
 
   const navItems: NavItem[] = [
     {
@@ -32,45 +62,45 @@ export const AdminSidebar: React.FC = () => {
       label: "Overview",
       icon: Activity,
       badge:
-        badgeCounts.urgentActions !== null
-          ? { text: `${badgeCounts.urgentActions} Urgent`, variant: "warning" }
-          : { isSkeleton: true },
+        urgentCount > 0
+          ? { text: `${urgentCount} Urgent`, variant: "warning" }
+          : { text: "Live", variant: "success" },
     },
     {
       id: "inquiries",
       label: "Inquiries",
       icon: FileText,
       badge:
-        badgeCounts.newInquiries !== null
-          ? { text: `${badgeCounts.newInquiries} New`, variant: "cyan" }
-          : { isSkeleton: true },
+        inquiriesCount > 0
+          ? { text: `${inquiriesCount} New`, variant: "cyan" }
+          : { text: "Live", variant: "success" },
     },
     {
       id: "user-directory",
       label: "User Directory",
       icon: Users,
       badge:
-        badgeCounts.totalUsers !== null
-          ? { text: badgeCounts.totalUsers.toLocaleString(), variant: "secondary" }
-          : { isSkeleton: true },
+        usersCount > 0
+          ? { text: usersCount.toLocaleString(), variant: "secondary" }
+          : { text: "Live", variant: "success" },
     },
     {
       id: "compliance",
       label: "Compliance",
       icon: ShieldAlert,
       badge:
-        badgeCounts.pendingCompliance !== null
-          ? { text: `${badgeCounts.pendingCompliance} Pending`, variant: "warning" }
-          : { isSkeleton: true },
+        complianceCount > 0
+          ? { text: `${complianceCount} Pending`, variant: "warning" }
+          : { text: "Live", variant: "success" },
     },
     {
       id: "treasury",
       label: "Treasury",
       icon: Wallet,
       badge:
-        badgeCounts.treasurySignOffs !== null
-          ? { text: `${badgeCounts.treasurySignOffs} Sign-Offs`, variant: "warning" }
-          : { isSkeleton: true },
+        treasuryCount > 0
+          ? { text: `${treasuryCount} Sign-Offs`, variant: "warning" }
+          : { text: "Live", variant: "success" },
     },
     {
       id: "deposit-rails",
@@ -83,9 +113,9 @@ export const AdminSidebar: React.FC = () => {
       label: "VIP Cards",
       icon: CreditCard,
       badge:
-        badgeCounts.activeCards !== null
-          ? { text: `${badgeCounts.activeCards} Active`, variant: "secondary" }
-          : { isSkeleton: true },
+        cardsCount > 0
+          ? { text: `${cardsCount} Active`, variant: "secondary" }
+          : { text: "Live", variant: "success" },
     },
     {
       id: "audit-log",
@@ -114,14 +144,6 @@ export const AdminSidebar: React.FC = () => {
       data-testid="admin-sidebar"
     >
       <div className="flex flex-col gap-3">
-        {/* Environment Staging Badge */}
-        <div className="bg-bg-canvas border border-border-subtle rounded-[4px] p-2 flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-telemetry-cyan shrink-0 animate-pulse" />
-          <span className="font-mono text-[11px] text-telemetry-cyan truncate">
-            Enclave: Zurich Depository (CH-8400)
-          </span>
-        </div>
-
         {/* Navigation Rail */}
         <nav className="flex flex-col gap-1">
           {navItems.map((item) => {
@@ -146,18 +168,15 @@ export const AdminSidebar: React.FC = () => {
                   />
                   <span>{item.label}</span>
                 </div>
-                {item.badge &&
-                  (item.badge.isSkeleton ? (
-                    <span className="w-12 h-3.5 rounded-[2px] wavy-skeleton shrink-0" />
-                  ) : (
-                    <span
-                      className={`font-mono text-[10px] px-1.5 py-0.5 rounded-[2px] border ${getBadgeStyle(
-                        item.badge.variant
-                      )}`}
-                    >
-                      {item.badge.text}
-                    </span>
-                  ))}
+                {item.badge && (
+                  <span
+                    className={`font-mono text-[10px] px-1.5 py-0.5 rounded-[2px] border ${getBadgeStyle(
+                      item.badge.variant
+                    )}`}
+                  >
+                    {item.badge.text}
+                  </span>
+                )}
               </button>
             )
           })}

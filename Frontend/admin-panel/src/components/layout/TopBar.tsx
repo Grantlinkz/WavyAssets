@@ -3,12 +3,10 @@ import { Search, Power, AlertTriangle, ShieldCheck } from "lucide-react"
 import { BrandLogo } from "../common/BrandLogo"
 import { useAdminAuthStore } from "../../store/useAdminAuthStore"
 import { useAdminNavStore } from "../../store/useAdminNavStore"
-import { useAdminWebSocket } from "../../api/websocket"
 
 export const TopBar: React.FC = () => {
   const { operator, setLoginModalOpen } = useAdminAuthStore()
   const { setCommandPaletteOpen, setEmergencyStopModalOpen, badgeCounts } = useAdminNavStore()
-  const ws = useAdminWebSocket()
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 flex flex-col select-none" data-testid="admin-topbar">
@@ -41,17 +39,7 @@ export const TopBar: React.FC = () => {
 
         {/* Actions & Operator Profile */}
         <div className="flex items-center gap-3 shrink-0">
-          {/* Live Sync Status */}
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border border-border-subtle bg-bg-canvas">
-            <span
-              className={`w-2 h-2 rounded-full ${
-                ws.isConnected ? "bg-telemetry-cyan animate-pulse" : "bg-text-muted"
-              }`}
-            />
-            <span className="font-mono text-xs text-telemetry-cyan">
-              Live Sync: {ws.latencyMs !== null ? `${ws.latencyMs}ms` : ws.isConnected ? "Connected" : "Offline"}
-            </span>
-          </div>
+         
 
           {/* Emergency System Stop */}
           <button
@@ -91,15 +79,9 @@ export const TopBar: React.FC = () => {
       {/* Urgent Attention Ticker Banner */}
       <div className="h-8 bg-bg-elevated border-b border-border-subtle px-4 flex items-center justify-center gap-2 overflow-hidden">
         <AlertTriangle className="w-3.5 h-3.5 text-status-warning shrink-0" />
-        {badgeCounts.urgentActions === null &&
-        badgeCounts.pendingCompliance === null &&
-        badgeCounts.treasurySignOffs === null ? (
-          <div className="h-3 w-80 wavy-skeleton rounded-[2px]" />
-        ) : (
-          <span className="text-xs font-medium text-status-warning tracking-tight truncate">
-            Attention Needed: {badgeCounts.urgentActions ?? 0} unverified bank wires • {badgeCounts.pendingCompliance ?? 0} pending passport reviews • {badgeCounts.treasurySignOffs ?? 0} large withdrawals over $100k waiting for second approval.
-          </span>
-        )}
+        <span className="text-xs font-medium text-status-warning tracking-tight truncate">
+          Attention Needed: {badgeCounts.urgentActions ?? 0} unverified bank wires • {badgeCounts.pendingCompliance ?? 0} pending passport reviews • {badgeCounts.treasurySignOffs ?? 0} large withdrawals over $100k waiting for second approval.
+        </span>
       </div>
     </header>
   )

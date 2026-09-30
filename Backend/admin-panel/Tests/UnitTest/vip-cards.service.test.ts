@@ -135,7 +135,7 @@ describe('VipCardsService (Unit)', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should reject minting if user already has an active sovereign card', async () => {
+    it('should reject minting if user already has an active Supreme card', async () => {
       mockPrisma.user.findUnique.mockResolvedValueOnce({
         id: 'usr-1',
         email: 'alice@vault.ch',

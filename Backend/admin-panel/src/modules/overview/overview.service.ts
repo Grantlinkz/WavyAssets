@@ -16,6 +16,16 @@ export interface OverviewMetrics {
     activeShards: number;
     coldStoreActive: boolean;
   };
+  badgeCounts?: BadgeCounts;
+}
+
+export interface BadgeCounts {
+  urgentActions: number;
+  newInquiries: number;
+  totalUsers: number;
+  pendingCompliance: number;
+  treasurySignOffs: number;
+  activeCards: number;
 }
 
 export interface SettlementRecord {
@@ -33,6 +43,7 @@ export interface SettlementRecord {
 const FX_TO_USD: Record<string, number> = {
   USD: 1.0,
   USDC: 1.0,
+  USDT: 1.0,
   EUR: 1.08,
   CHF: 1.12,
   BTC: 65000.0,
@@ -43,27 +54,52 @@ const FX_TO_USD: Record<string, number> = {
 export class OverviewService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async getBadgeCounts(): Promise<BadgeCounts> {
+    const [urgentActions, newInquiries, totalUsers, pendingCompliance, treasurySignOffs, activeCards] =
+      await Promise.all([
+        this.prisma.ledgerTransaction.count({
+          where: { status: { in: ['PENDING', 'PENDING_SECOND_SIGN_OFF'] } },
+        }),
+        this.prisma.leadInquiry.count({
+          where: { status: 'NEW' },
+        }),
+        this.prisma.user.count(),
+        this.prisma.kycDocument.count({
+          where: { isVerified: false },
+        }),
+        this.prisma.ledgerTransaction.count({
+          where: { status: 'PENDING_SECOND_SIGN_OFF' },
+        }),
+        this.prisma.vipCard.count({
+          where: { isFrozen: false },
+        }),
+      ]);
+
+    return {
+      urgentActions,
+      newInquiries,
+      totalUsers,
+      pendingCompliance,
+      treasurySignOffs,
+      activeCards,
+    };
+  }
+
   async getMetrics(): Promise<OverviewMetrics> {
-    // 1. Calculate Aggregate Balances across sovereign ledger accounts in consistent USD valuation
-    let totalVaultBalance = 142890420.0;
-    let liquidSettlementCapital = 28450110.5;
+    // 1. Calculate Aggregate Balances across real ledger accounts in consistent USD valuation
+    let totalVaultBalance = 0;
+    let liquidSettlementCapital = 0;
 
     const ledgerAccounts = await this.prisma.ledgerAccount.findMany();
     if (ledgerAccounts.length > 0) {
-      let total = 0;
-      let liquid = 0;
       for (const acc of ledgerAccounts) {
         const currency = (acc.currency || 'USD').toUpperCase();
         const rate = FX_TO_USD[currency] ?? 1.0;
         const balUsd = Number(acc.balance) * rate;
-        total += balUsd;
+        totalVaultBalance += balUsd;
         if (acc.accountType === 'AVAILABLE_CASH') {
-          liquid += balUsd;
+          liquidSettlementCapital += balUsd;
         }
-      }
-      if (total > 0) {
-        totalVaultBalance = total;
-        liquidSettlementCapital = liquid;
       }
     }
 
@@ -75,19 +111,27 @@ export class OverviewService {
     const activeLiquidityRailsCount = fiatRail + cryptoRailsCount;
 
     // 3. Action Queue Pending Triage Items (KYC, Dual Sign-offs, Pending Wires)
-    const [pendingTxs, unverifiedDocs, newInquiries] = await Promise.all([
-      this.prisma.ledgerTransaction.count({
-        where: {
-          status: { in: ['PENDING', 'PENDING_SECOND_SIGN_OFF'] },
-        },
-      }),
-      this.prisma.kycDocument.count({
-        where: { isVerified: false },
-      }),
-      this.prisma.leadInquiry.count({
-        where: { status: 'NEW' },
-      }),
-    ]);
+    const [pendingTxs, unverifiedDocs, newInquiries, totalUsers, treasurySignOffs, activeCards] =
+      await Promise.all([
+        this.prisma.ledgerTransaction.count({
+          where: {
+            status: { in: ['PENDING', 'PENDING_SECOND_SIGN_OFF'] },
+          },
+        }),
+        this.prisma.kycDocument.count({
+          where: { isVerified: false },
+        }),
+        this.prisma.leadInquiry.count({
+          where: { status: 'NEW' },
+        }),
+        this.prisma.user.count(),
+        this.prisma.ledgerTransaction.count({
+          where: { status: 'PENDING_SECOND_SIGN_OFF' },
+        }),
+        this.prisma.vipCard.count({
+          where: { isFrozen: false },
+        }),
+      ]);
     const actionQueuePending = pendingTxs + unverifiedDocs + newInquiries;
 
     // 4. Net Settlement 24h & Settled Transactions (strictly bounded to transactions created within the last 24h)
@@ -97,22 +141,41 @@ export class OverviewService {
         status: 'SETTLED',
         createdAt: { gte: since24h },
       },
+      include: {
+        entries: {
+          include: {
+            account: true,
+          },
+        },
+      },
     });
 
     const settledTransactionsCount24h = settledTxs.length;
     let netSettlement24h = 0;
     for (const tx of settledTxs) {
-      const currency = (tx.currency || 'USD').toUpperCase();
+      let amount = 0;
+      let currency = 'USD';
+      if (tx.entries?.length) {
+        const pos = tx.entries.find((e: any) => Number(e.amount) > 0) || tx.entries[0];
+        amount = Math.abs(Number(pos?.amount || 0));
+        currency = (pos?.account?.currency || 'USD').toUpperCase();
+      }
       const rate = FX_TO_USD[currency] ?? 1.0;
-      const amtUsd = Number(tx.amount) * rate;
+      const amtUsd = amount * rate;
       if (tx.type === 'DEPOSIT') netSettlement24h += amtUsd;
       else if (tx.type === 'WITHDRAWAL') netSettlement24h -= amtUsd;
       else netSettlement24h += amtUsd;
     }
 
+    const previousBalance = totalVaultBalance - netSettlement24h;
+    const vaultBalanceChange24h =
+      previousBalance > 0
+        ? Number(((netSettlement24h / previousBalance) * 100).toFixed(1))
+        : 0.0;
+
     return {
       totalVaultBalance,
-      vaultBalanceChange24h: 3.4,
+      vaultBalanceChange24h,
       liquidSettlementCapital,
       activeLiquidityRailsCount,
       actionQueuePending,
@@ -124,6 +187,14 @@ export class OverviewService {
         activeShards: 8,
         coldStoreActive: true,
       },
+      badgeCounts: {
+        urgentActions: pendingTxs,
+        newInquiries,
+        totalUsers,
+        pendingCompliance: unverifiedDocs,
+        treasurySignOffs,
+        activeCards,
+      },
     };
   }
 
@@ -131,7 +202,14 @@ export class OverviewService {
     const whereClause: any = {};
 
     if (query.currency && query.currency !== 'ALL') {
-      whereClause.currency = query.currency.toUpperCase();
+      const curr = query.currency.toUpperCase();
+      whereClause.entries = {
+        some: {
+          account: {
+            currency: curr,
+          },
+        },
+      };
     }
 
     if (query.type && query.type !== 'ALL') {
@@ -174,90 +252,40 @@ export class OverviewService {
     try {
       dbTxs = await this.prisma.ledgerTransaction.findMany({
         where: whereClause,
+        include: {
+          entries: {
+            include: {
+              account: {
+                include: {
+                  user: true,
+                },
+              },
+            },
+          },
+        },
         orderBy: { createdAt: 'desc' },
         take: limit,
         skip,
       });
-    } catch (err) {
-      if (process.env.DEMO_MODE === 'true') {
-        return this.getDemoBaselineRecords(query);
-      }
-      throw err;
+    } catch {
+      dbTxs = [];
     }
 
     if (dbTxs.length > 0) {
       return dbTxs.map((tx) => this.mapTransactionToRecord(tx));
     }
 
-    if (process.env.DEMO_MODE === 'true') {
-      return this.getDemoBaselineRecords(query);
-    }
-
     return [];
-  }
-
-  private getDemoBaselineRecords(query: SettlementQueryDto): SettlementRecord[] {
-    const baselineRecords: SettlementRecord[] = [
-      {
-        id: 'TX-SIC-89210-SETTLED',
-        timestamp: new Date().toISOString(),
-        type: 'DEPOSIT_WIRE',
-        entity: 'UBS AG Zurich Enclave',
-        accountNumber: 'CH93 0023 8812 4019 8821 0',
-        amount: 5200000.0,
-        currency: 'USD',
-        status: 'SETTLED',
-        rail: 'SWISS_SIC',
-      },
-      {
-        id: 'TX-MPC-USDC-4819',
-        timestamp: new Date(Date.now() - 3600000).toISOString(),
-        type: 'DEPOSIT_WIRE',
-        entity: '0x94A8...916B Fireblocks Vault',
-        accountNumber: 'ERC-20 Inbound',
-        amount: 2500000.0,
-        currency: 'USDC',
-        status: 'SETTLED',
-        rail: 'ETH',
-      },
-      {
-        id: 'TX-PENDING-WIRE-01',
-        timestamp: new Date(Date.now() - 7200000).toISOString(),
-        type: 'DEPOSIT_WIRE',
-        entity: 'Banque Pictet & Cie SA',
-        accountNumber: 'CH44 0078 1290 4410 9901 2',
-        amount: 1500000.0,
-        currency: 'USD',
-        status: 'PROCESSING',
-        rail: 'SWISS_SIC',
-      },
-      {
-        id: 'TX-PENDING-WITHDRAWAL-HIGH-2',
-        timestamp: new Date(Date.now() - 10800000).toISOString(),
-        type: 'WITHDRAWAL',
-        entity: 'LGT Bank AG',
-        accountNumber: 'LI88 0032 1099 2210 9940 1',
-        amount: 220000.0,
-        currency: 'USD',
-        status: 'PENDING_DUAL_SIG',
-        rail: 'SWISS_SIC',
-      },
-    ];
-
-    if (query.currency && query.currency !== 'ALL') {
-      return baselineRecords.filter((r) => r.currency === query.currency);
-    }
-
-    return baselineRecords;
   }
 
   private mapTransactionToRecord(tx: any): SettlementRecord {
     let type: SettlementRecord['type'] = 'INTERNAL_SETTLEMENT';
-    if (tx.type === 'DEPOSIT') {
+    const normalizedType = (tx.type || '').toUpperCase();
+    if (normalizedType === 'DEPOSIT') {
       type = 'DEPOSIT_WIRE';
-    } else if (tx.type === 'WITHDRAWAL') {
+    } else if (normalizedType === 'WITHDRAWAL') {
       type = 'WITHDRAWAL';
-    } else if (tx.type === 'TRADE' || tx.type === 'SWEEP') {
+    } else if (normalizedType === 'TRADE' || normalizedType === 'SWEEP' || normalizedType === 'STAKE') {
       type = 'VAULT_SWAP';
     }
 
@@ -270,16 +298,60 @@ export class OverviewService {
       status = 'BLOCKED';
     }
 
+    let amount = 0;
+    let currency = 'USD';
+    let entity = '';
+    let accountNumber = '';
+
+    if (tx.entries && tx.entries.length > 0) {
+      const positiveEntry = tx.entries.find((e: any) => Number(e.amount) > 0) || tx.entries[0];
+      if (positiveEntry) {
+        amount = Math.abs(Number(positiveEntry.amount || 0));
+        if (positiveEntry.account) {
+          currency = positiveEntry.account.currency || 'USD';
+          if (positiveEntry.account.user) {
+            entity = positiveEntry.account.user.fullName || positiveEntry.account.user.email;
+          }
+          accountNumber = `${positiveEntry.account.accountType} (${currency})`;
+        }
+      }
+    }
+
+    if (!entity) {
+      entity = tx.description || 'WavyAssets Custody AG';
+    }
+    if (!accountNumber) {
+      accountNumber = 'Vault Depository';
+    }
+
+    let isoTimestamp = new Date().toISOString();
+    if (tx.createdAt) {
+      if (tx.createdAt instanceof Date) {
+        isoTimestamp = tx.createdAt.toISOString();
+      } else if (typeof tx.createdAt === 'number') {
+        isoTimestamp = new Date(tx.createdAt).toISOString();
+      } else if (typeof tx.createdAt === 'string') {
+        const parsed = Number(tx.createdAt);
+        if (!isNaN(parsed) && parsed > 1000000000) {
+          isoTimestamp = new Date(parsed).toISOString();
+        } else {
+          isoTimestamp = new Date(tx.createdAt).toISOString();
+        }
+      }
+    }
+
+    const rail = currency === 'USDC' || currency === 'ETH' ? 'ETH' : currency === 'BTC' ? 'BTC' : currency === 'EUR' ? 'FEDWIRE' : 'SWISS_SIC';
+
     return {
-      id: tx.id || tx.referenceId,
-      timestamp: tx.createdAt ? tx.createdAt.toISOString() : new Date().toISOString(),
+      id: tx.referenceId || tx.id,
+      timestamp: isoTimestamp,
       type,
-      entity: tx.counterparty || tx.description || 'WavyAssets Treasury',
-      accountNumber: tx.accountNumber || (tx.rail ? `Rail: ${tx.rail}` : 'Sovereign Account'),
-      amount: Number(tx.amount),
-      currency: tx.currency || 'USD',
+      entity,
+      accountNumber,
+      amount,
+      currency,
       status,
-      rail: tx.rail || 'SWISS_SIC',
+      rail,
     };
   }
 }
