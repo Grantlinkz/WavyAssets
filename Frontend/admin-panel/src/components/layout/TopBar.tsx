@@ -79,15 +79,9 @@ export const TopBar: React.FC = () => {
       {/* Urgent Attention Ticker Banner */}
       <div className="h-8 bg-bg-elevated border-b border-border-subtle px-4 flex items-center justify-center gap-2 overflow-hidden">
         <AlertTriangle className="w-3.5 h-3.5 text-status-warning shrink-0" />
-        {badgeCounts.urgentActions === null &&
-        badgeCounts.pendingCompliance === null &&
-        badgeCounts.treasurySignOffs === null ? (
-          <div className="h-3 w-80 wavy-skeleton rounded-[2px]" />
-        ) : (
-          <span className="text-xs font-medium text-status-warning tracking-tight truncate">
-            Attention Needed: {badgeCounts.urgentActions ?? 0} unverified bank wires • {badgeCounts.pendingCompliance ?? 0} pending passport reviews • {badgeCounts.treasurySignOffs ?? 0} large withdrawals over $100k waiting for second approval.
-          </span>
-        )}
+        <span className="text-xs font-medium text-status-warning tracking-tight truncate">
+          Attention Needed: {badgeCounts.urgentActions ?? 0} unverified bank wires • {badgeCounts.pendingCompliance ?? 0} pending passport reviews • {badgeCounts.treasurySignOffs ?? 0} large withdrawals over $100k waiting for second approval.
+        </span>
       </div>
     </header>
   )
