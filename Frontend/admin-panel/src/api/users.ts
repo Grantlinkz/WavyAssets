@@ -63,7 +63,10 @@ export async function fetchUsers(params?: {
   if (params?.status && params.status !== "ALL") queryParts.push(`status=${encodeURIComponent(params.status)}`)
 
   const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : ""
-  return apiClient<SupremeUser[]>(`/users${queryString}`)
+  const res = await apiClient<SupremeUser[] | { users?: SupremeUser[] }>(`/users${queryString}`)
+  if (Array.isArray(res)) return res
+  if (res && typeof res === "object" && "users" in res && Array.isArray(res.users)) return res.users
+  return []
 }
 
 export async function fetchUserById(id: string): Promise<SupremeUser> {

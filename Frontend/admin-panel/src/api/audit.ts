@@ -45,7 +45,13 @@ export async function fetchAuditLogs(params?: {
   if (params?.dateRange) queryParts.push(`dateRange=${encodeURIComponent(params.dateRange)}`)
 
   const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : ""
-  return apiClient<AuditLogEntry[]>(`/audit/logs${queryString}`)
+  const res = await apiClient<AuditLogEntry[] | { logs?: AuditLogEntry[]; items?: AuditLogEntry[] }>(`/audit/logs${queryString}`)
+  if (Array.isArray(res)) return res
+  if (res && typeof res === "object") {
+    if ("logs" in res && Array.isArray(res.logs)) return res.logs
+    if ("items" in res && Array.isArray(res.items)) return res.items
+  }
+  return []
 }
 
 export async function fetchAuditLogById(id: string): Promise<AuditLogEntry> {

@@ -50,9 +50,6 @@ export const OverviewView: React.FC = () => {
           <div>
             <h1 className="text-xl font-semibold text-gold-accent tracking-tight flex items-center gap-2.5">
               <span>Executive Overview & Settlement Ledger</span>
-              <span className="font-mono text-[10px] text-secondary uppercase bg-bg-panel px-2 py-0.5 rounded-[2px] border border-border-subtle tracking-widest font-normal">
-                CH-8400 Depository
-              </span>
             </h1>
             <p className="text-xs text-secondary mt-0.5">
               Real-time multi-asset liquidity, cold storage telemetry, and clearing rail ledger.

@@ -64,7 +64,15 @@ export interface DossierRejectionPayload {
 
 export async function fetchKycQueue(status?: string): Promise<KycDossier[]> {
   const query = status && status !== "ALL" ? `?status=${encodeURIComponent(status)}` : ""
-  return apiClient<KycDossier[]>(`/compliance/dossiers${query}`)
+  const res = await apiClient<KycDossier[] | { queue?: KycDossier[]; dossiers?: KycDossier[] }>(
+    `/compliance/dossiers${query}`
+  )
+  if (Array.isArray(res)) return res
+  if (res && typeof res === "object") {
+    if ("queue" in res && Array.isArray(res.queue)) return res.queue
+    if ("dossiers" in res && Array.isArray(res.dossiers)) return res.dossiers
+  }
+  return []
 }
 
 export async function fetchDossierById(dossierId: string): Promise<KycDossier> {

@@ -35,7 +35,13 @@ export interface ConvertUserPayload {
 
 export async function fetchInquiries(statusFilter?: string): Promise<LeadInquiry[]> {
   const query = statusFilter && statusFilter !== "ALL" ? `?status=${statusFilter}` : ""
-  return apiClient<LeadInquiry[]>(`/inquiries${query}`)
+  const res = await apiClient<LeadInquiry[] | { inquiries?: LeadInquiry[]; items?: LeadInquiry[] }>(`/inquiries${query}`)
+  if (Array.isArray(res)) return res
+  if (res && typeof res === "object") {
+    if ("inquiries" in res && Array.isArray(res.inquiries)) return res.inquiries
+    if ("items" in res && Array.isArray(res.items)) return res.items
+  }
+  return []
 }
 
 export async function updateInquiryStatus(

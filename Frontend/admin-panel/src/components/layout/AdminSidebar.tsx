@@ -114,13 +114,6 @@ export const AdminSidebar: React.FC = () => {
       data-testid="admin-sidebar"
     >
       <div className="flex flex-col gap-3">
-        {/* Environment Staging Badge */}
-        <div className="bg-bg-canvas border border-border-subtle rounded-[4px] p-2 flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-telemetry-cyan shrink-0 animate-pulse" />
-          <span className="font-mono text-[11px] text-telemetry-cyan truncate">
-            Enclave: Zurich Depository (CH-8400)
-          </span>
-        </div>
 
         {/* Navigation Rail */}
         <nav className="flex flex-col gap-1">

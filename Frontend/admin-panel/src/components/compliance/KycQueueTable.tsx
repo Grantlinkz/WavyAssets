@@ -43,7 +43,8 @@ export const KycQueueTable: React.FC = () => {
     queryFn: () => fetchKycQueue(activeFilter),
   })
 
-  const filteredDossiers = (dossiers || []).filter((d) => {
+  const safeDossiers = Array.isArray(dossiers) ? dossiers : []
+  const filteredDossiers = safeDossiers.filter((d) => {
     if (!searchQuery.trim()) return true
     const q = searchQuery.toLowerCase()
     return (

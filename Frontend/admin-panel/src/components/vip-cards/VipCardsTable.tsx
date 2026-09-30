@@ -12,7 +12,7 @@ export const VipCardsTable: React.FC = () => {
   const [toggleLoadingId, setToggleLoadingId] = useState<string | null>(null)
 
   const {
-    data: cards = [],
+    data: cardsData,
     isLoading,
     isError,
     error,
@@ -21,6 +21,8 @@ export const VipCardsTable: React.FC = () => {
     queryKey: ["vip-cards", searchQuery, statusFilter],
     queryFn: () => fetchVipCards({ search: searchQuery, status: statusFilter }),
   })
+
+  const cards: VipCardItem[] = Array.isArray(cardsData) ? cardsData : []
 
   const toggleMutation = useMutation({
     mutationFn: ({ id, isFrozen }: { id: string; isFrozen: boolean }) =>

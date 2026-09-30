@@ -53,7 +53,10 @@ export async function fetchVipCards(params?: {
   if (params?.status && params.status !== "ALL") queryParts.push(`status=${encodeURIComponent(params.status)}`)
 
   const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : ""
-  return apiClient<VipCardItem[]>(`/vip-cards${queryString}`)
+  const res = await apiClient<VipCardItem[] | { cards?: VipCardItem[] }>(`/vip-cards${queryString}`)
+  if (Array.isArray(res)) return res
+  if (res && typeof res === "object" && "cards" in res && Array.isArray(res.cards)) return res.cards
+  return []
 }
 
 export async function fetchVipCardsTelemetry(): Promise<VipCardsTelemetry> {

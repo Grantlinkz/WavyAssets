@@ -83,7 +83,15 @@ export async function fetchPendingDeposits(params?: {
   if (params?.search) queryParts.push(`search=${encodeURIComponent(params.search)}`)
 
   const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : ""
-  return apiClient<PendingDeposit[]>(`/treasury/pending-deposits${queryString}`)
+  const res = await apiClient<PendingDeposit[] | { deposits?: PendingDeposit[]; items?: PendingDeposit[] }>(
+    `/treasury/pending-deposits${queryString}`
+  )
+  if (Array.isArray(res)) return res
+  if (res && typeof res === "object") {
+    if ("deposits" in res && Array.isArray(res.deposits)) return res.deposits
+    if ("items" in res && Array.isArray(res.items)) return res.items
+  }
+  return []
 }
 
 export async function fetchPendingWithdrawals(params?: {
@@ -95,7 +103,15 @@ export async function fetchPendingWithdrawals(params?: {
   if (params?.search) queryParts.push(`search=${encodeURIComponent(params.search)}`)
 
   const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : ""
-  return apiClient<PendingWithdrawal[]>(`/treasury/pending-withdrawals${queryString}`)
+  const res = await apiClient<PendingWithdrawal[] | { withdrawals?: PendingWithdrawal[]; items?: PendingWithdrawal[] }>(
+    `/treasury/pending-withdrawals${queryString}`
+  )
+  if (Array.isArray(res)) return res
+  if (res && typeof res === "object") {
+    if ("withdrawals" in res && Array.isArray(res.withdrawals)) return res.withdrawals
+    if ("items" in res && Array.isArray(res.items)) return res.items
+  }
+  return []
 }
 
 export async function approveDeposit(

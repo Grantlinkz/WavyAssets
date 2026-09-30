@@ -46,7 +46,7 @@ export const UserDirectoryTable: React.FC = () => {
   } = useUserRegistryStore()
 
   const {
-    data: users,
+    data: rawUsers,
     isLoading,
     isError,
     error,
@@ -61,6 +61,8 @@ export const UserDirectoryTable: React.FC = () => {
         status: selectedStatus,
       }),
   })
+
+  const users: SupremeUser[] = Array.isArray(rawUsers) ? rawUsers : []
 
   const getTierBadge = (tier: UserTier) => {
     switch (tier) {

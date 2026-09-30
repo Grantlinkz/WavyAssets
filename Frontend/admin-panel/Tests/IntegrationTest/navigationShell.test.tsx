@@ -15,7 +15,6 @@ describe("Navigation Shell Integration", () => {
   it("renders admin sidebar with institutional nav links and enclave badge", () => {
     const html = renderToString(<AdminSidebar />)
     expect(html).toContain('data-testid="admin-sidebar"')
-    expect(html).toContain("Enclave: Zurich Depository (CH-8400)")
     expect(html).toContain('data-testid="nav-overview"')
     expect(html).toContain('data-testid="nav-inquiries"')
     expect(html).toContain('data-testid="nav-user-directory"')
