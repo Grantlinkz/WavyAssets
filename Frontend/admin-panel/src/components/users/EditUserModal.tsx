@@ -175,7 +175,7 @@ export const EditUserModal: React.FC = () => {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="font-mono uppercase text-secondary text-[11px] block">
-                Access Tier
+                Account Type
               </label>
               <select
                 value={tier}

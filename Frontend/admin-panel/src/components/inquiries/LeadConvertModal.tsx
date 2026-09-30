@@ -146,7 +146,7 @@ export const LeadConvertModal: React.FC = () => {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-mono uppercase text-secondary mb-1">
-                Access Tier
+                Account Type
               </label>
               <select
                 value={accessTier}

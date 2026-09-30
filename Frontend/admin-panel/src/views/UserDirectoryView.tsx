@@ -19,7 +19,7 @@ export const UserDirectoryView: React.FC = () => {
             <span>Supreme User Directory & Ledger Governance</span>
           </h1>
           <p className="text-xs text-secondary mt-0.5">
-            Segregated capital custody, access tier elevation, and FINMA Article 14 operational kill-switch
+            Segregated capital custody, Account Type elevation, and FINMA Article 14 operational kill-switch
           </p>
         </div>
       </div>

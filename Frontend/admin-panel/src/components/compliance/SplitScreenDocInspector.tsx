@@ -117,7 +117,7 @@ export const SplitScreenDocInspector: React.FC = () => {
     },
     onSuccess: (data) => {
       setSuccessMsg(
-        `Dossier elevated to ${data.dossier.requestedTier}. Supreme ledger access elevated.`
+        `Dossier elevated to ${data.dossier.requestedTier}. User Ledger access elevated.`
       )
       queryClient.invalidateQueries({ queryKey: ["compliance"] })
       queryClient.invalidateQueries({ queryKey: ["users"] })

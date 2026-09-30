@@ -1,51 +1,63 @@
-import React, { useState } from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { DollarSign, X, ShieldAlert, CheckCircle2, AlertTriangle, FileText, ArrowRight } from "lucide-react"
-import { useUserRegistryStore } from "../../store/useUserRegistryStore"
-import { useAdminAuthStore } from "../../store/useAdminAuthStore"
-import { directFundUser, type BalanceType } from "../../api/users"
-import { formatCurrency } from "../../lib/formatters"
+import React, { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  DollarSign,
+  X,
+  ShieldAlert,
+  CheckCircle2,
+  AlertTriangle,
+  FileText,
+  ArrowRight,
+} from "lucide-react";
+import { useUserRegistryStore } from "../../store/useUserRegistryStore";
+import { useAdminAuthStore } from "../../store/useAdminAuthStore";
+import { directFundUser, type BalanceType } from "../../api/users";
+import { formatCurrency } from "../../lib/formatters";
 
 export const DirectFundingModal: React.FC = () => {
-  const { isDirectFundingModalOpen, closeFundingModal, selectedUser } = useUserRegistryStore()
-  const { hasPermission } = useAdminAuthStore()
-  const queryClient = useQueryClient()
+  const { isDirectFundingModalOpen, closeFundingModal, selectedUser } =
+    useUserRegistryStore();
+  const { hasPermission } = useAdminAuthStore();
+  const queryClient = useQueryClient();
 
-  const [direction, setDirection] = useState<"CREDIT" | "DEBIT">("CREDIT")
-  const [amount, setAmount] = useState("")
-  const [targetBalance, setTargetBalance] = useState<BalanceType>("AVAILABLE_CASH")
-  const [currency, setCurrency] = useState("USD")
-  const [auditJustification, setAuditJustification] = useState("")
-  const [complianceReferenceId, setComplianceReferenceId] = useState("")
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [successMsg, setSuccessMsg] = useState<string | null>(null)
+  const [direction, setDirection] = useState<"CREDIT" | "DEBIT">("CREDIT");
+  const [amount, setAmount] = useState("");
+  const [targetBalance, setTargetBalance] =
+    useState<BalanceType>("AVAILABLE_CASH");
+  const [currency, setCurrency] = useState("USD");
+  const [auditJustification, setAuditJustification] = useState("");
+  const [complianceReferenceId, setComplianceReferenceId] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const canDirectFund = hasPermission("canDirectFund")
+  const canDirectFund = hasPermission("canDirectFund");
 
   React.useEffect(() => {
     if (selectedUser) {
-      setCurrency(selectedUser.balances.currency || "USD")
-      setAmount("")
-      setAuditJustification("")
-      setComplianceReferenceId("")
-      setErrorMsg(null)
-      setSuccessMsg(null)
-      setDirection("CREDIT")
+      setCurrency(selectedUser.balances.currency || "USD");
+      setAmount("");
+      setAuditJustification("");
+      setComplianceReferenceId("");
+      setErrorMsg(null);
+      setSuccessMsg(null);
+      setDirection("CREDIT");
     }
-  }, [selectedUser])
+  }, [selectedUser]);
 
   const mutation = useMutation({
     mutationFn: async () => {
-      if (!selectedUser) throw new Error("No user selected for funding.")
-      const parsedAmount = parseFloat(amount)
+      if (!selectedUser) throw new Error("No user selected for funding.");
+      const parsedAmount = parseFloat(amount);
       if (isNaN(parsedAmount) || parsedAmount <= 0) {
-        throw new Error("Funding amount must be a positive number greater than 0.")
+        throw new Error("Amount must be a positive number greater than 0.");
       }
       if (!auditJustification.trim()) {
-        throw new Error("Mandatory audit justification required for ledger capital adjustment.")
+        throw new Error(
+          "Mandatory audit justification required for ledger capital adjustment.",
+        );
       }
       if (!complianceReferenceId.trim()) {
-        throw new Error("Mandatory compliance / wire reference ID required.")
+        throw new Error("Mandatory compliance / wire reference ID required.");
       }
 
       return directFundUser({
@@ -56,51 +68,61 @@ export const DirectFundingModal: React.FC = () => {
         currency,
         auditJustification: auditJustification.trim(),
         complianceReferenceId: complianceReferenceId.trim(),
-      })
+      });
     },
     onSuccess: (data) => {
       setSuccessMsg(
         `Successfully ${direction === "CREDIT" ? "credited" : "debited"} ${formatCurrency(parseFloat(amount), currency)} ${direction === "CREDIT" ? "to" : "from"} ${
-          targetBalance === "AVAILABLE_CASH" ? "Available Cash" : "Invested Capital"
-        }. Transaction ID: ${data.transactionId || "Confirmed"}`
-      )
-      queryClient.invalidateQueries({ queryKey: ["users"] })
+          targetBalance === "AVAILABLE_CASH"
+            ? "Available Cash"
+            : "Invested Capital"
+        }. Transaction ID: ${data.transactionId || "Confirmed"}`,
+      );
+      queryClient.invalidateQueries({ queryKey: ["users"] });
       setTimeout(() => {
-        closeFundingModal()
-        setErrorMsg(null)
-        setSuccessMsg(null)
-      }, 1500)
+        closeFundingModal();
+        setErrorMsg(null);
+        setSuccessMsg(null);
+      }, 1500);
     },
     onError: (err: Error) => {
-      setErrorMsg(err.message || "Direct funding operation failed.")
+      setErrorMsg(err.message || "Direct funding operation failed.");
     },
-  })
+  });
 
-  if (!isDirectFundingModalOpen || !selectedUser) return null
+  if (!isDirectFundingModalOpen || !selectedUser) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setErrorMsg(null)
-    mutation.mutate()
-  }
+    e.preventDefault();
+    setErrorMsg(null);
+    mutation.mutate();
+  };
 
-  const userCurrency = selectedUser.balances.currency || "USD"
-  const isCurrencyMatching = currency === userCurrency
-  const currentAvailable = selectedUser.balances.availableCash
-  const currentInvested = selectedUser.balances.investedCapital
-  const parsedAmount = parseFloat(amount) || 0
+  const userCurrency = selectedUser.balances.currency || "USD";
+  const isCurrencyMatching = currency === userCurrency;
+  const currentAvailable = selectedUser.balances.availableCash;
+  const currentInvested = selectedUser.balances.investedCapital;
+  const parsedAmount = parseFloat(amount) || 0;
 
   const projectedAvailable =
     direction === "CREDIT"
-      ? (targetBalance === "AVAILABLE_CASH" ? currentAvailable + parsedAmount : currentAvailable)
-      : (targetBalance === "AVAILABLE_CASH" ? Math.max(0, currentAvailable - parsedAmount) : currentAvailable)
+      ? targetBalance === "AVAILABLE_CASH"
+        ? currentAvailable + parsedAmount
+        : currentAvailable
+      : targetBalance === "AVAILABLE_CASH"
+        ? Math.max(0, currentAvailable - parsedAmount)
+        : currentAvailable;
 
   const projectedInvested =
     direction === "CREDIT"
-      ? (targetBalance === "INVESTED_CAPITAL" ? currentInvested + parsedAmount : currentInvested)
-      : (targetBalance === "INVESTED_CAPITAL" ? Math.max(0, currentInvested - parsedAmount) : currentInvested)
+      ? targetBalance === "INVESTED_CAPITAL"
+        ? currentInvested + parsedAmount
+        : currentInvested
+      : targetBalance === "INVESTED_CAPITAL"
+        ? Math.max(0, currentInvested - parsedAmount)
+        : currentInvested;
 
-  const projectedTotal = projectedAvailable + projectedInvested
+  const projectedTotal = projectedAvailable + projectedInvested;
 
   return (
     <div
@@ -119,9 +141,11 @@ export const DirectFundingModal: React.FC = () => {
             </div>
             <div>
               <h2 className="text-sm font-semibold text-on-surface">
-                Direct Supreme Ledger Funding
+                Direct User Ledger Funding
               </h2>
-              <p className="text-xs text-secondary font-mono">{selectedUser.fullLegalName}</p>
+              <p className="text-xs text-secondary font-mono">
+                {selectedUser.fullLegalName}
+              </p>
             </div>
           </div>
           <button
@@ -140,14 +164,18 @@ export const DirectFundingModal: React.FC = () => {
           </div>
           <div className="grid grid-cols-2 gap-3 mb-2">
             <div className="p-2 bg-bg-panel rounded-[2px] border border-border-subtle">
-              <div className="text-[10px] text-secondary">Available Cash (Liquid)</div>
+              <div className="text-[10px] text-secondary">
+                Available Cash (Liquid)
+              </div>
               <div className="font-mono tabular-nums text-sm font-bold text-on-surface">
                 {formatCurrency(currentAvailable, userCurrency)}
               </div>
               {isCurrencyMatching ? (
                 <div className="text-[10px] text-gold-accent flex items-center gap-1 mt-0.5">
                   <ArrowRight className="w-2.5 h-2.5" />
-                  <span className="font-mono tabular-nums">{formatCurrency(projectedAvailable, userCurrency)}</span>
+                  <span className="font-mono tabular-nums">
+                    {formatCurrency(projectedAvailable, userCurrency)}
+                  </span>
                 </div>
               ) : (
                 <div className="text-[10px] text-secondary italic mt-0.5">
@@ -157,14 +185,18 @@ export const DirectFundingModal: React.FC = () => {
             </div>
 
             <div className="p-2 bg-bg-panel rounded-[2px] border border-border-subtle">
-              <div className="text-[10px] text-secondary">Invested Capital (Vault)</div>
+              <div className="text-[10px] text-secondary">
+                Invested Capital (Vault)
+              </div>
               <div className="font-mono tabular-nums text-sm font-bold text-on-surface">
                 {formatCurrency(currentInvested, userCurrency)}
               </div>
               {isCurrencyMatching ? (
                 <div className="text-[10px] text-telemetry-cyan flex items-center gap-1 mt-0.5">
                   <ArrowRight className="w-2.5 h-2.5" />
-                  <span className="font-mono tabular-nums">{formatCurrency(projectedInvested, userCurrency)}</span>
+                  <span className="font-mono tabular-nums">
+                    {formatCurrency(projectedInvested, userCurrency)}
+                  </span>
                 </div>
               ) : (
                 <div className="text-[10px] text-secondary italic mt-0.5">
@@ -191,7 +223,10 @@ export const DirectFundingModal: React.FC = () => {
         {!canDirectFund && (
           <div className="mb-4 p-3 bg-status-warning/10 border border-status-warning/30 rounded-[4px] text-xs text-status-warning flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 shrink-0" />
-            <span>RBAC Restricted: Only Treasury Officers and Super Admins may inject ledger capital.</span>
+            <span>
+              RBAC Restricted: Only Treasury Officers and Super Admins may
+              inject ledger capital.
+            </span>
           </div>
         )}
 
@@ -250,11 +285,15 @@ export const DirectFundingModal: React.FC = () => {
               </label>
               <select
                 value={targetBalance}
-                onChange={(e) => setTargetBalance(e.target.value as BalanceType)}
+                onChange={(e) =>
+                  setTargetBalance(e.target.value as BalanceType)
+                }
                 className="w-full bg-bg-canvas border border-border-subtle rounded-[4px] p-1.5 text-on-surface focus:border-gold-accent focus:outline-none font-mono"
               >
                 <option value="AVAILABLE_CASH">AVAILABLE_CASH (Liquid)</option>
-                <option value="INVESTED_CAPITAL">INVESTED_CAPITAL (Locked)</option>
+                <option value="INVESTED_CAPITAL">
+                  INVESTED_CAPITAL (Locked)
+                </option>
               </select>
             </div>
 
@@ -276,7 +315,7 @@ export const DirectFundingModal: React.FC = () => {
 
           <div>
             <label className="block font-mono uppercase text-secondary mb-1">
-              Funding Amount ({currency}) *
+              Amount ({currency}) *
             </label>
             <div className="relative flex items-center">
               <DollarSign className="w-3.5 h-3.5 text-gold-accent absolute left-3 pointer-events-none" />
@@ -345,12 +384,12 @@ export const DirectFundingModal: React.FC = () => {
               <span>
                 {mutation.isPending
                   ? `Executing ${direction === "CREDIT" ? "Credit" : "Debit"}...`
-                  : `${direction === "CREDIT" ? "Credit" : "Debit"} Supreme Ledger`}
+                  : `${direction === "CREDIT" ? "Credit" : "Debit"} User Ledger`}
               </span>
             </button>
           </div>
         </form>
       </div>
     </div>
-  )
-}
+  );
+};

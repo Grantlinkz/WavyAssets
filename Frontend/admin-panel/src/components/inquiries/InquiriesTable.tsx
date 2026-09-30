@@ -143,7 +143,7 @@ export const InquiriesTable: React.FC<InquiriesTableProps> = ({
         <table className="w-full text-left text-xs border-collapse font-sans">
           <thead>
             <tr className="border-b border-border-subtle bg-bg-canvas/50 text-[11px] font-mono uppercase text-secondary tracking-wider">
-              <th className="py-2.5 px-4 font-medium">Dossier / Received</th>
+              <th className="py-2.5 px-4 font-medium">Contact Received</th>
               <th className="py-2.5 px-4 font-medium">Institutional Entity</th>
               <th className="py-2.5 px-4 font-medium">Principal Contact</th>
               <th className="py-2.5 px-4 font-medium">Capital Interest</th>

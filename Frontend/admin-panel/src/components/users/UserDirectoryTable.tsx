@@ -300,7 +300,7 @@ export const UserDirectoryTable: React.FC = () => {
                 <tr className="bg-bg-canvas/60 border-b border-border-subtle text-secondary font-mono uppercase text-[10px] tracking-wider">
                   <th className="py-2.5 px-3">Supreme Entity / Principal</th>
                   <th className="py-2.5 px-3">Corporate Contact</th>
-                  <th className="py-2.5 px-3">Access Tier</th>
+                  <th className="py-2.5 px-3">Account Type</th>
                   <th className="py-2.5 px-3">Status</th>
                   <th className="py-2.5 px-3 text-right">Available Cash</th>
                   <th className="py-2.5 px-3 text-right">Invested Capital</th>

@@ -148,7 +148,7 @@ export const SuspendUserModal: React.FC = () => {
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 text-xs">
           <div>
             <label className="block font-mono uppercase text-secondary mb-1">
-              Mandatory Regulatory Reason / FINMA Reference *
+              Mandatory Regulatory Reason *
             </label>
             <textarea
               required
