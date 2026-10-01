@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Shield, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
+import { getLandingUrl } from '../../lib/utils';
 
 interface AuthCallbackProps {
   onComplete?: () => void;
@@ -154,9 +155,7 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
                 size="default"
                 className="font-mono text-xs"
                 onClick={() => {
-                  const landingUrl = typeof window !== 'undefined'
-                    ? (import.meta.env.VITE_LANDING_URL || `${window.location.protocol}//${window.location.hostname}:5173`)
-                    : 'http://localhost:5173';
+                  const landingUrl = getLandingUrl();
                   if (typeof window !== 'undefined') {
                     window.location.href = `${landingUrl}/?auth=signin`;
                   }
@@ -169,9 +168,7 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
                 size="default"
                 className="font-mono text-xs"
                 onClick={() => {
-                  const landingUrl = typeof window !== 'undefined'
-                    ? (import.meta.env.VITE_LANDING_URL || `${window.location.protocol}//${window.location.hostname}:5173`)
-                    : 'http://localhost:5173';
+                  const landingUrl = getLandingUrl();
                   if (typeof window !== 'undefined') {
                     window.location.href = `${landingUrl}/?auth=mandate`;
                   }
@@ -186,9 +183,7 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
                 size="sm"
                 className="text-on-surface-variant hover:text-on-surface text-[11px] font-mono"
                 onClick={() => {
-                  const landingUrl = typeof window !== 'undefined'
-                    ? (import.meta.env.VITE_LANDING_URL || `${window.location.protocol}//${window.location.hostname}:5173`)
-                    : 'http://localhost:5173';
+                  const landingUrl = getLandingUrl();
                   if (typeof window !== 'undefined') {
                     window.location.href = landingUrl;
                   }

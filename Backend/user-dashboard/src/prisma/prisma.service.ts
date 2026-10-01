@@ -16,7 +16,7 @@ export class PrismaService
   async onModuleInit(): Promise<void> {
     try {
       await this.$connect();
-      this.logger.log('Prisma ORM connected to SQLite database successfully');
+      this.logger.log('Prisma ORM connected to database successfully');
     } catch (error) {
       this.logger.error('Failed to connect to database via Prisma', error);
       throw error;

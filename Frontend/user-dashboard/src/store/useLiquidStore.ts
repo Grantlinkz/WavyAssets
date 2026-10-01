@@ -22,7 +22,7 @@ export interface ActiveOrder {
   type: 'BUY_LIMIT' | 'SELL_LIMIT' | 'STOP_LOSS';
   shares: number;
   limitPrice: number;
-  status: 'PENDING' | 'ROUTING' | 'CANCELLED';
+  status: 'Active' | 'Cancelled' | 'Expired' | 'PENDING' | 'ROUTING' | 'CANCELLED';
   expires: string;
 }
 

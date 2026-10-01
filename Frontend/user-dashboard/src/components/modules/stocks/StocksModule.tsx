@@ -36,7 +36,7 @@ export const StocksModule: React.FC<StocksModuleProps> = ({ maskBalances: propMa
       { totalShares: number; totalCostBasis: number; avgLimitPrice: number; orderCount: number }
     > = {};
     activeOrders
-      .filter((o) => o.status !== 'CANCELLED')
+      .filter((o) => o.status !== 'CANCELLED' && o.status !== 'Cancelled')
       .forEach((order) => {
         const existing = map[order.symbol] || {
           totalShares: 0,
