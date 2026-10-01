@@ -395,3 +395,33 @@ model AuditLog {
   metadata      String?  // JSON string
   createdAt     DateTime @default(now())
 }
+
+// ------------------------------------------------------------------------------
+// Global Deposit Rail Configuration Models
+// ------------------------------------------------------------------------------
+
+model FiatDepositRailConfig {
+  id              String   @id @default("GLOBAL_FIAT_RAIL")
+  beneficiaryName String   @default("WavyAssets Supreme Custody AG")
+  depositoryBank  String?  @default("UBS Switzerland AG (Zurich Enclave)")
+  swissIban       String   @default("CH93 0023 8812 4019 8821 0")
+  bicSwift        String   @default("UBSWCHZH80A")
+  clearingRail    String   @default("Swiss SIC RTGS / Fedwire DvP")
+  memoFormat      String   @default("WY-{USER_REF}-TREASURY-03")
+  updatedAt       DateTime @updatedAt
+  updatedBy       String?
+}
+
+model CryptoDepositRailConfig {
+  id              String   @id @default(uuid())
+  asset           String   // USDC | USDT | BTC | ETH | SOL
+  network         String   // ERC-20 | BEP-20 | Polygon | TRC-20 | Bitcoin Native | Arbitrum | Optimism | Solana Native
+  vaultAddress    String
+  minDepositUsd   Float    @default(500.0)
+  confirmations   Int      @default(3)
+  isActive        Boolean  @default(true)
+  updatedAt       DateTime @updatedAt
+  updatedBy       String?
+
+  @@unique([asset, network])
+}

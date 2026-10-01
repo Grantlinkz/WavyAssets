@@ -14,6 +14,7 @@ export interface OverviewMetrics {
     activeShards: number
     coldStoreActive: boolean
   }
+  badgeCounts?: BadgeCounts
 }
 
 export interface SettlementRecord {

@@ -36,7 +36,7 @@ export class DepositRailsController {
   }
 
   @Put('fiat')
-  @Roles(AdminRole.SUPER_ADMIN, AdminRole.TREASURY_OFFICER)
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.TREASURY_OFFICER, AdminRole.DESK_LEAD)
   async updateFiatRail(
     @Body() dto: UpdateFiatRailDto,
     @CurrentAdmin() admin: CurrentAdminPayload,
@@ -47,7 +47,7 @@ export class DepositRailsController {
   }
 
   @Put('crypto')
-  @Roles(AdminRole.SUPER_ADMIN, AdminRole.TREASURY_OFFICER)
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.TREASURY_OFFICER, AdminRole.DESK_LEAD)
   async upsertCryptoRail(
     @Body() dto: UpdateCryptoRailDto,
     @CurrentAdmin() admin: CurrentAdminPayload,

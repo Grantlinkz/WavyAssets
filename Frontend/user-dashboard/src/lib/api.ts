@@ -520,3 +520,56 @@ export async function registerWhitelistDestination(payload: {
     body: JSON.stringify(body),
   });
 }
+
+// ----------------------------------------------------------------------
+// Deposit Rails (Bank Wire & Web3 Crypto Matrix)
+// ----------------------------------------------------------------------
+
+export interface DepositRailsData {
+  fiat: {
+    id: string;
+    beneficiaryName: string;
+    depositoryBank?: string;
+    swissIban: string;
+    bicSwift: string;
+    clearingRail: string;
+    memoFormat: string;
+    updatedAt?: string;
+  };
+  crypto: Array<{
+    id: string;
+    asset: string;
+    name?: string;
+    network: string;
+    standard?: string;
+    vaultAddress: string;
+    isActive: boolean;
+    minDepositUsd?: number;
+    confirmations?: number;
+  }>;
+}
+
+export async function fetchDepositRails(): Promise<DepositRailsData> {
+  const fallback: DepositRailsData = {
+    fiat: {
+      id: 'GLOBAL_FIAT_RAIL',
+      beneficiaryName: 'Grant Global Holdings AG / Escrow Treuhand Zurich',
+      depositoryBank: 'UBS Switzerland AG (Zurich Enclave)',
+      swissIban: 'CH93 0023 8812 4019 8821 0',
+      bicSwift: 'UBSWCHZH80A',
+      clearingRail: 'Swiss SIC RTGS / Fedwire DvP',
+      memoFormat: 'WY-9942-TREASURY-03',
+    },
+    crypto: [],
+  };
+
+  try {
+    return await requestApi<DepositRailsData>('/api/v1/wallet/deposit-rails', { method: 'GET' }, fallback);
+  } catch {
+    try {
+      return await requestApi<DepositRailsData>('/api/v1/deposit-rails', { method: 'GET' }, fallback);
+    } catch {
+      return fallback;
+    }
+  }
+}

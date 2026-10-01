@@ -41,6 +41,7 @@ export class DepositRailsService {
         ? {
             id: fiatRail.id,
             beneficiaryName: fiatRail.beneficiaryName,
+            depositoryBank: (fiatRail as any).depositoryBank || "UBS Switzerland AG (Zurich Enclave)",
             swissIban: fiatRail.swissIban,
             bicSwift: fiatRail.bicSwift,
             clearingRail: fiatRail.clearingRail,
@@ -76,6 +77,7 @@ export class DepositRailsService {
         create: {
           id: 'GLOBAL_FIAT_RAIL',
           beneficiaryName: dto.beneficiaryName,
+          depositoryBank: dto.depositoryBank || 'UBS Switzerland AG (Zurich Enclave)',
           swissIban: dto.swissIban,
           bicSwift: dto.bicSwift,
           clearingRail: dto.clearingRail,
@@ -84,6 +86,7 @@ export class DepositRailsService {
         },
         update: {
           beneficiaryName: dto.beneficiaryName,
+          depositoryBank: dto.depositoryBank || 'UBS Switzerland AG (Zurich Enclave)',
           swissIban: dto.swissIban,
           bicSwift: dto.bicSwift,
           clearingRail: dto.clearingRail,
@@ -203,6 +206,7 @@ export class DepositRailsService {
         where: { id: 'GLOBAL_FIAT_RAIL' },
         select: {
           beneficiaryName: true,
+          depositoryBank: true,
           swissIban: true,
           bicSwift: true,
           clearingRail: true,

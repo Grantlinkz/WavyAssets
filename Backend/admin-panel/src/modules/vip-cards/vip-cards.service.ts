@@ -21,6 +21,37 @@ export class VipCardsService {
     private readonly eventsGateway: EventsGateway,
   ) {}
 
+  private formatSafeCard(card: any) {
+    const { pinEncrypted, ...safeCard } = card;
+    const user = safeCard.user || {};
+    const tier = safeCard.tier || 'OBSIDIAN';
+    const substrate =
+      tier === 'CELEBRITY'
+        ? 'Celebrity 24K Gold & Diamond'
+        : tier === 'TITANIUM'
+        ? 'Silver Titanium'
+        : tier === 'Supreme'
+        ? 'Black Supreme Stainless'
+        : 'Obsidian 42g Tungsten';
+
+    return {
+      ...safeCard,
+      userName: user.fullName || 'VIP Member',
+      userCif: `CIF-${(safeCard.userId || safeCard.id || '0000').slice(0, 8).toUpperCase()}`,
+      userTier: user.tier ? `${user.tier} Tier` : 'Institutional Tier',
+      maskedPan: `•••• •••• •••• ${safeCard.cardNumberLast4 || '0000'}`,
+      substrate,
+      destination:
+        safeCard.destination ||
+        (safeCard.cardType === 'VIRTUAL'
+          ? 'Digital NFC Enclave'
+          : safeCard.shippingStatus === 'DELIVERED'
+          ? 'Registered Address (Vault Enclave)'
+          : 'Armored Vault Custody'),
+      issuedAt: safeCard.createdAt || safeCard.updatedAt,
+    };
+  }
+
   /**
    * Retrieves paginated catalog of VIP cards with executive metrics
    */
@@ -77,11 +108,8 @@ export class VipCardsService {
       }),
     ]);
 
-    // Sanitize cards: never leak encrypted PIN
-    const cards = rawCards.map((card) => {
-      const { pinEncrypted, ...safeCard } = card;
-      return safeCard;
-    });
+    // Sanitize cards: never leak encrypted PIN, enrich with display attributes
+    const cards = rawCards.map((card) => this.formatSafeCard(card));
 
     // Compute executive portfolio telemetry
     const totalIssued = allCards.length;
@@ -186,8 +214,7 @@ export class VipCardsService {
       throw new NotFoundException(`VIP Card with ID '${cardId}' not found`);
     }
 
-    const { pinEncrypted, ...safeCard } = card;
-    return safeCard;
+    return this.formatSafeCard(card);
   }
 
   /**
@@ -273,8 +300,7 @@ export class VipCardsService {
       `Minted VIP card '${card.id}' (tier: ${card.tier}, last4: ${card.cardNumberLast4}) for user '${card.userId}' by operator '${adminId}'`,
     );
 
-    const { pinEncrypted: _, ...safeCard } = card;
-    return safeCard;
+    return this.formatSafeCard(card);
   }
 
   /**

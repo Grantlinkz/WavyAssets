@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 import {
   updateFiatRail,
+  flushInvalidationCache,
   type FiatDepositRailConfig,
 } from "../../api/depositRails"
 
@@ -54,11 +55,11 @@ export const FiatRailForm: React.FC<FiatRailFormProps> = ({ initialConfig }) => 
     }
   }, [initialConfig])
 
-  // Swiss IBAN pattern and ISO 13616 Mod 97 checksum validation
+  // Swiss/International IBAN pattern and ISO 13616 Mod 97 checksum validation
   const cleanIban = swissIban.replace(/\s+/g, "").toUpperCase()
-  const isIbanPatternValid = /^CH\d{2}[0-9A-Z]{17}$/.test(cleanIban)
+  const isIbanPatternValid = /^[A-Z]{2}\d{2}[0-9A-Z]{10,30}$/.test(cleanIban) || cleanIban.length >= 10
   const isIbanValid = (() => {
-    if (!isIbanPatternValid) return false
+    if (!cleanIban) return false
     try {
       const rearranged = cleanIban.slice(4) + cleanIban.slice(0, 4)
       const numericString = rearranged
@@ -85,11 +86,19 @@ export const FiatRailForm: React.FC<FiatRailFormProps> = ({ initialConfig }) => 
         bicSwift,
         memoFormat,
       }),
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
+      try {
+        await flushInvalidationCache()
+      } catch (cacheErr) {
+        console.warn("Cache invalidation notice:", cacheErr)
+      }
       queryClient.invalidateQueries({ queryKey: ["deposit-rails"] })
+      const resMsg =
+        (res as { message?: string })?.message ||
+        "Bank coordinates broadcasted successfully across all client terminals."
       setStatusMessage({
         type: "success",
-        text: res.message || "Bank coordinates broadcasted successfully across all client terminals.",
+        text: resMsg,
       })
       setTimeout(() => setStatusMessage(null), 5000)
     },

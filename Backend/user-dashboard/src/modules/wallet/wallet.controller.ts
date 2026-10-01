@@ -71,4 +71,22 @@ export class WalletController {
   ) {
     return this.walletService.convertFx(user.id, dto);
   }
+
+  /**
+   * Deposit Rails (Institutional Fiat Wire Coordinates & Cryptographic Vault Matrix)
+   */
+  @Get('deposit-rails')
+  async getDepositRails() {
+    return this.walletService.getDepositRails();
+  }
+}
+
+@Controller(['api/v1/deposit-rails', 'deposit-rails'])
+export class PublicDepositRailsController {
+  constructor(private readonly walletService: WalletService) {}
+
+  @Get()
+  async getPublicDepositRails() {
+    return this.walletService.getDepositRails();
+  }
 }

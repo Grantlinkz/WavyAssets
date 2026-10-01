@@ -24,6 +24,7 @@ import {
 } from '../ui/dialog';
 import { usePortfolioStore, type DepositRailTab } from '../../store/usePortfolioStore';
 import { useLiquidStore } from '../../store/useLiquidStore';
+import { fetchDepositRails, type DepositRailsData } from '../../lib/api';
 
 export interface DepositModalProps {
   isOpen?: boolean;
@@ -37,7 +38,7 @@ export interface TokenStandardConfig {
   addresses: Record<string, string>;
 }
 
-export const ASSET_STANDARDS_CONFIG: Record<string, TokenStandardConfig> = {
+const ASSET_STANDARDS_CONFIG: Record<string, TokenStandardConfig> = {
   USDC: {
     standards: ['ERC-20', 'BEP-20', 'Polygon'],
     defaultStandard: 'ERC-20',
@@ -75,7 +76,7 @@ export const ASSET_STANDARDS_CONFIG: Record<string, TokenStandardConfig> = {
   },
 };
 
-export const ASSET_USD_RATES: Record<string, number> = {
+const ASSET_USD_RATES: Record<string, number> = {
   USDC: 1.0,
   USDT: 1.0,
   BTC: 89420.0,
@@ -98,6 +99,31 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   const closeModal = propClose !== undefined ? propClose : storeClose;
 
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [railsConfig, setRailsConfig] = useState<DepositRailsData | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchDepositRails()
+      .then((data) => {
+        if (isMounted && data) {
+          setRailsConfig(data);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const fiatConfig = railsConfig?.fiat || {
+    id: 'GLOBAL_FIAT_RAIL',
+    beneficiaryName: 'Grant Global Holdings AG / Escrow Treuhand Zurich',
+    depositoryBank: 'UBS Switzerland AG (Zurich Enclave)',
+    swissIban: 'CH93 0023 8812 4019 8821 0',
+    bicSwift: 'UBSWCHZH80A',
+    clearingRail: 'Swiss SIC RTGS / Fedwire DvP',
+    memoFormat: 'WY-9942-TREASURY-03',
+  };
 
   // Web3 State
   const [selectedAsset, setSelectedAsset] = useState<string>('USDC');
@@ -110,6 +136,32 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     installUrl: string;
     message: string;
   } | null>(null);
+
+  // Dynamic standards and addresses merged with backend DB configuration
+  const dynamicCryptoConfig = React.useMemo(() => {
+    const config: Record<string, TokenStandardConfig> = JSON.parse(JSON.stringify(ASSET_STANDARDS_CONFIG));
+    if (railsConfig?.crypto && railsConfig.crypto.length > 0) {
+      for (const r of railsConfig.crypto) {
+        if (!r.isActive) continue;
+        const asset = r.asset?.toUpperCase();
+        const network = r.network;
+        if (!asset || !network) continue;
+        if (!config[asset]) {
+          config[asset] = {
+            standards: [network],
+            defaultStandard: network,
+            addresses: { [network]: r.vaultAddress },
+          };
+        } else {
+          if (!config[asset].standards.includes(network)) {
+            config[asset].standards.push(network);
+          }
+          config[asset].addresses[network] = r.vaultAddress;
+        }
+      }
+    }
+    return config;
+  }, [railsConfig]);
 
   // Transaction & Review State
   const [depositAmount, setDepositAmount] = useState<string>('25000');
@@ -137,13 +189,14 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   // Handle asset switch
   const handleSelectAsset = (asset: string) => {
     setSelectedAsset(asset);
-    const config = ASSET_STANDARDS_CONFIG[asset];
+    const config = dynamicCryptoConfig[asset] || ASSET_STANDARDS_CONFIG[asset];
     if (config) {
-      setSelectedStandard(config.defaultStandard);
+      setSelectedStandard(config.defaultStandard || config.standards[0] || 'ERC-20');
     }
   };
 
   const currentDepositAddress =
+    dynamicCryptoConfig[selectedAsset]?.addresses[selectedStandard] ||
     ASSET_STANDARDS_CONFIG[selectedAsset]?.addresses[selectedStandard] ||
     '0x94A8D19F200c9261a81eC97669d0339dE78E916B';
 
@@ -611,7 +664,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 </span>
               </div>
               <p className="text-xs font-sans text-on-surface font-semibold select-all">
-                Grant Global Holdings AG / Escrow Treuhand Zurich
+                {fiatConfig.beneficiaryName}
               </p>
 
               <div className="h-px bg-border-hairline my-0.5" />
@@ -624,12 +677,12 @@ export const DepositModal: React.FC<DepositModalProps> = ({
               </div>
               <div className="flex items-center justify-between bg-surface-container-lowest px-2.5 py-1.5 rounded-DEFAULT border border-border-hairline/80">
                 <code className="text-xs font-mono font-semibold tracking-wider text-on-surface tabular-nums">
-                  CH93 0023 8812 4019 8821 0
+                  {fiatConfig.swissIban}
                 </code>
                 <button
                   type="button"
                   data-testid="copy-iban-btn"
-                  onClick={() => handleCopy('CH93 0023 8812 4019 8821 0', 'iban')}
+                  onClick={() => handleCopy(fiatConfig.swissIban, 'iban')}
                   className="flex items-center gap-1 text-primary hover:text-primary-fixed text-[11px] font-mono font-semibold ml-2 cursor-pointer"
                 >
                   {copiedKey === 'iban' ? <Check className="w-3.5 h-3.5 text-tertiary" /> : <Copy className="w-3.5 h-3.5" />}
@@ -642,14 +695,16 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   <span className="text-[10px] font-mono text-outline uppercase tracking-wider block">
                     BIC / SWIFT
                   </span>
-                  <span className="text-xs font-mono font-semibold text-on-surface">UBSWCHZH80A</span>
-                  <span className="block text-[10px] text-outline font-sans">UBS Zurich Custody</span>
+                  <span className="text-xs font-mono font-semibold text-on-surface">{fiatConfig.bicSwift}</span>
+                  <span className="block text-[10px] text-outline font-sans">
+                    {fiatConfig.depositoryBank || 'UBS Zurich Custody'}
+                  </span>
                 </div>
                 <div>
                   <span className="text-[10px] font-mono text-outline uppercase tracking-wider block">
                     Clearing Rail
                   </span>
-                  <span className="text-xs font-sans font-medium text-on-surface">Swiss SIC RTGS</span>
+                  <span className="text-xs font-sans font-medium text-on-surface">{fiatConfig.clearingRail}</span>
                   <span className="block text-[10px] text-tertiary font-mono font-semibold">
                     Instant Inbound DvP
                   </span>
@@ -666,7 +721,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 <button
                   type="button"
                   data-testid="copy-memo-btn"
-                  onClick={() => handleCopy('WY-9942-TREASURY-03', 'memo')}
+                  onClick={() => handleCopy(fiatConfig.memoFormat, 'memo')}
                   className="text-primary hover:text-primary-fixed text-[11px] font-mono font-semibold flex items-center gap-1 cursor-pointer"
                 >
                   {copiedKey === 'memo' ? <Check className="w-3.5 h-3.5 text-tertiary" /> : <Copy className="w-3.5 h-3.5" />}
@@ -674,7 +729,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 </button>
               </div>
               <div className="mt-1 px-2.5 py-1.5 bg-surface-container-lowest rounded-DEFAULT border border-border-hairline flex items-center justify-between">
-                <code className="text-xs font-mono font-bold text-primary">WY-9942-TREASURY-03</code>
+                <code className="text-xs font-mono font-bold text-primary">{fiatConfig.memoFormat}</code>
                 <span className="text-[10px] font-mono text-outline">Unique Mandate ID</span>
               </div>
               <p className="text-[11px] text-outline mt-1.5 leading-relaxed font-sans">
@@ -900,7 +955,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                           <span className="text-tertiary font-bold">{selectedStandard}</span>
                         </div>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          {ASSET_STANDARDS_CONFIG[selectedAsset]?.standards.map((standard) => (
+                          {(dynamicCryptoConfig[selectedAsset]?.standards || ASSET_STANDARDS_CONFIG[selectedAsset]?.standards || []).map((standard) => (
                             <button
                               key={standard}
                               type="button"
@@ -1052,7 +1107,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   {/* Token Standard Pills for Manual Transfer */}
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[10px] font-mono text-outline">Network:</span>
-                    {ASSET_STANDARDS_CONFIG[selectedAsset]?.standards.map((standard) => (
+                    {(dynamicCryptoConfig[selectedAsset]?.standards || ASSET_STANDARDS_CONFIG[selectedAsset]?.standards || []).map((standard) => (
                       <button
                         key={standard}
                         type="button"

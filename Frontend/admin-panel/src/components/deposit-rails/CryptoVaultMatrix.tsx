@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 import {
   updateCryptoRail,
+  flushInvalidationCache,
   type CryptoDepositRailConfig,
 } from "../../api/depositRails"
 import { useDepositRailsStore } from "../../store/useDepositRailsStore"
@@ -34,6 +35,30 @@ export const CryptoVaultMatrix: React.FC<CryptoVaultMatrixProps> = ({
   const [editingRail, setEditingRail] = useState<CryptoDepositRailConfig | null>(null)
   const [isNewRail, setIsNewRail] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [isSavingAll, setIsSavingAll] = useState(false)
+
+  const handleSaveAllCryptoRails = async () => {
+    try {
+      setIsSavingAll(true)
+      setFormError(null)
+      for (const r of rails) {
+        await updateCryptoRail(r)
+      }
+      try {
+        await flushInvalidationCache()
+      } catch (cacheErr) {
+        console.warn("Cache invalidation notice:", cacheErr)
+      }
+      queryClient.invalidateQueries({ queryKey: ["deposit-rails"] })
+      setHsmAuditNotice("Cryptographic cold storage inflow matrix permanently synchronized to DB and committed to ledger.")
+      setTimeout(() => setHsmAuditNotice(null), 6000)
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : "Failed to commit crypto address matrix to database."
+      setFormError(errMsg)
+    } finally {
+      setIsSavingAll(false)
+    }
+  }
 
   const saveRailMutation = useMutation({
     mutationFn: (rail: CryptoDepositRailConfig) => updateCryptoRail(rail),
@@ -385,14 +410,12 @@ export const CryptoVaultMatrix: React.FC<CryptoVaultMatrixProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => {
-              setHsmAuditNotice("Cryptographic cold storage inflow matrix synchronized and committed to ledger.")
-              setTimeout(() => setHsmAuditNotice(null), 5000)
-            }}
-            className="h-8 px-4 rounded-[4px] bg-[#00C288] hover:bg-[#00A875] text-[#050505] font-sans text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+            disabled={isSavingAll}
+            onClick={handleSaveAllCryptoRails}
+            className="h-8 px-4 rounded-[4px] bg-[#00C288] hover:bg-[#00A875] text-[#050505] font-sans text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer disabled:opacity-50"
           >
-            <Check className="w-3.5 h-3.5 stroke-[3]" />
-            <span>Save Crypto Address Matrix</span>
+            {isSavingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5 stroke-[3]" />}
+            <span>{isSavingAll ? "Saving to Database..." : "Save Crypto Address Matrix"}</span>
           </button>
         </div>
       </div>

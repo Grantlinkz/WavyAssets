@@ -22,6 +22,7 @@ import { randomUUID } from 'crypto';
 import { PortfolioGateway } from '../websocket/portfolio.gateway';
 import { DashboardService } from '../dashboard/dashboard.service';
 import { Prisma } from '@prisma/client';
+import { EmailService } from '../../common/services/email.service';
 
 export interface LedgerEntryInput {
   accountId: string;
@@ -54,6 +55,7 @@ export class WalletService {
     private readonly prisma: PrismaService,
     @Optional() @Inject(PortfolioGateway) private readonly portfolioGateway?: PortfolioGateway,
     @Optional() @Inject(DashboardService) private readonly dashboardService?: DashboardService,
+    @Optional() @Inject(EmailService) private readonly emailService?: EmailService,
   ) {}
 
   /**
@@ -172,8 +174,9 @@ export class WalletService {
       );
     }
 
+    const referenceId = input.referenceId || `tx-${randomUUID()}`;
+
     const execute = async (tx: Prisma.TransactionClient) => {
-      const referenceId = input.referenceId || `tx-${randomUUID()}`;
 
       // Check balance constraints before modifying
       for (const entry of input.entries) {
@@ -239,11 +242,103 @@ export class WalletService {
       );
     };
 
-    if (externalTx) {
-      return execute(externalTx);
-    }
+    const txRecord = externalTx ? await execute(externalTx) : await this.prisma.$transaction(execute);
 
-    return this.prisma.$transaction(execute);
+    this.dispatchBalanceChangeEmails(input, txRecord?.referenceId || referenceId).catch((err) => {
+      this.logger.warn(`Failed to dispatch transaction email notification: ${err?.message}`);
+    });
+
+    return txRecord;
+  }
+
+  private async dispatchBalanceChangeEmails(input: RecordTransactionInput, referenceId: string) {
+    if (!this.emailService) return;
+
+    for (const entry of input.entries) {
+      if (!entry.amount || entry.amount === 0) continue;
+      try {
+        const account = await this.prisma.ledgerAccount.findUnique({
+          where: { id: entry.accountId },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                fullName: true,
+              },
+            },
+          },
+        });
+
+        if (
+          account?.user?.email &&
+          (account.accountType === 'AVAILABLE_CASH' || account.accountType === 'INVESTED_CAPITAL')
+        ) {
+          const direction = entry.amount > 0 ? 'CREDIT' : 'DEBIT';
+          const absAmount = Math.abs(Number(entry.amount));
+          const newBalance = Number(account.balance);
+
+          await this.emailService.sendTransactionNotification({
+            toEmail: account.user.email,
+            userFullName: account.user.fullName,
+            transactionType: input.type,
+            direction,
+            amount: absAmount,
+            currency: account.currency || 'USD',
+            description: input.description,
+            referenceId,
+            accountType: account.accountType,
+            newBalance,
+            timestamp: new Date(),
+          });
+        }
+      } catch (e: any) {
+        this.logger.warn(`Error processing transaction email for entry ${entry.accountId}: ${e?.message}`);
+      }
+    }
+  }
+
+  /**
+   * Retrieves active global deposit rails (fiat wire coordinates and crypto matrix) from database
+   */
+  async getDepositRails() {
+    const [fiatRail, cryptoRails] = await Promise.all([
+      this.prisma.fiatDepositRailConfig.findUnique({
+        where: { id: 'GLOBAL_FIAT_RAIL' },
+      }),
+      this.prisma.cryptoDepositRailConfig.findMany({
+        where: { isActive: true },
+        orderBy: [{ asset: 'asc' }, { network: 'asc' }],
+      }),
+    ]);
+
+    const defaultFiat = {
+      id: 'GLOBAL_FIAT_RAIL',
+      beneficiaryName: 'WavyAssets Supreme Custody AG',
+      depositoryBank: 'UBS Switzerland AG (Zurich Enclave)',
+      swissIban: 'CH93 0023 8812 4019 8821 0',
+      bicSwift: 'UBSWCHZH80A',
+      clearingRail: 'Swiss SIC RTGS / Fedwire DvP',
+      memoFormat: 'WY-{USER_REF}-TREASURY-03',
+    };
+
+    const finalFiat = fiatRail
+      ? {
+          id: fiatRail.id,
+          beneficiaryName: fiatRail.beneficiaryName,
+          depositoryBank: (fiatRail as any).depositoryBank || defaultFiat.depositoryBank,
+          swissIban: fiatRail.swissIban,
+          bicSwift: fiatRail.bicSwift,
+          clearingRail: fiatRail.clearingRail,
+          memoFormat: fiatRail.memoFormat,
+          updatedAt: fiatRail.updatedAt,
+        }
+      : defaultFiat;
+
+    return {
+      fiat: finalFiat,
+      crypto: cryptoRails,
+    };
   }
 
   /**
