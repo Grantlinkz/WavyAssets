@@ -10,7 +10,6 @@ import {
 } from "lucide-react"
 import {
   fetchDepositRails,
-  testClientMeshConnection,
   flushInvalidationCache,
   type DepositRailsData,
 } from "../api/depositRails"
@@ -22,10 +21,7 @@ import { DepositQrModal } from "../components/deposit-rails/DepositQrModal"
 export const DepositRailsView: React.FC = () => {
   const queryClient = useQueryClient()
   const {
-    isTestingMesh,
     isFlushingCache,
-    setIsTestingMesh,
-    setTestMeshResult,
     setIsFlushingCache,
     setFlushCacheMessage,
   } = useDepositRailsStore()
@@ -46,28 +42,6 @@ export const DepositRailsView: React.FC = () => {
     queryFn: fetchDepositRails,
   })
 
-  const testMeshMutation = useMutation({
-    mutationFn: async () => {
-      setIsTestingMesh(true)
-      return testClientMeshConnection()
-    },
-    onSuccess: (res) => {
-      setIsTestingMesh(false)
-      setTestMeshResult(res)
-      setNotification({
-        type: "success",
-        text: `Client connection verified across ${res.activeTerminals} client terminals with ${res.latencyMs}ms RTT.`,
-      })
-      setTimeout(() => setNotification(null), 6000)
-    },
-    onError: (err: Error) => {
-      setIsTestingMesh(false)
-      setNotification({
-        type: "error",
-        text: err.message || "Diagnostic test mesh ping failed.",
-      })
-    },
-  })
 
   const flushCacheMutation = useMutation({
     mutationFn: async () => {
@@ -105,9 +79,7 @@ export const DepositRailsView: React.FC = () => {
               </h1>
               <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-[3px] bg-status-success/10 border border-status-success/30">
                 <span className="w-2 h-2 rounded-full bg-status-success animate-pulse" />
-                <span className="font-mono text-[10px] uppercase font-bold tracking-wider text-status-success">
-                  Production Inflow Stream
-                </span>
+              
               </div>
               <span className="font-mono text-xs text-secondary bg-bg-elevated px-2.5 py-0.5 rounded-[3px] border border-border-subtle">
                 Config Version: {railsData?.telemetry?.configVersion || "v4.88.2-CH"}
@@ -119,16 +91,6 @@ export const DepositRailsView: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-            <button
-              type="button"
-              disabled={isTestingMesh}
-              onClick={() => testMeshMutation.mutate()}
-              className="h-8 px-3.5 rounded-[4px] border border-border-subtle bg-bg-elevated text-on-surface hover:bg-state-hover hover:border-gold-accent font-sans text-xs font-medium flex items-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
-              id="btn-test-mesh"
-            >
-              <Network className="w-3.5 h-3.5 text-telemetry-cyan" />
-              <span>{isTestingMesh ? "Testing Mesh..." : "Test Client Connection"}</span>
-            </button>
 
             <button
               type="button"
