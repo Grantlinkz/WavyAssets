@@ -71,6 +71,7 @@ export const OverviewView: React.FC = () => {
               <option value="24h" className="bg-bg-panel text-on-surface">Last 24 Hours</option>
               <option value="7d" className="bg-bg-panel text-on-surface">Last 7 Days</option>
               <option value="30d" className="bg-bg-panel text-on-surface">Last 30 Days</option>
+              <option value="ALL" className="bg-bg-panel text-on-surface">All Time</option>
             </select>
           </div>
 

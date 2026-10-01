@@ -69,14 +69,23 @@ export const VipCard3DPreview: React.FC<VipCard3DPreviewProps> = ({
 
         {/* Top Row: Brand & EMV Chip / Swiss Cross Hologram */}
         <div className="relative z-10 flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            {/* WavyAssets Mini Mark */}
-            <div className="w-5 h-5 rounded-[3px] border border-gold-accent/60 bg-bg-canvas flex items-center justify-center">
-              <span className="font-mono text-[9px] font-bold text-gold-accent">W</span>
+          <div className="flex items-center gap-2" data-testid="card-brand-identity">
+            {/* Official Favicon Squircle Emblem */}
+            <div className="w-6 h-6 rounded-[5px] overflow-hidden shrink-0 flex items-center justify-center border border-gold-accent/40 shadow-sm bg-[#08090B]">
+              <svg viewBox="0 0 64 64" fill="none" className="w-full h-full p-0.5" xmlns="http://www.w3.org/2000/svg">
+                <rect width="64" height="64" rx="14" fill="#08090B" />
+                <rect x="1" y="1" width="62" height="62" rx="13" stroke="#D4AF37" strokeWidth="2.5" strokeOpacity="0.8" />
+                <circle cx="32" cy="32" r="18" fill="#D4AF37" fillOpacity="0.15" />
+                <path d="M 12 33 C 18 19, 26 19, 32 33 C 38 47, 46 47, 52 33" stroke="#D4AF37" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M 12 42 C 18 28, 26 28, 32 42 C 38 56, 46 56, 52 42" stroke="#00C288" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.9" />
+                <circle cx="32" cy="17" r="3.5" fill="#D4AF37" />
+              </svg>
             </div>
-            <span className="font-mono text-[10px] tracking-[0.16em] uppercase text-gold-accent font-semibold">
-              WAVYASSETS
-            </span>
+            {/* Official Project Logo Brand Typography */}
+            <div className="flex items-center text-[11px] tracking-[0.16em] uppercase font-sans font-bold leading-none select-none">
+              <span className="text-[#DEE2F2] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">WAVY</span>
+              <span className="text-gold-accent font-semibold ml-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">ASSETS</span>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">

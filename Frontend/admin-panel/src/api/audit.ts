@@ -46,12 +46,23 @@ export async function fetchAuditLogs(params?: {
 
   const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : ""
   const res = await apiClient<AuditLogEntry[] | { logs?: AuditLogEntry[]; items?: AuditLogEntry[] }>(`/audit/logs${queryString}`)
-  if (Array.isArray(res)) return res
-  if (res && typeof res === "object") {
-    if ("logs" in res && Array.isArray(res.logs)) return res.logs
-    if ("items" in res && Array.isArray(res.items)) return res.items
+  let rawList: any[] = []
+  if (Array.isArray(res)) {
+    rawList = res
+  } else if (res && typeof res === "object") {
+    if ("logs" in res && Array.isArray(res.logs)) rawList = res.logs
+    else if ("items" in res && Array.isArray(res.items)) rawList = res.items
   }
-  return []
+  return rawList.map((l: any) => ({
+    ...l,
+    timestamp: l.timestamp || (l.createdAt ? new Date(l.createdAt).toISOString().replace("T", " ").substring(0, 19) : ""),
+    officerName: l.officerName || l.admin?.fullName || "System Officer",
+    officerDepartment: l.officerDepartment || (l.admin?.role ? l.admin.role.replace(/_/g, " ") : "Operations"),
+    targetLabel: l.targetLabel || l.targetEntity || "Client Entity",
+    nodeOrigin: l.nodeOrigin || (l.ipAddressHash ? `SHA256:${l.ipAddressHash.substring(0, 8)}` : "Node CH-ZUR-01"),
+    ledgerState: l.ledgerState || "COMMITTED",
+    actionCategory: l.actionCategory || (l.action?.includes("CREDIT") ? "CREDIT" : l.action?.includes("LOCK") ? "LOCK" : l.action?.includes("KYC") ? "KYC" : "ALL"),
+  }))
 }
 
 export async function fetchAuditLogById(id: string): Promise<AuditLogEntry> {

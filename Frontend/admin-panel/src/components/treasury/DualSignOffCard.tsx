@@ -429,7 +429,10 @@ export const DualSignOffCard: React.FC<DualSignOffCardProps> = ({
             <button
               type="button"
               disabled={!isFormValid || signOffMutation.isPending}
-              onClick={() => signOffMutation.mutate()}
+              onClick={() => {
+                setErrorMessage(null)
+                signOffMutation.mutate()
+              }}
               className="flex-[2] bg-gold-accent hover:bg-gold-accent/90 disabled:opacity-50 disabled:cursor-not-allowed text-bg-canvas font-title-sm text-body-sm py-2 rounded flex items-center justify-center gap-2 font-bold transition-all shadow-md"
             >
               <CheckCircle2 className="w-4 h-4" />

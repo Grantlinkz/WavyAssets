@@ -11,7 +11,7 @@ import { AdminRole } from '../../common/constants/roles.constant';
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 
-  @Get()
+  @Get(['', 'logs'])
   @Roles(
     AdminRole.SUPER_ADMIN,
     AdminRole.COMPLIANCE_OFFICER,
@@ -22,13 +22,24 @@ export class AuditController {
     return this.auditService.getAuditLogs(query);
   }
 
+  @Get('telemetry')
+  @Roles(
+    AdminRole.SUPER_ADMIN,
+    AdminRole.COMPLIANCE_OFFICER,
+    AdminRole.TREASURY_OFFICER,
+    AdminRole.DESK_LEAD,
+  )
+  async getTelemetry() {
+    return this.auditService.getTelemetry();
+  }
+
   @Get('export')
   @Roles(AdminRole.SUPER_ADMIN, AdminRole.COMPLIANCE_OFFICER)
   async exportCompliance(@Query() query: AuditQueryDto) {
     return this.auditService.generateComplianceExport(query);
   }
 
-  @Get(':id')
+  @Get(['logs/:id', ':id'])
   @Roles(
     AdminRole.SUPER_ADMIN,
     AdminRole.COMPLIANCE_OFFICER,
