@@ -1,7 +1,7 @@
 import { apiClient } from "./client"
 
-export type VipCardSubstrate = "Obsidian 42g Tungsten" | "Black Supreme Stainless" | "Silver Titanium"
-export type VipCardTier = "OBSIDIAN" | "Supreme" | "TITANIUM"
+export type VipCardSubstrate = "Obsidian 42g Tungsten" | "Black Supreme Stainless" | "Silver Titanium" | "Celebrity 24K Gold & Diamond"
+export type VipCardTier = "OBSIDIAN" | "Supreme" | "TITANIUM" | "CELEBRITY"
 export type VipCardType = "PHYSICAL" | "VIRTUAL"
 export type VipShippingStatus = "DELIVERED" | "IN_TRANSIT" | "VAULT_CUSTODY"
 

@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Put,
+  Post,
   Body,
   Req,
   UseGuards,
@@ -54,6 +55,26 @@ export class DepositRailsController {
   ) {
     const adminId = admin?.id || (admin as any)?.sub;
     return this.depositRailsService.upsertCryptoRail(dto, adminId, req.ip);
+  }
+
+  @Post('flush-cache')
+  @Roles(
+    AdminRole.SUPER_ADMIN,
+    AdminRole.TREASURY_OFFICER,
+    AdminRole.DESK_LEAD,
+  )
+  async flushInvalidationCache() {
+    return this.depositRailsService.flushInvalidationCache();
+  }
+
+  @Post('test-mesh')
+  @Roles(
+    AdminRole.SUPER_ADMIN,
+    AdminRole.TREASURY_OFFICER,
+    AdminRole.DESK_LEAD,
+  )
+  async testClientMeshConnection() {
+    return this.depositRailsService.testClientMeshConnection();
   }
 }
 

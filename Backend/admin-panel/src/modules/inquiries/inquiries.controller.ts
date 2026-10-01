@@ -7,11 +7,15 @@ import {
   Param,
   Body,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { InquiriesService } from './inquiries.service';
 import { UpdateInquiryStatusDto } from './dto/update-status.dto';
 import { ConvertLeadDto } from './dto/convert-lead.dto';
+import { SendSubscriberEmailDto } from './dto/send-subscriber-email.dto';
+import { BroadcastSubscribersEmailDto } from './dto/broadcast-subscribers-email.dto';
 import { AdminAuthGuard } from '../../common/guards/admin-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -42,6 +46,29 @@ export class InquiriesController {
   @Roles(AdminRole.SUPER_ADMIN, AdminRole.DESK_LEAD)
   async deleteSubscriber(@Param('id') id: string) {
     return this.inquiriesService.deleteSubscriber(id);
+  }
+
+  @Post('subscribers/:id/email')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.DESK_LEAD, AdminRole.CONCIERGE)
+  async sendSubscriberEmail(
+    @Param('id') id: string,
+    @Body() dto: SendSubscriberEmailDto,
+    @CurrentAdmin() admin: CurrentAdminPayload,
+    @Req() req: Request,
+  ) {
+    const adminId = admin?.id || (admin as any)?.sub;
+    return this.inquiriesService.sendSubscriberEmail(id, dto, adminId, req?.ip);
+  }
+
+  @Post('subscribers/email/broadcast')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.DESK_LEAD)
+  async broadcastSubscribersEmail(
+    @Body() dto: BroadcastSubscribersEmailDto,
+    @CurrentAdmin() admin: CurrentAdminPayload,
+    @Req() req: Request,
+  ) {
+    const adminId = admin?.id || (admin as any)?.sub;
+    return this.inquiriesService.broadcastSubscribersEmail(dto, adminId, req?.ip);
   }
 
   @Get(':id')

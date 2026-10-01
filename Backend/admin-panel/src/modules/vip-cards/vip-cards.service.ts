@@ -110,6 +110,60 @@ export class VipCardsService {
   }
 
   /**
+   * Computes real-time executive VIP card portfolio telemetry from database
+   */
+  async getTelemetry() {
+    const [activeCards, lockedCards, allCards, transactions24h] = await Promise.all([
+      this.prisma.vipCard.count({ where: { isFrozen: false } }),
+      this.prisma.vipCard.count({ where: { isFrozen: true } }),
+      this.prisma.vipCard.findMany({
+        where: { isFrozen: false },
+        select: { dailySpendLimit: true },
+      }),
+      this.prisma.ledgerTransaction.findMany({
+        where: {
+          createdAt: {
+            gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+          },
+        },
+        select: {
+          amount: true,
+          status: true,
+        },
+      }),
+    ]);
+
+    const authorizedDailyCapacity = allCards.reduce(
+      (sum, c) => sum + (c.dailySpendLimit || 0),
+      0,
+    );
+
+    const settledTxs = transactions24h.filter((t) => t.status === 'SETTLED');
+    const volume24h = settledTxs.reduce(
+      (sum, t) => sum + (Number(t.amount) || 0),
+      0,
+    );
+
+    const authRate24h =
+      transactions24h.length > 0
+        ? Number(((settledTxs.length / transactions24h.length) * 100).toFixed(1))
+        : 100.0;
+
+    // Real blank inventory: 500 initial safe vault capacity minus total minted cards
+    const totalMinted = activeCards + lockedCards;
+    const vaultInventoryBlanks = Math.max(0, 500 - totalMinted);
+
+    return {
+      activeCards,
+      authorizedDailyCapacity,
+      volume24h,
+      authRate24h,
+      lockedCards,
+      vaultInventoryBlanks,
+    };
+  }
+
+  /**
    * Retrieves single VIP card by ID
    */
   async getCardById(cardId: string) {

@@ -34,6 +34,16 @@ export const VipCard3DPreview: React.FC<VipCard3DPreviewProps> = ({
           borderClass: "border-[#64748B]/60",
           accentColor: "#E2E8F0",
         }
+      case "Celebrity 24K Gold & Diamond":
+        return {
+          weight: "50.00 grams",
+          milling: "24K Inlaid & Micro-Guilloche",
+          coating: "Mirror 24K Gold & Diamond DLC",
+          bgGradient: "bg-gradient-to-br from-[#2E2208] via-[#1A1305] to-[#080601]",
+          borderClass: "border-[#FFD700]/90 shadow-[0_0_20px_rgba(212,175,55,0.3)]",
+          accentColor: "#FFE066",
+          isCelebrity: true,
+        }
       case "Obsidian 42g Tungsten":
       default:
         return {
@@ -43,6 +53,7 @@ export const VipCard3DPreview: React.FC<VipCard3DPreviewProps> = ({
           bgGradient: "bg-gradient-to-br from-[#1E1B15] via-[#0F0E0C] to-[#050505]",
           borderClass: "border-gold-accent/40",
           accentColor: "#D4AF37",
+          isCelebrity: false,
         }
     }
   }
@@ -107,23 +118,33 @@ export const VipCard3DPreview: React.FC<VipCard3DPreviewProps> = ({
         </div>
 
         {/* Middle Row: Masked Card PAN */}
-        <div className="relative z-10 text-left my-1">
+        <div className="relative z-10 flex items-center justify-between my-1">
           <span
-            className="font-mono text-sm tracking-[0.24em] text-[#E5D294] font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
+            className={`font-mono text-sm tracking-[0.24em] font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] ${
+              details.isCelebrity ? "text-[#FFF4C2]" : "text-[#E5D294]"
+            }`}
             data-testid="preview-masked-pan"
           >
             {maskedPan}
           </span>
+          {details.isCelebrity && (
+            <span className="px-2 py-0.5 rounded-[3px] bg-gradient-to-r from-[#FFD700] via-[#F3E7BE] to-[#D4AF37] text-[#0A0701] font-mono text-[8px] font-black uppercase tracking-widest shadow-md flex items-center gap-1 border border-[#FFF] border-opacity-30">
+              <span>★</span>
+              <span>CELEBRITY</span>
+            </span>
+          )}
         </div>
 
         {/* Bottom Row: Cardholder Name, Expiry & Visa Infinite */}
         <div className="relative z-10 flex items-end justify-between text-left">
           <div>
             <span className="font-mono text-[8px] uppercase tracking-wider text-secondary/70 block">
-              Authorized Cardholder
+              {details.isCelebrity ? "Celebrity Cardholder" : "Authorized Cardholder"}
             </span>
             <span
-              className="font-mono text-xs uppercase tracking-wider text-[#F2E5BA] font-semibold block truncate max-w-[190px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
+              className={`font-mono text-xs uppercase tracking-wider font-semibold block truncate max-w-[190px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] ${
+                details.isCelebrity ? "text-[#FFF4C2]" : "text-[#F2E5BA]"
+              }`}
               data-testid="preview-cardholder-name"
             >
               {cardholderName || "CARDHOLDER NAME"}
@@ -134,11 +155,13 @@ export const VipCard3DPreview: React.FC<VipCard3DPreviewProps> = ({
           </div>
 
           <div className="text-right flex flex-col items-end">
-            <span className="font-sans text-[13px] font-black italic tracking-tighter text-[#F2E5BA] leading-none">
+            <span className={`font-sans text-[13px] font-black italic tracking-tighter leading-none ${
+              details.isCelebrity ? "text-[#FFF4C2]" : "text-[#F2E5BA]"
+            }`}>
               VISA
             </span>
             <span className="font-mono text-[7px] tracking-widest text-gold-accent uppercase font-bold mt-0.5">
-              INFINITE
+              {details.isCelebrity ? "CELEBRITY" : "INFINITE"}
             </span>
           </div>
         </div>

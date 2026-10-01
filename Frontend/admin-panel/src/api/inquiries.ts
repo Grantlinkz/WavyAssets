@@ -86,3 +86,37 @@ export async function deleteSubscriber(id: string): Promise<{ success: boolean; 
     method: "DELETE",
   })
 }
+
+export async function sendSubscriberEmail(
+  id: string,
+  payload: { subject: string; message: string }
+): Promise<{ success: boolean; recipient: string; subject: string; message: string; resendId?: string }> {
+  return apiClient<{ success: boolean; recipient: string; subject: string; message: string; resendId?: string }>(
+    `/inquiries/subscribers/${encodeURIComponent(id)}/email`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }
+  )
+}
+
+export async function broadcastSubscribersEmail(
+  payload: { subject: string; message: string; filter?: "ALL" | "CONFIRMED" }
+): Promise<{
+  success: boolean
+  totalRecipients: number
+  deliveredCount: number
+  failedCount: number
+  message: string
+}> {
+  return apiClient<{
+    success: boolean
+    totalRecipients: number
+    deliveredCount: number
+    failedCount: number
+    message: string
+  }>("/inquiries/subscribers/email/broadcast", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  })
+}

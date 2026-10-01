@@ -79,7 +79,9 @@ export const DepositRailsView: React.FC = () => {
               </h1>
               <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-[3px] bg-status-success/10 border border-status-success/30">
                 <span className="w-2 h-2 rounded-full bg-status-success animate-pulse" />
-              
+                <span className="font-mono text-[10px] text-status-success uppercase font-semibold">
+                  Production Inflow Stream
+                </span>
               </div>
               <span className="font-mono text-xs text-secondary bg-bg-elevated px-2.5 py-0.5 rounded-[3px] border border-border-subtle">
                 Config Version: {railsData?.telemetry?.configVersion || "v4.88.2-CH"}

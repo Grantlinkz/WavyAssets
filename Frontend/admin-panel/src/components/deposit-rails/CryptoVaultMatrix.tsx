@@ -5,6 +5,10 @@ import {
   Copy,
   Check,
   ShieldCheck,
+  Edit3,
+  Plus,
+  X,
+  Loader2,
 } from "lucide-react"
 import {
   updateCryptoRail,
@@ -27,6 +31,24 @@ export const CryptoVaultMatrix: React.FC<CryptoVaultMatrixProps> = ({
   const { openQrModal } = useDepositRailsStore()
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [hsmAuditNotice, setHsmAuditNotice] = useState<string | null>(null)
+  const [editingRail, setEditingRail] = useState<CryptoDepositRailConfig | null>(null)
+  const [isNewRail, setIsNewRail] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
+
+  const saveRailMutation = useMutation({
+    mutationFn: (rail: CryptoDepositRailConfig) => updateCryptoRail(rail),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["deposit-rails"] })
+      setEditingRail(null)
+      setIsNewRail(false)
+      setFormError(null)
+      setHsmAuditNotice(res.message || "Crypto deposit rail coordinates successfully updated and anchored.")
+      setTimeout(() => setHsmAuditNotice(null), 6000)
+    },
+    onError: (err: Error) => {
+      setFormError(err.message || "Failed to update crypto deposit rail.")
+    },
+  })
 
   const toggleMutation = useMutation({
     mutationFn: (rail: CryptoDepositRailConfig) =>
@@ -102,6 +124,29 @@ export const CryptoVaultMatrix: React.FC<CryptoVaultMatrixProps> = ({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setEditingRail({
+                id: "",
+                asset: "USDC",
+                name: "USD Coin",
+                network: "ERC-20",
+                vaultAddress: "0x94A8D19F200c9261a81eC97669d0339dE78E916B",
+                minDepositUsd: 500,
+                confirmations: 3,
+                confirmationTimeEst: "~3 mins",
+                isActive: true,
+              })
+              setIsNewRail(true)
+              setFormError(null)
+            }}
+            className="h-8 px-3 rounded-[4px] bg-gold-accent hover:bg-[#C5A028] text-bg-canvas font-sans text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+            data-testid="add-crypto-rail-btn"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>+ Add Web3 Rail</span>
+          </button>
           <span className="font-mono text-xs text-secondary bg-bg-canvas px-3 py-1.5 rounded-[4px] border border-border-subtle">
             Active Multi-Sig: 4/7 Quorum Bound
           </span>
@@ -274,19 +319,29 @@ export const CryptoVaultMatrix: React.FC<CryptoVaultMatrixProps> = ({
 
                     {/* Action / Re-Key */}
                     <td className="py-3 px-4 text-right">
-                      {isSolana ? (
-                        <span className="font-mono text-xs text-secondary/50 px-3 py-1 rounded-[3px] border border-border-subtle/50 bg-bg-elevated/40">
-                          Locked
-                        </span>
-                      ) : (
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingRail({ ...rail })
+                            setIsNewRail(false)
+                            setFormError(null)
+                          }}
+                          className="h-7 px-2.5 rounded-[3px] border border-gold-accent/40 bg-gold-accent/10 hover:bg-gold-accent/20 text-gold-accent font-sans text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Update Web3 vault address and network details"
+                          data-testid={`edit-rail-${rail.asset}-${rail.network}`}
+                        >
+                          <Edit3 className="w-3 h-3" />
+                          <span>Edit</span>
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleAuditHsm(rail.asset, rail.vaultAddress)}
-                          className="h-7 px-3 rounded-[3px] border border-border-subtle bg-bg-elevated hover:border-gold-accent hover:bg-state-hover text-on-surface font-sans text-xs transition-colors cursor-pointer"
+                          className="h-7 px-2.5 rounded-[3px] border border-border-subtle bg-bg-elevated hover:border-gold-accent hover:bg-state-hover text-on-surface font-sans text-xs transition-colors cursor-pointer"
                         >
                           Audit HSM
                         </button>
-                      )}
+                      </div>
                     </td>
                   </tr>
                 )
@@ -341,6 +396,236 @@ export const CryptoVaultMatrix: React.FC<CryptoVaultMatrixProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Edit / Add Web3 Crypto Rail Coordinates Modal */}
+      {editingRail && (
+        <div
+          className="fixed inset-0 z-50 bg-bg-canvas/80 backdrop-blur-[4px] flex items-center justify-center p-4 overflow-y-auto"
+          data-testid="edit-crypto-rail-modal"
+        >
+          <div className="w-full max-w-[560px] bg-bg-panel border border-border-subtle rounded-[6px] shadow-2xl overflow-hidden my-auto flex flex-col">
+            {/* Modal Header */}
+            <div className="px-5 py-3.5 bg-bg-elevated border-b border-border-subtle flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-[4px] bg-gold-accent/15 border border-gold-accent/30 flex items-center justify-center text-gold-accent font-bold">
+                  {editingRail.asset === "BTC"
+                    ? "₿"
+                    : editingRail.asset === "ETH"
+                    ? "Ξ"
+                    : editingRail.asset === "USDT"
+                    ? "₮"
+                    : "$"}
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-on-surface">
+                    {isNewRail ? "Add New Web3 Deposit Rail" : `Configure ${editingRail.asset} (${editingRail.network}) Web3 Rail`}
+                  </h3>
+                  <p className="text-[11px] font-mono text-secondary">
+                    Cryptographic vault coordinates for user-dashboard deposits
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingRail(null)}
+                className="text-secondary hover:text-on-surface p-1 rounded hover:bg-state-hover"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                setFormError(null)
+                if (!editingRail.vaultAddress.trim()) {
+                  setFormError("Vault deposit destination address cannot be empty.")
+                  return
+                }
+                saveRailMutation.mutate(editingRail)
+              }}
+              className="p-5 flex flex-col gap-4"
+            >
+              {formError && (
+                <div className="p-2.5 bg-status-danger/10 border border-status-danger/40 rounded-[4px] text-xs text-status-danger font-mono">
+                  {formError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                {/* Asset */}
+                <div className="space-y-1">
+                  <label className="block font-mono text-[10px] uppercase tracking-wider text-secondary">
+                    Cryptocurrency Asset
+                  </label>
+                  <select
+                    disabled={!isNewRail}
+                    value={editingRail.asset}
+                    onChange={(e) =>
+                      setEditingRail({
+                        ...editingRail,
+                        asset: e.target.value,
+                        name:
+                          e.target.value === "BTC"
+                            ? "Bitcoin"
+                            : e.target.value === "ETH"
+                            ? "Ethereum"
+                            : e.target.value === "USDT"
+                            ? "Tether USD"
+                            : e.target.value === "SOL"
+                            ? "Solana"
+                            : "USD Coin",
+                      })
+                    }
+                    className="w-full bg-bg-canvas border border-border-subtle rounded-[4px] px-3 py-1.5 text-xs text-on-surface focus:border-gold-accent focus:outline-none disabled:opacity-60"
+                  >
+                    <option value="USDC">USDC (USD Coin)</option>
+                    <option value="USDT">USDT (Tether USD)</option>
+                    <option value="BTC">BTC (Bitcoin)</option>
+                    <option value="ETH">ETH (Ethereum)</option>
+                    <option value="SOL">SOL (Solana)</option>
+                  </select>
+                </div>
+
+                {/* Blockchain Network */}
+                <div className="space-y-1">
+                  <label className="block font-mono text-[10px] uppercase tracking-wider text-secondary">
+                    Blockchain Network / Standard
+                  </label>
+                  <select
+                    disabled={!isNewRail}
+                    value={editingRail.network}
+                    onChange={(e) => setEditingRail({ ...editingRail, network: e.target.value })}
+                    className="w-full bg-bg-canvas border border-border-subtle rounded-[4px] px-3 py-1.5 text-xs text-on-surface focus:border-gold-accent focus:outline-none disabled:opacity-60"
+                  >
+                    <option value="ERC-20">ERC-20 (Ethereum)</option>
+                    <option value="BEP-20">BEP-20 (BNB Chain)</option>
+                    <option value="Polygon">Polygon (PoS)</option>
+                    <option value="TRC-20">TRC-20 (Tron)</option>
+                    <option value="Bitcoin Native">Bitcoin Native (SegWit)</option>
+                    <option value="Arbitrum">Arbitrum One</option>
+                    <option value="Optimism">Optimism (OP Mainnet)</option>
+                    <option value="Solana Native">Solana Native</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Vault Destination Address */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="block font-mono text-[10px] uppercase tracking-wider text-secondary">
+                    Web3 Vault Deposit Destination Address *
+                  </label>
+                  <span className="text-[10px] font-mono text-telemetry-cyan">HSM Anchored</span>
+                </div>
+                <input
+                  type="text"
+                  value={editingRail.vaultAddress}
+                  onChange={(e) => setEditingRail({ ...editingRail, vaultAddress: e.target.value.trim() })}
+                  placeholder="0x... / bc1... / TLx..."
+                  className="w-full bg-bg-canvas border border-border-subtle rounded-[4px] px-3 py-2 font-mono text-xs text-on-surface focus:border-gold-accent focus:outline-none tracking-wide"
+                  data-testid="edit-vault-address-input"
+                  required
+                />
+                <span className="text-[10px] text-secondary font-sans block mt-0.5">
+                  Clients on User Dashboard will be directed to transfer {editingRail.asset} on {editingRail.network} to this exact address.
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {/* Minimum Deposit USD */}
+                <div className="space-y-1">
+                  <label className="block font-mono text-[10px] uppercase tracking-wider text-secondary">
+                    Min Deposit (USD Eq.)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="any"
+                    value={editingRail.minDepositUsd}
+                    onChange={(e) => setEditingRail({ ...editingRail, minDepositUsd: Number(e.target.value) })}
+                    className="w-full bg-bg-canvas border border-border-subtle rounded-[4px] px-3 py-1.5 font-mono text-xs text-on-surface focus:border-gold-accent focus:outline-none"
+                    required
+                  />
+                </div>
+
+                {/* Confirmations Required */}
+                <div className="space-y-1">
+                  <label className="block font-mono text-[10px] uppercase tracking-wider text-secondary">
+                    Required Confirmations (Blocks)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={editingRail.confirmations}
+                    onChange={(e) => setEditingRail({ ...editingRail, confirmations: Number(e.target.value) })}
+                    className="w-full bg-bg-canvas border border-border-subtle rounded-[4px] px-3 py-1.5 font-mono text-xs text-on-surface focus:border-gold-accent focus:outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Active Rail Switch */}
+              <div className="p-3 bg-bg-elevated/40 border border-border-subtle rounded-[4px] flex items-center justify-between">
+                <div>
+                  <span className="font-sans text-xs font-semibold text-on-surface block">
+                    Rail Operational Status
+                  </span>
+                  <span className="font-mono text-[10px] text-secondary">
+                    {editingRail.isActive
+                      ? "Active: Accepting incoming client deposits"
+                      : "Offline: Held for maintenance / quorum validation"}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingRail({ ...editingRail, isActive: !editingRail.isActive })}
+                  className={`w-10 h-5 rounded-full relative transition-colors p-0.5 cursor-pointer ${
+                    editingRail.isActive ? "bg-status-success" : "bg-border-subtle"
+                  }`}
+                >
+                  <span
+                    className={`block w-4 h-4 bg-white rounded-full transition-transform ${
+                      editingRail.isActive ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-border-subtle">
+                <button
+                  type="button"
+                  onClick={() => setEditingRail(null)}
+                  className="px-3.5 py-1.5 rounded-[4px] border border-border-subtle bg-bg-canvas hover:bg-state-hover text-on-surface text-xs font-medium cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saveRailMutation.isPending}
+                  className="px-4 py-1.5 rounded-[4px] bg-gold-accent hover:bg-[#C5A028] text-bg-canvas text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-60"
+                  data-testid="save-crypto-rail-btn"
+                >
+                  {saveRailMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Saving Coordinates...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      <span>Save Web3 Coordinates</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

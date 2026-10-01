@@ -13,6 +13,9 @@ export enum VipCardTier {
   OBSIDIAN = 'OBSIDIAN',
   BLACK = 'BLACK',
   SILVER = 'SILVER',
+  Supreme = 'Supreme',
+  TITANIUM = 'TITANIUM',
+  CELEBRITY = 'CELEBRITY',
 }
 
 export enum VipCardType {

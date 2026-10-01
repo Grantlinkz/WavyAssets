@@ -191,10 +191,59 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
               </div>
 
               {/* Substrate & Metal Alloy Radio Tiles */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="block font-mono text-[10px] uppercase tracking-wider text-secondary">
                   Substrate &amp; Metal Alloy Grade
                 </label>
+
+                {/* Exclusive Celebrity Membership Card Option */}
+                <div
+                  onClick={() => handleSubstrateSelect("Celebrity 24K Gold & Diamond", "CELEBRITY", 1000000)}
+                  className={`p-3 rounded-[4px] border cursor-pointer transition-all flex items-center justify-between gap-3 ${
+                    draftMint.substrate === "Celebrity 24K Gold & Diamond"
+                      ? "bg-gradient-to-r from-amber-500/20 via-yellow-500/15 to-amber-600/20 border-[#FFD700] ring-1 ring-[#FFD700]/50 shadow-md"
+                      : "bg-bg-canvas hover:bg-state-hover border-border-subtle hover:border-gold-accent/40"
+                  }`}
+                  data-testid="celebrity-card-section"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-[4px] flex items-center justify-center font-bold text-sm ${
+                      draftMint.substrate === "Celebrity 24K Gold & Diamond"
+                        ? "bg-gradient-to-tr from-[#FFD700] to-[#FFF0A0] text-black shadow-sm"
+                        : "bg-bg-elevated text-gold-accent border border-border-subtle"
+                    }`}>
+                      ★
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-on-surface">
+                          Celebrity Membership Card
+                        </span>
+                        <span className="px-1.5 py-0.2 bg-[#FFD700]/20 text-[#FFD700] border border-[#FFD700]/40 text-[9px] font-mono font-bold rounded-[2px]">
+                          EXCLUSIVE VIP
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-secondary font-mono">
+                        Swiss 24K pure gold inlay &amp; diamond micro-lattice • $1M standard authorization
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-gold-accent hidden sm:inline">
+                      $1,000,000 / day
+                    </span>
+                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                      draftMint.substrate === "Celebrity 24K Gold & Diamond"
+                        ? "border-gold-accent bg-gold-accent"
+                        : "border-secondary"
+                    }`}>
+                      {draftMint.substrate === "Celebrity 24K Gold & Diamond" && (
+                        <Check className="w-2.5 h-2.5 text-black stroke-[3]" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {/* Option 1: Obsidian Tungsten */}
                   <label
