@@ -9,9 +9,11 @@ import {
   Plus,
   X,
   Loader2,
+  Trash2,
 } from "lucide-react"
 import {
   updateCryptoRail,
+  deleteCryptoRail,
   flushInvalidationCache,
   type CryptoDepositRailConfig,
 } from "../../api/depositRails"
@@ -83,6 +85,18 @@ export const CryptoVaultMatrix: React.FC<CryptoVaultMatrixProps> = ({
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["deposit-rails"] })
+    },
+  })
+
+  const deleteRailMutation = useMutation({
+    mutationFn: (id: string) => deleteCryptoRail(id),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["deposit-rails"] })
+      setHsmAuditNotice(res.message || "Crypto deposit rail coordinates successfully removed from database.")
+      setTimeout(() => setHsmAuditNotice(null), 6000)
+    },
+    onError: (err: Error) => {
+      setFormError(err.message || "Failed to delete crypto deposit rail.")
     },
   })
 
@@ -365,6 +379,20 @@ export const CryptoVaultMatrix: React.FC<CryptoVaultMatrixProps> = ({
                           className="h-7 px-2.5 rounded-[3px] border border-border-subtle bg-bg-elevated hover:border-gold-accent hover:bg-state-hover text-on-surface font-sans text-xs transition-colors cursor-pointer"
                         >
                           Audit HSM
+                        </button>
+                        <button
+                          type="button"
+                          disabled={deleteRailMutation.isPending}
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to remove the ${rail.asset} (${rail.network}) deposit rail?`)) {
+                              deleteRailMutation.mutate(rail.id)
+                            }
+                          }}
+                          className="h-7 w-7 rounded-[3px] border border-status-danger/30 bg-status-danger/10 hover:bg-status-danger/20 text-status-danger flex items-center justify-center transition-colors cursor-pointer"
+                          title="Delete Web3 Rail"
+                          data-testid={`delete-rail-${rail.asset}-${rail.network}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>

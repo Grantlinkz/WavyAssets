@@ -3,6 +3,8 @@ import {
   Get,
   Put,
   Post,
+  Delete,
+  Param,
   Body,
   Req,
   UseGuards,
@@ -55,6 +57,17 @@ export class DepositRailsController {
   ) {
     const adminId = admin?.id || (admin as any)?.sub;
     return this.depositRailsService.upsertCryptoRail(dto, adminId, req.ip);
+  }
+
+  @Delete('crypto/:id')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.TREASURY_OFFICER, AdminRole.DESK_LEAD)
+  async deleteCryptoRail(
+    @Param('id') id: string,
+    @CurrentAdmin() admin: CurrentAdminPayload,
+    @Req() req: Request,
+  ) {
+    const adminId = admin?.id || (admin as any)?.sub;
+    return this.depositRailsService.deleteCryptoRail(id, adminId, req.ip);
   }
 
   @Post('flush-cache')

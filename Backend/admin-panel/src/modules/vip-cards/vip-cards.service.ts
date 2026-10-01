@@ -72,6 +72,17 @@ export class VipCardsService {
       where.isFrozen = query.isFrozen;
     }
 
+    if (query.status && query.status.toUpperCase() !== 'ALL') {
+      const s = query.status.toUpperCase();
+      if (s === 'ACTIVE') {
+        where.isFrozen = false;
+      } else if (s === 'LOCKED') {
+        where.isFrozen = true;
+      } else if (s === 'IN_TRANSIT') {
+        where.shippingStatus = 'IN_TRANSIT';
+      }
+    }
+
     if (query.search) {
       const search = query.search.trim();
       where.OR = [

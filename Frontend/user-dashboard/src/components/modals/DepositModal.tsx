@@ -137,9 +137,10 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     message: string;
   } | null>(null);
 
-  // Dynamic standards and addresses merged with backend DB configuration
+  // Dynamic standards and addresses strictly sourced from DB so old settings are gone upon update
   const dynamicCryptoConfig = React.useMemo(() => {
-    const config: Record<string, TokenStandardConfig> = JSON.parse(JSON.stringify(ASSET_STANDARDS_CONFIG));
+    const config: Record<string, TokenStandardConfig> = {};
+
     if (railsConfig?.crypto && railsConfig.crypto.length > 0) {
       for (const r of railsConfig.crypto) {
         if (!r.isActive) continue;
@@ -160,8 +161,24 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         }
       }
     }
+
+    // For any assets with zero DB config, fallback to default standards
+    for (const [fallbackAsset, fallbackConfig] of Object.entries(ASSET_STANDARDS_CONFIG)) {
+      if (!config[fallbackAsset] || config[fallbackAsset].standards.length === 0) {
+        config[fallbackAsset] = JSON.parse(JSON.stringify(fallbackConfig));
+      }
+    }
+
     return config;
   }, [railsConfig]);
+
+  // Keep selected standard synchronized if active rails change
+  useEffect(() => {
+    const config = dynamicCryptoConfig[selectedAsset];
+    if (config && config.standards.length > 0 && !config.standards.includes(selectedStandard)) {
+      setSelectedStandard(config.defaultStandard || config.standards[0]);
+    }
+  }, [selectedAsset, dynamicCryptoConfig, selectedStandard]);
 
   // Transaction & Review State
   const [depositAmount, setDepositAmount] = useState<string>('25000');
@@ -197,7 +214,6 @@ export const DepositModal: React.FC<DepositModalProps> = ({
 
   const currentDepositAddress =
     dynamicCryptoConfig[selectedAsset]?.addresses[selectedStandard] ||
-    ASSET_STANDARDS_CONFIG[selectedAsset]?.addresses[selectedStandard] ||
     '0x94A8D19F200c9261a81eC97669d0339dE78E916B';
 
   interface EthereumProvider {

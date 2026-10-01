@@ -14,12 +14,25 @@ export class PrismaService
   private readonly logger = new Logger(PrismaService.name);
 
   async onModuleInit(): Promise<void> {
-    try {
-      await this.$connect();
-      this.logger.log('Prisma ORM connected to SQLite database successfully');
-    } catch (error) {
-      this.logger.error('Failed to connect to database via Prisma', error);
-      throw error;
+    const maxRetries = 5;
+    let attempt = 0;
+    let delayMs = 1000;
+
+    while (attempt < maxRetries) {
+      try {
+        attempt++;
+        await this.$connect();
+        this.logger.log('Prisma ORM connected to PostgreSQL database successfully');
+        return;
+      } catch (error) {
+        if (attempt >= maxRetries) {
+          this.logger.error(`Failed to connect to database via Prisma after ${attempt} attempts`, error);
+          throw error;
+        }
+        this.logger.warn(`Prisma connection attempt ${attempt}/${maxRetries} failed. Retrying in ${delayMs}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        delayMs = Math.min(delayMs * 1.5, 5000);
+      }
     }
   }
 

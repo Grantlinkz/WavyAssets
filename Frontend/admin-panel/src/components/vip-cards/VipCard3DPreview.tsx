@@ -62,6 +62,10 @@ export const VipCard3DPreview: React.FC<VipCard3DPreviewProps> = ({
 
   const details = getSubstrateDetails(substrate)
 
+  const [celebrityRandomCode] = React.useState(() =>
+    Math.floor(100000 + Math.random() * 900000).toString()
+  )
+
   return (
     <div className="flex flex-col items-center gap-4 w-full" data-testid="vip-card-3d-preview">
       {/* 3D Physical Card Model Container */}
@@ -80,7 +84,7 @@ export const VipCard3DPreview: React.FC<VipCard3DPreviewProps> = ({
           }}
         />
 
-        {/* Top Row: Brand & EMV Chip / Swiss Cross Hologram */}
+        {/* Top Row: Brand & EMV Chip / Swiss Cross Hologram (or 6-digit number for Celebrity) */}
         <div className="relative z-10 flex items-start justify-between">
           <div className="flex items-center gap-2" data-testid="card-brand-identity">
             {/* Official Favicon Squircle Emblem */}
@@ -101,22 +105,33 @@ export const VipCard3DPreview: React.FC<VipCard3DPreviewProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Gold EMV Contact Chip */}
-            <div className="w-8 h-6 rounded-[2px] bg-gradient-to-tr from-[#947629] via-[#D4AF37] to-[#F3E7BE] border border-[#7A5B0F] p-0.5 flex flex-col justify-between shadow-inner">
-              <div className="w-full h-px bg-[#7A5B0F]/50" />
-              <div className="w-full flex justify-between">
-                <div className="w-2.5 h-1.5 border border-[#7A5B0F]/50 rounded-[1px]" />
-                <div className="w-2.5 h-1.5 border border-[#7A5B0F]/50 rounded-[1px]" />
+          {details.isCelebrity ? (
+            <div
+              className="flex items-center justify-center px-2 py-0.5 rounded-[4px] bg-black/50 border border-[#FFD700]/60 shadow-[0_0_8px_rgba(255,215,0,0.2)]"
+              data-testid="celebrity-random-code"
+            >
+              <span className="font-mono text-xs font-bold tracking-widest text-[#FFD700] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] select-none">
+                {celebrityRandomCode}
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              {/* Gold EMV Contact Chip */}
+              <div className="w-8 h-6 rounded-[2px] bg-gradient-to-tr from-[#947629] via-[#D4AF37] to-[#F3E7BE] border border-[#7A5B0F] p-0.5 flex flex-col justify-between shadow-inner">
+                <div className="w-full h-px bg-[#7A5B0F]/50" />
+                <div className="w-full flex justify-between">
+                  <div className="w-2.5 h-1.5 border border-[#7A5B0F]/50 rounded-[1px]" />
+                  <div className="w-2.5 h-1.5 border border-[#7A5B0F]/50 rounded-[1px]" />
+                </div>
+                <div className="w-full h-px bg-[#7A5B0F]/50" />
               </div>
-              <div className="w-full h-px bg-[#7A5B0F]/50" />
-            </div>
 
-            {/* Swiss Cross Hologram Stamp */}
-            <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-telemetry-cyan/20 via-gold-accent/30 to-purple-500/20 border border-gold-accent/40 flex items-center justify-center">
-              <span className="font-mono text-[8px] text-gold-accent font-bold">CH</span>
+              {/* Swiss Cross Hologram Stamp */}
+              <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-telemetry-cyan/20 via-gold-accent/30 to-purple-500/20 border border-gold-accent/40 flex items-center justify-center">
+                <span className="font-mono text-[8px] text-gold-accent font-bold">CH</span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Middle Row: Masked Card PAN (removed for Celebrity Event Membership Card) */}

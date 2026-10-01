@@ -56,11 +56,17 @@ export const VipCardsTable: React.FC = () => {
     toggleMutation.mutate({ id: card.id, isFrozen: !card.isFrozen })
   }
 
+  const { data: allCardsData } = useQuery({
+    queryKey: ["vip-cards", searchQuery, "ALL"],
+    queryFn: () => fetchVipCards({ search: searchQuery, status: "ALL" }),
+  })
+  const allCards: VipCardItem[] = Array.isArray(allCardsData) ? allCardsData : cards
+
   // Filter calculations
-  const totalCount = cards.length
-  const activeCount = cards.filter((c) => !c.isFrozen).length
-  const lockedCount = cards.filter((c) => c.isFrozen).length
-  const transitCount = cards.filter((c) => c.shippingStatus === "IN_TRANSIT").length
+  const totalCount = allCards.length
+  const activeCount = allCards.filter((c) => !c.isFrozen).length
+  const lockedCount = allCards.filter((c) => c.isFrozen).length
+  const transitCount = allCards.filter((c) => c.shippingStatus === "IN_TRANSIT").length
 
   const getSubstrateBadge = (sub: string) => {
     if (sub.includes("Tungsten")) {
