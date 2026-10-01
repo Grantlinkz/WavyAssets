@@ -53,4 +53,16 @@ export class UpdateCryptoRailDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean = true;
+
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  confirmationTimeEst?: string;
 }

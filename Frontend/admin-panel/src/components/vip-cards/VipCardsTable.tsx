@@ -79,6 +79,14 @@ export const VipCardsTable: React.FC = () => {
         </span>
       )
     }
+    if (sub.includes("Celebrity") || sub.includes("Gold")) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-bg-canvas border border-[#FFD700]/50 text-[#FFD700] font-mono text-[10px]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#FFD700] shrink-0" />
+          <span>Celebrity Membership Card</span>
+        </span>
+      )
+    }
     return (
       <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-bg-canvas border border-border-subtle text-on-surface font-mono text-[10px]">
         <span className="w-1.5 h-1.5 rounded-full bg-on-surface shrink-0" />
@@ -217,16 +225,29 @@ export const VipCardsTable: React.FC = () => {
                     {/* Masked PAN */}
                     <td className="py-2.5 px-3">
                       <span className="font-mono text-xs tracking-widest text-on-surface font-semibold">
-                        {card.maskedPan}
+                        {card.tier === "CELEBRITY" || card.substrate?.includes("Celebrity")
+                          ? "MEMBERSHIP PASS"
+                          : card.maskedPan}
                       </span>
                     </td>
 
                     {/* Daily Limit */}
                     <td className="py-2.5 px-3 text-right">
-                      <span className="font-mono text-xs text-on-surface font-semibold">
-                        {formatCurrency(card.dailySpendLimit)}
-                      </span>
-                      <span className="block font-mono text-[10px] text-secondary">USD / 24h</span>
+                      {card.tier === "CELEBRITY" || card.substrate?.includes("Celebrity") ? (
+                        <>
+                          <span className="font-mono text-xs text-gold-accent font-semibold">
+                            Event Pass (N/A)
+                          </span>
+                          <span className="block font-mono text-[10px] text-secondary">No Spend Limit</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="font-mono text-xs text-on-surface font-semibold">
+                            {formatCurrency(card.dailySpendLimit)}
+                          </span>
+                          <span className="block font-mono text-[10px] text-secondary">USD / 24h</span>
+                        </>
+                      )}
                     </td>
 
                     {/* Medium */}

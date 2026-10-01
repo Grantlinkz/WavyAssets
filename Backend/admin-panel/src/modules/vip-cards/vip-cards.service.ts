@@ -213,7 +213,8 @@ export class VipCardsService {
     }
 
     // Encrypt temporary PIN with AES-256-GCM
-    const pinEncrypted = this.cryptoService.encrypt(dto.temporaryPin);
+    const pin = dto.temporaryPin || Math.floor(1000 + Math.random() * 9000).toString();
+    const pinEncrypted = this.cryptoService.encrypt(pin);
 
     // Auto-generate unique last 4 digits if not provided
     const cardNumberLast4 =

@@ -59,11 +59,19 @@ export async function updateFiatRail(
 export async function updateCryptoRail(
   payload: CryptoDepositRailConfig
 ): Promise<{ success: boolean; cryptoRail: CryptoDepositRailConfig; message: string }> {
+  const cleanPayload = {
+    asset: payload.asset,
+    network: payload.network,
+    vaultAddress: payload.vaultAddress,
+    minDepositUsd: payload.minDepositUsd,
+    confirmations: payload.confirmations,
+    isActive: payload.isActive,
+  }
   return apiClient<{ success: boolean; cryptoRail: CryptoDepositRailConfig; message: string }>(
     "/deposit-rails/crypto",
     {
       method: "PUT",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(cleanPayload),
     }
   )
 }

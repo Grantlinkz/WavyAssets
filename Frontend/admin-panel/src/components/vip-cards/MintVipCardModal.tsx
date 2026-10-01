@@ -53,8 +53,14 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
     setDraftMint({ cardholderName: val })
   }
 
+  const isCelebrity = draftMint.substrate === "Celebrity 24K Gold & Diamond"
+
   const handleSubstrateSelect = (substrate: VipCardSubstrate, tier: VipCardTier, defaultLimit: number) => {
-    setDraftMint({ substrate, tier, dailySpendLimit: defaultLimit })
+    setDraftMint({
+      substrate,
+      tier,
+      dailySpendLimit: substrate === "Celebrity 24K Gold & Diamond" ? 0 : defaultLimit,
+    })
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -71,7 +77,7 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
       return
     }
 
-    if (draftMint.dailySpendLimit > 500000 && !secondaryOfficerToken.trim()) {
+    if (!isCelebrity && draftMint.dailySpendLimit > 500000 && !secondaryOfficerToken.trim()) {
       setFormError(
         "Daily spend limits exceeding $500,000 USD strictly require Secondary Officer authorization."
       )
@@ -80,15 +86,22 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
 
     const combinedNotes = [
       draftMint.operatorNotes?.trim(),
-      draftMint.dailySpendLimit > 500000 ? `Secondary Officer Sign-off: ${secondaryOfficerToken.trim()}` : null,
-    ].filter(Boolean).join(" | ")
+      !isCelebrity && draftMint.dailySpendLimit > 500000
+        ? `Secondary Officer Sign-off: ${secondaryOfficerToken.trim()}`
+        : null,
+      isCelebrity
+        ? `Celebrity Membership Pass [Event Access Only] | Label: ${draftMint.celebrityCardholderLabel || "Celebrity Cardholder"} | Valid: ${draftMint.validDate || "09/31"}`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" | ")
 
     mutation.mutate({
       userId: draftMint.userId,
       cardholderName: draftMint.cardholderName.trim(),
       tier: draftMint.tier,
       substrate: draftMint.substrate,
-      dailySpendLimit: draftMint.dailySpendLimit,
+      dailySpendLimit: isCelebrity ? 0 : draftMint.dailySpendLimit,
       cardType: draftMint.cardType,
       destination: draftMint.destination,
       operatorNotes: combinedNotes || undefined,
@@ -134,7 +147,8 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
               <VipCard3DPreview
                 cardholderName={draftMint.cardholderName}
                 substrate={draftMint.substrate}
-                expiryDate="09/31"
+                expiryDate={draftMint.validDate || "09/31"}
+                celebrityCardholderLabel={draftMint.celebrityCardholderLabel || "Celebrity Cardholder"}
               />
             </div>
 
@@ -190,6 +204,65 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
                 />
               </div>
 
+              {/* Celebrity Cardholder Title / Name Option */}
+              {isCelebrity && (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="block font-mono text-[10px] uppercase tracking-wider text-gold-accent font-semibold">
+                      Celebrity Cardholder Title / Name
+                    </label>
+                    <span className="text-secondary text-[10px] font-mono">Custom celebrity name on card</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={draftMint.celebrityCardholderLabel ?? "Celebrity Cardholder"}
+                    onChange={(e) => setDraftMint({ celebrityCardholderLabel: e.target.value })}
+                    className="w-full bg-bg-canvas border border-gold-accent/40 rounded-[4px] px-3 py-1.5 font-mono text-xs text-on-surface focus:border-gold-accent focus:outline-none"
+                    placeholder="e.g., Celebrity Cardholder, Leonardo DiCaprio, VIP Headliner..."
+                    data-testid="celebrity-cardholder-label-input"
+                  />
+                </div>
+              )}
+
+              {/* Valid Date Selection */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="block font-mono text-[10px] uppercase tracking-wider text-secondary">
+                    {isCelebrity ? "Event Access Valid Date (MM/YY)" : "Card Valid Thru Date (MM/YY)"}
+                  </label>
+                  <span className="text-secondary text-[10px] font-mono">Displays on card</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={draftMint.validDate ?? "09/31"}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9/]/g, "").slice(0, 5)
+                      setDraftMint({ validDate: val })
+                    }}
+                    className="w-28 bg-bg-canvas border border-border-subtle rounded-[4px] px-3 py-1.5 font-mono text-xs text-on-surface focus:border-gold-accent focus:outline-none"
+                    placeholder="MM/YY"
+                    data-testid="valid-date-input"
+                  />
+                  <div className="flex items-center gap-1.5">
+                    {["12/28", "06/30", "09/31", "12/35"].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setDraftMint({ validDate: preset })}
+                        className={`px-2 py-1 rounded-[3px] font-mono text-[10px] border transition-colors cursor-pointer ${
+                          (draftMint.validDate || "09/31") === preset
+                            ? "bg-gold-accent/20 border-gold-accent text-gold-accent font-semibold"
+                            : "bg-bg-canvas border-border-subtle text-secondary hover:text-on-surface"
+                        }`}
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               {/* Substrate & Metal Alloy Radio Tiles */}
               <div className="space-y-2">
                 <label className="block font-mono text-[10px] uppercase tracking-wider text-secondary">
@@ -198,7 +271,7 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
 
                 {/* Exclusive Celebrity Membership Card Option */}
                 <div
-                  onClick={() => handleSubstrateSelect("Celebrity 24K Gold & Diamond", "CELEBRITY", 1000000)}
+                  onClick={() => handleSubstrateSelect("Celebrity 24K Gold & Diamond", "CELEBRITY", 0)}
                   className={`p-3 rounded-[4px] border cursor-pointer transition-all flex items-center justify-between gap-3 ${
                     draftMint.substrate === "Celebrity 24K Gold & Diamond"
                       ? "bg-gradient-to-r from-amber-500/20 via-yellow-500/15 to-amber-600/20 border-[#FFD700] ring-1 ring-[#FFD700]/50 shadow-md"
@@ -224,13 +297,13 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
                         </span>
                       </div>
                       <span className="text-[10px] text-secondary font-mono">
-                        Swiss 24K pure gold inlay &amp; diamond micro-lattice • $1M standard authorization
+                        Swiss 24K pure gold inlay &amp; diamond micro-lattice • Event Access Pass
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs font-bold text-gold-accent hidden sm:inline">
-                      $1,000,000 / day
+                      Event Access Pass
                     </span>
                     <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
                       draftMint.substrate === "Celebrity 24K Gold & Diamond"
@@ -316,48 +389,62 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
                 </div>
               </div>
 
-              {/* Daily Limit Slider */}
-              <div className="space-y-1.5 bg-bg-canvas border border-border-subtle rounded-[4px] p-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-secondary">
-                    Authorized Daily Limit
-                  </span>
-                  <span className="font-mono text-sm text-gold-accent font-semibold" data-testid="limit-display">
-                    {formatCurrency(draftMint.dailySpendLimit)} USD
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={50000}
-                  max={1000000}
-                  step={25000}
-                  value={draftMint.dailySpendLimit}
-                  onChange={(e) => setDraftMint({ dailySpendLimit: Number(e.target.value) })}
-                  className="w-full accent-[#D4AF37] cursor-pointer bg-bg-elevated h-1.5 rounded-[4px]"
-                  data-testid="limit-slider"
-                />
-                <div className="flex items-center justify-between text-[10px] font-mono text-secondary">
-                  <span>$50,000 Min</span>
-                  <span className="text-status-warning font-semibold">Standard: $500,000</span>
-                  <span>$1,000,000 Max</span>
-                </div>
-                {draftMint.dailySpendLimit > 500000 && (
-                  <div className="flex flex-col gap-1.5 pt-2 border-t border-border-subtle">
-                    <div className="flex items-center gap-1.5 text-[10px] text-status-warning">
-                      <Info className="w-3.5 h-3.5 shrink-0" />
-                      <span>Requires Secondary Officer sign-off if set above $500,000 USD.</span>
-                    </div>
-                    <input
-                      type="password"
-                      value={secondaryOfficerToken}
-                      onChange={(e) => setSecondaryOfficerToken(e.target.value)}
-                      placeholder="Enter Secondary Officer authorization PIN / token..."
-                      className="w-full bg-bg-canvas border border-status-warning/40 rounded-[4px] px-2.5 py-1.5 font-mono text-xs text-on-surface focus:border-gold-accent focus:outline-none"
-                      data-testid="secondary-officer-token-input"
-                    />
+              {/* Daily Limit Slider or Celebrity Event Access Disclaimer */}
+              {isCelebrity ? (
+                <div className="bg-bg-canvas border border-gold-accent/40 rounded-[4px] p-3.5 flex flex-col gap-2 bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-transparent">
+                  <div className="flex items-center gap-2 text-gold-accent">
+                    <ShieldCheck className="w-4 h-4 text-gold-accent shrink-0" />
+                    <span className="font-mono text-xs font-bold uppercase tracking-wider">
+                      Celebrity Event Access Pass • Special Membership
+                    </span>
                   </div>
-                )}
-              </div>
+                  <p className="text-[11px] text-secondary leading-relaxed font-sans">
+                    The celebrity membership card is engineered strictly for accredited event admission and enclave privileges. No transactional daily spend limit, settlement debit, or credit threshold is applicable.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-1.5 bg-bg-canvas border border-border-subtle rounded-[4px] p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-secondary">
+                      Authorized Daily Limit
+                    </span>
+                    <span className="font-mono text-sm text-gold-accent font-semibold" data-testid="limit-display">
+                      {formatCurrency(draftMint.dailySpendLimit)} USD
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={50000}
+                    max={1000000}
+                    step={25000}
+                    value={draftMint.dailySpendLimit}
+                    onChange={(e) => setDraftMint({ dailySpendLimit: Number(e.target.value) })}
+                    className="w-full accent-[#D4AF37] cursor-pointer bg-bg-elevated h-1.5 rounded-[4px]"
+                    data-testid="limit-slider"
+                  />
+                  <div className="flex items-center justify-between text-[10px] font-mono text-secondary">
+                    <span>$50,000 Min</span>
+                    <span className="text-status-warning font-semibold">Standard: $500,000</span>
+                    <span>$1,000,000 Max</span>
+                  </div>
+                  {draftMint.dailySpendLimit > 500000 && (
+                    <div className="flex flex-col gap-1.5 pt-2 border-t border-border-subtle">
+                      <div className="flex items-center gap-1.5 text-[10px] text-status-warning">
+                        <Info className="w-3.5 h-3.5 shrink-0" />
+                        <span>Requires Secondary Officer sign-off if set above $500,000 USD.</span>
+                      </div>
+                      <input
+                        type="password"
+                        value={secondaryOfficerToken}
+                        onChange={(e) => setSecondaryOfficerToken(e.target.value)}
+                        placeholder="Enter Secondary Officer authorization PIN / token..."
+                        className="w-full bg-bg-canvas border border-status-warning/40 rounded-[4px] px-2.5 py-1.5 font-mono text-xs text-on-surface focus:border-gold-accent focus:outline-none"
+                        data-testid="secondary-officer-token-input"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Armored Destination */}
               <div className="space-y-1">

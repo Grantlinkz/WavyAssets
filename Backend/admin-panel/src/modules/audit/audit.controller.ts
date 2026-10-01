@@ -17,6 +17,7 @@ export class AuditController {
     AdminRole.COMPLIANCE_OFFICER,
     AdminRole.TREASURY_OFFICER,
     AdminRole.DESK_LEAD,
+    AdminRole.CONCIERGE,
   )
   async getAuditLogs(@Query() query: AuditQueryDto) {
     return this.auditService.getAuditLogs(query);
@@ -28,6 +29,7 @@ export class AuditController {
     AdminRole.COMPLIANCE_OFFICER,
     AdminRole.TREASURY_OFFICER,
     AdminRole.DESK_LEAD,
+    AdminRole.CONCIERGE,
   )
   async getTelemetry() {
     return this.auditService.getTelemetry();

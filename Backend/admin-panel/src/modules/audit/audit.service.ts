@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import * as crypto from 'crypto';
 import { PrismaService } from '../../common/services/prisma.service';
 import { AuditQueryDto } from './dto/audit-query.dto';
 
@@ -269,11 +270,20 @@ export class AuditService {
       where: { createdAt: { gte: today } },
     });
 
+    const latestLog = await this.prisma.adminAuditLog.findFirst({
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, ipAddressHash: true, createdAt: true, action: true },
+    });
+
+    const merkleRoot = latestLog
+      ? `0x${crypto.createHash('sha256').update(latestLog.id + latestLog.createdAt.toISOString() + (latestLog.ipAddressHash || '')).digest('hex')}`
+      : '0x0000000000000000000000000000000000000000000000000000000000000000';
+
     return {
       totalLogEntries: total,
       todayExecutions: todayCount,
-      merkleRoot: '0x8f2d91a4b9c103e871239c019d38fa21e8537b019a84218e81c0199182390abc',
-      merkleBlock: 198421,
+      merkleRoot,
+      merkleBlock: total,
       retentionYears: 10,
     };
   }

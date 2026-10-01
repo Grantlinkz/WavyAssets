@@ -6,6 +6,7 @@ interface VipCard3DPreviewProps {
   maskedPan?: string
   expiryDate?: string
   substrate: VipCardSubstrate
+  celebrityCardholderLabel?: string
 }
 
 export const VipCard3DPreview: React.FC<VipCard3DPreviewProps> = ({
@@ -13,6 +14,7 @@ export const VipCard3DPreview: React.FC<VipCard3DPreviewProps> = ({
   maskedPan = "•••• •••• •••• 5590",
   expiryDate = "09/31",
   substrate,
+  celebrityCardholderLabel,
 }) => {
   const getSubstrateDetails = (sub: VipCardSubstrate) => {
     switch (sub) {
@@ -117,29 +119,35 @@ export const VipCard3DPreview: React.FC<VipCard3DPreviewProps> = ({
           </div>
         </div>
 
-        {/* Middle Row: Masked Card PAN */}
-        <div className="relative z-10 flex items-center justify-between my-1">
-          <span
-            className={`font-mono text-sm tracking-[0.24em] font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] ${
-              details.isCelebrity ? "text-[#FFF4C2]" : "text-[#E5D294]"
-            }`}
-            data-testid="preview-masked-pan"
-          >
-            {maskedPan}
-          </span>
+        {/* Middle Row: Masked Card PAN (removed for Celebrity Event Membership Card) */}
+        <div className="relative z-10 flex items-center justify-between my-1 min-h-[22px]">
+          {!details.isCelebrity ? (
+            <span
+              className="font-mono text-sm tracking-[0.24em] font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] text-[#E5D294]"
+              data-testid="preview-masked-pan"
+            >
+              {maskedPan}
+            </span>
+          ) : (
+            <span className="font-mono text-[10px] tracking-wider text-[#FFD700]/70 font-semibold drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+              EVENT ACCESS PASS
+            </span>
+          )}
           {details.isCelebrity && (
             <span className="px-2 py-0.5 rounded-[3px] bg-gradient-to-r from-[#FFD700] via-[#F3E7BE] to-[#D4AF37] text-[#0A0701] font-mono text-[8px] font-black uppercase tracking-widest shadow-md flex items-center gap-1 border border-[#FFF] border-opacity-30">
               <span>★</span>
-              <span>CELEBRITY</span>
+              <span>MEMBERSHIP CARD</span>
             </span>
           )}
         </div>
 
-        {/* Bottom Row: Cardholder Name, Expiry & Visa Infinite */}
+        {/* Bottom Row: Cardholder Name, Expiry & Access / Visa */}
         <div className="relative z-10 flex items-end justify-between text-left">
           <div>
             <span className="font-mono text-[8px] uppercase tracking-wider text-secondary/70 block">
-              {details.isCelebrity ? "Celebrity Cardholder" : "Authorized Cardholder"}
+              {details.isCelebrity
+                ? (celebrityCardholderLabel || "Celebrity Cardholder")
+                : "Authorized Cardholder"}
             </span>
             <span
               className={`font-mono text-xs uppercase tracking-wider font-semibold block truncate max-w-[190px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] ${
@@ -147,7 +155,7 @@ export const VipCard3DPreview: React.FC<VipCard3DPreviewProps> = ({
               }`}
               data-testid="preview-cardholder-name"
             >
-              {cardholderName || "CARDHOLDER NAME"}
+              {cardholderName || (details.isCelebrity ? "CELEBRITY GUEST" : "CARDHOLDER NAME")}
             </span>
             <span className="font-mono text-[9px] text-secondary/80 mt-0.5 block">
               VALID THRU: <span className="text-gold-accent font-semibold">{expiryDate}</span>
@@ -158,10 +166,10 @@ export const VipCard3DPreview: React.FC<VipCard3DPreviewProps> = ({
             <span className={`font-sans text-[13px] font-black italic tracking-tighter leading-none ${
               details.isCelebrity ? "text-[#FFF4C2]" : "text-[#F2E5BA]"
             }`}>
-              VISA
+              {details.isCelebrity ? "ACCESS" : "VISA"}
             </span>
             <span className="font-mono text-[7px] tracking-widest text-gold-accent uppercase font-bold mt-0.5">
-              {details.isCelebrity ? "CELEBRITY" : "INFINITE"}
+              {details.isCelebrity ? "MEMBERSHIP" : "INFINITE"}
             </span>
           </div>
         </div>
