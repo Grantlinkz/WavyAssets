@@ -195,13 +195,13 @@ export const KycQueueTable: React.FC = () => {
             Compliance Queue Clean
           </h3>
           <p className="text-xs text-secondary max-w-md mb-4">
-            No dossiers match current status filter. All pending FINMA AML submissions have been processed.
+            No users match current status filter. All pending FINMA AML submissions have been processed.
           </p>
           <button
             onClick={() => setActiveFilter("ALL")}
             className="px-4 py-1.5 rounded-[4px] bg-bg-panel hover:bg-state-hover border border-border-subtle text-xs text-secondary hover:text-on-surface font-medium cursor-pointer"
           >
-            View All Dossiers
+            View All Users
           </button>
         </div>
       ) : (
