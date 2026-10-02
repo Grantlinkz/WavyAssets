@@ -86,6 +86,7 @@ describe("Immutable Audit Trail & Diff Inspector Integration", () => {
     expect(html).toContain("Today")
     expect(html).toContain("Past 7 Days")
     expect(html).toContain("Past 30 Days")
+    expect(html).toContain("All")
     expect(html).toContain("All Actions")
     expect(html).toContain("Balance Credits")
     expect(html).toContain("User Locks")

@@ -4,9 +4,11 @@ import { UsersService } from './users.service';
 import { PrismaService } from '../../common/services/prisma.service';
 import { CryptoService } from '../../common/services/crypto.service';
 
+import { EmailService } from '../../common/services/email.service';
+
 @Module({
   controllers: [UsersController],
-  providers: [UsersService, PrismaService, CryptoService],
-  exports: [UsersService],
+  providers: [UsersService, PrismaService, CryptoService, EmailService],
+  exports: [UsersService, EmailService],
 })
 export class UsersModule {}

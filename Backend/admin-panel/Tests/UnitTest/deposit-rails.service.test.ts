@@ -15,9 +15,12 @@ describe('DepositRailsService', () => {
         upsert: vi.fn(),
       },
       cryptoDepositRailConfig: {
-        findMany: vi.fn(),
+        findMany: vi.fn().mockResolvedValue([]),
         findUnique: vi.fn(),
         upsert: vi.fn(),
+        create: vi.fn(),
+        delete: vi.fn(),
+        deleteMany: vi.fn(),
       },
       adminAuditLog: {
         create: vi.fn(),
@@ -129,7 +132,7 @@ describe('DepositRailsService', () => {
       };
 
       mockPrisma.cryptoDepositRailConfig.findUnique.mockResolvedValue(null);
-      mockPrisma.cryptoDepositRailConfig.upsert.mockResolvedValue({
+      const railResult = {
         id: 'rail-poly-1',
         asset: 'USDC',
         network: 'Polygon',
@@ -137,7 +140,9 @@ describe('DepositRailsService', () => {
         minDepositUsd: 100,
         confirmations: 12,
         isActive: true,
-      });
+      };
+      mockPrisma.cryptoDepositRailConfig.upsert.mockResolvedValue(railResult);
+      mockPrisma.cryptoDepositRailConfig.create.mockResolvedValue(railResult);
 
       const result = await service.upsertCryptoRail(dto, 'op-super_admin-01');
 

@@ -161,12 +161,12 @@ export class DepositRailsService {
 
     // Ensure any old one related to this asset and network is deleted first
     // For example if there was a previous USDT BEP-20, deleting it ensures the old setting is completely gone
-    const oldMatches = await this.prisma.cryptoDepositRailConfig.findMany({
+    const oldMatches = (await this.prisma.cryptoDepositRailConfig.findMany({
       where: {
         asset: { equals: asset, mode: 'insensitive' },
         network: { equals: network, mode: 'insensitive' },
       },
-    });
+    })) || [];
 
     const diffBefore = oldMatches.length > 0 ? JSON.stringify(oldMatches[0]) : null;
 

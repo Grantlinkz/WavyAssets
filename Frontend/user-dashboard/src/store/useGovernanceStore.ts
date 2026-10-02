@@ -5,6 +5,7 @@ import {
   type WhitelistedDestination,
 } from '../lib/governanceAssetData';
 import { getInitialActualSessions, saveActualSessions } from '../lib/clientDevice';
+import { fetchVipCardStatus, updateCardControlsApi } from '../lib/api';
 
 export interface AddDestinationPayload {
   assetRail: string;
@@ -15,8 +16,29 @@ export interface AddDestinationPayload {
   addressOrIban: string;
 }
 
+export interface VipCardData {
+  id: string;
+  cardNumberMasked: string;
+  cardNumberLast4: string;
+  cardType: 'PHYSICAL' | 'VIRTUAL';
+  tier: string;
+  isFrozen: boolean;
+  dailySpendLimit: number;
+  shippingStatus: string;
+  tierProgression?: {
+    currentTier: string;
+    nextTier: string | null;
+    currentAum: number;
+    nextTierThreshold: number | null;
+    progressPercentage: number;
+    amountToNextTier: number;
+  };
+}
+
 interface GovernanceState {
   // VIP Cards Slice
+  vipCard: VipCardData | null;
+  isLoadingCard: boolean;
   isCardFrozen: boolean;
   cardMode: 'physical' | 'virtual';
   isCvvRevealed: boolean;
@@ -24,6 +46,7 @@ interface GovernanceState {
   isBiometricModalOpen: boolean;
   isConciergeModalOpen: boolean;
 
+  loadVipCard: () => Promise<void>;
   toggleFreezeCard: () => void;
   setCardMode: (mode: 'physical' | 'virtual') => void;
   openBiometricModal: () => void;
@@ -60,6 +83,8 @@ let cvvTimer: ReturnType<typeof setInterval> | null = null;
 
 export const useGovernanceStore = create<GovernanceState>((set, get) => ({
   // VIP Card Initial State
+  vipCard: null,
+  isLoadingCard: false,
   isCardFrozen: false,
   cardMode: 'physical',
   isCvvRevealed: false,
@@ -67,10 +92,46 @@ export const useGovernanceStore = create<GovernanceState>((set, get) => ({
   isBiometricModalOpen: false,
   isConciergeModalOpen: false,
 
-  toggleFreezeCard: () =>
-    set((state) => ({ isCardFrozen: !state.isCardFrozen })),
+  loadVipCard: async () => {
+    set({ isLoadingCard: true });
+    try {
+      const data = await fetchVipCardStatus<VipCardData | null>(null);
+      if (data && data.cardNumberLast4) {
+        set({
+          vipCard: data,
+          isCardFrozen: Boolean(data.isFrozen),
+          cardMode: data.cardType === 'VIRTUAL' ? 'virtual' : 'physical',
+          isLoadingCard: false,
+        });
+      } else {
+        set({ isLoadingCard: false });
+      }
+    } catch {
+      set({ isLoadingCard: false });
+    }
+  },
 
-  setCardMode: (mode) => set({ cardMode: mode }),
+  toggleFreezeCard: () => {
+    const nextFrozen = !get().isCardFrozen;
+    set((state) => ({
+      isCardFrozen: nextFrozen,
+      vipCard: state.vipCard ? { ...state.vipCard, isFrozen: nextFrozen } : null,
+    }));
+    // Persist freeze toggle to backend enclave
+    updateCardControlsApi({ isFrozen: nextFrozen }).catch((err) => {
+      console.warn('Failed to commit card freeze status to backend:', err);
+    });
+  },
+
+  setCardMode: (mode) => {
+    set((state) => ({
+      cardMode: mode,
+      vipCard: state.vipCard ? { ...state.vipCard, cardType: mode === 'virtual' ? 'VIRTUAL' : 'PHYSICAL' } : null,
+    }));
+    updateCardControlsApi({ cardType: mode === 'virtual' ? 'VIRTUAL' : 'PHYSICAL' }).catch((err) => {
+      console.warn('Failed to commit card mode to backend:', err);
+    });
+  },
 
   openBiometricModal: () => set({ isBiometricModalOpen: true }),
   closeBiometricModal: () => set({ isBiometricModalOpen: false }),

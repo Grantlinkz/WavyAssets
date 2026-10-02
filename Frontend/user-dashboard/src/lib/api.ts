@@ -433,6 +433,17 @@ export async function updateCardSpendingLimitApi(dailySpendLimit: number): Promi
   });
 }
 
+export async function updateCardControlsApi(controls: {
+  isFrozen?: boolean;
+  cardType?: 'PHYSICAL' | 'VIRTUAL';
+  dailySpendLimit?: number;
+}): Promise<unknown> {
+  return requestApi<unknown>('/api/v1/vip-cards/controls', {
+    method: 'PATCH',
+    body: JSON.stringify(controls),
+  });
+}
+
 // ----------------------------------------------------------------------
 // Governance & Security (VIP Cards, Compliance, 48h Time-Lock)
 // ----------------------------------------------------------------------

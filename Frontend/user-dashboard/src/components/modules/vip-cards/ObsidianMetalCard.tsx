@@ -2,6 +2,7 @@ import React from 'react';
 import { Shield, Fingerprint, Lock, EyeOff } from 'lucide-react';
 import { useGovernanceStore } from '../../../store/useGovernanceStore';
 import { useDashboardStore } from '../../../store/useDashboardStore';
+import { useAuthStore } from '../../../store/useAuthStore';
 
 interface ObsidianMetalCardProps {
   maskBalances?: boolean;
@@ -10,8 +11,10 @@ interface ObsidianMetalCardProps {
 export const ObsidianMetalCard: React.FC<ObsidianMetalCardProps> = ({ maskBalances: propMask }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
+  const user = useAuthStore((s) => s.user);
 
   const {
+    vipCard,
     isCardFrozen,
     cardMode,
     isCvvRevealed,
@@ -21,6 +24,10 @@ export const ObsidianMetalCard: React.FC<ObsidianMetalCardProps> = ({ maskBalanc
     openBiometricModal,
     hideCvv,
   } = useGovernanceStore();
+
+  const last4 = vipCard?.cardNumberLast4 || '9412';
+  const cardholderName = (user?.fullName || 'M. GRANT').toUpperCase();
+  const cardTier = vipCard?.tier || 'OBSIDIAN';
 
   return (
     <div
@@ -114,7 +121,7 @@ export const ObsidianMetalCard: React.FC<ObsidianMetalCardProps> = ({ maskBalanc
               </div>
               <div className="flex flex-col">
                 <span className="font-serif text-xs text-primary-container font-bold tracking-wider uppercase">
-                  WavyAssets Global
+                  WavyAssets {cardTier}
                 </span>
                 <span className="font-mono text-[8px] text-outline tracking-widest uppercase">
                   ZURICH
@@ -123,8 +130,8 @@ export const ObsidianMetalCard: React.FC<ObsidianMetalCardProps> = ({ maskBalanc
             </div>
 
             <div className="flex items-center gap-2 font-mono text-[10px]">
-              <span className="text-secondary/90 tracking-widest border border-secondary/30 px-1.5 py-0.5 rounded-DEFAULT bg-secondary/5">
-                {cardMode === 'physical' ? '42g SOLID TUNGSTEN' : 'NFC ENCLAVE ACTIVE'}
+              <span className="text-secondary/90 tracking-widest border border-secondary/30 px-1.5 py-0.5 rounded-DEFAULT bg-secondary/5 uppercase">
+                {cardMode === 'physical' ? (cardTier === 'OBSIDIAN' ? '42g SOLID TUNGSTEN' : `${cardTier} EDITION`) : 'NFC ENCLAVE ACTIVE'}
               </span>
             </div>
           </div>
@@ -156,8 +163,8 @@ export const ObsidianMetalCard: React.FC<ObsidianMetalCardProps> = ({ maskBalanc
                 className="font-mono text-base tracking-[0.2em] text-on-surface font-semibold select-none tabular-nums"
               >
                 {isCvvRevealed && !maskBalances
-                  ? '4921 •••• •••• 9412'
-                  : '•••• •••• •••• 9412'}
+                  ? `4921 •••• •••• ${last4}`
+                  : `•••• •••• •••• ${last4}`}
               </div>
 
               <div className="flex items-center gap-4">
@@ -166,7 +173,7 @@ export const ObsidianMetalCard: React.FC<ObsidianMetalCardProps> = ({ maskBalanc
                     CARDHOLDER
                   </span>
                   <span className="font-mono text-xs text-primary-fixed tracking-wider font-semibold uppercase">
-                    M. GRANT
+                    {cardholderName}
                   </span>
                 </div>
 

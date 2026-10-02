@@ -12,9 +12,11 @@ import { DepositRailsModule } from './modules/deposit-rails/deposit-rails.module
 import { VipCardsModule } from './modules/vip-cards/vip-cards.module';
 import { EmergencyModule } from './modules/emergency/emergency.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { AdminsModule } from './modules/admins/admins.module';
 import { PrismaService } from './common/services/prisma.service';
 import { CryptoService } from './common/services/crypto.service';
 import { TotpService } from './common/services/totp.service';
+import { EmailService } from './common/services/email.service';
 import { EmergencyLockdownGuard } from './common/guards/emergency-lockdown.guard';
 
 @Module({
@@ -34,12 +36,14 @@ import { EmergencyLockdownGuard } from './common/guards/emergency-lockdown.guard
     VipCardsModule,
     EmergencyModule,
     AuditModule,
+    AdminsModule,
   ],
   controllers: [],
   providers: [
     PrismaService,
     CryptoService,
     TotpService,
+    EmailService,
     {
       provide: APP_GUARD,
       useClass: EmergencyLockdownGuard,

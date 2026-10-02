@@ -26,6 +26,31 @@ interface CryptoVaultMatrixProps {
   isLoading?: boolean
 }
 
+const ASSET_STANDARDS_MAP: Record<string, { value: string; label: string }[]> = {
+  USDC: [
+    { value: "ERC-20", label: "ERC-20 (Ethereum)" },
+    { value: "BEP-20", label: "BEP-20 (BNB Chain)" },
+    { value: "Polygon", label: "Polygon (PoS)" },
+  ],
+  USDT: [
+    { value: "ERC-20", label: "ERC-20 (Ethereum)" },
+    { value: "TRC-20", label: "TRC-20 (Tron)" },
+    { value: "BEP-20", label: "BEP-20 (BNB Chain)" },
+  ],
+  BTC: [
+    { value: "Bitcoin Native", label: "Bitcoin Native (SegWit)" },
+    { value: "BEP-20", label: "BEP-20 (BNB Chain)" },
+  ],
+  ETH: [
+    { value: "ERC-20", label: "ERC-20 (Ethereum)" },
+    { value: "Arbitrum", label: "Arbitrum One" },
+    { value: "Optimism", label: "Optimism (OP Mainnet)" },
+  ],
+  SOL: [
+    { value: "Solana Native", label: "Solana Native" },
+  ],
+}
+
 export const CryptoVaultMatrix: React.FC<CryptoVaultMatrixProps> = ({
   rails,
   isLoading = false,
@@ -513,22 +538,27 @@ export const CryptoVaultMatrix: React.FC<CryptoVaultMatrixProps> = ({
                   <select
                     disabled={!isNewRail}
                     value={editingRail.asset}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const newAsset = e.target.value;
+                      const availableNetworks = ASSET_STANDARDS_MAP[newAsset] || [];
+                      const networkStillValid = availableNetworks.some((n: { value: string; label: string }) => n.value === editingRail.network);
+                      const nextNetwork = networkStillValid ? editingRail.network : availableNetworks[0]?.value || "ERC-20";
                       setEditingRail({
                         ...editingRail,
-                        asset: e.target.value,
+                        asset: newAsset,
+                        network: nextNetwork,
                         name:
-                          e.target.value === "BTC"
+                          newAsset === "BTC"
                             ? "Bitcoin"
-                            : e.target.value === "ETH"
+                            : newAsset === "ETH"
                             ? "Ethereum"
-                            : e.target.value === "USDT"
+                            : newAsset === "USDT"
                             ? "Tether USD"
-                            : e.target.value === "SOL"
+                            : newAsset === "SOL"
                             ? "Solana"
                             : "USD Coin",
-                      })
-                    }
+                      });
+                    }}
                     className="w-full bg-bg-canvas border border-border-subtle rounded-[4px] px-3 py-1.5 text-xs text-on-surface focus:border-gold-accent focus:outline-none disabled:opacity-60"
                   >
                     <option value="USDC">USDC (USD Coin)</option>
@@ -550,14 +580,13 @@ export const CryptoVaultMatrix: React.FC<CryptoVaultMatrixProps> = ({
                     onChange={(e) => setEditingRail({ ...editingRail, network: e.target.value })}
                     className="w-full bg-bg-canvas border border-border-subtle rounded-[4px] px-3 py-1.5 text-xs text-on-surface focus:border-gold-accent focus:outline-none disabled:opacity-60"
                   >
-                    <option value="ERC-20">ERC-20 (Ethereum)</option>
-                    <option value="BEP-20">BEP-20 (BNB Chain)</option>
-                    <option value="Polygon">Polygon (PoS)</option>
-                    <option value="TRC-20">TRC-20 (Tron)</option>
-                    <option value="Bitcoin Native">Bitcoin Native (SegWit)</option>
-                    <option value="Arbitrum">Arbitrum One</option>
-                    <option value="Optimism">Optimism (OP Mainnet)</option>
-                    <option value="Solana Native">Solana Native</option>
+                    {(ASSET_STANDARDS_MAP[editingRail.asset] || [
+                      { value: "ERC-20", label: "ERC-20 (Ethereum)" },
+                    ]).map((net: { value: string; label: string }) => (
+                      <option key={net.value} value={net.value}>
+                        {net.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

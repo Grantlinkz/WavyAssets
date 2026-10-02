@@ -12,6 +12,7 @@ import { TreasuryView } from "./views/TreasuryView"
 import { DepositRailsView } from "./views/DepositRailsView"
 import { VipCardsView } from "./views/VipCardsView"
 import { AuditLogView } from "./views/AuditLogView"
+import { AdminDirectoryView } from "./views/AdminDirectoryView"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,6 +67,8 @@ export const AppContent: React.FC = () => {
         return <VipCardsView />
       case "audit-log":
         return <AuditLogView />
+      case "admin-directory":
+        return <AdminDirectoryView />
       default:
         return <OverviewView />
     }

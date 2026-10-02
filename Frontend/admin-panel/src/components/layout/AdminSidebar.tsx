@@ -10,6 +10,7 @@ import {
   CreditCard,
   History,
   CheckCircle2,
+  UserCog,
 } from "lucide-react"
 import { useAdminNavStore, type AdminRoute } from "../../store/useAdminNavStore"
 import { fetchBadgeCounts } from "../../api/overview"
@@ -121,6 +122,12 @@ export const AdminSidebar: React.FC = () => {
       id: "audit-log",
       label: "Audit Log",
       icon: History,
+    },
+    {
+      id: "admin-directory",
+      label: "Admin Directory",
+      icon: UserCog,
+      badge: { text: "RBAC", variant: "cyan" },
     },
   ]
 
