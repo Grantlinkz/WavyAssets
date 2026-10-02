@@ -61,6 +61,8 @@ export class ComplianceService {
       user.kycDocuments.filter((d) => d.isVerified).map((d) => d.docType),
     );
 
+    const userTierLevel = currentTier === 'TIER_3' ? 3 : currentTier === 'TIER_2' ? 2 : 1;
+
     const requirements = [
       {
         tier: KycTierLevel.TIER_1,
@@ -72,13 +74,14 @@ export class ComplianceService {
         tier: KycTierLevel.TIER_2,
         name: 'Government ID Verification',
         description: 'Valid passport, national ID, or driver license with clear Name, DOB, and ID number (Admin review)',
-        isMet: verifiedDocTypes.has('PASSPORT') || verifiedDocTypes.has('GOVERNMENT_ID'),
+        isMet: userTierLevel >= 2 || verifiedDocTypes.has('PASSPORT') || verifiedDocTypes.has('GOVERNMENT_ID'),
       },
       {
         tier: KycTierLevel.TIER_3,
         name: 'Proof of Address & Financial Standing',
         description: 'Utility bill or bank statement (<3 months old) with clear provider/bank and billing address (Admin review)',
         isMet:
+          userTierLevel >= 3 ||
           verifiedDocTypes.has('UTILITY_BILL') ||
           verifiedDocTypes.has('BANK_STATEMENT') ||
           verifiedDocTypes.has('ARTICLES_OF_INC') ||

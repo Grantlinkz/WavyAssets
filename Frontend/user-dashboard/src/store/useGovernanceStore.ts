@@ -40,7 +40,7 @@ interface GovernanceState {
   vipCard: VipCardData | null;
   isLoadingCard: boolean;
   isCardFrozen: boolean;
-  cardMode: 'physical' | 'virtual';
+  cardMode: 'physical' | 'membership' | 'virtual';
   isCvvRevealed: boolean;
   cvvCountdown: number;
   isBiometricModalOpen: boolean;
@@ -48,7 +48,7 @@ interface GovernanceState {
 
   loadVipCard: () => Promise<void>;
   toggleFreezeCard: () => void;
-  setCardMode: (mode: 'physical' | 'virtual') => void;
+  setCardMode: (mode: 'physical' | 'membership' | 'virtual') => void;
   openBiometricModal: () => void;
   closeBiometricModal: () => void;
   openConciergeModal: () => void;
@@ -97,10 +97,16 @@ export const useGovernanceStore = create<GovernanceState>((set, get) => ({
     try {
       const data = await fetchVipCardStatus<VipCardData | null>(null);
       if (data && data.cardNumberLast4) {
+        const initialMode =
+          data.tier === 'CELEBRITY'
+            ? 'membership'
+            : data.cardType === 'VIRTUAL'
+            ? 'virtual'
+            : 'physical';
         set({
           vipCard: data,
           isCardFrozen: Boolean(data.isFrozen),
-          cardMode: data.cardType === 'VIRTUAL' ? 'virtual' : 'physical',
+          cardMode: initialMode,
           isLoadingCard: false,
         });
       } else {
@@ -126,9 +132,16 @@ export const useGovernanceStore = create<GovernanceState>((set, get) => ({
   setCardMode: (mode) => {
     set((state) => ({
       cardMode: mode,
-      vipCard: state.vipCard ? { ...state.vipCard, cardType: mode === 'virtual' ? 'VIRTUAL' : 'PHYSICAL' } : null,
+      vipCard: state.vipCard
+        ? {
+            ...state.vipCard,
+            cardType: mode === 'membership' || mode === 'virtual' ? 'VIRTUAL' : 'PHYSICAL',
+          }
+        : null,
     }));
-    updateCardControlsApi({ cardType: mode === 'virtual' ? 'VIRTUAL' : 'PHYSICAL' }).catch((err) => {
+    updateCardControlsApi({
+      cardType: mode === 'membership' || mode === 'virtual' ? 'VIRTUAL' : 'PHYSICAL',
+    }).catch((err) => {
       console.warn('Failed to commit card mode to backend:', err);
     });
   },

@@ -122,6 +122,7 @@ export const App: React.FC<AppProps> = ({
       await Promise.all([
         useLiquidStore.getState().loadUserDcaSchedules(user?.id),
         useLiquidStore.getState().loadUserOrders(user?.id),
+        useLiquidStore.getState().loadTransactions(user?.id),
         useAlternativeStore.getState().loadUserAlternativeHoldings(),
       ]);
 

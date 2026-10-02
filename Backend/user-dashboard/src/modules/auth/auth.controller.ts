@@ -95,7 +95,8 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  getProfile(@CurrentUser() user: AuthenticatedUser) {
-    return user;
+  async getProfile(@CurrentUser() user: AuthenticatedUser) {
+    const dbUser = await this.authService.getDbUser(user.id);
+    return dbUser || user;
   }
 }

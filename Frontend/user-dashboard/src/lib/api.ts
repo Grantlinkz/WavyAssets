@@ -234,6 +234,10 @@ export async function fetchActionRails<T = unknown>(fallback?: T): Promise<T> {
 // Liquid Asset Engines (Crypto, Stocks, Wallet)
 // ----------------------------------------------------------------------
 
+export async function fetchUserTransactions<T = unknown>(limit = 50, fallback?: T): Promise<T> {
+  return requestApi<T>(`/api/v1/wallet/transactions?limit=${limit}`, { method: 'GET' }, fallback);
+}
+
 export async function fetchCryptoHoldings<T = unknown>(fallback?: T): Promise<T> {
   return requestApi<T>('/api/v1/crypto/holdings', { method: 'GET' }, fallback);
 }
@@ -478,11 +482,33 @@ export async function uploadDossierDocument<T = unknown>(
   },
   fallback?: T
 ): Promise<T> {
-  const fileUrl =
-    payload.fileUrl ||
-    (payload.file
-      ? `https://vault.wavyassets.com/dossier/vault_${Date.now()}_${encodeURIComponent(payload.file.name)}`
-      : 'https://vault.wavyassets.com/dossier/dossier_upload.pdf');
+  let fileUrl = payload.fileUrl;
+  if (!fileUrl && payload.file) {
+    if (typeof FileReader !== 'undefined') {
+      try {
+        fileUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+              resolve(reader.result);
+            } else {
+              resolve(`https://vault.wavyassets.com/dossier/vault_${Date.now()}_${encodeURIComponent(payload.file!.name)}`);
+            }
+          };
+          reader.onerror = () => {
+            resolve(`https://vault.wavyassets.com/dossier/vault_${Date.now()}_${encodeURIComponent(payload.file!.name)}`);
+          };
+          reader.readAsDataURL(payload.file!);
+        });
+      } catch {
+        fileUrl = `https://vault.wavyassets.com/dossier/vault_${Date.now()}_${encodeURIComponent(payload.file.name)}`;
+      }
+    } else {
+      fileUrl = `https://vault.wavyassets.com/dossier/vault_${Date.now()}_${encodeURIComponent(payload.file.name)}`;
+    }
+  } else if (!fileUrl) {
+    fileUrl = 'https://vault.wavyassets.com/dossier/dossier_upload.pdf';
+  }
 
   const bodyData = { ...payload };
   delete bodyData.file;

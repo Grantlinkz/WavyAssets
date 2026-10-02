@@ -212,6 +212,19 @@ export class CryptoService {
       },
     });
 
+    this.dashboardService?.invalidateCache(userId);
+    if (this.walletService) {
+      this.walletService
+        .getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD')
+        .then((cash) => {
+          this.portfolioGateway?.broadcastBalanceUpdated(userId, {
+            availableCash: Number(cash.balance),
+            currency: 'USD',
+          });
+        })
+        .catch(() => {});
+    }
+
     return {
       success: true,
       schedule: {
@@ -278,6 +291,19 @@ export class CryptoService {
     await this.prisma.dcaSchedule.delete({
       where: { id },
     });
+
+    this.dashboardService?.invalidateCache(userId);
+    if (this.walletService) {
+      this.walletService
+        .getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD')
+        .then((cash) => {
+          this.portfolioGateway?.broadcastBalanceUpdated(userId, {
+            availableCash: Number(cash.balance),
+            currency: 'USD',
+          });
+        })
+        .catch(() => {});
+    }
 
     return {
       success: true,

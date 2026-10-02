@@ -23,6 +23,7 @@ export const BASELINE_SPOT_PRICES: Record<string, number> = {
   XRP: 0.58,
   ADA: 0.38,
   DOT: 4.65,
+  LINK: 22.40,
 };
 
 export const BASELINE_ENTRY_MARKS: Record<string, number> = {
@@ -35,6 +36,7 @@ export const BASELINE_ENTRY_MARKS: Record<string, number> = {
   XRP: 0.54,
   ADA: 0.35,
   DOT: 4.20,
+  LINK: 18.50,
 };
 
 // In-memory cache for live prices

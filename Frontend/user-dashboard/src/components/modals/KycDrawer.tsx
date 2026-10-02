@@ -57,9 +57,20 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
   const [submissions, setSubmissions] = useState<KycSubmissions>({});
 
   // Active level tab
-  const [activeTab, setActiveTab] = useState<'level1' | 'level2' | 'level3'>(
-    propInitialTab ?? 'level1'
-  );
+  const getTierRank = (tier?: string) => {
+    if (!tier) return 1;
+    const t = tier.toUpperCase();
+    if (t === 'TIER_3' || t === 'INSTITUTIONAL') return 3;
+    if (t === 'TIER_2') return 2;
+    return 1;
+  };
+
+  const [activeTab, setActiveTab] = useState<'level1' | 'level2' | 'level3'>(() => {
+    if (propInitialTab) return propInitialTab;
+    const rank = Math.max(getTierRank(user?.kycTier), 1);
+    if (rank === 2) return 'level3';
+    return 'level1';
+  });
 
   // Level 2 Form State
   const [l2FullName, setL2FullName] = useState('');
@@ -123,6 +134,10 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
           if (tier) {
             useAuthStore.getState().updateUserKycTier(tier as 'TIER_1' | 'TIER_2' | 'TIER_3');
           }
+          const tierRank = getTierRank(tier);
+          if (tierRank === 2 && !propInitialTab) {
+            setActiveTab('level3');
+          }
           if (Array.isArray(data.documents)) {
             const l2Doc = data.documents.find((d) => d.docType === 'PASSPORT' || d.docType === 'GOVERNMENT_ID');
             const l3Doc = data.documents.find((d) => d.docType === 'UTILITY_BILL' || d.docType === 'BANK_STATEMENT');
@@ -133,7 +148,13 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
                 ? {
                     fileName: l2Doc.fileName || 'Government_ID_Verified.pdf',
                     submittedAt: l2Timestamp ? new Date(l2Timestamp).toISOString() : new Date().toISOString(),
-                    status: l2Doc.isVerified ? 'APPROVED' : 'PENDING_APPROVAL',
+                    status: (l2Doc.isVerified || tierRank >= 2) ? 'APPROVED' : 'PENDING_APPROVAL',
+                  }
+                : tierRank >= 2
+                ? {
+                    fileName: 'Government_ID_Verified.pdf',
+                    submittedAt: new Date().toISOString(),
+                    status: 'APPROVED',
                   }
                 : undefined,
               level3: l3Doc
@@ -141,7 +162,7 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
                     docCategory: l3Doc.docType === 'BANK_STATEMENT' ? 'BANK_STATEMENT' : 'UTILITY_BILL',
                     fileName: l3Doc.fileName || (l3Doc.docType === 'BANK_STATEMENT' ? 'Bank_Statement_Verified.pdf' : 'Proof_Of_Address.pdf'),
                     submittedAt: l3Timestamp ? new Date(l3Timestamp).toISOString() : new Date().toISOString(),
-                    status: l3Doc.isVerified ? 'APPROVED' : 'PENDING_APPROVAL',
+                    status: (l3Doc.isVerified || tierRank >= 3) ? 'APPROVED' : 'PENDING_APPROVAL',
                   }
                 : undefined,
             });
@@ -155,22 +176,27 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [propInitialTab]);
 
   // Update submission status in component state without localStorage
   const saveSubmissions = (updated: KycSubmissions) => {
     setSubmissions(updated);
   };
 
-  // Determine Level Statuses strictly from verified KYC documents:
-  // Level 1: Passed automatically upon OTP / email verification.
-  // Level 2: Gov ID MUST NOT pass without going through KYC upload & admin review.
+  const highestTierRank = Math.max(
+    getTierRank(user?.kycTier),
+    getTierRank(serverCompliance?.currentTier)
+  );
+
+  // Determine Level Statuses from KYC tier rank and verified documents
   const hasServerVerifiedL2Doc = Boolean(
+    highestTierRank >= 2 ||
     serverCompliance?.documents?.some(
       (d) => (d.docType === 'PASSPORT' || d.docType === 'GOVERNMENT_ID') && d.isVerified
     ) || serverCompliance?.requirements?.find((r) => r.tier === 'TIER_2')?.isMet
   );
   const hasServerVerifiedL3Doc = Boolean(
+    highestTierRank >= 3 ||
     serverCompliance?.documents?.some(
       (d) =>
         (d.docType === 'UTILITY_BILL' ||
@@ -181,10 +207,10 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
     ) || serverCompliance?.requirements?.find((r) => r.tier === 'TIER_3')?.isMet
   );
 
-  const isLevel2Approved = hasServerVerifiedL2Doc || submissions.level2?.status === 'APPROVED';
+  const isLevel2Approved = highestTierRank >= 2 || hasServerVerifiedL2Doc || submissions.level2?.status === 'APPROVED';
   const isLevel2Pending = !isLevel2Approved && submissions.level2?.status === 'PENDING_APPROVAL';
 
-  const isLevel3Approved = isLevel2Approved && (hasServerVerifiedL3Doc || submissions.level3?.status === 'APPROVED');
+  const isLevel3Approved = highestTierRank >= 3 || (isLevel2Approved && (hasServerVerifiedL3Doc || submissions.level3?.status === 'APPROVED'));
   const isLevel3Pending = !isLevel3Approved && submissions.level3?.status === 'PENDING_APPROVAL';
   const isLevel3Locked = !isLevel2Approved; // Level 3 is strictly locked until Level 2 has been approved
 
