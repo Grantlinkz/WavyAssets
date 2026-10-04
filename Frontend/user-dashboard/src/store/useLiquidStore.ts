@@ -61,6 +61,7 @@ interface LiquidState {
   filterVertical: string;
   loadTransactions: (userId?: string) => Promise<void>;
   addTransaction: (tx: WalletTransaction) => void;
+  removeTransaction: (id: string) => void;
   toggleAutoSweep: () => void;
   setSweepThreshold: (amount: number) => void;
   setFilterVertical: (v: string) => void;
@@ -132,6 +133,7 @@ export const useLiquidStore = create<LiquidState>((set) => ({
       amountUsd: schedule.amountUsd,
       status: 'CLEARED',
       reference: `DCA-${schedule.asset}-${Date.now().toString().slice(-4)}`,
+      dcaScheduleId: tempId,
     };
     set((state) => ({
       dcaSchedules: [...state.dcaSchedules, newSchedule],
@@ -150,6 +152,9 @@ export const useLiquidStore = create<LiquidState>((set) => ({
       if (serverId) {
         set((state) => ({
           dcaSchedules: state.dcaSchedules.map((s) => (s.id === tempId ? { ...s, id: serverId } : s)),
+          transactions: state.transactions.map((t) =>
+            t.dcaScheduleId === tempId ? { ...t, dcaScheduleId: serverId } : t
+          ),
         }));
       }
     } catch (err) {
@@ -283,7 +288,7 @@ export const useLiquidStore = create<LiquidState>((set) => ({
         : Array.isArray((data as Record<string, unknown>)?.transactions)
         ? ((data as Record<string, unknown>).transactions as Array<Record<string, unknown>>)
         : [];
-      if (Array.isArray(rawList) && rawList.length > 0) {
+      if (Array.isArray(rawList)) {
         const mapped: WalletTransaction[] = rawList.map((t) => {
           const desc = String(t.description || '');
           const isCrypto =
@@ -331,9 +336,11 @@ export const useLiquidStore = create<LiquidState>((set) => ({
         });
 
         set((state) => {
-          const existingIds = new Set(mapped.map((m) => m.id));
-          const remainingDefault = state.transactions.filter((d) => !existingIds.has(d.id));
-          return { transactions: [...mapped, ...remainingDefault] };
+          const mappedIds = new Set(mapped.map((m) => m.id));
+          const pendingLocal = state.transactions.filter(
+            (t) => !mappedIds.has(t.id) && t.status === 'PENDING'
+          );
+          return { transactions: [...mapped, ...pendingLocal] };
         });
       }
     } catch (err) {
@@ -344,6 +351,10 @@ export const useLiquidStore = create<LiquidState>((set) => ({
   addTransaction: (tx) =>
     set((state) => ({
       transactions: [tx, ...state.transactions],
+    })),
+  removeTransaction: (id) =>
+    set((state) => ({
+      transactions: state.transactions.filter((tx) => tx.id !== id),
     })),
   toggleAutoSweep: () => set((state) => ({ autoSweepEnabled: !state.autoSweepEnabled })),
   setSweepThreshold: (amount) => set({ sweepThreshold: amount }),

@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
   Logger,
   Optional,
   Inject,
@@ -246,14 +247,16 @@ export class WalletService {
 
     const txRecord = externalTx ? await execute(externalTx) : await this.prisma.$transaction(execute);
 
-    this.dispatchBalanceChangeEmails(input, txRecord?.referenceId || referenceId).catch((err) => {
-      this.logger.warn(`Failed to dispatch transaction email notification: ${err?.message}`);
-    });
+    if (!externalTx) {
+      this.dispatchBalanceChangeEmails(input, txRecord?.referenceId || referenceId).catch((err) => {
+        this.logger.warn(`Failed to dispatch transaction email notification: ${err?.message}`);
+      });
+    }
 
     return txRecord;
   }
 
-  private async dispatchBalanceChangeEmails(input: RecordTransactionInput, referenceId: string) {
+  async dispatchBalanceChangeEmails(input: RecordTransactionInput, referenceId: string) {
     if (!this.emailService) return;
 
     for (const entry of input.entries) {
@@ -535,14 +538,43 @@ export class WalletService {
     if (user.kycTier === 'TIER_2') dailyLimit = 250000;
     if (user.kycTier === 'TIER_3') dailyLimit = Infinity;
 
-    if (dto.amount > dailyLimit) {
+    // WITHDRAWAL Flow: Enforce cumulative KYC Tier Daily Limits across 24h
+    const startOfToday = new Date();
+    startOfToday.setUTCHours(0, 0, 0, 0);
+
+    const cashAccounts = await this.prisma.ledgerAccount.findMany({
+      where: { userId, accountType: 'AVAILABLE_CASH' },
+    });
+    const cashAccountIds = (cashAccounts || []).map((a) => a.id);
+
+    const todaysWithdrawals = await this.prisma.ledgerEntry.findMany({
+      where: {
+        accountId: { in: cashAccountIds },
+        amount: { lt: 0 },
+        transaction: {
+          type: 'WITHDRAWAL',
+          status: { in: ['SETTLED', 'PENDING'] },
+          createdAt: { gte: startOfToday },
+        },
+      },
+    });
+
+    const withdrawnToday = todaysWithdrawals.reduce(
+      (sum, entry) => sum + Math.abs(Number(entry.amount)),
+      0,
+    );
+
+    if (withdrawnToday + dto.amount > dailyLimit) {
       const tierName =
         user.kycTier === 'TIER_3' ? 'Level 3' : user.kycTier === 'TIER_2' ? 'Level 2' : 'Level 1';
       throw new BadRequestException(
         `You have exceeded your Tier daily limit ($${dailyLimit.toLocaleString('en-US', {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
-        })} USD for ${tierName}). Please upgrade your Tier.`,
+        })} USD for ${tierName}). Current 24h utilization: $${withdrawnToday.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })} USD. Please upgrade your Tier.`,
       );
     }
 
@@ -561,13 +593,27 @@ export class WalletService {
     // Execute atomic reservation
     const tx = await this.prisma.$transaction(
       async (prismaTx) => {
-        // 1. Debit available cash to reserve payout
-        await prismaTx.ledgerAccount.update({
-          where: { id: cashAccount.id },
+        // 1. Atomic conditional debit: only succeeds if balance >= dto.amount
+        const updateResult = await prismaTx.ledgerAccount.updateMany({
+          where: {
+            id: cashAccount.id,
+            balance: { gte: dto.amount },
+          },
           data: {
             balance: { decrement: dto.amount },
           },
         });
+
+        if (updateResult.count === 0) {
+          const fresh = await prismaTx.ledgerAccount.findUnique({
+            where: { id: cashAccount.id },
+          });
+          throw new InsufficientAvailableBalanceException(
+            'Insufficient available cash balance',
+            dto.amount,
+            fresh ? Number(fresh.balance) : 0,
+          );
+        }
 
         // 2. Create pending LedgerTransaction
         const ledgerTx = await prismaTx.ledgerTransaction.create({
@@ -581,12 +627,27 @@ export class WalletService {
           },
         });
 
-        // 3. Create entry linking transaction to user's account
+        // 3. Create balanced zero-sum entries: user cash account (-) and platform clearing account (+)
         await prismaTx.ledgerEntry.create({
           data: {
             transactionId: ledgerTx.id,
             accountId: cashAccount.id,
             amount: -dto.amount,
+          },
+        });
+
+        const clearingAccount = await this.getOrCreateAccount(
+          userId,
+          'FEE_RECEIVABLE',
+          currency,
+          prismaTx,
+        );
+
+        await prismaTx.ledgerEntry.create({
+          data: {
+            transactionId: ledgerTx.id,
+            accountId: clearingAccount.id,
+            amount: dto.amount,
           },
         });
 
@@ -683,10 +744,18 @@ export class WalletService {
       async (prismaTx) => {
         let existingTx = await prismaTx.ledgerTransaction.findUnique({
           where: { referenceId: dto.referenceId },
-          include: { entries: true },
+          include: { entries: { include: { account: true } } },
         });
 
-        if (!existingTx) {
+        if (existingTx) {
+          for (const entry of existingTx.entries) {
+            if (entry.account && entry.account.userId && entry.account.userId !== userId) {
+              throw new ForbiddenException(
+                'Cannot attach deposit receipt to a transaction belonging to another user.',
+              );
+            }
+          }
+        } else {
           existingTx = await prismaTx.ledgerTransaction.create({
             data: {
               referenceId: dto.referenceId,
@@ -696,7 +765,7 @@ export class WalletService {
                 ? `Inbound ${railType} wire memo: ${dto.wireMemo}`
                 : `Inbound ${railType} deposit awaiting verification`,
             },
-            include: { entries: true },
+            include: { entries: { include: { account: true } } },
           });
         }
 

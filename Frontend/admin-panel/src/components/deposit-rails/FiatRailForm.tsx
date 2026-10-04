@@ -57,9 +57,9 @@ export const FiatRailForm: React.FC<FiatRailFormProps> = ({ initialConfig }) => 
 
   // Swiss/International IBAN pattern and ISO 13616 Mod 97 checksum validation
   const cleanIban = swissIban.replace(/\s+/g, "").toUpperCase()
-  const isIbanPatternValid = /^[A-Z]{2}\d{2}[0-9A-Z]{10,30}$/.test(cleanIban) || cleanIban.length >= 10
+  const isIbanPatternValid = /^[A-Z]{2}\d{2}[0-9A-Z]{10,30}$/.test(cleanIban)
   const isIbanValid = (() => {
-    if (!cleanIban) return false
+    if (!cleanIban || !isIbanPatternValid) return false
     try {
       const rearranged = cleanIban.slice(4) + cleanIban.slice(0, 4)
       const numericString = rearranged
@@ -70,9 +70,9 @@ export const FiatRailForm: React.FC<FiatRailFormProps> = ({ initialConfig }) => 
         })
         .join("")
       const mod = BigInt(numericString) % 97n
-      return mod === 1n || isIbanPatternValid
+      return mod === 1n
     } catch {
-      return isIbanPatternValid
+      return false
     }
   })()
 
@@ -361,7 +361,19 @@ export const FiatRailForm: React.FC<FiatRailFormProps> = ({ initialConfig }) => 
         <div className="flex items-center gap-2 text-secondary text-xs">
           <History className="w-4 h-4 text-gold-accent shrink-0" />
           <span>
-            Last updated today at 11:20 UTC by <strong className="text-on-surface font-semibold">Eleanor Vance</strong> • Requires cryptographic key sign to apply changes
+            Last updated{" "}
+            {initialConfig?.updatedAt
+              ? new Date(initialConfig.updatedAt).toLocaleString("en-US", {
+                  timeZone: "UTC",
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                }) + " UTC"
+              : "recently"}{" "}
+            by{" "}
+            <strong className="text-on-surface font-semibold">
+              {initialConfig?.updatedBy || "Treasury Officer"}
+            </strong>{" "}
+            • Requires cryptographic key sign to apply changes
           </span>
         </div>
         <div className="flex items-center gap-2.5 shrink-0">

@@ -118,7 +118,8 @@ export const useGovernanceStore = create<GovernanceState>((set, get) => ({
   },
 
   toggleFreezeCard: () => {
-    const nextFrozen = !get().isCardFrozen;
+    const prevFrozen = get().isCardFrozen;
+    const nextFrozen = !prevFrozen;
     set((state) => ({
       isCardFrozen: nextFrozen,
       vipCard: state.vipCard ? { ...state.vipCard, isFrozen: nextFrozen } : null,
@@ -126,10 +127,16 @@ export const useGovernanceStore = create<GovernanceState>((set, get) => ({
     // Persist freeze toggle to backend enclave
     updateCardControlsApi({ isFrozen: nextFrozen }).catch((err) => {
       console.warn('Failed to commit card freeze status to backend:', err);
+      set((state) => ({
+        isCardFrozen: prevFrozen,
+        vipCard: state.vipCard ? { ...state.vipCard, isFrozen: prevFrozen } : null,
+      }));
     });
   },
 
   setCardMode: (mode) => {
+    const prevMode = get().cardMode;
+    const prevCardType = get().vipCard?.cardType;
     set((state) => ({
       cardMode: mode,
       vipCard: state.vipCard
@@ -143,6 +150,15 @@ export const useGovernanceStore = create<GovernanceState>((set, get) => ({
       cardType: mode === 'membership' || mode === 'virtual' ? 'VIRTUAL' : 'PHYSICAL',
     }).catch((err) => {
       console.warn('Failed to commit card mode to backend:', err);
+      set((state) => ({
+        cardMode: prevMode,
+        vipCard: state.vipCard
+          ? {
+              ...state.vipCard,
+              cardType: prevCardType ?? (prevMode === 'membership' || prevMode === 'virtual' ? 'VIRTUAL' : 'PHYSICAL'),
+            }
+          : null,
+      }));
     });
   },
 

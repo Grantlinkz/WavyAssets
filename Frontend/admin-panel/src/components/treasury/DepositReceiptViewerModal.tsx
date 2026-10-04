@@ -173,7 +173,9 @@ export const DepositReceiptViewerModal: React.FC<DepositReceiptViewerModalProps>
               )}
             </div>
 
-            {selectedDeposit.proofReceiptUrl ? (
+            {selectedDeposit.proofReceiptUrl &&
+            (selectedDeposit.proofReceiptUrl.startsWith("https://") ||
+              selectedDeposit.proofReceiptUrl.startsWith("data:image/")) ? (
               <div className="bg-bg-canvas border border-border-subtle rounded p-4 flex flex-col gap-3">
                 <div className="flex justify-between items-center text-on-surface border-b border-border-subtle pb-2">
                   <span className="font-bold font-mono text-body-sm text-gold-accent">
@@ -183,10 +185,9 @@ export const DepositReceiptViewerModal: React.FC<DepositReceiptViewerModalProps>
                     href={selectedDeposit.proofReceiptUrl}
                     target="_blank"
                     rel="noreferrer"
-                    download={`receipt_${selectedDeposit.id}.png`}
                     className="text-gold-accent hover:underline font-mono text-[11px]"
                   >
-                    Open / Download Original &rarr;
+                    Open Original &rarr;
                   </a>
                 </div>
 

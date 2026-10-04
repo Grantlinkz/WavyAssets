@@ -43,5 +43,5 @@ services:
 
 networks:
   wavyassets-landing-network:
-    name: wavyassets_landing_frontend_network
-    driver: bridge
+    name: wavyassets_landing_network
+    external: true

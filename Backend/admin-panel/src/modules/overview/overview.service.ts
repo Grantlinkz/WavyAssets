@@ -29,6 +29,7 @@ export interface BadgeCounts {
   pendingCompliance: number;
   treasurySignOffs: number;
   activeCards: number;
+  pendingWithdrawals?: number;
 }
 
 export interface SettlementRecord {
@@ -57,48 +58,69 @@ const FX_TO_USD: Record<string, number> = {
 export class OverviewService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getBadgeCounts(): Promise<BadgeCounts> {
-    const [urgentActions, newInquiries, totalUsers, unverifiedDocs, treasurySignOffs, activeCards] =
-      await Promise.all([
-        this.prisma.ledgerTransaction.count({
-          where: { status: { in: ['PENDING', 'PENDING_SECOND_SIGN_OFF'] } },
-        }),
-        this.prisma.leadInquiry.count({
-          where: { status: 'NEW' },
-        }),
-        this.prisma.user.count(),
-        this.prisma.kycDocument.findMany({
-          where: { isVerified: false },
-          select: { id: true },
-        }),
-        this.prisma.ledgerTransaction.count({
-          where: { status: 'PENDING_SECOND_SIGN_OFF' },
-        }),
-        this.prisma.vipCard.count({
-          where: { isFrozen: false },
-        }),
-      ]);
+  private async getPendingComplianceCount(): Promise<number> {
+    const unverifiedDocs = await this.prisma.kycDocument.findMany({
+      where: { isVerified: false },
+      select: { id: true },
+    });
+
+    if (unverifiedDocs.length === 0) return 0;
 
     let rejectedDocIds = new Set<string>();
-    if (unverifiedDocs.length > 0) {
-      try {
-        const rejectedAudits = await this.prisma.adminAuditLog.findMany({
-          where: {
-            targetEntity: 'KycDocument',
-            targetId: { in: unverifiedDocs.map((d) => d.id) },
-            action: 'KYC_DOC_REJECTED',
-          },
-          select: { targetId: true },
-        });
-        rejectedDocIds = new Set(rejectedAudits.map((a) => a.targetId).filter(Boolean) as string[]);
-      } catch {
-        // continue gracefully
-      }
+    try {
+      const rejectedAudits = await this.prisma.adminAuditLog.findMany({
+        where: {
+          targetEntity: 'KycDocument',
+          targetId: { in: unverifiedDocs.map((d) => d.id) },
+          action: 'KYC_DOC_REJECTED',
+        },
+        select: { targetId: true },
+      });
+      rejectedDocIds = new Set(
+        rejectedAudits.map((a) => a.targetId).filter(Boolean) as string[],
+      );
+    } catch {
+      // continue gracefully
     }
-    const pendingCompliance = unverifiedDocs.filter((d) => !rejectedDocIds.has(d.id)).length;
+
+    return unverifiedDocs.filter((d) => !rejectedDocIds.has(d.id)).length;
+  }
+
+  async getBadgeCounts(): Promise<BadgeCounts> {
+    const [
+      urgentActions,
+      pendingWithdrawals,
+      newInquiries,
+      totalUsers,
+      pendingCompliance,
+      treasurySignOffs,
+      activeCards,
+    ] = await Promise.all([
+      this.prisma.ledgerTransaction.count({
+        where: { status: { in: ['PENDING', 'PENDING_SECOND_SIGN_OFF'] } },
+      }),
+      this.prisma.ledgerTransaction.count({
+        where: {
+          type: 'WITHDRAWAL',
+          status: { in: ['PENDING', 'PENDING_SECOND_SIGN_OFF'] },
+        },
+      }),
+      this.prisma.leadInquiry.count({
+        where: { status: 'NEW' },
+      }),
+      this.prisma.user.count(),
+      this.getPendingComplianceCount(),
+      this.prisma.ledgerTransaction.count({
+        where: { status: 'PENDING_SECOND_SIGN_OFF' },
+      }),
+      this.prisma.vipCard.count({
+        where: { isFrozen: false },
+      }),
+    ]);
 
     return {
       urgentActions,
+      pendingWithdrawals,
       newInquiries,
       totalUsers,
       pendingCompliance,
@@ -133,32 +155,43 @@ export class OverviewService {
     const activeLiquidityRailsCount = fiatRail + cryptoRailsCount;
 
     // 3. Action Queue Pending Triage Items (KYC, Dual Sign-offs, Pending Wires)
-    const [pendingTxs, unverifiedDocs, newInquiries, totalUsers, treasurySignOffs, activeCards] =
-      await Promise.all([
-        this.prisma.ledgerTransaction.count({
-          where: {
-            status: { in: ['PENDING', 'PENDING_SECOND_SIGN_OFF'] },
-          },
-        }),
-        this.prisma.kycDocument.count({
-          where: { isVerified: false },
-        }),
-        this.prisma.leadInquiry.count({
-          where: { status: 'NEW' },
-        }),
-        this.prisma.user.count(),
-        this.prisma.ledgerTransaction.count({
-          where: { status: 'PENDING_SECOND_SIGN_OFF' },
-        }),
-        this.prisma.vipCard.count({
-          where: { isFrozen: false },
-        }),
-      ]);
-    const actionQueuePending = pendingTxs + unverifiedDocs;
+    const [
+      pendingTxs,
+      pendingWithdrawals,
+      pendingCompliance,
+      newInquiries,
+      totalUsers,
+      treasurySignOffs,
+      activeCards,
+    ] = await Promise.all([
+      this.prisma.ledgerTransaction.count({
+        where: {
+          status: { in: ['PENDING', 'PENDING_SECOND_SIGN_OFF'] },
+        },
+      }),
+      this.prisma.ledgerTransaction.count({
+        where: {
+          type: 'WITHDRAWAL',
+          status: { in: ['PENDING', 'PENDING_SECOND_SIGN_OFF'] },
+        },
+      }),
+      this.getPendingComplianceCount(),
+      this.prisma.leadInquiry.count({
+        where: { status: 'NEW' },
+      }),
+      this.prisma.user.count(),
+      this.prisma.ledgerTransaction.count({
+        where: { status: 'PENDING_SECOND_SIGN_OFF' },
+      }),
+      this.prisma.vipCard.count({
+        where: { isFrozen: false },
+      }),
+    ]);
+    const actionQueuePending = pendingTxs + pendingCompliance;
     const warningText =
       actionQueuePending === 0
         ? 'All treasury and compliance queues cleared and up to date'
-        : `${actionQueuePending} actionable treasury/compliance item${actionQueuePending === 1 ? '' : 's'} require triage (${pendingTxs} treasury, ${unverifiedDocs} compliance)`;
+        : `${actionQueuePending} actionable treasury/compliance item${actionQueuePending === 1 ? '' : 's'} require triage (${pendingTxs} treasury, ${pendingCompliance} compliance)`;
 
     // 4. Net Settlement 24h & Settled Transactions (strictly bounded to transactions created within the last 24h)
     const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -179,12 +212,14 @@ export class OverviewService {
     const settledTransactionsCount24h = settledTxs.length;
     let netSettlement24h = 0;
     for (const tx of settledTxs) {
-      let amount = 0;
-      let currency = 'USD';
+      let amount = Number(tx.amount || 0);
+      let currency = (tx.currency || 'USD').toUpperCase();
       if (tx.entries?.length) {
         const pos = tx.entries.find((e: any) => Number(e.amount) > 0) || tx.entries[0];
-        amount = Math.abs(Number(pos?.amount || 0));
-        currency = (pos?.account?.currency || 'USD').toUpperCase();
+        if (pos) {
+          amount = Math.abs(Number(pos?.amount || 0)) || amount;
+          currency = (pos?.account?.currency || currency).toUpperCase();
+        }
       }
       const rate = FX_TO_USD[currency] ?? 1.0;
       const amtUsd = amount * rate;
@@ -193,7 +228,13 @@ export class OverviewService {
       else netSettlement24h += amtUsd;
     }
 
-    const vaultBalanceChange24h = 3.4;
+    const priorBalance = totalVaultBalance - netSettlement24h;
+    const vaultBalanceChange24h =
+      priorBalance > 0
+        ? Number(((netSettlement24h / priorBalance) * 100).toFixed(1))
+        : totalVaultBalance > 0
+        ? 100.0
+        : 0.0;
 
     return {
       totalVaultBalance,
@@ -204,7 +245,7 @@ export class OverviewService {
       actionQueueWarning: warningText,
       treasurySignOffs,
       pendingTreasury: pendingTxs,
-      pendingCompliance: unverifiedDocs,
+      pendingCompliance,
       netSettlement24h,
       settledTransactionsCount24h,
       nodeTelemetry: {
@@ -214,9 +255,10 @@ export class OverviewService {
       },
       badgeCounts: {
         urgentActions: pendingTxs,
+        pendingWithdrawals,
         newInquiries,
         totalUsers,
-        pendingCompliance: unverifiedDocs,
+        pendingCompliance,
         treasurySignOffs,
         activeCards,
       },

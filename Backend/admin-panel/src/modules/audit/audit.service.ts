@@ -17,6 +17,61 @@ export class AuditService {
     const limit = Math.max(1, Math.min(100, Number(query.limit) || 20));
     const skip = (page - 1) * limit;
 
+    const where = this.buildWhereClause(query);
+
+    const [total, rawLogs, actionGroups] = await Promise.all([
+      this.prisma.adminAuditLog.count({ where }),
+      this.prisma.adminAuditLog.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          admin: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              role: true,
+            },
+          },
+        },
+      }),
+      this.prisma.adminAuditLog.groupBy({
+        by: ['action'],
+        _count: { action: true },
+        take: 10,
+        orderBy: { _count: { action: 'desc' } },
+        where,
+      }),
+    ]);
+
+    const logs = rawLogs.map((log) => this.formatAuditLog(log));
+
+    const actionsDistribution: Record<string, number> = {};
+    for (const group of actionGroups) {
+      actionsDistribution[group.action] = group._count.action;
+    }
+
+    return {
+      logs,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+      summary: {
+        totalLogs: total,
+        actionsDistribution,
+      },
+    };
+  }
+
+  /**
+   * Builds where clause from AuditQueryDto for unified filtering
+   */
+  private buildWhereClause(query: Partial<AuditQueryDto>) {
     const andConditions: any[] = [];
 
     if (query.adminId) {
@@ -117,54 +172,7 @@ export class AuditService {
       });
     }
 
-    const where: any = andConditions.length > 0 ? { AND: andConditions } : {};
-
-    const [total, rawLogs, actionGroups] = await Promise.all([
-      this.prisma.adminAuditLog.count({ where }),
-      this.prisma.adminAuditLog.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          admin: {
-            select: {
-              id: true,
-              fullName: true,
-              email: true,
-              role: true,
-            },
-          },
-        },
-      }),
-      this.prisma.adminAuditLog.groupBy({
-        by: ['action'],
-        _count: { action: true },
-        take: 10,
-        orderBy: { _count: { action: 'desc' } },
-      }),
-    ]);
-
-    const logs = rawLogs.map((log) => this.formatAuditLog(log));
-
-    const actionsDistribution: Record<string, number> = {};
-    for (const group of actionGroups) {
-      actionsDistribution[group.action] = group._count.action;
-    }
-
-    return {
-      logs,
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-      summary: {
-        totalLogs: total,
-        actionsDistribution,
-      },
-    };
+    return andConditions.length > 0 ? { AND: andConditions } : {};
   }
 
   /**
@@ -196,23 +204,7 @@ export class AuditService {
    * Generates statutory compliance export dataset (FINMA AMLA Art 14 / SEC Rule 17a-4)
    */
   async generateComplianceExport(query: Partial<AuditQueryDto>) {
-    const where: any = {};
-
-    if (query.action) {
-      where.action = query.action;
-    }
-    if (query.targetEntity) {
-      where.targetEntity = query.targetEntity;
-    }
-    if (query.startDate || query.endDate) {
-      where.createdAt = {};
-      if (query.startDate) {
-        where.createdAt.gte = new Date(query.startDate);
-      }
-      if (query.endDate) {
-        where.createdAt.lte = new Date(query.endDate);
-      }
-    }
+    const where = this.buildWhereClause(query);
 
     const [totalCount, logs] = await Promise.all([
       this.prisma.adminAuditLog.count({ where }).catch(() => null),
@@ -315,10 +307,8 @@ export class AuditService {
         ? `SHA256:${log.ipAddressHash.substring(0, 8)}`
         : log.userAgent || 'Cluster Node CH-ZUR-01',
       ledgerState: 'COMMITTED',
-      sha256Hash:
-        log.ipAddressHash ||
-        'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-      merkleBlock: 184920,
+      sha256Hash: (log as any).sha256Hash || 'UNAVAILABLE',
+      merkleBlock: (log as any).merkleBlock ?? null,
       officerId: log.adminId || '',
       officerName: log.admin?.fullName || 'System Officer',
       officerDepartment: log.admin?.role

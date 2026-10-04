@@ -27,7 +27,7 @@ export class PrismaService
       } catch (error) {
         if (attempt >= maxRetries) {
           this.logger.error(`Failed to connect to database via Prisma after ${attempt} attempts: ${(error as Error)?.message || error}`);
-          return;
+          throw error;
         }
         this.logger.warn(`Prisma connection attempt ${attempt}/${maxRetries} failed. Retrying in ${delayMs}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delayMs));

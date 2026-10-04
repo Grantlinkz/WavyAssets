@@ -172,7 +172,7 @@ npm run preview
 
 The User Dashboard features a direct integration with **Smartsupp Live Chat**, offering 24/7 institutional client desk support:
 
-- **Dynamic Script Loading**: Managed via [`src/lib/smartsupp.ts`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/user-dashboard/src/lib/smartsupp.ts) with defensive SSR fallback and zero layout impact.
+- **Dynamic Script Loading**: Managed via [`src/lib/smartsupp.ts`](src/lib/smartsupp.ts) with defensive SSR fallback and zero layout impact.
 - **Client Identity Synchronization**: Automatically syncs the authenticated client's full name, email, account ID, institutional tier, and KYC level into the Smartsupp session.
 - **Multiple Entry Points**:
   - **Floating Concierge Launcher**: Luxury bottom-right button with live pulse indicator (`SmartsuppChat.tsx`).
@@ -203,6 +203,7 @@ docker build -t wavyassets/user-dashboard:1.0.0 .
 
 # Run container with dynamic backend proxy
 docker run -d -p 5174:80 \
+  --add-host=host.docker.internal:host-gateway \
   -e BACKEND_HOST=host.docker.internal \
   -e BACKEND_PORT=4000 \
   --name wavyassets-user-dashboard \

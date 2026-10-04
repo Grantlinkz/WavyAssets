@@ -112,6 +112,7 @@ export const OverviewModule: React.FC = () => {
       venue: string;
       status: string;
       time: string;
+      dcaScheduleId?: string;
     }> = [];
 
     // Map real liquid transactions
@@ -132,13 +133,14 @@ export const OverviewModule: React.FC = () => {
         venue,
         status: tx.status,
         time: tx.timestamp,
+        dcaScheduleId: tx.dcaScheduleId,
       });
     });
 
     // Active crypto DCA execution schedules (ensure immediate appearance on refresh)
     dcaSchedules.forEach((dca) => {
       const alreadyInBlotter = list.some(
-        (item) => item.id === dca.id || item.id === `tx-${dca.id}` || (item.asset.includes(dca.asset) && Math.abs(item.numericPrice - dca.amountUsd) < 0.01)
+        (item) => item.dcaScheduleId === dca.id || item.id === dca.id || item.id === `tx-${dca.id}`
       );
       if (!alreadyInBlotter) {
         list.push({
@@ -151,6 +153,7 @@ export const OverviewModule: React.FC = () => {
           venue: 'Geneva OTC Bunker',
           status: dca.active ? 'CLEARED' : 'PAUSED',
           time: dca.nextExecution || 'Active Schedule',
+          dcaScheduleId: dca.id,
         });
       }
     });

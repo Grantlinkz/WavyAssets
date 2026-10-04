@@ -85,10 +85,14 @@ function normalizeVipCard(raw: Record<string, unknown>): VipCardItem {
 export async function fetchVipCards(params?: {
   search?: string
   status?: string
+  limit?: number
+  page?: number
 }): Promise<VipCardItem[]> {
   const queryParts: string[] = []
   if (params?.search) queryParts.push(`search=${encodeURIComponent(params.search)}`)
   if (params?.status && params.status !== "ALL") queryParts.push(`status=${encodeURIComponent(params.status)}`)
+  if (params?.limit) queryParts.push(`limit=${params.limit}`)
+  if (params?.page) queryParts.push(`page=${params.page}`)
 
   const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : ""
   const res = await apiClient<unknown>(`/vip-cards${queryString}`)

@@ -87,6 +87,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
     };
     submittedAt: string;
   } | null>(null);
+  const [withdrawalError, setWithdrawalError] = useState<string | null>(null);
 
   // Active form validation
   const currentAmountStr = activeRail === 'bank' ? bankAmount : cryptoAmount;
@@ -106,6 +107,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
 
   const handleAuthorize = async () => {
     if (!isValidAmount || !kycCheck.allowed) return;
+    setWithdrawalError(null);
     setIsVerifying(true);
 
     try {
@@ -181,14 +183,17 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
           second: '2-digit',
         }),
       });
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to submit withdrawal request:', err);
+      const errMsg = err instanceof Error ? err.message : 'Failed to submit withdrawal request';
+      setWithdrawalError(errMsg);
     } finally {
       setIsVerifying(false);
     }
   };
 
   const handleResetForNew = () => {
+    setWithdrawalError(null);
     setPendingWithdrawal(null);
   };
 
@@ -585,6 +590,12 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
 
               {/* Hardware Key / FIDO2 Trigger */}
               <div className="pt-1">
+                {withdrawalError && (
+                  <div className="mb-2 p-2 bg-error/10 border border-error/20 rounded-DEFAULT text-xs font-mono text-error flex items-start gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    <span>{withdrawalError}</span>
+                  </div>
+                )}
                 <button
                   type="button"
                   data-testid="authorize-withdraw-btn"

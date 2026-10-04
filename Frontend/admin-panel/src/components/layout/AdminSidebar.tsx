@@ -47,6 +47,9 @@ export const AdminSidebar: React.FC = () => {
       updateBadgeCount("pendingCompliance", serverBadgeCounts.pendingCompliance)
       updateBadgeCount("treasurySignOffs", serverBadgeCounts.treasurySignOffs)
       updateBadgeCount("activeCards", serverBadgeCounts.activeCards)
+      if (serverBadgeCounts.pendingWithdrawals !== undefined) {
+        updateBadgeCount("pendingWithdrawals", serverBadgeCounts.pendingWithdrawals)
+      }
     }
   }, [serverBadgeCounts, updateBadgeCount])
 
@@ -55,6 +58,7 @@ export const AdminSidebar: React.FC = () => {
   const usersCount = serverBadgeCounts?.totalUsers ?? badgeCounts.totalUsers ?? 0
   const complianceCount = serverBadgeCounts?.pendingCompliance ?? badgeCounts.pendingCompliance ?? 0
   const treasuryCount = serverBadgeCounts?.treasurySignOffs ?? badgeCounts.treasurySignOffs ?? 0
+  const pendingWithdrawalsCount = serverBadgeCounts?.pendingWithdrawals ?? badgeCounts.pendingWithdrawals ?? 0
   const cardsCount = serverBadgeCounts?.activeCards ?? badgeCounts.activeCards ?? 0
 
   const navItems: NavItem[] = [
@@ -99,10 +103,10 @@ export const AdminSidebar: React.FC = () => {
       label: "Treasury",
       icon: Wallet,
       badge:
-        urgentCount > 0
-          ? { text: `${urgentCount} Pending`, variant: "warning" }
-          : treasuryCount > 0
-            ? { text: `${treasuryCount} Sign-Offs`, variant: "warning" }
+        treasuryCount > 0
+          ? { text: `${treasuryCount} Sign-Offs`, variant: "warning" }
+          : pendingWithdrawalsCount > 0
+            ? { text: `${pendingWithdrawalsCount} Pending`, variant: "warning" }
             : { text: "Live", variant: "success" },
     },
     {

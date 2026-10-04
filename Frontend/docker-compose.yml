@@ -30,6 +30,7 @@ services:
           - frontend
           - landing-frontend
           - wavyassets-landing-frontend
+      wavyassets-backend-network: {}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://127.0.0.1:$${PORT:-80}/healthz || exit 1"]
       interval: 30s
@@ -72,6 +73,7 @@ services:
           - dashboard
           - user-dashboard-frontend
           - wavyassets-user-dashboard
+      wavyassets-backend-network: {}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://127.0.0.1:$${PORT:-80}/healthz || exit 1"]
       interval: 30s
@@ -114,6 +116,7 @@ services:
           - admin-panel
           - admin-panel-frontend
           - wavyassets-admin-frontend
+      wavyassets-backend-network: {}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://127.0.0.1:$${PORT:-80}/healthz || exit 1"]
       interval: 30s
@@ -138,3 +141,6 @@ networks:
   wavyassets-frontend-network:
     name: wavyassets_frontend_network
     driver: bridge
+  wavyassets-backend-network:
+    name: wavyassets_backend_internal_network
+    external: true

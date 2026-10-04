@@ -24,6 +24,7 @@ import {
 } from '../ui/dialog';
 import { usePortfolioStore, type DepositRailTab } from '../../store/usePortfolioStore';
 import { useLiquidStore } from '../../store/useLiquidStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import {
   fetchDepositRails,
   submitDepositReceipt,
@@ -97,6 +98,8 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   const storeTab = usePortfolioStore((s) => s.activeDepositTab);
   const setActiveDepositTab = usePortfolioStore((s) => s.setActiveDepositTab);
   const addTransaction = useLiquidStore((s) => s.addTransaction);
+  const removeTransaction = useLiquidStore((s) => s.removeTransaction);
+  const user = useAuthStore((s) => s.user);
 
   const isOpen = propIsOpen !== undefined ? propIsOpen : storeModal === 'deposit';
   const activeDepositTab = propTab !== undefined ? propTab : storeTab;
@@ -129,6 +132,13 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     memoFormat: 'WY-9942-TREASURY-03',
   };
 
+  const resolvedMemo = React.useMemo(() => {
+    const userRef = user?.id
+      ? (user.id.includes('-') ? user.id.replace(/-/g, '').slice(-8).toUpperCase() : user.id)
+      : 'CLIENT-01';
+    return (fiatConfig.memoFormat || 'WY-{USER_REF}-TREASURY-03').replace('{USER_REF}', userRef);
+  }, [fiatConfig.memoFormat, user?.id]);
+
   // Web3 State
   const [selectedAsset, setSelectedAsset] = useState<string>('USDC');
   const [selectedStandard, setSelectedStandard] = useState<string>('ERC-20');
@@ -141,11 +151,10 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     message: string;
   } | null>(null);
 
-  // Dynamic standards and addresses strictly sourced from DB so old settings are gone upon update
+  // Dynamic standards and addresses strictly sourced from active DB rails
   const dynamicCryptoConfig = React.useMemo(() => {
-    const config: Record<string, TokenStandardConfig> = {};
-
-    if (railsConfig?.crypto && railsConfig.crypto.length > 0) {
+    if (railsConfig && Array.isArray(railsConfig.crypto)) {
+      const config: Record<string, TokenStandardConfig> = {};
       for (const r of railsConfig.crypto) {
         if (!r.isActive) continue;
         const asset = r.asset?.toUpperCase();
@@ -164,18 +173,29 @@ export const DepositModal: React.FC<DepositModalProps> = ({
           config[asset].addresses[network] = r.vaultAddress;
         }
       }
+      return config;
     }
 
-    // For any assets with zero DB config, fallback to default standards
-    for (const [fallbackAsset, fallbackConfig] of Object.entries(ASSET_STANDARDS_CONFIG)) {
-      if (!config[fallbackAsset] || config[fallbackAsset].standards.length === 0) {
-        config[fallbackAsset] = JSON.parse(JSON.stringify(fallbackConfig));
-      }
-    }
-
-    return config;
+    return ASSET_STANDARDS_CONFIG;
   }, [railsConfig]);
 
+  // Reconcile selectedAsset and selectedStandard when dynamicCryptoConfig changes
+  useEffect(() => {
+    const availableAssets = Object.keys(dynamicCryptoConfig);
+    if (availableAssets.length > 0) {
+      if (!dynamicCryptoConfig[selectedAsset]) {
+        const nextAsset = availableAssets[0];
+        setSelectedAsset(nextAsset);
+        const standards = dynamicCryptoConfig[nextAsset].standards;
+        setSelectedStandard(standards[0] || '');
+      } else {
+        const standards = dynamicCryptoConfig[selectedAsset].standards;
+        if (!standards.includes(selectedStandard)) {
+          setSelectedStandard(standards[0] || '');
+        }
+      }
+    }
+  }, [dynamicCryptoConfig, selectedAsset, selectedStandard]);
 
   // Transaction & Review State
   const [depositAmount, setDepositAmount] = useState<string>('25000');
@@ -207,15 +227,18 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   // Handle asset switch
   const handleSelectAsset = (asset: string) => {
     setSelectedAsset(asset);
-    const config = dynamicCryptoConfig[asset] || ASSET_STANDARDS_CONFIG[asset];
+    const config = dynamicCryptoConfig[asset];
     if (config) {
-      setSelectedStandard(config.defaultStandard || config.standards[0] || 'ERC-20');
+      setSelectedStandard(config.defaultStandard || config.standards[0] || '');
     }
   };
 
-  const currentDepositAddress =
-    dynamicCryptoConfig[selectedAsset]?.addresses[selectedStandard] ||
-    '0x94A8D19F200c9261a81eC97669d0339dE78E916B';
+  const hasActiveCryptoRail = Boolean(
+    dynamicCryptoConfig[selectedAsset]?.addresses?.[selectedStandard]
+  );
+  const currentDepositAddress = hasActiveCryptoRail
+    ? dynamicCryptoConfig[selectedAsset].addresses[selectedStandard]
+    : '';
 
   interface EthereumProvider {
     isMetaMask?: boolean;
@@ -528,9 +551,10 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
       };
 
+      const optimisticTxId = `tx-${Date.now()}`;
       // Add to liquid store transactions blotter as PENDING only after successful transfer
       addTransaction({
-        id: `tx-${Date.now()}`,
+        id: optimisticTxId,
         timestamp: 'Just now',
         vertical: 'CRYPTO',
         type: 'DEPOSIT',
@@ -544,7 +568,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
       try {
         await submitDepositReceipt({
           amount: amountUsd,
-          currency: selectedAsset,
+          currency: 'USD',
           rail: 'CRYPTO',
           referenceId: refId,
           senderIbanOrAddress: connectedWallet || '0x94A8D19F200c9261a81eC97669d0339dE78E916B',
@@ -554,6 +578,10 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         });
       } catch (e) {
         console.warn('Backend deposit registration failed:', e);
+        removeTransaction(optimisticTxId);
+        setDepositError(e instanceof Error ? e.message : 'Backend deposit registration failed');
+        setIsDepositing(false);
+        return;
       }
 
       setPendingTxData(txData);
@@ -623,13 +651,13 @@ export const DepositModal: React.FC<DepositModalProps> = ({
       const amountUsd = pendingTxData.asset === 'USD' ? numAmount : numAmount * rate;
       await submitDepositReceipt({
         amount: amountUsd,
-        currency: pendingTxData.asset || 'USDC',
+        currency: 'USD',
         rail: activeDepositTab === 'wire' ? 'BANK_WIRE' : 'CRYPTO',
         referenceId: pendingTxData.refId,
         senderName: wireSenderName || undefined,
         senderBank: activeDepositTab === 'wire' ? fiatConfig.depositoryBank : undefined,
         senderIbanOrAddress: pendingTxData.walletAddress,
-        wireMemo: activeDepositTab === 'wire' ? fiatConfig.memoFormat : undefined,
+        wireMemo: activeDepositTab === 'wire' ? resolvedMemo : undefined,
         txHash: pendingTxData.txHash,
         receiptDataUrl: receiptDataUrl || undefined,
         receiptName: uploadedReceipt?.name || 'deposit-receipt.png',
@@ -665,7 +693,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         senderName: wireSenderName || fiatConfig.beneficiaryName,
         senderBank: fiatConfig.depositoryBank,
         senderIbanOrAddress: fiatConfig.swissIban,
-        wireMemo: fiatConfig.memoFormat,
+        wireMemo: resolvedMemo,
         receiptDataUrl: receiptDataUrl || undefined,
         receiptName: uploadedReceipt?.name || 'bank-wire-receipt.pdf',
       });
@@ -871,7 +899,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 <button
                   type="button"
                   data-testid="copy-memo-btn"
-                  onClick={() => handleCopy(fiatConfig.memoFormat, 'memo')}
+                  onClick={() => handleCopy(resolvedMemo, 'memo')}
                   className="text-primary hover:text-primary-fixed text-[11px] font-mono font-semibold flex items-center gap-1 cursor-pointer"
                 >
                   {copiedKey === 'memo' ? <Check className="w-3.5 h-3.5 text-tertiary" /> : <Copy className="w-3.5 h-3.5" />}
@@ -879,7 +907,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 </button>
               </div>
               <div className="mt-1 px-2.5 py-1.5 bg-surface-container-lowest rounded-DEFAULT border border-border-hairline flex items-center justify-between">
-                <code className="text-xs font-mono font-bold text-primary">{fiatConfig.memoFormat}</code>
+                <code className="text-xs font-mono font-bold text-primary">{resolvedMemo}</code>
                 <span className="text-[10px] font-mono text-outline">Unique Mandate ID</span>
               </div>
               <p className="text-[11px] text-outline mt-1.5 leading-relaxed font-sans">
@@ -1334,13 +1362,15 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                         <button
                           type="button"
                           onClick={handleWalletDeposit}
-                          disabled={isDepositing || !depositAmount}
+                          disabled={isDepositing || !depositAmount || !hasActiveCryptoRail}
                           className="w-full mt-1 py-2 bg-primary text-on-primary hover:bg-primary-container font-mono text-xs font-bold uppercase tracking-wider rounded-DEFAULT transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-sm"
                         >
                           <ShieldCheck className="w-3.5 h-3.5" />
                           <span>
                             {isDepositing
                               ? 'Broadcasting to Vault Enclave...'
+                              : !hasActiveCryptoRail
+                              ? 'Deposit Rail Unavailable'
                               : `Deposit ${depositAmount || '0'} ${selectedAsset} (${selectedStandard}) to Vault`}
                           </span>
                         </button>
@@ -1440,13 +1470,14 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   </span>
                   <div className="flex items-center justify-between bg-surface-container-lowest px-2.5 py-1.5 rounded-DEFAULT border border-border-hairline">
                     <code className="text-xs font-mono text-on-surface truncate max-w-[340px]">
-                      {currentDepositAddress}
+                      {hasActiveCryptoRail ? currentDepositAddress : 'No active rail configured'}
                     </code>
                     <button
                       type="button"
                       data-testid="copy-crypto-address-btn"
-                      onClick={() => handleCopy(currentDepositAddress, 'crypto')}
-                      className="flex items-center gap-1 text-primary hover:text-primary-fixed text-[11px] font-mono font-semibold ml-2 cursor-pointer"
+                      disabled={!hasActiveCryptoRail}
+                      onClick={() => hasActiveCryptoRail && handleCopy(currentDepositAddress, 'crypto')}
+                      className="flex items-center gap-1 text-primary hover:text-primary-fixed text-[11px] font-mono font-semibold ml-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {copiedKey === 'crypto' ? <Check className="w-3.5 h-3.5 text-tertiary" /> : <Copy className="w-3.5 h-3.5" />}
                       <span>{copiedKey === 'crypto' ? 'COPIED' : 'COPY'}</span>

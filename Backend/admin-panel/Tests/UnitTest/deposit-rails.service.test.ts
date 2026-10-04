@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { NotFoundException } from '@nestjs/common';
 import { DepositRailsService } from '../../src/modules/deposit-rails/deposit-rails.service';
 
 describe('DepositRailsService', () => {
@@ -92,7 +93,7 @@ describe('DepositRailsService', () => {
     it('should update fiat rail parameters, log audit entry and emit event', async () => {
       const dto = {
         beneficiaryName: 'WavyAssets Updated AG',
-        swissIban: 'CH93 0000 0000 0000 0000 0',
+        swissIban: 'CH93 0023 8812 4019 8821 0',
         bicSwift: 'UBSWCHZHXXX',
         clearingRail: 'Swiss SIC / Fedwire DvP',
         memoFormat: 'WY-VAULT-{USER_REF}',
@@ -155,6 +156,78 @@ describe('DepositRailsService', () => {
         network: 'Polygon',
         rail: expect.any(Object),
       });
+    });
+
+    it('should replace an existing rail when updating asset or network', async () => {
+      const dto = {
+        id: 'rail-existing-1',
+        asset: 'USDC',
+        network: 'Arbitrum',
+        vaultAddress: '0x9999999999999999999999999999999999999999',
+        minDepositUsd: 200,
+        confirmations: 5,
+        isActive: true,
+      };
+
+      mockPrisma.cryptoDepositRailConfig.findUnique.mockResolvedValue({
+        id: 'rail-existing-1',
+        asset: 'USDC',
+        network: 'ERC-20',
+      });
+      mockPrisma.cryptoDepositRailConfig.findMany.mockResolvedValue([
+        {
+          id: 'rail-existing-arb',
+          asset: 'USDC',
+          network: 'Arbitrum',
+        },
+      ]);
+      mockPrisma.cryptoDepositRailConfig.delete.mockResolvedValue({});
+      mockPrisma.cryptoDepositRailConfig.deleteMany.mockResolvedValue({ count: 1 });
+
+      const newRail = { ...dto, id: 'rail-new-1' };
+      mockPrisma.cryptoDepositRailConfig.create.mockResolvedValue(newRail);
+
+      const result = await service.upsertCryptoRail(dto, 'op-super_admin-01');
+
+      expect(mockPrisma.cryptoDepositRailConfig.delete).toHaveBeenCalledWith({
+        where: { id: 'rail-existing-1' },
+      });
+      expect(mockPrisma.cryptoDepositRailConfig.deleteMany).toHaveBeenCalled();
+      expect(result.network).toBe('Arbitrum');
+      expect(mockPrisma.adminAuditLog.create).toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteCryptoRail', () => {
+    it('should delete existing rail, log audit and emit event', async () => {
+      mockPrisma.cryptoDepositRailConfig.findUnique.mockResolvedValue({
+        id: 'rail-1',
+        asset: 'USDC',
+        network: 'ERC-20',
+      });
+      mockPrisma.cryptoDepositRailConfig.delete.mockResolvedValue({});
+
+      const result = await service.deleteCryptoRail('rail-1', 'admin-1', '127.0.0.1');
+
+      expect(result.success).toBe(true);
+      expect(mockPrisma.cryptoDepositRailConfig.delete).toHaveBeenCalledWith({
+        where: { id: 'rail-1' },
+      });
+      expect(mockPrisma.adminAuditLog.create).toHaveBeenCalled();
+      expect(mockEventsGateway.emitDepositRailUpdated).toHaveBeenCalledWith({
+        railType: 'CRYPTO',
+        asset: 'USDC',
+        network: 'ERC-20',
+        rail: null,
+      });
+    });
+
+    it('should throw NotFoundException if rail does not exist', async () => {
+      mockPrisma.cryptoDepositRailConfig.findUnique.mockResolvedValue(null);
+
+      await expect(service.deleteCryptoRail('non-existent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 

@@ -48,6 +48,7 @@ export interface BadgeCounts {
   pendingCompliance: number
   treasurySignOffs: number
   activeCards: number
+  pendingWithdrawals?: number
 }
 
 export async function fetchBadgeCounts(): Promise<BadgeCounts> {

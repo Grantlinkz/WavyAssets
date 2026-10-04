@@ -81,6 +81,70 @@ describe('TreasuryService', () => {
       expect(res.summary.totalPendingCount).toBe(1);
       expect(res.summary.totalPendingAmountUsd).toBe(50000);
     });
+
+    it('should filter receipt audit logs by deposit transaction/reference IDs and attach newest matching metadata', async () => {
+      mockPrisma.ledgerTransaction.count.mockResolvedValue(1);
+      mockPrisma.ledgerTransaction.findMany.mockResolvedValue([
+        {
+          id: 'tx-dep-100',
+          referenceId: 'DEP-REF-100',
+          amount: 25000,
+          currency: 'USD',
+          rail: 'SWISS_SIC',
+          counterparty: 'Zurich Cantonal Bank',
+          accountNumber: 'CH93 0023 8812 4019 8821 0',
+          description: 'Deposit with receipt',
+          status: 'PENDING',
+          createdAt: new Date(),
+          entries: [],
+        },
+      ]);
+
+      mockPrisma.auditLog = {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: 'log-newest',
+            action: 'DEPOSIT_RECEIPT_UPLOAD',
+            metadata: JSON.stringify({
+              transactionId: 'tx-dep-100',
+              receiptUrl: 'https://storage.wavyassets.com/receipts/newest.pdf',
+              senderName: 'Hans Gruber',
+              senderBank: 'UBS Zurich',
+            }),
+            createdAt: new Date('2026-10-04T05:00:00Z'),
+          },
+          {
+            id: 'log-older',
+            action: 'DEPOSIT_RECEIPT_UPLOAD',
+            metadata: JSON.stringify({
+              transactionId: 'tx-dep-100',
+              receiptUrl: 'https://storage.wavyassets.com/receipts/older.pdf',
+              senderName: 'Hans Gruber',
+              senderBank: 'UBS Zurich',
+            }),
+            createdAt: new Date('2026-10-03T05:00:00Z'),
+          },
+        ]),
+      };
+
+      const res = await service.getPendingDeposits({ page: 1, limit: 10 });
+
+      expect(mockPrisma.auditLog.findMany).toHaveBeenCalledWith({
+        where: {
+          action: 'DEPOSIT_RECEIPT_UPLOAD',
+          OR: [
+            { metadata: { contains: 'tx-dep-100' } },
+            { metadata: { contains: 'DEP-REF-100' } },
+          ],
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 200,
+      });
+
+      expect(res.items[0].proofReceiptUrl).toBe('https://storage.wavyassets.com/receipts/newest.pdf');
+      expect(res.items[0].senderName).toBe('Hans Gruber');
+      expect(res.items[0].senderBank).toBe('UBS Zurich');
+    });
   });
 
   describe('approveDeposit', () => {
@@ -219,6 +283,12 @@ describe('TreasuryService', () => {
       const res = await service.signOffWithdrawal('tx-wd-small', 'op-treasury-1', {
         action: SignOffAction.APPROVE,
         notes: 'Small wire approved',
+        officerToken: 'tok_officer_test',
+        complianceAttestations: {
+          ibanMatchesMandate: true,
+          liquidityVerified: true,
+          voiceOrHardwareOtpConfirmed: true,
+        },
       });
 
       expect(res.requiresDualSignOff).toBe(false);
@@ -251,6 +321,12 @@ describe('TreasuryService', () => {
 
       const res = await service.signOffWithdrawal('tx-wd-large', 'op-officer-1', {
         action: SignOffAction.APPROVE,
+        officerToken: 'tok_officer_test',
+        complianceAttestations: {
+          ibanMatchesMandate: true,
+          liquidityVerified: true,
+          voiceOrHardwareOtpConfirmed: true,
+        },
       });
 
       expect(res.requiresDualSignOff).toBe(true);
@@ -277,6 +353,12 @@ describe('TreasuryService', () => {
       await expect(
         service.signOffWithdrawal('tx-wd-large', 'op-officer-1', {
           action: SignOffAction.APPROVE,
+          officerToken: 'tok_officer_test',
+          complianceAttestations: {
+            ibanMatchesMandate: true,
+            liquidityVerified: true,
+            voiceOrHardwareOtpConfirmed: true,
+          },
         }),
       ).rejects.toThrow(ConflictException);
     });
@@ -312,6 +394,12 @@ describe('TreasuryService', () => {
 
       const res = await service.signOffWithdrawal('tx-wd-large', 'op-officer-2', {
         action: SignOffAction.APPROVE,
+        officerToken: 'tok_officer_test',
+        complianceAttestations: {
+          ibanMatchesMandate: true,
+          liquidityVerified: true,
+          voiceOrHardwareOtpConfirmed: true,
+        },
       });
 
       expect(res.requiresDualSignOff).toBe(true);

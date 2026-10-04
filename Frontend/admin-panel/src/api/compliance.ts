@@ -215,18 +215,18 @@ export async function verifyComplianceDocument(payload: {
   isVerified: boolean
   rejectionReason?: string
 }): Promise<{
-  success: boolean
   documentId: string
   isVerified: boolean
+  docType: string
+  userId: string
   message: string
-  dossier?: KycDossier
 }> {
   return apiClient<{
-    success: boolean
     documentId: string
     isVerified: boolean
+    docType: string
+    userId: string
     message: string
-    dossier?: KycDossier
   }>(`/compliance/verify-document`, {
     method: "POST",
     body: JSON.stringify(payload),

@@ -150,9 +150,22 @@ export function identifySmartsuppUser(user: UserEntity | null): void {
 }
 
 /**
+ * Clears and resets the Smartsupp visitor identity on logout or user switch
+ */
+export function clearSmartsuppUser(): void {
+  callSmartsupp('chat:close');
+  callSmartsupp('logout');
+}
+
+/**
  * Open the Smartsupp chat widget window
  */
 export function openSmartsuppChat(): void {
+  const key = getSmartsuppKey();
+  if (!key) {
+    console.warn('[Smartsupp] Cannot open chat: VITE_SMARTSUPP_KEY is not configured');
+    return;
+  }
   callSmartsupp('chat:open');
 }
 

@@ -4,6 +4,7 @@ import {
   ConflictException,
   Logger,
 } from '@nestjs/common';
+import { randomInt } from 'node:crypto';
 import { PrismaService } from '../../common/services/prisma.service';
 import { CryptoService } from '../../common/services/crypto.service';
 import { EventsGateway } from '../events/events.gateway';
@@ -49,6 +50,8 @@ export class VipCardsService {
           ? 'Registered Address (Vault Enclave)'
           : 'Armored Vault Custody'),
       issuedAt: safeCard.createdAt || safeCard.updatedAt,
+      validDate: card.validDate || '12/29',
+      celebrityCardholderLabel: card.celebrityCardholderLabel || null,
     };
   }
 
@@ -152,9 +155,10 @@ export class VipCardsService {
    * Computes real-time executive VIP card portfolio telemetry from database
    */
   async getTelemetry() {
-    const [activeCards, lockedCards, allCards, transactions24h] = await Promise.all([
+    const [activeCards, lockedCards, physicalCardsCount, allCards, transactions24h] = await Promise.all([
       this.prisma.vipCard.count({ where: { isFrozen: false } }),
       this.prisma.vipCard.count({ where: { isFrozen: true } }),
+      this.prisma.vipCard.count({ where: { cardType: 'PHYSICAL' } }),
       this.prisma.vipCard.findMany({
         where: { isFrozen: false },
         select: { dailySpendLimit: true },
@@ -164,6 +168,11 @@ export class VipCardsService {
           createdAt: {
             gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
           },
+          OR: [
+            { type: { in: ['CARD', 'CARD_SPEND', 'CARD_SETTLEMENT', 'CARD_PAYMENT'] } },
+            { description: { contains: 'CARD' } },
+            { description: { contains: 'VIP' } },
+          ],
         },
         select: {
           amount: true,
@@ -188,9 +197,8 @@ export class VipCardsService {
         ? Number(((settledTxs.length / transactions24h.length) * 100).toFixed(1))
         : 100.0;
 
-    // Real blank inventory: 500 initial safe vault capacity minus total minted cards
-    const totalMinted = activeCards + lockedCards;
-    const vaultInventoryBlanks = Math.max(0, 500 - totalMinted);
+    // Real blank inventory: 500 initial safe vault capacity minus total minted physical cards
+    const vaultInventoryBlanks = Math.max(0, 500 - physicalCardsCount);
 
     return {
       activeCards,
@@ -251,13 +259,13 @@ export class VipCardsService {
     }
 
     // Encrypt temporary PIN with AES-256-GCM
-    const pin = dto.temporaryPin || Math.floor(1000 + Math.random() * 9000).toString();
+    const pin = dto.temporaryPin || randomInt(1000, 10000).toString();
     const pinEncrypted = this.cryptoService.encrypt(pin);
 
     // Auto-generate unique last 4 digits if not provided
     const cardNumberLast4 =
       dto.cardNumberLast4 ||
-      Math.floor(1000 + Math.random() * 9000).toString();
+      randomInt(1000, 10000).toString();
 
     const card = await this.prisma.vipCard.create({
       data: {
@@ -301,6 +309,8 @@ export class VipCardsService {
           cardType: card.cardType,
           dailySpendLimit: card.dailySpendLimit,
           shippingStatus: card.shippingStatus,
+          validDate: dto.validDate || '12/29',
+          celebrityCardholderLabel: dto.celebrityCardholderLabel || null,
         }),
         reason: `Minted Supreme VIP card for user ${user.email}`,
         ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(adminId).slice(0, 16),
@@ -311,7 +321,10 @@ export class VipCardsService {
       `Minted VIP card '${card.id}' (tier: ${card.tier}, last4: ${card.cardNumberLast4}) for user '${card.userId}' by operator '${adminId}'`,
     );
 
-    return this.formatSafeCard(card);
+    const safeCard = this.formatSafeCard(card);
+    if (dto.validDate) safeCard.validDate = dto.validDate;
+    if (dto.celebrityCardholderLabel) safeCard.celebrityCardholderLabel = dto.celebrityCardholderLabel;
+    return safeCard;
   }
 
   /**

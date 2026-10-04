@@ -78,10 +78,10 @@ export class ComplianceController {
     );
     const dossier = await this.complianceService.getDossierById(rawUserId).catch(() => null);
     return {
+      ...result,
       success: true,
       message: `Tier elevated successfully`,
       dossier: dossier || result,
-      ...result,
     };
   }
 

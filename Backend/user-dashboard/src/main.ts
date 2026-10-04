@@ -46,9 +46,31 @@ async function bootstrap() {
     }),
   );
 
-  // Increase body size limit for encrypted documents and dossier uploads (e.g. proof of address/identity)
-  app.use(json({ limit: '50mb' }));
-  app.use(urlencoded({ extended: true, limit: '50mb' }));
+  // Bounded body parser limits: 2mb default, 50mb only for dossier and receipt upload routes
+  const defaultJsonParser = json({ limit: '2mb' });
+  const defaultUrlencodedParser = urlencoded({ extended: true, limit: '2mb' });
+  const uploadJsonParser = json({ limit: '50mb' });
+  const uploadUrlencodedParser = urlencoded({ extended: true, limit: '50mb' });
+
+  app.use((req: any, res: any, next: any) => {
+    const isUploadPath =
+      typeof req.path === 'string' &&
+      (req.path.includes('dossier') ||
+        req.path.includes('receipt') ||
+        req.path.includes('upload'));
+
+    if (isUploadPath) {
+      uploadJsonParser(req, res, (err: any) => {
+        if (err) return next(err);
+        uploadUrlencodedParser(req, res, next);
+      });
+    } else {
+      defaultJsonParser(req, res, (err: any) => {
+        if (err) return next(err);
+        defaultUrlencodedParser(req, res, next);
+      });
+    }
+  });
 
   // Cookie Parser for HttpOnly Refresh Tokens
   app.use(cookieParser());

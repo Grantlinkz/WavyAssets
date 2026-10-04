@@ -160,19 +160,25 @@ export const OverviewView: React.FC = () => {
           }
           icon={PenTool}
           iconColorClass={
-            metrics && metrics.actionQueuePending > 0
+            !metrics
+              ? "text-secondary"
+              : metrics.actionQueuePending > 0
               ? "text-status-warning"
               : "text-status-success"
           }
           badgeText={
-            metrics && (metrics.badgeCounts?.treasurySignOffs ?? 0) > 0
+            !metrics
+              ? undefined
+              : (metrics.badgeCounts?.treasurySignOffs ?? 0) > 0
               ? "SIGNATURE REQUIRED"
-              : metrics && metrics.actionQueuePending > 0
+              : metrics.actionQueuePending > 0
               ? "TRIAGE REQUIRED"
               : "QUEUE CLEAR"
           }
           badgeColorClass={
-            metrics && metrics.actionQueuePending > 0
+            !metrics
+              ? undefined
+              : metrics.actionQueuePending > 0
               ? "text-status-warning bg-status-warning/10 border-status-warning/40"
               : "text-status-success bg-status-success/10 border-status-success/40"
           }

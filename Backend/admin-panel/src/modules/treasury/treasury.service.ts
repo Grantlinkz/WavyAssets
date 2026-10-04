@@ -66,19 +66,6 @@ export class TreasuryService {
       ];
     }
 
-    // Backfill any zero/null amounts on LedgerTransaction from their ledger entry
-    try {
-      await this.prisma.$executeRawUnsafe(`
-        UPDATE "LedgerTransaction" lt
-        SET "amount" = ABS(le."amount")
-        FROM "LedgerEntry" le
-        WHERE lt."id" = le."transactionId"
-          AND (lt."amount" IS NULL OR lt."amount" = 0)
-          AND le."amount" != 0
-      `);
-    } catch {
-      // Continue gracefully if engine restricts update
-    }
 
     const [total, pendingGrouped, transactions] = await Promise.all([
       this.prisma.ledgerTransaction.count({ where }),
@@ -116,14 +103,26 @@ export class TreasuryService {
       }),
     ]);
 
-    // Query recent deposit receipt audit logs
-    const receiptAuditLogs = typeof (this.prisma as any).auditLog?.findMany === 'function'
-      ? await (this.prisma as any).auditLog.findMany({
-          where: { action: 'DEPOSIT_RECEIPT_UPLOAD' },
-          orderBy: { createdAt: 'desc' },
-          take: 200,
-        })
-      : [];
+    // Query recent deposit receipt audit logs matching deposits on current page
+    const targetIds = Array.from(
+      new Set(
+        transactions
+          .flatMap((tx) => [tx.id, tx.referenceId])
+          .filter((id): id is string => Boolean(id && typeof id === 'string' && id.trim().length > 0)),
+      ),
+    );
+
+    const receiptAuditLogs =
+      targetIds.length > 0 && typeof (this.prisma as any).auditLog?.findMany === 'function'
+        ? await (this.prisma as any).auditLog.findMany({
+            where: {
+              action: 'DEPOSIT_RECEIPT_UPLOAD',
+              OR: targetIds.map((id) => ({ metadata: { contains: id } })),
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 200,
+          })
+        : [];
 
     const receiptsByTx = new Map<string, { receiptUrl?: string; txHash?: string; senderName?: string; senderBank?: string }>();
     for (const log of receiptAuditLogs) {
@@ -144,15 +143,30 @@ export class TreasuryService {
     let totalPendingAmountUsd = 0;
     const pendingByCurrency: Record<string, number> = {};
 
+    if (pendingGrouped && pendingGrouped.length > 0) {
+      for (const group of pendingGrouped) {
+        const cur = (group.currency || 'USD').toUpperCase();
+        const sum = Number(group._sum?.amount || 0);
+        pendingByCurrency[cur] = (pendingByCurrency[cur] || 0) + sum;
+        const rate = FX_TO_USD[cur] ?? 1.0;
+        totalPendingAmountUsd += sum * rate;
+      }
+    } else {
+      for (const tx of transactions) {
+        const positiveEntry = tx.entries?.find((e) => Number(e.amount) > 0);
+        const entryAmt = positiveEntry ? Math.abs(Number(positiveEntry.amount)) : 0;
+        const amt = Number(tx.amount) > 0 ? Number(tx.amount) : entryAmt;
+        const cur = (tx.currency || 'USD').toUpperCase();
+        pendingByCurrency[cur] = (pendingByCurrency[cur] || 0) + amt;
+        const rate = FX_TO_USD[cur] ?? 1.0;
+        totalPendingAmountUsd += amt * rate;
+      }
+    }
+
     const items = transactions.map((tx) => {
       const positiveEntry = tx.entries.find((e) => Number(e.amount) > 0);
       const entryAmt = positiveEntry ? Math.abs(Number(positiveEntry.amount)) : 0;
       const amt = Number(tx.amount) > 0 ? Number(tx.amount) : entryAmt;
-      const cur = (tx.currency || 'USD').toUpperCase();
-
-      pendingByCurrency[cur] = (pendingByCurrency[cur] || 0) + amt;
-      const rate = FX_TO_USD[cur] ?? 1.0;
-      totalPendingAmountUsd += amt * rate;
 
       const userEntry = tx.entries.find((e) => e.account?.user);
       const user = userEntry?.account?.user || null;
@@ -164,8 +178,10 @@ export class TreasuryService {
         amount: amt,
         currency: tx.currency || 'USD',
         rail: tx.rail || 'SWISS_SIC',
-        counterparty: receiptMeta?.senderName || tx.counterparty || 'Institutional Depositor',
-        accountNumber: receiptMeta?.senderBank || tx.accountNumber || 'CH93 0023 8812 4019 8821 0',
+        counterparty: tx.counterparty || 'Institutional Depositor',
+        accountNumber: tx.accountNumber || 'CH93 0023 8812 4019 8821 0',
+        senderName: receiptMeta?.senderName || null,
+        senderBank: receiptMeta?.senderBank || null,
         description: tx.description,
         proofReceiptUrl: receiptMeta?.receiptUrl || null,
         txHash: receiptMeta?.txHash || null,
@@ -701,6 +717,15 @@ export class TreasuryService {
     const rate = cur === 'USD' ? 1.0 : FX_TO_USD[cur];
     const amountInUsd = rate !== undefined ? Number(tx.amount) * rate : Infinity;
     const requiresDualSignOff = amountInUsd > FINMA_DUAL_SIGNOFF_THRESHOLD;
+
+    if (dto.action === SignOffAction.APPROVE || !dto.action) {
+      if (!dto.officerToken || !dto.officerToken.trim()) {
+        throw new BadRequestException('officerToken is required for withdrawal approval.');
+      }
+      if (!dto.complianceAttestations) {
+        throw new BadRequestException('complianceAttestations are required for withdrawal approval.');
+      }
+    }
 
     // Handle rejection before sign-off creation so rejected requests cannot settle
     if (dto?.action === SignOffAction.REJECT) {

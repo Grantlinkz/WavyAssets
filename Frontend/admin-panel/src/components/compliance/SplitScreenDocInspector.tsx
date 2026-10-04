@@ -16,6 +16,8 @@ import {
   CheckSquare,
   Square,
   Hash,
+  FileText,
+  ExternalLink,
 } from "lucide-react"
 import { useComplianceStore } from "../../store/useComplianceStore"
 import { useAdminAuthStore } from "../../store/useAdminAuthStore"
@@ -81,6 +83,10 @@ export const SplitScreenDocInspector: React.FC = () => {
       setImgLoadFailed(false)
     }
   }, [selectedDossier])
+
+  React.useEffect(() => {
+    setImgLoadFailed(false)
+  }, [activeDocumentIndex])
 
   // Checklist toggle
   const toggleChecklistItem = async (key: keyof FinmaChecklist) => {
@@ -171,15 +177,16 @@ export const SplitScreenDocInspector: React.FC = () => {
   // Document verification mutation
   const verifyDocMutation = useMutation({
     mutationFn: async ({
+      documentId,
       isVerified,
       rejectionReason,
     }: {
+      documentId: string
       isVerified: boolean
       rejectionReason?: string
     }) => {
-      if (!activeDoc) throw new Error("No document selected.")
       return verifyComplianceDocument({
-        documentId: activeDoc.id,
+        documentId,
         isVerified,
         rejectionReason,
       })
@@ -193,9 +200,9 @@ export const SplitScreenDocInspector: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["compliance"] })
       queryClient.invalidateQueries({ queryKey: ["users"] })
 
-      if (selectedDossier && activeDoc) {
+      if (selectedDossier) {
         const updatedDocs = (selectedDossier.documents || []).map((d) =>
-          d.id === activeDoc.id
+          d.id === variables.documentId
             ? {
                 ...d,
                 verified: variables.isVerified,
@@ -548,7 +555,10 @@ export const SplitScreenDocInspector: React.FC = () => {
                   {(selectedDossier.documents || []).map((doc, idx) => (
                     <button
                       key={doc.id || idx}
-                      onClick={() => setActiveDocumentIndex(idx)}
+                      onClick={() => {
+                        setActiveDocumentIndex(idx)
+                        setImgLoadFailed(false)
+                      }}
                       className={`px-3 py-1.5 rounded-[2px] font-mono text-[11px] flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 border ${
                         activeDocumentIndex === idx
                           ? "bg-bg-canvas text-gold-accent border-gold-accent/40 font-semibold"
@@ -598,7 +608,7 @@ export const SplitScreenDocInspector: React.FC = () => {
                     <div className="flex items-center gap-1.5 mr-2 pr-2 border-r border-border-subtle/60">
                       <button
                         type="button"
-                        onClick={() => verifyDocMutation.mutate({ isVerified: true })}
+                        onClick={() => verifyDocMutation.mutate({ documentId: activeDoc.id, isVerified: true })}
                         disabled={verifyDocMutation.isPending || activeDoc.verified}
                         className="px-2 py-0.5 rounded-[2px] bg-status-success/15 hover:bg-status-success/25 border border-status-success/30 text-status-success font-mono text-[10px] font-semibold flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-40"
                         title="Approve this document"
@@ -615,6 +625,7 @@ export const SplitScreenDocInspector: React.FC = () => {
                           )
                           if (reason && reason.trim()) {
                             verifyDocMutation.mutate({
+                              documentId: activeDoc.id,
                               isVerified: false,
                               rejectionReason: reason.trim(),
                             })
@@ -744,127 +755,24 @@ export const SplitScreenDocInspector: React.FC = () => {
                           />
                         </div>
                       ) : (
-                        /* Authentic Swiss / FINMA Passport Document Specification View */
-                        <div className="w-full max-w-md bg-[#161a23] border-2 border-[#d4af37]/70 rounded-[8px] p-5 shadow-[0_20px_50px_rgba(0,0,0,0.9)] text-on-surface relative overflow-hidden flex flex-col gap-3 font-sans">
-                          {/* Guilloche & Security Pattern Background */}
-                          <div
-                            className="absolute inset-0 opacity-10 pointer-events-none"
-                            style={{
-                              backgroundImage:
-                                "radial-gradient(circle at 50% 50%, rgba(212,175,55,0.4) 1px, transparent 1px)",
-                              backgroundSize: "16px 16px",
-                            }}
-                          />
-
-                          {/* Passport Header */}
-                          <div className="flex items-center justify-between border-b border-[#d4af37]/40 pb-2 relative z-10">
-                            <div className="flex items-center gap-2">
-                              {/* Swiss Cross Shield */}
-                              <div className="w-6 h-7 bg-red-600 rounded-[2px] flex items-center justify-center shadow-md border border-white/40">
-                                <span className="text-white font-bold text-xs leading-none">+</span>
-                              </div>
-                              <div>
-                                <div className="font-serif text-[11px] font-bold tracking-wider text-gold-accent uppercase">
-                                  SCHWEIZERISCHE EIDGENOSSENSCHAFT
-                                </div>
-                                <div className="text-[8px] font-mono text-secondary tracking-widest uppercase">
-                                  CONFÉDÉRATION SUISSE • PASSPORT
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex flex-col items-end">
-                              <span className="font-mono text-[9px] font-bold text-gold-accent uppercase">
-                                TYPE P / CHE
-                              </span>
-                              <span className="font-mono text-[8px] text-secondary">
-                                ICAO DOC 9303
-                              </span>
-                            </div>
+                        /* Document preview unavailable fallback */
+                        <div className="w-full max-w-md bg-bg-panel border border-border-subtle rounded-[6px] p-6 shadow-xl text-center flex flex-col items-center justify-center gap-3">
+                          <FileText className="w-10 h-10 text-secondary opacity-50" />
+                          <div>
+                            <h4 className="text-sm font-semibold text-on-surface">Document preview unavailable</h4>
+                            <p className="text-xs text-secondary mt-1 font-mono break-all">{activeDoc.filename || "Unknown file"}</p>
                           </div>
-
-                          {/* Passport Main Section: Photo + Fields */}
-                          <div className="grid grid-cols-12 gap-3 py-1 relative z-10">
-                            {/* Left: Applicant Photo Badge */}
-                            <div className="col-span-4 flex flex-col items-center">
-                              <div className="w-full aspect-[3/4] bg-[#0c0e14] border-2 border-border-subtle rounded-[4px] p-1 flex flex-col items-center justify-between relative overflow-hidden shadow-inner">
-                                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-[#1a202c] to-[#0c0e14] rounded-[2px]">
-                                  <div className="w-12 h-12 rounded-full border border-gold-accent/50 bg-gold-accent/10 flex items-center justify-center text-gold-accent font-serif font-bold text-base mb-1">
-                                    {selectedDossier.userName.split(" ").map((n) => n[0]).join("")}
-                                  </div>
-                                  <span className="font-mono text-[7px] text-gold-accent uppercase tracking-wider">
-                                    BIOMETRIC ENCLAVE
-                                  </span>
-                                </div>
-                                {/* Holographic Foil Strip Overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-gold-accent/15 to-transparent pointer-events-none" />
-                              </div>
-                              <span className="font-mono text-[8px] text-gold-accent mt-1 tracking-widest font-semibold uppercase">
-                                ★ VERIFIED
-                              </span>
-                            </div>
-
-                            {/* Right: Key Fields */}
-                            <div className="col-span-8 flex flex-col justify-between font-mono text-[10px] space-y-1">
-                              <div className="grid grid-cols-2 gap-1 border-b border-border-subtle/40 pb-1">
-                                <div>
-                                  <span className="text-[8px] text-secondary block uppercase">Passport No.</span>
-                                  <span className="font-bold text-gold-accent">
-                                    E{selectedDossier.id ? selectedDossier.id.replace(/-/g, "").slice(0, 8).toUpperCase() : "8291047"}
-                                  </span>
-                                </div>
-                                <div>
-                                  <span className="text-[8px] text-secondary block uppercase">Nationality</span>
-                                  <span className="font-semibold text-on-surface">CHE (SWISS)</span>
-                                </div>
-                              </div>
-
-                              <div className="border-b border-border-subtle/40 pb-1">
-                                <span className="text-[8px] text-secondary block uppercase">Surname</span>
-                                <span className="font-bold text-on-surface text-xs uppercase tracking-wider">
-                                  {selectedDossier.userName.split(" ").slice(-1)[0] || "OSEJI"}
-                                </span>
-                              </div>
-
-                              <div className="border-b border-border-subtle/40 pb-1">
-                                <span className="text-[8px] text-secondary block uppercase">Given Names</span>
-                                <span className="font-semibold text-on-surface uppercase">
-                                  {selectedDossier.userName.split(" ").slice(0, -1).join(" ") || "GRANT EMEKE"}
-                                </span>
-                              </div>
-
-                              <div className="grid grid-cols-2 gap-1">
-                                <div>
-                                  <span className="text-[8px] text-secondary block uppercase">Date of Birth</span>
-                                  <span className="text-on-surface font-semibold">14.08.1988</span>
-                                </div>
-                                <div>
-                                  <span className="text-[8px] text-secondary block uppercase">Sex / Sex</span>
-                                  <span className="text-on-surface font-semibold">M</span>
-                                </div>
-                              </div>
-
-                              <div className="grid grid-cols-2 gap-1 pt-0.5">
-                                <div>
-                                  <span className="text-[8px] text-secondary block uppercase">Date of Issue</span>
-                                  <span className="text-on-surface font-semibold">12.09.2024</span>
-                                </div>
-                                <div>
-                                  <span className="text-[8px] text-secondary block uppercase">Date of Expiry</span>
-                                  <span className="text-gold-accent font-bold">11.09.2034</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Machine Readable Zone (MRZ Lines) */}
-                          <div className="bg-[#0a0d14] rounded-[4px] p-2 border border-border-subtle font-mono text-[9px] tracking-[0.16em] text-telemetry-cyan font-bold leading-tight select-all">
-                            <div>
-                              P&lt;CHE{(selectedDossier.userName.split(" ").slice(-1)[0] || "OSEJI").toUpperCase()}&lt;&lt;{(selectedDossier.userName.split(" ").slice(0, -1).join("&lt;") || "GRANT&lt;EMEKE").toUpperCase()}&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
-                            </div>
-                            <div>
-                              E{selectedDossier.id ? selectedDossier.id.replace(/-/g, "").slice(0, 7).toUpperCase() : "829104"}&lt;8CHE8808144M3409117&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;04
-                            </div>
-                          </div>
+                          {activeDoc.documentUrl ? (
+                            <a
+                              href={activeDoc.documentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-bg-elevated hover:bg-state-hover border border-border-subtle text-gold-accent text-xs font-medium transition-colors"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              <span>Open raw document</span>
+                            </a>
+                          ) : null}
                         </div>
                       )}
                     </div>

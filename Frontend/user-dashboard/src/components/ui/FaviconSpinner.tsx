@@ -43,10 +43,13 @@ export const FaviconSpinner: React.FC<FaviconSpinnerProps> = ({
   const isFullscreen = size === 'fullscreen';
   const { icon: pxSize } = sizeDimensions[size];
 
+  const accessibleName = ariaLabel || label || 'Loading...';
+
   const spinnerGraphic = (
     <div
-      role="status"
-      aria-label={ariaLabel || label || 'Loading...'}
+      role={isFullscreen ? undefined : 'status'}
+      aria-label={isFullscreen ? undefined : accessibleName}
+      aria-hidden={isFullscreen ? true : undefined}
       className={`relative inline-flex items-center justify-center select-none ${className}`}
       style={{ width: pxSize, height: pxSize }}
     >
@@ -192,6 +195,7 @@ export const FaviconSpinner: React.FC<FaviconSpinnerProps> = ({
         className="fixed inset-0 z-50 bg-[#08090B]/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-on-surface"
         role="status"
         aria-live="polite"
+        aria-label={accessibleName}
       >
         <div className="flex flex-col items-center text-center max-w-sm p-8 rounded-sm border border-border-hairline bg-[#0E1015]/80 shadow-2xl">
           {spinnerGraphic}

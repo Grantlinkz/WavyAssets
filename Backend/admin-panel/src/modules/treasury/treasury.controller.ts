@@ -7,6 +7,7 @@ import {
   Query,
   Req,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { TreasuryService } from './treasury.service';
@@ -92,6 +93,9 @@ export class TreasuryController {
     @CurrentAdmin() admin: CurrentAdminPayload,
     @Req() req: Request,
   ) {
+    if (dto.transactionId && dto.transactionId !== id) {
+      throw new BadRequestException('Transaction ID mismatch between route and payload');
+    }
     const adminId = admin?.id || (admin as any)?.sub;
     return this.treasuryService.rejectAndRefundWithdrawal(id, adminId, dto, req.ip);
   }

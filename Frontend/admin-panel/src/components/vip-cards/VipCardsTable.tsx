@@ -57,8 +57,8 @@ export const VipCardsTable: React.FC = () => {
   }
 
   const { data: allCardsData } = useQuery({
-    queryKey: ["vip-cards", searchQuery, "ALL"],
-    queryFn: () => fetchVipCards({ search: searchQuery, status: "ALL" }),
+    queryKey: ["vip-cards", searchQuery, "ALL", "aggregate"],
+    queryFn: () => fetchVipCards({ search: searchQuery, status: "ALL", limit: 1000 }),
   })
   const allCards: VipCardItem[] = Array.isArray(allCardsData) ? allCardsData : cards
 
@@ -273,9 +273,9 @@ export const VipCardsTable: React.FC = () => {
                       {card.tier === "CELEBRITY" || card.substrate?.includes("Celebrity") ? (
                         <>
                           <span className="font-mono text-xs text-gold-accent font-semibold">
-                            Event Pass (N/A)
+                            Event Access Only
                           </span>
-                          <span className="block font-mono text-[10px] text-secondary">No Spend Limit</span>
+                          <span className="block font-mono text-[10px] text-secondary">Non-Spending Pass</span>
                         </>
                       ) : (
                         <>

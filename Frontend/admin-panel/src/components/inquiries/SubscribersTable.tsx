@@ -83,14 +83,21 @@ export const SubscribersTable: React.FC = () => {
     mutationFn: (data: { subject: string; message: string; filter: "ALL" | "CONFIRMED" }) =>
       broadcastSubscribersEmail({ subject: data.subject, message: data.message, filter: data.filter }),
     onSuccess: (res) => {
-      setEmailFeedback({
-        type: "success",
-        text: res.message || `Dispatched to ${res.deliveredCount} of ${res.totalRecipients} subscribers via Resend.`,
-      })
-      setTimeout(() => {
-        setIsEmailModalOpen(false)
-        setEmailFeedback(null)
-      }, 1800)
+      if (res.failedCount > 0) {
+        setEmailFeedback({
+          type: "error",
+          text: `Partial delivery failure: ${res.deliveredCount} delivered, ${res.failedCount} failed of ${res.totalRecipients} subscribers.`,
+        })
+      } else {
+        setEmailFeedback({
+          type: "success",
+          text: res.message || `Dispatched to ${res.deliveredCount} of ${res.totalRecipients} subscribers via Resend.`,
+        })
+        setTimeout(() => {
+          setIsEmailModalOpen(false)
+          setEmailFeedback(null)
+        }, 1800)
+      }
     },
     onError: (err: Error) => {
       setEmailFeedback({

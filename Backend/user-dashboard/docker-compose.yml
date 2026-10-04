@@ -13,7 +13,7 @@ services:
     restart: unless-stopped
     # Production Hardening: Bind internal API ports to host loopback (127.0.0.1) only
     ports:
-      - "${BACKEND_BIND_IP:-127.0.0.1}:${PORT:-4001}:4000"
+      - "${BACKEND_BIND_IP:-127.0.0.1}:${USER_DASHBOARD_BACKEND_PORT:-4001}:4000"
     env_file:
       - .env
     environment:

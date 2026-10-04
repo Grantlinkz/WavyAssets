@@ -15,6 +15,16 @@ export interface TransactionEmailOptions {
   timestamp?: Date;
 }
 
+function escapeHtml(str: string | null | undefined): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
@@ -37,10 +47,15 @@ export class EmailService {
       ? rawFrom.trim()
       : 'WavyAssets Treasury <onboarding@resend.dev>';
 
-    this.provider =
+    this.provider = (
       this.configService.get<string>('EMAIL_PROVIDER') ||
       process.env.EMAIL_PROVIDER ||
-      'resend';
+      'resend'
+    ).toLowerCase();
+
+    if (this.provider === 'resend' && (!this.apiKey || !this.apiKey.startsWith('re_'))) {
+      this.logger.error('Configuration Failure: EMAIL_PROVIDER is "resend" but RESEND_API_KEY is invalid or missing.');
+    }
   }
 
   /**
@@ -87,7 +102,7 @@ export class EmailService {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${subject}</title>
+  <title>${escapeHtml(subject)}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #08090B; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #FFFFFF;">
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #08090B; padding: 40px 16px;">
@@ -130,7 +145,7 @@ export class EmailService {
                 ${formattedAmount}
               </div>
               <span style="display: inline-block; font-size: 12px; color: #8A92A6; margin-top: 6px;">
-                Account Type: <strong style="color: #FFFFFF;">${accountType || 'AVAILABLE_CASH'}</strong>
+                Account Type: <strong style="color: #FFFFFF;">${escapeHtml(accountType || 'AVAILABLE_CASH')}</strong>
               </span>
             </td>
           </tr>
@@ -139,7 +154,7 @@ export class EmailService {
           <tr>
             <td style="padding: 28px 32px;">
               <p style="font-size: 14px; line-height: 22px; color: #CBD2E0; margin-top: 0; margin-bottom: 20px;">
-                Dear <strong style="color: #FFFFFF;">${userFullName || 'Valued Client'}</strong>,<br>
+                Dear <strong style="color: #FFFFFF;">${escapeHtml(userFullName || 'Valued Client')}</strong>,<br>
                 This electronic advice confirms that a double-entry ledger settlement has altered your liquid custody account balance.
               </p>
 
@@ -147,15 +162,15 @@ export class EmailService {
               <table width="100%" cellpadding="10" cellspacing="0" border="0" style="background-color: #0A0C0E; border: 1px solid #23272F; border-radius: 4px; font-size: 12px;">
                 <tr style="border-bottom: 1px solid #1C2027;">
                   <td width="38%" style="color: #8A92A6; font-family: monospace; text-transform: uppercase; font-size: 11px;">Description</td>
-                  <td style="color: #FFFFFF; font-weight: 600;">${description}</td>
+                  <td style="color: #FFFFFF; font-weight: 600;">${escapeHtml(description)}</td>
                 </tr>
                 <tr style="border-bottom: 1px solid #1C2027;">
                   <td style="color: #8A92A6; font-family: monospace; text-transform: uppercase; font-size: 11px;">Transaction Type</td>
-                  <td style="color: #D4AF37; font-family: monospace; font-weight: 700;">${transactionType}</td>
+                  <td style="color: #D4AF37; font-family: monospace; font-weight: 700;">${escapeHtml(transactionType)}</td>
                 </tr>
                 <tr style="border-bottom: 1px solid #1C2027;">
                   <td style="color: #8A92A6; font-family: monospace; text-transform: uppercase; font-size: 11px;">Audit Reference</td>
-                  <td style="color: #FFFFFF; font-family: monospace;">${referenceId}</td>
+                  <td style="color: #FFFFFF; font-family: monospace;">${escapeHtml(referenceId)}</td>
                 </tr>
                 <tr style="border-bottom: 1px solid #1C2027;">
                   <td style="color: #8A92A6; font-family: monospace; text-transform: uppercase; font-size: 11px;">Settlement Date</td>
@@ -193,9 +208,14 @@ export class EmailService {
     try {
       this.logger.log(`Dispatching balance notification (${direction} ${formattedAmount}) to ${toEmail}`);
 
-      if (!this.apiKey || !this.apiKey.startsWith('re_') || this.provider === 'console') {
+      if (this.provider === 'console') {
         this.logger.log(`[Console Email Fallback] To: ${toEmail} | Subject: ${subject}`);
         return true;
+      }
+
+      if (!this.apiKey || !this.apiKey.startsWith('re_')) {
+        this.logger.error(`Resend API dispatch failed: Invalid or missing RESEND_API_KEY for recipient ${toEmail}`);
+        return false;
       }
 
       // Native fetch to Resend API endpoint
@@ -211,6 +231,7 @@ export class EmailService {
           subject,
           html: htmlContent,
         }),
+        signal: AbortSignal.timeout(10000),
       });
 
       if (!response.ok) {
@@ -563,9 +584,14 @@ export class EmailService {
     try {
       this.logger.log(`Dispatching notification email ("${subject}") to ${toEmail}`);
 
-      if (!this.apiKey || !this.apiKey.startsWith('re_') || this.provider === 'console') {
+      if (this.provider === 'console') {
         this.logger.log(`[Console Email Fallback] To: ${toEmail} | Subject: ${subject}`);
         return true;
+      }
+
+      if (!this.apiKey || !this.apiKey.startsWith('re_')) {
+        this.logger.error(`Resend API dispatch failed: Invalid or missing RESEND_API_KEY for recipient ${toEmail}`);
+        return false;
       }
 
       const response = await fetch('https://api.resend.com/emails', {
@@ -580,6 +606,7 @@ export class EmailService {
           subject,
           html: htmlContent,
         }),
+        signal: AbortSignal.timeout(10000),
       });
 
       if (!response.ok) {

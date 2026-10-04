@@ -1,4 +1,11 @@
-import { IsEnum, IsOptional, IsString, IsObject } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsBoolean,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 export enum SignOffAction {
   APPROVE = 'APPROVE',
@@ -7,12 +14,15 @@ export enum SignOffAction {
 
 export class ComplianceAttestationsDto {
   @IsOptional()
+  @IsBoolean()
   ibanMatchesMandate?: boolean;
 
   @IsOptional()
+  @IsBoolean()
   liquidityVerified?: boolean;
 
   @IsOptional()
+  @IsBoolean()
   voiceOrHardwareOtpConfirmed?: boolean;
 }
 
@@ -33,7 +43,8 @@ export class SignOffWithdrawalDto {
   officerToken?: string;
 
   @IsOptional()
-  @IsObject()
+  @ValidateNested()
+  @Type(() => ComplianceAttestationsDto)
   complianceAttestations?: ComplianceAttestationsDto;
 }
 

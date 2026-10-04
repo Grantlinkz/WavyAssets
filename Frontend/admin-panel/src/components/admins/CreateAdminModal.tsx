@@ -72,9 +72,11 @@ export const CreateAdminModal: React.FC<CreateAdminModalProps> = ({
 
   const handleGeneratePassword = () => {
     const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%^&*"
-    let pass = "WavyAdmin!"
-    for (let i = 0; i < 12; i++) {
-      pass += chars.charAt(Math.floor(Math.random() * chars.length))
+    const randomArray = new Uint32Array(20)
+    window.crypto.getRandomValues(randomArray)
+    let pass = ""
+    for (let i = 0; i < randomArray.length; i++) {
+      pass += chars.charAt(randomArray[i] % chars.length)
     }
     setPassphrase(pass)
     setShowPassword(true)

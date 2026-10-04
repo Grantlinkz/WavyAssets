@@ -123,32 +123,36 @@ export class AdminsService {
 
     const passphraseHash = await this.cryptoService.hashPassword(dto.passphrase);
 
-    const newAdmin = await this.prisma.adminUser.create({
-      data: {
-        email: dto.email.toLowerCase().trim(),
-        fullName: dto.fullName.trim(),
-        passphraseHash,
-        role: dto.role,
-        isActive: true,
-      },
-    });
+    const newAdmin = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.adminUser.create({
+        data: {
+          email: dto.email.toLowerCase().trim(),
+          fullName: dto.fullName.trim(),
+          passphraseHash,
+          role: dto.role,
+          isActive: true,
+        },
+      });
 
-    await this.prisma.adminAuditLog.create({
-      data: {
-        adminId: operatorId || null,
-        action: 'ADMIN_CREATE',
-        targetEntity: 'AdminUser',
-        targetId: newAdmin.id,
-        diffBefore: null,
-        diffAfter: JSON.stringify({
-          id: newAdmin.id,
-          email: newAdmin.email,
-          fullName: newAdmin.fullName,
-          role: newAdmin.role,
-        }),
-        reason: `Registered new administrative personnel: ${newAdmin.fullName} (${newAdmin.email}) as ${newAdmin.role}`,
-        ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(operatorId || 'system').slice(0, 16),
-      },
+      await tx.adminAuditLog.create({
+        data: {
+          adminId: operatorId || null,
+          action: 'ADMIN_CREATE',
+          targetEntity: 'AdminUser',
+          targetId: created.id,
+          diffBefore: null,
+          diffAfter: JSON.stringify({
+            id: created.id,
+            email: created.email,
+            fullName: created.fullName,
+            role: created.role,
+          }),
+          reason: `Registered new administrative personnel: ${created.fullName} (${created.email}) as ${created.role}`,
+          ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(operatorId || 'system').slice(0, 16),
+        },
+      });
+
+      return created;
     });
 
     this.logger.log(
@@ -165,6 +169,20 @@ export class AdminsService {
 
     if (!admin) {
       throw new NotFoundException(`Personnel with ID '${id}' not found`);
+    }
+
+    if (
+      admin.role === 'SUPER_ADMIN' &&
+      admin.isActive &&
+      dto.role &&
+      dto.role !== 'SUPER_ADMIN'
+    ) {
+      const otherActiveSuperAdmins = await this.prisma.adminUser.count({
+        where: { role: 'SUPER_ADMIN', isActive: true, NOT: { id } },
+      });
+      if (otherActiveSuperAdmins === 0) {
+        throw new BadRequestException('Cannot demote the last active SUPER_ADMIN.');
+      }
     }
 
     if (dto.email && dto.email.toLowerCase().trim() !== admin.email) {
@@ -195,27 +213,31 @@ export class AdminsService {
       role: admin.role,
     };
 
-    const updated = await this.prisma.adminUser.update({
-      where: { id },
-      data: dataToUpdate,
-    });
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const updatedUser = await tx.adminUser.update({
+        where: { id },
+        data: dataToUpdate,
+      });
 
-    await this.prisma.adminAuditLog.create({
-      data: {
-        adminId: operatorId || null,
-        action: 'ADMIN_UPDATE',
-        targetEntity: 'AdminUser',
-        targetId: updated.id,
-        diffBefore: JSON.stringify(diffBefore),
-        diffAfter: JSON.stringify({
-          fullName: updated.fullName,
-          email: updated.email,
-          role: updated.role,
-          passwordUpdated: !!dto.passphrase,
-        }),
-        reason: `Updated administrative personnel details for ${updated.fullName} (${updated.email})`,
-        ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(operatorId || 'system').slice(0, 16),
-      },
+      await tx.adminAuditLog.create({
+        data: {
+          adminId: operatorId || null,
+          action: 'ADMIN_UPDATE',
+          targetEntity: 'AdminUser',
+          targetId: updatedUser.id,
+          diffBefore: JSON.stringify(diffBefore),
+          diffAfter: JSON.stringify({
+            fullName: updatedUser.fullName,
+            email: updatedUser.email,
+            role: updatedUser.role,
+            passwordUpdated: !!dto.passphrase,
+          }),
+          reason: `Updated administrative personnel details for ${updatedUser.fullName} (${updatedUser.email})`,
+          ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(operatorId || 'system').slice(0, 16),
+        },
+      });
+
+      return updatedUser;
     });
 
     return this.formatSafeAdmin(updated);
@@ -241,31 +263,44 @@ export class AdminsService {
       );
     }
 
-    const updated = await this.prisma.adminUser.update({
-      where: { id },
-      data: { isActive: !suspend },
-    });
-
-    if (suspend) {
-      // Invalidate active sessions
-      await this.prisma.adminSession.deleteMany({
-        where: { adminId: id },
+    if (suspend && admin.role === 'SUPER_ADMIN' && admin.isActive) {
+      const otherActiveSuperAdmins = await this.prisma.adminUser.count({
+        where: { role: 'SUPER_ADMIN', isActive: true, NOT: { id } },
       });
+      if (otherActiveSuperAdmins === 0) {
+        throw new BadRequestException('Cannot suspend the last active SUPER_ADMIN.');
+      }
     }
 
-    await this.prisma.adminAuditLog.create({
-      data: {
-        adminId: operatorId || null,
-        action: suspend ? 'ADMIN_SUSPEND' : 'ADMIN_UNSUSPEND',
-        targetEntity: 'AdminUser',
-        targetId: updated.id,
-        diffBefore: JSON.stringify({ isActive: admin.isActive }),
-        diffAfter: JSON.stringify({ isActive: updated.isActive }),
-        reason:
-          reason ||
-          `${suspend ? 'Suspended' : 'Reactivated'} administrative credentials for ${updated.fullName}`,
-        ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(operatorId || 'system').slice(0, 16),
-      },
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const updatedUser = await tx.adminUser.update({
+        where: { id },
+        data: { isActive: !suspend },
+      });
+
+      if (suspend) {
+        // Invalidate active sessions
+        await tx.adminSession.deleteMany({
+          where: { adminId: id },
+        });
+      }
+
+      await tx.adminAuditLog.create({
+        data: {
+          adminId: operatorId || null,
+          action: suspend ? 'ADMIN_SUSPEND' : 'ADMIN_UNSUSPEND',
+          targetEntity: 'AdminUser',
+          targetId: updatedUser.id,
+          diffBefore: JSON.stringify({ isActive: admin.isActive }),
+          diffAfter: JSON.stringify({ isActive: updatedUser.isActive }),
+          reason:
+            reason ||
+            `${suspend ? 'Suspended' : 'Reactivated'} administrative credentials for ${updatedUser.fullName}`,
+          ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(operatorId || 'system').slice(0, 16),
+        },
+      });
+
+      return updatedUser;
     });
 
     return this.formatSafeAdmin(updated);
@@ -286,34 +321,45 @@ export class AdminsService {
       );
     }
 
-    // Delete related sessions
-    await this.prisma.adminSession.deleteMany({
-      where: { adminId: id },
-    });
+    if (admin.role === 'SUPER_ADMIN' && admin.isActive) {
+      const otherActiveSuperAdmins = await this.prisma.adminUser.count({
+        where: { role: 'SUPER_ADMIN', isActive: true, NOT: { id } },
+      });
+      if (otherActiveSuperAdmins === 0) {
+        throw new BadRequestException('Cannot delete the last active SUPER_ADMIN.');
+      }
+    }
 
-    // Delete admin user
-    await this.prisma.adminUser.delete({
-      where: { id },
-    });
+    await this.prisma.$transaction(async (tx) => {
+      // Delete related sessions
+      await tx.adminSession.deleteMany({
+        where: { adminId: id },
+      });
 
-    await this.prisma.adminAuditLog.create({
-      data: {
-        adminId: operatorId || null,
-        action: 'ADMIN_DELETE',
-        targetEntity: 'AdminUser',
-        targetId: id,
-        diffBefore: JSON.stringify({
-          id: admin.id,
-          fullName: admin.fullName,
-          email: admin.email,
-          role: admin.role,
-        }),
-        diffAfter: null,
-        reason:
-          reason ||
-          `Permanently deleted administrative personnel ${admin.fullName} (${admin.email})`,
-        ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(operatorId || 'system').slice(0, 16),
-      },
+      // Delete admin user
+      await tx.adminUser.delete({
+        where: { id },
+      });
+
+      await tx.adminAuditLog.create({
+        data: {
+          adminId: operatorId || null,
+          action: 'ADMIN_DELETE',
+          targetEntity: 'AdminUser',
+          targetId: id,
+          diffBefore: JSON.stringify({
+            id: admin.id,
+            fullName: admin.fullName,
+            email: admin.email,
+            role: admin.role,
+          }),
+          diffAfter: null,
+          reason:
+            reason ||
+            `Permanently deleted administrative personnel ${admin.fullName} (${admin.email})`,
+          ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(operatorId || 'system').slice(0, 16),
+        },
+      });
     });
 
     return {

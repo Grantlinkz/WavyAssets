@@ -76,18 +76,12 @@ export class DepositRailsController {
     AdminRole.TREASURY_OFFICER,
     AdminRole.DESK_LEAD,
   )
-  async flushInvalidationCache() {
-    return this.depositRailsService.flushInvalidationCache();
-  }
-
-  @Post('test-mesh')
-  @Roles(
-    AdminRole.SUPER_ADMIN,
-    AdminRole.TREASURY_OFFICER,
-    AdminRole.DESK_LEAD,
-  )
-  async testClientMeshConnection() {
-    return this.depositRailsService.testClientMeshConnection();
+  async flushInvalidationCache(
+    @CurrentAdmin() admin: CurrentAdminPayload,
+    @Req() req: Request,
+  ) {
+    const adminId = admin?.id || (admin as any)?.sub;
+    return this.depositRailsService.flushInvalidationCache(adminId, req.ip);
   }
 }
 

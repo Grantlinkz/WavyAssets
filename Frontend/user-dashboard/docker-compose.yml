@@ -43,5 +43,5 @@ services:
 
 networks:
   wavyassets-dashboard-network:
-    name: wavyassets_dashboard_frontend_network
-    driver: bridge
+    name: wavyassets_dashboard_network
+    external: true

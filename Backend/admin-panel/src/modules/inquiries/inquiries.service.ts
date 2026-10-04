@@ -94,13 +94,23 @@ export class InquiriesService {
     `.trim();
   }
 
+  private escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   /**
    * Generates institutional HTML email template containing project logo and favicon
    */
   private generateSubscriberEmailHtml(subject: string, message: string): string {
+    const escapedSubject = this.escapeHtml(subject);
     const formattedMessage = message
       .split('\n')
-      .map((p) => (p.trim() ? `<p style="margin: 0 0 16px 0; line-height: 1.65;">${p}</p>` : ''))
+      .map((p) => (p.trim() ? `<p style="margin: 0 0 16px 0; line-height: 1.65;">${this.escapeHtml(p)}</p>` : ''))
       .join('');
 
     return `
@@ -109,13 +119,13 @@ export class InquiriesService {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${subject}</title>
+  <title>${escapedSubject}</title>
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #08090b; color: #f1f5f9; padding: 32px 16px; margin: 0;">
   <div style="max-width: 600px; margin: 0 auto; background-color: #0f131a; border: 1px solid #1f2937; border-radius: 8px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
     <div style="padding: 28px 32px; background: linear-gradient(135deg, #0c1017 0%, #161c28 100%); border-bottom: 1px solid #1f2937;">
       ${this.generateBrandHeader()}
-      <h2 style="font-size: 18px; font-weight: 700; color: #f8fafc; margin: 0; letter-spacing: -0.01em;">${subject}</h2>
+      <h2 style="font-size: 18px; font-weight: 700; color: #f8fafc; margin: 0; letter-spacing: -0.01em;">${escapedSubject}</h2>
     </div>
     <div style="padding: 32px; font-size: 14px; line-height: 1.65; color: #cbd5e1;">
       ${formattedMessage}
@@ -206,18 +216,18 @@ export class InquiriesService {
 
         if (response.error) {
           deliveryError = response.error.message;
-          this.logger.error(`Resend API error sending to ${subscriber.email}: ${deliveryError}`);
+          this.logger.error(`Resend API error sending to recipient ${subscriber.id}: ${deliveryError}`);
         } else {
           emailDelivered = true;
           resendMessageId = response.data?.id || null;
-          this.logger.log(`Resend sent email to ${subscriber.email}. ID: ${resendMessageId}`);
+          this.logger.log(`Resend sent email to recipient ${subscriber.id}. ID: ${resendMessageId}`);
         }
       } catch (err: any) {
         deliveryError = err?.message || 'Unexpected Resend exception';
-        this.logger.error(`Resend exception sending to ${subscriber.email}: ${deliveryError}`, err);
+        this.logger.error(`Resend exception sending to recipient ${subscriber.id}: ${deliveryError}`, err);
       }
     } else {
-      this.logger.warn(`Resend client inactive. Simulated subscriber email to ${subscriber.email}`);
+      this.logger.warn(`Resend client inactive. Simulated subscriber email to ${subscriber.id}`);
       emailDelivered = true;
       resendMessageId = `sim_${Date.now()}`;
     }
@@ -286,26 +296,38 @@ export class InquiriesService {
     const errors: string[] = [];
 
     if (this.resendClient) {
-      // Dispatch individually or in small batches to respect rate limits
-      for (const email of recipientEmails) {
-        try {
-          const response = await this.resendClient.emails.send({
-            from: this.emailFrom,
-            to: email,
-            subject: dto.subject,
-            html,
-            text: dto.message,
-          });
+      const batchSize = 100;
+      for (let i = 0; i < recipientEmails.length; i += batchSize) {
+        const batchSlice = recipientEmails.slice(i, i + batchSize);
+        const batchPayload = batchSlice.map((email) => ({
+          from: this.emailFrom,
+          to: email,
+          subject: dto.subject,
+          html,
+          text: dto.message,
+        }));
 
-          if (response.error) {
-            failedCount++;
-            errors.push(`${email}: ${response.error.message}`);
+        try {
+          const response: any = await this.resendClient.batch.send(batchPayload);
+          if (response?.error) {
+            failedCount += batchSlice.length;
+            errors.push(`Batch chunk ${Math.floor(i / batchSize) + 1}: ${response.error.message}`);
+          } else if (response?.data?.data && Array.isArray(response.data.data)) {
+            for (let j = 0; j < response.data.data.length; j++) {
+              const item = response.data.data[j];
+              if (item?.error) {
+                failedCount++;
+                errors.push(`${batchSlice[j]}: ${item.error.message}`);
+              } else {
+                deliveredCount++;
+              }
+            }
           } else {
-            deliveredCount++;
+            deliveredCount += batchSlice.length;
           }
         } catch (err: any) {
-          failedCount++;
-          errors.push(`${email}: ${err?.message || 'Unknown error'}`);
+          failedCount += batchSlice.length;
+          errors.push(`Batch chunk ${Math.floor(i / batchSize) + 1} exception: ${err?.message || 'Unknown error'}`);
         }
       }
     } else {

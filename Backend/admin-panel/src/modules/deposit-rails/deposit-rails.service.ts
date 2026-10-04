@@ -1,4 +1,10 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../../common/services/prisma.service';
 import { CryptoService } from '../../common/services/crypto.service';
 import { EventsGateway } from '../events/events.gateway';
@@ -40,7 +46,7 @@ export class DepositRailsService {
       ? {
           id: fiatRail.id,
           beneficiaryName: fiatRail.beneficiaryName,
-          depositoryBank: (fiatRail as any).depositoryBank || "UBS Switzerland AG (Zurich Enclave)",
+          depositoryBank: fiatRail.depositoryBank || 'UBS Switzerland AG (Zurich Enclave)',
           swissIban: fiatRail.swissIban,
           bicSwift: fiatRail.bicSwift,
           clearingRail: fiatRail.clearingRail,
@@ -78,6 +84,11 @@ export class DepositRailsService {
     adminId?: string,
     ipAddress?: string,
   ) {
+    const cleanIban = dto.swissIban.replace(/\s+/g, '').toUpperCase();
+    if (!/^[A-Z]{2}\d{2}[0-9A-Z]{10,30}$/.test(cleanIban)) {
+      throw new BadRequestException('Invalid IBAN format');
+    }
+
     const existing = await this.prisma.fiatDepositRailConfig.findUnique({
       where: { id: 'GLOBAL_FIAT_RAIL' },
     });
@@ -97,7 +108,10 @@ export class DepositRailsService {
         },
         update: {
           beneficiaryName: dto.beneficiaryName,
-          depositoryBank: dto.depositoryBank || 'UBS Switzerland AG (Zurich Enclave)',
+          depositoryBank:
+            dto.depositoryBank !== undefined
+              ? dto.depositoryBank
+              : existing?.depositoryBank,
           swissIban: dto.swissIban,
           bicSwift: dto.bicSwift,
           clearingRail: dto.clearingRail,
@@ -143,83 +157,89 @@ export class DepositRailsService {
     const asset = dto.asset.toUpperCase().trim();
     const network = dto.network.trim();
 
-    // If an ID was provided and it belongs to a rail whose asset or network was changed, delete the old one
-    if (dto.id) {
-      const existingById = await this.prisma.cryptoDepositRailConfig.findUnique({
-        where: { id: dto.id },
-      });
-      if (
-        existingById &&
-        (existingById.asset.toUpperCase() !== asset ||
-          existingById.network.toLowerCase() !== network.toLowerCase())
-      ) {
-        await this.prisma.cryptoDepositRailConfig.delete({
-          where: { id: dto.id },
+    try {
+      const updated = await this.prisma.$transaction(async (tx) => {
+        // If an ID was provided and it belongs to a rail whose asset or network was changed, delete the old one
+        if (dto.id) {
+          const existingById = await tx.cryptoDepositRailConfig.findUnique({
+            where: { id: dto.id },
+          });
+          if (
+            existingById &&
+            (existingById.asset.toUpperCase() !== asset ||
+              existingById.network.toLowerCase() !== network.toLowerCase())
+          ) {
+            await tx.cryptoDepositRailConfig.delete({
+              where: { id: dto.id },
+            });
+          }
+        }
+
+        // Ensure any old one related to this asset and network is deleted first
+        const oldMatches = (await tx.cryptoDepositRailConfig.findMany({
+          where: {
+            asset: { equals: asset, mode: 'insensitive' },
+            network: { equals: network, mode: 'insensitive' },
+          },
+        })) || [];
+
+        const diffBefore = oldMatches.length > 0 ? JSON.stringify(oldMatches[0]) : null;
+
+        if (oldMatches.length > 0) {
+          await tx.cryptoDepositRailConfig.deleteMany({
+            where: {
+              asset: { equals: asset, mode: 'insensitive' },
+              network: { equals: network, mode: 'insensitive' },
+            },
+          });
+        }
+
+        const rail = await tx.cryptoDepositRailConfig.create({
+          data: {
+            asset,
+            network,
+            vaultAddress: dto.vaultAddress.trim(),
+            minDepositUsd: dto.minDepositUsd ?? 500.0,
+            confirmations: dto.confirmations ?? 3,
+            isActive: dto.isActive !== undefined ? dto.isActive : true,
+            updatedBy: adminId || 'SUPER_ADMIN',
+          },
         });
+
+        await tx.adminAuditLog.create({
+          data: {
+            adminId: adminId || null,
+            action: 'DEPOSIT_RAIL_CRYPTO_UPDATE',
+            targetEntity: 'CryptoDepositRailConfig',
+            targetId: rail.id,
+            diffBefore,
+            diffAfter: JSON.stringify(dto),
+            reason: `Crypto deposit rail ${asset}-${network} coordinates updated by treasury administration (previous configuration replaced)`,
+            ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
+          },
+        });
+
+        return rail;
+      });
+
+      this.logger.log(
+        `Crypto deposit rail ${asset} (${network}) upserted by operator ${adminId || 'SYSTEM'}`,
+      );
+
+      this.eventsGateway.emitDepositRailUpdated({
+        railType: 'CRYPTO',
+        asset,
+        network,
+        rail: updated,
+      });
+
+      return updated;
+    } catch (error: any) {
+      if (error?.code === 'P2002' || error?.message?.includes('Unique constraint')) {
+        throw new ConflictException(`Crypto deposit rail for ${asset} (${network}) already exists.`);
       }
+      throw error;
     }
-
-    // Ensure any old one related to this asset and network is deleted first
-    // For example if there was a previous USDT BEP-20, deleting it ensures the old setting is completely gone
-    const oldMatches = (await this.prisma.cryptoDepositRailConfig.findMany({
-      where: {
-        asset: { equals: asset, mode: 'insensitive' },
-        network: { equals: network, mode: 'insensitive' },
-      },
-    })) || [];
-
-    const diffBefore = oldMatches.length > 0 ? JSON.stringify(oldMatches[0]) : null;
-
-    if (oldMatches.length > 0) {
-      await this.prisma.cryptoDepositRailConfig.deleteMany({
-        where: {
-          asset: { equals: asset, mode: 'insensitive' },
-          network: { equals: network, mode: 'insensitive' },
-        },
-      });
-    }
-
-    const updated = await this.prisma.$transaction(async (tx) => {
-      const rail = await tx.cryptoDepositRailConfig.create({
-        data: {
-          asset,
-          network,
-          vaultAddress: dto.vaultAddress.trim(),
-          minDepositUsd: dto.minDepositUsd ?? 500.0,
-          confirmations: dto.confirmations ?? 3,
-          isActive: dto.isActive !== undefined ? dto.isActive : true,
-          updatedBy: adminId || 'SUPER_ADMIN',
-        },
-      });
-
-      await tx.adminAuditLog.create({
-        data: {
-          adminId: adminId || null,
-          action: 'DEPOSIT_RAIL_CRYPTO_UPDATE',
-          targetEntity: 'CryptoDepositRailConfig',
-          targetId: rail.id,
-          diffBefore,
-          diffAfter: JSON.stringify(dto),
-          reason: `Crypto deposit rail ${asset}-${network} coordinates updated by treasury administration (previous configuration replaced)`,
-          ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
-        },
-      });
-
-      return rail;
-    });
-
-    this.logger.log(
-      `Crypto deposit rail ${asset} (${network}) upserted by operator ${adminId || 'SYSTEM'}`,
-    );
-
-    this.eventsGateway.emitDepositRailUpdated({
-      railType: 'CRYPTO',
-      asset,
-      network,
-      rail: updated,
-    });
-
-    return updated;
   }
 
   /**
@@ -306,26 +326,52 @@ export class DepositRailsService {
   }
 
   /**
-   * Flushes global edge distribution caches for real-time deposit coordinates invalidation
+   * Flushes global edge distribution caches and propagates deposit rail updates
    */
-  async flushInvalidationCache() {
-    this.logger.log('Global edge cache invalidated across all regional nodes.');
-    return {
-      success: true,
-      flushedNodesCount: 12,
-      message: 'Global cache invalidation complete. All edge nodes refreshed.',
-    };
-  }
+  async flushInvalidationCache(adminId?: string, ipAddress?: string) {
+    const [fiatRail, cryptoRails] = await Promise.all([
+      this.prisma.fiatDepositRailConfig.findUnique({
+        where: { id: 'GLOBAL_FIAT_RAIL' },
+      }),
+      this.prisma.cryptoDepositRailConfig.findMany({
+        where: { isActive: true },
+      }),
+    ]);
 
-  /**
-   * Tests high-availability WebSocket cluster synchronization and terminal mesh connectivity
-   */
-  async testClientMeshConnection() {
+    this.eventsGateway.emitDepositRailUpdated({
+      railType: 'FIAT',
+      fiat: fiatRail,
+    });
+
+    for (const rail of cryptoRails) {
+      this.eventsGateway.emitDepositRailUpdated({
+        railType: 'CRYPTO',
+        asset: rail.asset,
+        network: rail.network,
+        rail,
+      });
+    }
+
+    await this.prisma.adminAuditLog.create({
+      data: {
+        adminId: adminId || null,
+        action: 'DEPOSIT_RAIL_CACHE_FLUSH',
+        targetEntity: 'DepositRailConfig',
+        targetId: 'GLOBAL_FIAT_RAIL',
+        diffBefore: null,
+        diffAfter: null,
+        reason: 'Operator triggered global deposit rail cache invalidation and edge propagation',
+        ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
+      },
+    });
+
+    this.logger.log(
+      `Deposit rail cache invalidation executed by operator ${adminId || 'SYSTEM'}`,
+    );
+
     return {
       success: true,
-      latencyMs: 14,
-      activeTerminals: 1429,
-      message: 'Direct mesh WebSocket connectivity nominal across all regional nodes.',
+      message: 'Global deposit rail configuration propagated and cache invalidated.',
     };
   }
 }

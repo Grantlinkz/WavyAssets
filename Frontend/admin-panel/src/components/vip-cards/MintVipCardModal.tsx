@@ -271,9 +271,11 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
                 </label>
 
                 {/* Exclusive Celebrity Membership Card Option */}
-                <div
+                <button
+                  type="button"
+                  aria-pressed={draftMint.substrate === "Celebrity 24K Gold & Diamond"}
                   onClick={() => handleSubstrateSelect("Celebrity 24K Gold & Diamond", "CELEBRITY", 0)}
-                  className={`p-3 rounded-[4px] border cursor-pointer transition-all flex items-center justify-between gap-3 ${
+                  className={`w-full text-left p-3 rounded-[4px] border cursor-pointer transition-all flex items-center justify-between gap-3 ${
                     draftMint.substrate === "Celebrity 24K Gold & Diamond"
                       ? "bg-gradient-to-r from-amber-500/20 via-yellow-500/15 to-amber-600/20 border-[#FFD700] ring-1 ring-[#FFD700]/50 shadow-md"
                       : "bg-bg-canvas hover:bg-state-hover border-border-subtle hover:border-gold-accent/40"
@@ -316,7 +318,7 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
                       )}
                     </div>
                   </div>
-                </div>
+                </button>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {/* Option 1: Obsidian Tungsten */}

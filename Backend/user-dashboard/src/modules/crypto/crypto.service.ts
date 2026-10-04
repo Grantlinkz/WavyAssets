@@ -191,11 +191,14 @@ export class CryptoService {
     const now = new Date();
     let nextRunAt = new Date(now.getTime() + 24 * 3600 * 1000); // Default daily
 
-    if (dto.frequency === 'WEEKLY') {
+    const normalizedFrequency =
+      dto.frequency === 'BI_WEEKLY' ? 'BIWEEKLY' : dto.frequency;
+
+    if (normalizedFrequency === 'WEEKLY') {
       nextRunAt = new Date(now.getTime() + 7 * 24 * 3600 * 1000);
-    } else if (dto.frequency === 'BIWEEKLY') {
+    } else if (normalizedFrequency === 'BIWEEKLY') {
       nextRunAt = new Date(now.getTime() + 14 * 24 * 3600 * 1000);
-    } else if (dto.frequency === 'MONTHLY') {
+    } else if (normalizedFrequency === 'MONTHLY') {
       const targetMonth = now.getMonth() + 1;
       const targetYear = now.getFullYear() + Math.floor(targetMonth / 12);
       const normalizedMonth = targetMonth % 12;
@@ -204,9 +207,6 @@ export class CryptoService {
       const adjustedDay = Math.min(originalDay, maxDaysInMonth);
       nextRunAt = new Date(targetYear, normalizedMonth, adjustedDay, now.getHours(), now.getMinutes(), now.getSeconds());
     }
-
-    const normalizedFrequency =
-      dto.frequency === 'BI_WEEKLY' ? 'BIWEEKLY' : dto.frequency;
 
     const schedule = await this.prisma.dcaSchedule.create({
       data: {

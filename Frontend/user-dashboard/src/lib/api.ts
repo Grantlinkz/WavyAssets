@@ -486,30 +486,25 @@ export async function uploadDossierDocument<T = unknown>(
 ): Promise<T> {
   let fileUrl = payload.fileUrl;
   if (!fileUrl && payload.file) {
-    if (typeof FileReader !== 'undefined') {
-      try {
-        fileUrl = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            if (typeof reader.result === 'string') {
-              resolve(reader.result);
-            } else {
-              resolve(`https://vault.wavyassets.com/dossier/vault_${Date.now()}_${encodeURIComponent(payload.file!.name)}`);
-            }
-          };
-          reader.onerror = () => {
-            resolve(`https://vault.wavyassets.com/dossier/vault_${Date.now()}_${encodeURIComponent(payload.file!.name)}`);
-          };
-          reader.readAsDataURL(payload.file!);
-        });
-      } catch {
-        fileUrl = `https://vault.wavyassets.com/dossier/vault_${Date.now()}_${encodeURIComponent(payload.file.name)}`;
-      }
-    } else {
-      fileUrl = `https://vault.wavyassets.com/dossier/vault_${Date.now()}_${encodeURIComponent(payload.file.name)}`;
+    if (typeof FileReader === 'undefined') {
+      throw new Error('FileReader is unavailable in this environment');
     }
+    fileUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          resolve(reader.result);
+        } else {
+          reject(new Error('FileReader did not produce a string result'));
+        }
+      };
+      reader.onerror = () => {
+        reject(reader.error || new Error('FileReader failed to read document'));
+      };
+      reader.readAsDataURL(payload.file!);
+    });
   } else if (!fileUrl) {
-    fileUrl = 'https://vault.wavyassets.com/dossier/dossier_upload.pdf';
+    throw new Error('Document file or fileUrl is required for dossier submission');
   }
 
   const bodyData = { ...payload };
@@ -589,26 +584,23 @@ export interface DepositRailsData {
 }
 
 export async function fetchDepositRails(): Promise<DepositRailsData> {
-  const fallback: DepositRailsData = {
-    fiat: {
-      id: 'GLOBAL_FIAT_RAIL',
-      beneficiaryName: 'Grant Global Holdings AG / Escrow Treuhand Zurich',
-      depositoryBank: 'UBS Switzerland AG (Zurich Enclave)',
-      swissIban: 'CH93 0023 8812 4019 8821 0',
-      bicSwift: 'UBSWCHZH80A',
-      clearingRail: 'Swiss SIC RTGS / Fedwire DvP',
-      memoFormat: 'WY-9942-TREASURY-03',
-    },
-    crypto: [],
-  };
-
   try {
-    return await requestApi<DepositRailsData>('/api/v1/wallet/deposit-rails', { method: 'GET' }, fallback);
+    return await requestApi<DepositRailsData>('/api/v1/wallet/deposit-rails', { method: 'GET' });
   } catch {
     try {
-      return await requestApi<DepositRailsData>('/api/v1/deposit-rails', { method: 'GET' }, fallback);
+      return await requestApi<DepositRailsData>('/api/v1/deposit-rails', { method: 'GET' });
     } catch {
-      return fallback;
+      return {
+        fiat: {
+          id: 'UNAVAILABLE',
+          beneficiaryName: 'Deposit Instructions Unavailable',
+          swissIban: '',
+          bicSwift: '',
+          clearingRail: 'Unavailable',
+          memoFormat: '',
+        },
+        crypto: [],
+      };
     }
   }
 }

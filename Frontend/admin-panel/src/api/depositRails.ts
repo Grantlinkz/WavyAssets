@@ -46,23 +46,14 @@ export async function fetchDepositRails(): Promise<DepositRailsData> {
   const cryptoRails = (res.cryptoRails || res.crypto) as CryptoDepositRailConfig[] | undefined
   const telemetry = res.telemetry as DepositRailsTelemetry | undefined
 
+  if (!fiatRail || !telemetry) {
+    throw new Error("Deposit rails configuration or telemetry unavailable from server")
+  }
+
   return {
-    fiatRail: fiatRail || {
-      beneficiaryName: "Grant Global Holdings AG / Escrow Treuhand Zurich",
-      depositoryBank: "UBS Switzerland AG (Zurich Enclave)",
-      clearingRail: "Swiss SIC RTGS / Fedwire DvP",
-      swissIban: "CH93 0023 8812 4019 8821 0",
-      bicSwift: "UBSWCHZH80A",
-      memoFormat: "WY-{USER_REF}-TREASURY-03",
-    },
+    fiatRail,
     cryptoRails: cryptoRails || [],
-    telemetry: telemetry || {
-      broadcasterConnected: true,
-      wsLatencyMs: 14,
-      activeTerminalsCount: 1429,
-      hsmStatus: "Gemalto SafeNet Luna 7",
-      configVersion: "v4.88.2-CH",
-    },
+    telemetry,
   }
 }
 

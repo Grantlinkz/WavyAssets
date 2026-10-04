@@ -84,7 +84,7 @@ export const DepositRailsView: React.FC = () => {
                 </span>
               </div>
               <span className="font-mono text-xs text-secondary bg-bg-elevated px-2.5 py-0.5 rounded-[3px] border border-border-subtle">
-                Config Version: {railsData?.telemetry?.configVersion || "v4.88.2-CH"}
+                Config Version: {railsData?.telemetry?.configVersion ?? "Unavailable"}
               </span>
             </div>
             <p className="font-sans text-xs text-secondary max-w-4xl leading-relaxed">
@@ -161,12 +161,16 @@ export const DepositRailsView: React.FC = () => {
                   WebSocket Sync Latency
                 </span>
                 <span className="font-mono text-xs text-on-surface font-semibold">
-                  {railsData?.telemetry?.wsLatencyMs || 14}ms Average RTT
+                  {railsData?.telemetry?.wsLatencyMs != null
+                    ? `${railsData.telemetry.wsLatencyMs}ms Average RTT`
+                    : "— Latency Unavailable"}
                 </span>
               </div>
             </div>
             <span className="font-mono text-xs text-telemetry-cyan bg-telemetry-cyan/10 px-2.5 py-1 rounded-[3px] border border-telemetry-cyan/30 font-semibold">
-              {railsData?.telemetry?.activeTerminalsCount?.toLocaleString() || "1,429"} Terminals
+              {railsData?.telemetry?.activeTerminalsCount != null
+                ? `${railsData.telemetry.activeTerminalsCount.toLocaleString()} Terminals`
+                : "— Terminals"}
             </span>
           </div>
 
@@ -180,7 +184,7 @@ export const DepositRailsView: React.FC = () => {
                   Ledger Verification HSM
                 </span>
                 <span className="font-sans text-xs font-semibold text-on-surface">
-                  {railsData?.telemetry?.hsmStatus || "Gemalto SafeNet Luna 7"}
+                  {railsData?.telemetry?.hsmStatus ?? "Unavailable"}
                 </span>
               </div>
             </div>

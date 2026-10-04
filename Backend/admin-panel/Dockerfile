@@ -51,7 +51,7 @@ EXPOSE 4002
 
 # Integrated Health Probe
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD curl -f http://localhost:${PORT}/api/v1/overview/summary || exit 1
+  CMD curl -f http://localhost:${PORT}/health || exit 1
 
 # Launch with tini signal management and exec replacement for graceful shutdown
 ENTRYPOINT ["/sbin/tini", "--"]

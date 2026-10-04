@@ -10,6 +10,7 @@ import {
   X,
   Loader2,
   Trash2,
+  AlertTriangle,
 } from "lucide-react"
 import {
   updateCryptoRail,
@@ -62,30 +63,9 @@ export const CryptoVaultMatrix: React.FC<CryptoVaultMatrixProps> = ({
   const [editingRail, setEditingRail] = useState<CryptoDepositRailConfig | null>(null)
   const [isNewRail, setIsNewRail] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const [isSavingAll, setIsSavingAll] = useState(false)
-
-  const handleSaveAllCryptoRails = async () => {
-    try {
-      setIsSavingAll(true)
-      setFormError(null)
-      for (const r of rails) {
-        await updateCryptoRail(r)
-      }
-      try {
-        await flushInvalidationCache()
-      } catch (cacheErr) {
-        console.warn("Cache invalidation notice:", cacheErr)
-      }
-      queryClient.invalidateQueries({ queryKey: ["deposit-rails"] })
-      setHsmAuditNotice("Cryptographic cold storage inflow matrix permanently synchronized to DB and committed to ledger.")
-      setTimeout(() => setHsmAuditNotice(null), 6000)
-    } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : "Failed to commit crypto address matrix to database."
-      setFormError(errMsg)
-    } finally {
-      setIsSavingAll(false)
-    }
-  }
+  const [pendingChanges, setPendingChanges] = useState<Map<string, CryptoDepositRailConfig>>(new Map())
 
   const saveRailMutation = useMutation({
     mutationFn: (rail: CryptoDepositRailConfig) => updateCryptoRail(rail),
@@ -117,13 +97,47 @@ export const CryptoVaultMatrix: React.FC<CryptoVaultMatrixProps> = ({
     mutationFn: (id: string) => deleteCryptoRail(id),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["deposit-rails"] })
+      setDeleteError(null)
       setHsmAuditNotice(res.message || "Crypto deposit rail coordinates successfully removed from database.")
       setTimeout(() => setHsmAuditNotice(null), 6000)
     },
     onError: (err: Error) => {
-      setFormError(err.message || "Failed to delete crypto deposit rail.")
+      setDeleteError(err.message || "Failed to delete crypto deposit rail.")
     },
   })
+
+  const isAnyMutationPending =
+    saveRailMutation.isPending || toggleMutation.isPending || deleteRailMutation.isPending
+
+  const handleSaveAllCryptoRails = async () => {
+    if (isAnyMutationPending || isSavingAll) return
+    const changesToSave = Array.from(pendingChanges.values())
+    if (changesToSave.length === 0) {
+      return
+    }
+
+    try {
+      setIsSavingAll(true)
+      setDeleteError(null)
+      for (const r of changesToSave) {
+        await updateCryptoRail(r)
+      }
+      try {
+        await flushInvalidationCache()
+      } catch (cacheErr) {
+        console.warn("Cache invalidation notice:", cacheErr)
+      }
+      queryClient.invalidateQueries({ queryKey: ["deposit-rails"] })
+      setPendingChanges(new Map())
+      setHsmAuditNotice("Cryptographic cold storage inflow matrix permanently synchronized to DB and committed to ledger.")
+      setTimeout(() => setHsmAuditNotice(null), 6000)
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : "Failed to commit crypto address matrix to database."
+      setDeleteError(errMsg)
+    } finally {
+      setIsSavingAll(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -196,7 +210,7 @@ export const CryptoVaultMatrix: React.FC<CryptoVaultMatrixProps> = ({
                 asset: "USDC",
                 name: "USD Coin",
                 network: "ERC-20",
-                vaultAddress: "0x94A8D19F200c9261a81eC97669d0339dE78E916B",
+                vaultAddress: "",
                 minDepositUsd: 500,
                 confirmations: 3,
                 confirmationTimeEst: "~3 mins",
@@ -216,6 +230,22 @@ export const CryptoVaultMatrix: React.FC<CryptoVaultMatrixProps> = ({
           </span>
         </div>
       </div>
+
+      {deleteError && (
+        <div className="p-3 bg-status-danger/10 border border-status-danger/30 rounded-[4px] text-status-danger text-xs flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>{deleteError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDeleteError(null)}
+            className="text-xs hover:underline cursor-pointer"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {hsmAuditNotice && (
         <div className="p-3 bg-status-success/10 border border-status-success/30 rounded-[4px] text-status-success text-xs flex items-center gap-2">
@@ -358,9 +388,9 @@ export const CryptoVaultMatrix: React.FC<CryptoVaultMatrixProps> = ({
                         <div className="inline-flex items-center gap-1.5">
                           <button
                             type="button"
-                            disabled={toggleMutation.isPending}
+                            disabled={toggleMutation.isPending || isSavingAll}
                             onClick={() => toggleMutation.mutate(rail)}
-                            className={`w-8 h-4 rounded-full relative transition-colors focus:outline-none p-0.5 cursor-pointer ${
+                            className={`w-8 h-4 rounded-full relative transition-colors focus:outline-none p-0.5 cursor-pointer disabled:opacity-50 ${
                               rail.isActive ? "bg-status-success" : "bg-border-subtle"
                             }`}
                           >
@@ -386,12 +416,13 @@ export const CryptoVaultMatrix: React.FC<CryptoVaultMatrixProps> = ({
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           type="button"
+                          disabled={isSavingAll}
                           onClick={() => {
                             setEditingRail({ ...rail })
                             setIsNewRail(false)
                             setFormError(null)
                           }}
-                          className="h-7 px-2.5 rounded-[3px] border border-gold-accent/40 bg-gold-accent/10 hover:bg-gold-accent/20 text-gold-accent font-sans text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                          className="h-7 px-2.5 rounded-[3px] border border-gold-accent/40 bg-gold-accent/10 hover:bg-gold-accent/20 text-gold-accent font-sans text-xs flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
                           title="Update Web3 vault address and network details"
                           data-testid={`edit-rail-${rail.asset}-${rail.network}`}
                         >
@@ -400,14 +431,15 @@ export const CryptoVaultMatrix: React.FC<CryptoVaultMatrixProps> = ({
                         </button>
                         <button
                           type="button"
+                          disabled={isSavingAll}
                           onClick={() => handleAuditHsm(rail.asset, rail.vaultAddress)}
-                          className="h-7 px-2.5 rounded-[3px] border border-border-subtle bg-bg-elevated hover:border-gold-accent hover:bg-state-hover text-on-surface font-sans text-xs transition-colors cursor-pointer"
+                          className="h-7 px-2.5 rounded-[3px] border border-border-subtle bg-bg-elevated hover:border-gold-accent hover:bg-state-hover text-on-surface font-sans text-xs transition-colors cursor-pointer disabled:opacity-50"
                         >
                           Audit HSM
                         </button>
                         <button
                           type="button"
-                          disabled={deleteRailMutation.isPending}
+                          disabled={deleteRailMutation.isPending || isSavingAll}
                           onClick={() => {
                             if (window.confirm(`Are you sure you want to remove the ${rail.asset} (${rail.network}) deposit rail?`)) {
                               deleteRailMutation.mutate(rail.id)
@@ -463,7 +495,7 @@ export const CryptoVaultMatrix: React.FC<CryptoVaultMatrixProps> = ({
           </button>
           <button
             type="button"
-            disabled={isSavingAll}
+            disabled={isSavingAll || isAnyMutationPending || pendingChanges.size === 0}
             onClick={handleSaveAllCryptoRails}
             className="h-8 px-4 rounded-[4px] bg-[#00C288] hover:bg-[#00A875] text-[#050505] font-sans text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer disabled:opacity-50"
           >
@@ -685,7 +717,7 @@ export const CryptoVaultMatrix: React.FC<CryptoVaultMatrixProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={saveRailMutation.isPending}
+                  disabled={saveRailMutation.isPending || isSavingAll}
                   className="px-4 py-1.5 rounded-[4px] bg-gold-accent hover:bg-[#C5A028] text-bg-canvas text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-60"
                   data-testid="save-crypto-rail-btn"
                 >

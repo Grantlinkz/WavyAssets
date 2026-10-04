@@ -18,6 +18,45 @@ export class ComplianceService {
   ) {}
 
   /**
+   * Evaluates dossier status with consistent FINMA AML compliance criteria
+   */
+  private computeDossierStatus(params: {
+    kycTier: string;
+    documentsCount: number;
+    unverifiedCount: number;
+    hasPendingDoc: boolean;
+    isDossierRejected: boolean;
+    hasAnyDocRejected: boolean;
+  }): 'APPROVED' | 'REJECTED' | 'PENDING_REVIEW' {
+    const {
+      kycTier,
+      documentsCount,
+      unverifiedCount,
+      hasPendingDoc,
+      isDossierRejected,
+      hasAnyDocRejected,
+    } = params;
+
+    if (documentsCount === 0) {
+      return isDossierRejected ? 'REJECTED' : 'PENDING_REVIEW';
+    }
+
+    if (kycTier === 'TIER_3' || unverifiedCount === 0) {
+      return 'APPROVED';
+    }
+
+    if (hasPendingDoc) {
+      return 'PENDING_REVIEW';
+    }
+
+    if (isDossierRejected || hasAnyDocRejected) {
+      return 'REJECTED';
+    }
+
+    return 'PENDING_REVIEW';
+  }
+
+  /**
    * Retrieves pending identity dossiers in the FINMA AML review queue
    */
   async getQueue(query?: { search?: string; tier?: string; status?: string }) {
@@ -156,17 +195,14 @@ export class ComplianceService {
       const hasPendingDoc = mappedDocs.some((d) => d.status === 'PENDING');
       const hasAnyDocRejected = mappedDocs.some((d) => d.status === 'REJECTED');
 
-      let status: 'APPROVED' | 'REJECTED' | 'PENDING_REVIEW';
-      if (user.kycTier === 'TIER_3' || (unverifiedCount === 0 && mappedDocs.length > 0)) {
-        status = 'APPROVED';
-      } else if (hasPendingDoc) {
-        // If there is ANY pending document awaiting review (e.g. re-uploaded replacement), dossier is PENDING_REVIEW
-        status = 'PENDING_REVIEW';
-      } else if (isDossierRejected || hasAnyDocRejected) {
-        status = 'REJECTED';
-      } else {
-        status = 'PENDING_REVIEW';
-      }
+      const status = this.computeDossierStatus({
+        kycTier: user.kycTier,
+        documentsCount: mappedDocs.length,
+        unverifiedCount,
+        hasPendingDoc,
+        isDossierRejected,
+        hasAnyDocRejected,
+      });
 
       const dossierNumber = `FINMA-KYC-${shortId}`;
       const submittedAt = latestDoc ? latestDoc.uploadedAt.toISOString() : user.createdAt.toISOString();
@@ -471,16 +507,17 @@ export class ComplianceService {
     });
 
     const unverifiedCount = (user.kycDocuments || []).filter((d) => !d.isVerified).length;
+    const hasPendingDoc = mappedDocs.some((d) => d.status === 'PENDING');
     const hasAnyDocRejected = mappedDocs.some((d) => d.status === 'REJECTED');
 
-    let status: 'APPROVED' | 'REJECTED' | 'PENDING_REVIEW';
-    if (user.kycTier === 'TIER_3' || unverifiedCount === 0) {
-      status = 'APPROVED';
-    } else if (isDossierRejected || hasAnyDocRejected) {
-      status = 'REJECTED';
-    } else {
-      status = 'PENDING_REVIEW';
-    }
+    const status = this.computeDossierStatus({
+      kycTier: user.kycTier,
+      documentsCount: mappedDocs.length,
+      unverifiedCount,
+      hasPendingDoc,
+      isDossierRejected,
+      hasAnyDocRejected,
+    });
 
     let requestedTier = 'INSTITUTIONAL';
     if (user.kycTier === 'TIER_1') requestedTier = 'TIER_2';

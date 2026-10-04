@@ -71,7 +71,7 @@ WavyAssets/ (Git Root)
 │   ├── user-dashboard/                       # Authenticated Sovereign Command Deck (:5174)
 │   │   ├── src/                              # 7 asset module command views, Smartsupp live concierge, universal bar
 │   │   ├── Dockerfile                        # Multi-stage Vite build + Nginx Alpine web server
-│   │   ├── nginx.conf.template               # Production reverse proxy to backend dashboard (:4000)
+│   │   ├── nginx.conf.template               # Production reverse proxy to backend dashboard (:4001)
 │   │   ├── docker-compose.yml                # Standalone service compose
 │   │   ├── docker-compose.dev.yml            # Live hot-reload development compose
 │   │   └── README.md                         # Terminal documentation

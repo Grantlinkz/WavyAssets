@@ -24,6 +24,7 @@ describe('AdminsService (Unit)', () => {
       adminAuditLog: {
         create: vi.fn(),
       },
+      $transaction: vi.fn(async (cb) => cb(mockPrisma)),
     };
 
     mockCryptoService = {

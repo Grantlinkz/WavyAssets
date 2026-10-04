@@ -7,7 +7,7 @@ set -e
 
 # Automatically push database schema if in SQLite environment
 if [ -f "/app/prisma/schema.prisma" ]; then
-  npx prisma db push --skip-generate || true
+  npx prisma db push --skip-generate
 fi
 
 # Ensure correct permissions for the unprivileged node user
