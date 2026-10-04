@@ -40,7 +40,7 @@ export const DeleteAdminModal: React.FC = () => {
       setConfirmEmail("")
       setErrorMsg(null)
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       setErrorMsg(err?.message || "Failed to remove administrative personnel.")
     },
   })

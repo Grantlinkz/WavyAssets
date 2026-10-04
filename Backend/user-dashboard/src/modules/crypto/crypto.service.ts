@@ -21,6 +21,10 @@ export class CryptoService {
     SOL: { price: 145.5, name: 'Solana' },
     LINK: { price: 16.8, name: 'Chainlink' },
     AVAX: { price: 28.5, name: 'Avalanche' },
+    USDC: { price: 1.0, name: 'USD Coin' },
+    BNB: { price: 620.4, name: 'Binance Coin' },
+    XRP: { price: 0.54, name: 'Ripple' },
+    USDT: { price: 1.0, name: 'Tether USD' },
   };
 
   constructor(
@@ -201,12 +205,15 @@ export class CryptoService {
       nextRunAt = new Date(targetYear, normalizedMonth, adjustedDay, now.getHours(), now.getMinutes(), now.getSeconds());
     }
 
+    const normalizedFrequency =
+      dto.frequency === 'BI_WEEKLY' ? 'BIWEEKLY' : dto.frequency;
+
     const schedule = await this.prisma.dcaSchedule.create({
       data: {
         userId,
         symbol: dto.symbol,
         amountUsd: dto.amountUsd,
-        frequency: dto.frequency,
+        frequency: normalizedFrequency,
         isActive: true,
         nextRunAt,
       },

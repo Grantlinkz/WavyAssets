@@ -1,0 +1,166 @@
+# ==============================================================================
+# WavyAssets Backend Microservices Stack — Unified Backend Compose
+# ==============================================================================
+# Services:
+# - backend-landing:         Landing Page API & WebSocket Gateway (:4000)
+# - backend-user-dashboard:  User Dashboard Transaction Core & Ledger (:4001)
+# - backend-admin-panel:     Supreme Admin Panel & Treasury Operations (:4002)
+# ==============================================================================
+
+services:
+  backend-landing:
+    build:
+      context: ./landing-page
+      dockerfile: Dockerfile
+      target: runner
+    image: wavyassets/landing-page-backend:1.0.0
+    container_name: wavyassets-landing-backend
+    restart: unless-stopped
+    ports:
+      - "${LANDING_BACKEND_PORT:-4000}:4000"
+    env_file:
+      - ./landing-page/.env
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - DATABASE_URL=file:./dev.db
+    command: sh -c "npx prisma db push --skip-generate && node dist/main.js"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - backend_landing_sqlite_data:/app/prisma
+    networks:
+      wavyassets-backend-network:
+        aliases:
+          - backend
+          - backend-landing
+          - wavyassets-landing-backend
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4000/health/live || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.50"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backend-user-dashboard:
+    build:
+      context: ./user-dashboard
+      dockerfile: Dockerfile
+      target: runner
+    image: wavyassets/user-dashboard-backend:1.0.0
+    container_name: wavyassets-backend-user-dashboard
+    restart: unless-stopped
+    ports:
+      - "${USER_DASHBOARD_BACKEND_PORT:-4001}:4000"
+    env_file:
+      - ./user-dashboard/.env
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - DATABASE_URL=file:./dev.db
+    command: sh -c "npx prisma db push --skip-generate && node dist/src/main.js"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - backend_dashboard_sqlite_data:/app/prisma
+    networks:
+      wavyassets-backend-network:
+        aliases:
+          - backend-user-dashboard
+          - user-dashboard-backend
+          - wavyassets-backend-user-dashboard
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.50"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backend-admin-panel:
+    build:
+      context: ./admin-panel
+      dockerfile: Dockerfile
+      target: runner
+    image: wavyassets/admin-panel-backend:1.0.0
+    container_name: wavyassets-backend-admin-panel
+    restart: unless-stopped
+    ports:
+      - "${ADMIN_BACKEND_PORT:-4002}:4002"
+    env_file:
+      - ./admin-panel/.env
+    environment:
+      - NODE_ENV=production
+      - PORT=4002
+      - DATABASE_URL=file:./dev.db
+    command: sh -c "npx prisma db push --skip-generate && node dist/src/main.js"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - backend_admin_sqlite_data:/app/prisma
+    networks:
+      wavyassets-backend-network:
+        aliases:
+          - backend-admin-panel
+          - admin-panel-backend
+          - wavyassets-backend-admin-panel
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4002/api/v1/overview/summary || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.50"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  backend_landing_sqlite_data:
+    name: wavyassets_landing_backend_data
+    driver: local
+  backend_dashboard_sqlite_data:
+    name: wavyassets_dashboard_backend_data
+    driver: local
+  backend_admin_sqlite_data:
+    name: wavyassets_admin_backend_data
+    driver: local
+
+networks:
+  wavyassets-backend-network:
+    name: wavyassets_backend_internal_network
+    driver: bridge

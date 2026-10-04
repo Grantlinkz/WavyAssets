@@ -154,6 +154,12 @@ export const useLiquidStore = create<LiquidState>((set) => ({
       }
     } catch (err) {
       console.error('Failed to create DCA schedule in DB', err);
+      // Revert optimistic schedule on network/server failure so ghost item doesn't linger
+      set((state) => ({
+        dcaSchedules: state.dcaSchedules.filter((s) => s.id !== tempId),
+        transactions: state.transactions.filter((t) => t.id !== tx.id),
+      }));
+      throw err;
     }
   },
 

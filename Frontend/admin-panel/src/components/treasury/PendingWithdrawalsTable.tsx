@@ -36,6 +36,7 @@ export const PendingWithdrawalsTable: React.FC = () => {
         rail: railFilter !== "ALL" ? railFilter : undefined,
         search: searchQuery || undefined,
       }),
+    refetchInterval: 3000,
   })
 
   if (isLoading) {
@@ -161,9 +162,16 @@ export const PendingWithdrawalsTable: React.FC = () => {
                             </span>
                           )}
                         </span>
-                        <span className="font-mono tabular-nums text-body-sm text-secondary">
-                          {item.userCif || "CIF-INST-001"}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-mono tabular-nums text-body-sm text-secondary">
+                            {item.userCif || "CIF-INST-001"}
+                          </span>
+                          {item.referenceId && (
+                            <span className="font-mono text-[10px] text-gold-accent/90 bg-gold-accent/10 px-1 rounded border border-gold-accent/20">
+                              {item.referenceId}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
 

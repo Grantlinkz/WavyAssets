@@ -160,14 +160,19 @@ model LedgerAccount {
 }
 
 model LedgerTransaction {
-  id          String        @id @default(uuid())
-  referenceId String        @unique // Idempotency key
-  type        String        // DEPOSIT | WITHDRAWAL | TRADE | STAKE | REWARD | DIVIDEND | SWEEP
-  status      String        // PENDING | SETTLED | FAILED
-  description String
-  createdAt   DateTime      @default(now())
+  id            String        @id @default(uuid())
+  referenceId   String        @unique // Idempotency key
+  type          String        // DEPOSIT | WITHDRAWAL | TRADE | STAKE | REWARD | DIVIDEND | SWEEP
+  status        String        // PENDING | SETTLED | FAILED
+  description   String
+  amount        Decimal?      @default(0.0)
+  currency      String?       @default("USD")
+  rail          String?       // SWISS_SIC | FEDWIRE | ETH | BTC | POLYGON
+  counterparty  String?
+  accountNumber String?
+  createdAt     DateTime      @default(now())
 
-  entries     LedgerEntry[]
+  entries       LedgerEntry[]
 }
 
 model LedgerEntry {

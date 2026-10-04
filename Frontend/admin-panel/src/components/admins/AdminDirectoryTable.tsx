@@ -11,7 +11,6 @@ import {
   Pencil,
   Trash2,
   ShieldCheck,
-  ShieldAlert,
   UserCheck,
 } from "lucide-react"
 import { fetchAdmins, type AdminPersonnel, type AdminPersonnelRole } from "../../api/admins"

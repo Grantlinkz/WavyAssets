@@ -20,6 +20,7 @@ import { DepositModal } from './components/modals/DepositModal';
 import { WithdrawModal } from './components/modals/WithdrawModal';
 import { TradeModal } from './components/modals/TradeModal';
 import { KycDrawer } from './components/modals/KycDrawer';
+import { SmartsuppChat } from './components/chat/SmartsuppChat';
 import { InstitutionalGate } from './components/auth/InstitutionalGate';
 import { useAuthStore, type UserEntity } from './store/useAuthStore';
 import { usePortfolioStore } from './store/usePortfolioStore';
@@ -268,6 +269,9 @@ export const App: React.FC<AppProps> = ({
       <WithdrawModal />
       <TradeModal />
       <KycDrawer />
+
+      {/* Institutional 24/7 Smartsupp Live Concierge Desk */}
+      <SmartsuppChat />
     </div>
   );
 };

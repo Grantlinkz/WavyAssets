@@ -1,0 +1,140 @@
+# ==============================================================================
+# WavyAssets Frontend Terminals Stack — Unified Frontend Compose
+# ==============================================================================
+# Services:
+# - landing-frontend:         Showcase & Interactive Terminal (:5173)
+# - user-dashboard-frontend:  Sovereign Wealth Command Deck (:5174)
+# - admin-panel-frontend:     Supreme Institutional Admin Deck (:5175)
+# ==============================================================================
+
+services:
+  landing-frontend:
+    build:
+      context: ./landing-page
+      dockerfile: Dockerfile
+      target: runner
+    image: wavyassets/landing-page-frontend:1.0.0
+    container_name: wavyassets-landing-frontend
+    restart: unless-stopped
+    ports:
+      - "${LANDING_FRONTEND_PORT:-5173}:80"
+    environment:
+      - PORT=80
+      - BACKEND_HOST=${BACKEND_LANDING_HOST:-wavyassets-landing-backend}
+      - BACKEND_PORT=${BACKEND_LANDING_PORT:-4000}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      wavyassets-frontend-network:
+        aliases:
+          - frontend
+          - landing-frontend
+          - wavyassets-landing-frontend
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 256M
+        reservations:
+          cpus: "0.10"
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  user-dashboard-frontend:
+    build:
+      context: ./user-dashboard
+      dockerfile: Dockerfile
+      target: runner
+    image: wavyassets/user-dashboard:1.0.0
+    container_name: wavyassets-user-dashboard
+    restart: unless-stopped
+    ports:
+      - "${DASHBOARD_FRONTEND_PORT:-5174}:80"
+    environment:
+      - PORT=80
+      - BACKEND_HOST=${BACKEND_DASHBOARD_HOST:-wavyassets-backend-user-dashboard}
+      - BACKEND_PORT=${BACKEND_DASHBOARD_PORT:-4000}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      wavyassets-frontend-network:
+        aliases:
+          - dashboard
+          - user-dashboard-frontend
+          - wavyassets-user-dashboard
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 256M
+        reservations:
+          cpus: "0.10"
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  admin-panel-frontend:
+    build:
+      context: ./admin-panel
+      dockerfile: Dockerfile
+      target: runner
+    image: wavyassets/admin-panel-frontend:1.0.0
+    container_name: wavyassets-admin-frontend
+    restart: unless-stopped
+    ports:
+      - "${ADMIN_FRONTEND_PORT:-5175}:80"
+    environment:
+      - PORT=80
+      - BACKEND_HOST=${BACKEND_ADMIN_HOST:-wavyassets-backend-admin-panel}
+      - BACKEND_PORT=${BACKEND_ADMIN_PORT:-4002}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      wavyassets-frontend-network:
+        aliases:
+          - admin-panel
+          - admin-panel-frontend
+          - wavyassets-admin-frontend
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 256M
+        reservations:
+          cpus: "0.10"
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  wavyassets-frontend-network:
+    name: wavyassets_frontend_network
+    driver: bridge

@@ -12,6 +12,8 @@ import {
   CashSweepDto,
   FxConvertDto,
   WalletBalancesResponse,
+  WithdrawalRequestDto,
+  DepositReceiptDto,
 } from './dto/wallet.dto';
 import {
   LedgerImbalanceException,
@@ -513,6 +515,274 @@ export class WalletService {
       currency: dto.currency,
       destination: destination.addressOrIban,
       referenceId: tx.referenceId,
+    };
+  }
+
+  /**
+   * Institutional Withdrawal Request (Bank Wire or Web3 Crypto) - Queued for Treasury Co-Sign
+   */
+  async requestWithdrawal(userId: string, dto: WithdrawalRequestDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const currency = (dto.currency || 'USD').toUpperCase();
+    const isBank = dto.rail?.toLowerCase() === 'bank';
+
+    // Verify KYC Tier daily withdrawal limit
+    let dailyLimit = 10000;
+    if (user.kycTier === 'TIER_2') dailyLimit = 250000;
+    if (user.kycTier === 'TIER_3') dailyLimit = Infinity;
+
+    if (dto.amount > dailyLimit) {
+      const tierName =
+        user.kycTier === 'TIER_3' ? 'Level 3' : user.kycTier === 'TIER_2' ? 'Level 2' : 'Level 1';
+      throw new BadRequestException(
+        `You have exceeded your Tier daily limit ($${dailyLimit.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })} USD for ${tierName}). Please upgrade your Tier.`,
+      );
+    }
+
+    // Check available cash balance
+    const cashAccount = await this.getOrCreateAccount(userId, 'AVAILABLE_CASH', currency);
+    const currentBalance = Number(cashAccount.balance);
+    if (currentBalance < dto.amount) {
+      throw new InsufficientAvailableBalanceException('Insufficient available cash balance', dto.amount, currentBalance);
+    }
+
+    const railLabel = isBank ? (dto.bankName || 'BANK WIRE TRANSFER') : `${dto.cryptoAsset || 'USDT'} (${dto.protocol || 'ERC-20'})`;
+    const destinationStr = isBank
+      ? `${dto.bankName || 'UBS Switzerland AG'} - Acct: ${dto.accountNumber || ''} (${dto.accountName || ''})`
+      : `${dto.cryptoAsset || 'USDT'} (${dto.protocol || 'ERC-20'}): ${dto.destinationAddress || ''}`;
+
+    // Execute atomic reservation
+    const tx = await this.prisma.$transaction(
+      async (prismaTx) => {
+        // 1. Debit available cash to reserve payout
+        await prismaTx.ledgerAccount.update({
+          where: { id: cashAccount.id },
+          data: {
+            balance: { decrement: dto.amount },
+          },
+        });
+
+        // 2. Create pending LedgerTransaction
+        const ledgerTx = await prismaTx.ledgerTransaction.create({
+          data: {
+            referenceId: dto.referenceId,
+            type: 'WITHDRAWAL',
+            status: 'PENDING',
+            description: isBank
+              ? `Bank Wire Transfer to ${dto.bankName || 'UBS Switzerland AG'} (${dto.accountNumber || ''})`
+              : `Crypto Disbursement (${dto.cryptoAsset || 'USDT'} - ${dto.protocol || 'ERC-20'}) to ${dto.destinationAddress || ''}`,
+          },
+        });
+
+        // 3. Create entry linking transaction to user's account
+        await prismaTx.ledgerEntry.create({
+          data: {
+            transactionId: ledgerTx.id,
+            accountId: cashAccount.id,
+            amount: -dto.amount,
+          },
+        });
+
+        // Set amount, currency, rail directly in PostgreSQL row
+        try {
+          await prismaTx.$executeRawUnsafe(
+            `UPDATE "LedgerTransaction" SET "amount" = $1, "currency" = $2, "rail" = $3, "counterparty" = $4, "accountNumber" = $5 WHERE "id" = $6`,
+            dto.amount,
+            currency,
+            isBank ? 'SWISS_SIC' : (dto.protocol || dto.cryptoAsset || 'ERC-20'),
+            isBank ? (dto.accountName || user.fullName || 'Institutional Client') : (dto.destinationAddress || user.fullName),
+            isBank ? (dto.accountNumber || 'CH88 0024 0000 1234 5678 9') : (dto.destinationAddress || ''),
+            ledgerTx.id,
+          );
+        } catch {
+          // Continue gracefully
+        }
+
+        return ledgerTx;
+      },
+      { timeout: 30000, maxWait: 10000 },
+    );
+
+    // 4. Record audit log outside transaction
+    try {
+      await this.prisma.auditLog.create({
+        data: {
+          userId,
+          action: 'WITHDRAWAL_REQUEST_SUBMITTED',
+          metadata: JSON.stringify({
+            referenceId: dto.referenceId,
+            rail: dto.rail,
+            amount: dto.amount,
+            currency,
+            details: {
+              bankName: dto.bankName,
+              accountName: dto.accountName,
+              accountNumber: dto.accountNumber,
+              cryptoAsset: dto.cryptoAsset,
+              protocol: dto.protocol,
+              destinationAddress: dto.destinationAddress,
+            },
+          }),
+        },
+      });
+    } catch (auditErr: any) {
+      this.logger.warn(`Failed to write withdrawal audit log: ${auditErr?.message}`);
+    }
+
+    this.dashboardService?.invalidateCache(userId);
+
+    // Send email notification for PENDING withdrawal
+    if (user.email && this.emailService) {
+      this.emailService
+        .sendWithdrawalNotification({
+          toEmail: user.email,
+          userFullName: user.fullName,
+          amount: dto.amount,
+          currency,
+          referenceId: tx.referenceId,
+          rail: railLabel,
+          status: 'PENDING',
+          destination: destinationStr,
+          timestamp: new Date(),
+        })
+        .catch((e) => this.logger.warn(`Failed to dispatch withdrawal pending email: ${e?.message}`));
+    }
+
+    return {
+      success: true,
+      status: 'PENDING',
+      referenceId: tx.referenceId,
+      amount: dto.amount,
+      currency,
+      rail: railLabel,
+    };
+  }
+
+  /**
+   * Deposit Receipt Upload (Bank Wire or Web3 Crypto Proof)
+   */
+  async uploadDepositReceipt(userId: string, dto: DepositReceiptDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const currency = (dto.currency || 'USD').toUpperCase();
+    const isBank = dto.rail?.toLowerCase().includes('wire') || dto.rail?.toLowerCase().includes('bank');
+    const railType = isBank ? 'SWISS_SIC' : (dto.rail || 'USDC');
+
+    // Create or find the pending deposit transaction
+    const tx = await this.prisma.$transaction(
+      async (prismaTx) => {
+        let existingTx = await prismaTx.ledgerTransaction.findUnique({
+          where: { referenceId: dto.referenceId },
+          include: { entries: true },
+        });
+
+        if (!existingTx) {
+          existingTx = await prismaTx.ledgerTransaction.create({
+            data: {
+              referenceId: dto.referenceId,
+              type: 'DEPOSIT',
+              status: 'PENDING',
+              description: dto.wireMemo
+                ? `Inbound ${railType} wire memo: ${dto.wireMemo}`
+                : `Inbound ${railType} deposit awaiting verification`,
+            },
+            include: { entries: true },
+          });
+        }
+
+        // Ensure linked to user's cash account
+        const cashAccount = await this.getOrCreateAccount(userId, 'AVAILABLE_CASH', currency, prismaTx);
+        const hasEntry = existingTx.entries.some((e) => e.accountId === cashAccount.id);
+        if (!hasEntry) {
+          const newEntry = await prismaTx.ledgerEntry.create({
+            data: {
+              transactionId: existingTx.id,
+              accountId: cashAccount.id,
+              amount: dto.amount,
+            },
+          });
+          existingTx.entries.push(newEntry);
+        }
+
+        // Update columns directly in PostgreSQL table so amount, rail, counterparty are set immediately
+        try {
+          await prismaTx.$executeRawUnsafe(
+            `UPDATE "LedgerTransaction" SET "amount" = $1, "currency" = $2, "rail" = $3, "counterparty" = $4, "accountNumber" = $5 WHERE "id" = $6`,
+            dto.amount,
+            currency,
+            railType,
+            dto.senderName || user.fullName || 'Institutional Depositor',
+            dto.senderIbanOrAddress || dto.senderBank || 'CH93 0023 8812 4019 8821 0',
+            existingTx.id,
+          );
+        } catch {
+          // Continue gracefully
+        }
+
+        return existingTx;
+      },
+      { timeout: 30000, maxWait: 10000 },
+    );
+
+    if (!tx) {
+      throw new BadRequestException('Failed to process deposit transaction');
+    }
+
+    // Record in AuditLog outside interactive transaction with receipt payload for Treasury Inspector
+    try {
+      await this.prisma.auditLog.create({
+        data: {
+          userId,
+          action: 'DEPOSIT_RECEIPT_UPLOAD',
+          metadata: JSON.stringify({
+            transactionId: tx.id,
+            referenceId: tx.referenceId,
+            receiptUrl: dto.receiptDataUrl || null,
+            receiptName: dto.receiptName || null,
+            txHash: dto.txHash || null,
+            senderName: dto.senderName || user.fullName,
+            senderBank: dto.senderBank || (isBank ? 'UBS Switzerland AG' : null),
+            wireMemo: dto.wireMemo || null,
+          }),
+        },
+      });
+    } catch (auditErr: any) {
+      this.logger.warn(`Failed to write deposit receipt audit log: ${auditErr?.message}`);
+    }
+
+    // Send email notification for PENDING deposit
+    if (user.email && this.emailService) {
+      this.emailService
+        .sendDepositNotification({
+          toEmail: user.email,
+          userFullName: user.fullName,
+          amount: dto.amount,
+          currency,
+          referenceId: tx.referenceId,
+          rail: railType,
+          status: 'PENDING',
+          timestamp: new Date(),
+        })
+        .catch((e) => this.logger.warn(`Failed to dispatch deposit pending email: ${e?.message}`));
+    }
+
+    return {
+      success: true,
+      status: 'PENDING',
+      referenceId: tx.referenceId,
+      amount: dto.amount,
+      currency,
+      rail: railType,
     };
   }
 

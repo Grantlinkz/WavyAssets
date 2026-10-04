@@ -170,9 +170,19 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
 ### 3. Standalone Docker Build & Run
 ```bash
-docker build -t wavyassets/landing-page-frontend:latest .
-docker run -d -p 5173:80 --name wavyassets-frontend wavyassets/landing-page-frontend:latest
+docker build -t wavyassets/landing-page-frontend:1.0.0 .
+docker run -d -p 5173:80 --name wavyassets-landing-frontend \
+  -e BACKEND_HOST=host.docker.internal \
+  -e BACKEND_PORT=4000 \
+  wavyassets/landing-page-frontend:1.0.0
 ```
+
+### 4. Monorepo Integration
+- **Root Compose**: `docker compose up -d` (All 6 frontends & backends on `wavyassets-network`)
+- **Frontend Stack Compose**: `docker compose -f Frontend/docker-compose.yml up -d` (All 3 frontends on `wavyassets-frontend-network`)
+- **Container Name**: `wavyassets-landing-frontend`
+- **Dynamic Proxy**: Nginx proxies `/api/` to `wavyassets-landing-backend:4000`
+
 
 ---
 

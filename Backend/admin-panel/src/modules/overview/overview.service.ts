@@ -58,7 +58,7 @@ export class OverviewService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getBadgeCounts(): Promise<BadgeCounts> {
-    const [urgentActions, newInquiries, totalUsers, pendingCompliance, treasurySignOffs, activeCards] =
+    const [urgentActions, newInquiries, totalUsers, unverifiedDocs, treasurySignOffs, activeCards] =
       await Promise.all([
         this.prisma.ledgerTransaction.count({
           where: { status: { in: ['PENDING', 'PENDING_SECOND_SIGN_OFF'] } },
@@ -67,8 +67,9 @@ export class OverviewService {
           where: { status: 'NEW' },
         }),
         this.prisma.user.count(),
-        this.prisma.kycDocument.count({
+        this.prisma.kycDocument.findMany({
           where: { isVerified: false },
+          select: { id: true },
         }),
         this.prisma.ledgerTransaction.count({
           where: { status: 'PENDING_SECOND_SIGN_OFF' },
@@ -77,6 +78,24 @@ export class OverviewService {
           where: { isFrozen: false },
         }),
       ]);
+
+    let rejectedDocIds = new Set<string>();
+    if (unverifiedDocs.length > 0) {
+      try {
+        const rejectedAudits = await this.prisma.adminAuditLog.findMany({
+          where: {
+            targetEntity: 'KycDocument',
+            targetId: { in: unverifiedDocs.map((d) => d.id) },
+            action: 'KYC_DOC_REJECTED',
+          },
+          select: { targetId: true },
+        });
+        rejectedDocIds = new Set(rejectedAudits.map((a) => a.targetId).filter(Boolean) as string[]);
+      } catch {
+        // continue gracefully
+      }
+    }
+    const pendingCompliance = unverifiedDocs.filter((d) => !rejectedDocIds.has(d.id)).length;
 
     return {
       urgentActions,

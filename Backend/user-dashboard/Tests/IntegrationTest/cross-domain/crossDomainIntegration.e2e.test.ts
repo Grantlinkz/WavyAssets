@@ -210,7 +210,7 @@ describe('E2E Integration — Monorepo Cross-Domain Authentication & Multi-Asset
     // Capture rotated Set-Cookie value
     const cookies = response.headers['set-cookie'];
     if (cookies) {
-      refreshTokenCookie = Array.isArray(cookies) ? cookies : [cookies];
+      refreshTokenCookie = Array.isArray(cookies) ? cookies[0] : cookies;
     }
   });
 

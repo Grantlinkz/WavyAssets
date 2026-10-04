@@ -41,13 +41,47 @@ export class ComplianceService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
-        kycDocuments: true,
+        kycDocuments: {
+          orderBy: { uploadedAt: 'desc' },
+        },
       },
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
+
+    const docIds = user.kycDocuments.map((d) => d.id);
+    let docAudits: Array<{ targetId: string; action: string; reason: string | null; createdAt: Date }> = [];
+    if (docIds.length > 0) {
+      try {
+        docAudits = await this.prisma.$queryRawUnsafe(
+          `SELECT "targetId", "action", "reason", "createdAt" FROM "AdminAuditLog" WHERE "targetEntity" = 'KycDocument' AND "targetId" = ANY($1::text[]) ORDER BY "createdAt" DESC`,
+          docIds,
+        );
+      } catch {
+        docAudits = [];
+      }
+    }
+
+    const mappedDocuments = user.kycDocuments.map((doc) => {
+      const audit = docAudits.find((a) => a.targetId === doc.id);
+      const isDocRejected = !doc.isVerified && audit?.action === 'KYC_DOC_REJECTED';
+      const docStatus: 'VERIFIED' | 'REJECTED' | 'PENDING' = doc.isVerified
+        ? 'VERIFIED'
+        : isDocRejected
+        ? 'REJECTED'
+        : 'PENDING';
+      return {
+        id: doc.id,
+        docType: doc.docType,
+        fileUrl: doc.fileUrl,
+        isVerified: doc.isVerified,
+        status: docStatus,
+        rejectionReason: isDocRejected ? audit?.reason || 'Document unverified or details illegible' : undefined,
+        uploadedAt: doc.uploadedAt,
+      };
+    });
 
     const currentTier = (user.kycTier as KycTierLevel) || KycTierLevel.TIER_1;
 
@@ -98,13 +132,7 @@ export class ComplianceService {
       limits: tierLimits[currentTier],
       status: isFullyVerified ? 'VERIFIED' : 'PENDING_VERIFICATION',
       requirements,
-      documents: user.kycDocuments.map((doc) => ({
-        id: doc.id,
-        docType: doc.docType,
-        fileUrl: doc.fileUrl,
-        isVerified: doc.isVerified,
-        uploadedAt: doc.uploadedAt,
-      })),
+      documents: mappedDocuments,
     };
   }
 

@@ -6,6 +6,7 @@ import {
   ShieldAlert,
   FileCheck,
   CheckCircle2,
+  XCircle,
   AlertTriangle,
   ArrowRight,
   RotateCw,
@@ -21,6 +22,7 @@ import { useAdminAuthStore } from "../../store/useAdminAuthStore"
 import {
   elevateUserTier,
   rejectKycDossier,
+  verifyComplianceDocument,
   updateFinmaChecklist,
   type FinmaChecklist,
 } from "../../api/compliance"
@@ -120,8 +122,10 @@ export const SplitScreenDocInspector: React.FC = () => {
       })
     },
     onSuccess: (data) => {
+      const targetTier =
+        data?.dossier?.requestedTier || selectedDossier?.requestedTier || "INSTITUTIONAL"
       setSuccessMsg(
-        `Dossier elevated to ${data.dossier.requestedTier}. User Ledger access elevated.`
+        `Dossier elevated to ${targetTier}. User Ledger access elevated.`
       )
       queryClient.invalidateQueries({ queryKey: ["compliance"] })
       queryClient.invalidateQueries({ queryKey: ["users"] })
@@ -154,12 +158,67 @@ export const SplitScreenDocInspector: React.FC = () => {
     onSuccess: () => {
       setSuccessMsg("Dossier has been rejected/escalated for FINMA Article 14 review.")
       queryClient.invalidateQueries({ queryKey: ["compliance"] })
+      queryClient.invalidateQueries({ queryKey: ["users"] })
       setTimeout(() => {
         closeInspector()
       }, 1500)
     },
     onError: (err: Error) => {
       setErrorMsg(err.message || "Failed to reject dossier.")
+    },
+  })
+
+  // Document verification mutation
+  const verifyDocMutation = useMutation({
+    mutationFn: async ({
+      isVerified,
+      rejectionReason,
+    }: {
+      isVerified: boolean
+      rejectionReason?: string
+    }) => {
+      if (!activeDoc) throw new Error("No document selected.")
+      return verifyComplianceDocument({
+        documentId: activeDoc.id,
+        isVerified,
+        rejectionReason,
+      })
+    },
+    onSuccess: (_data, variables) => {
+      setSuccessMsg(
+        variables.isVerified
+          ? "Document verified and attested in compliance registry."
+          : "Document marked as rejected."
+      )
+      queryClient.invalidateQueries({ queryKey: ["compliance"] })
+      queryClient.invalidateQueries({ queryKey: ["users"] })
+
+      if (selectedDossier && activeDoc) {
+        const updatedDocs = (selectedDossier.documents || []).map((d) =>
+          d.id === activeDoc.id
+            ? {
+                ...d,
+                verified: variables.isVerified,
+                status: variables.isVerified
+                  ? ("VERIFIED" as const)
+                  : ("REJECTED" as const),
+              }
+            : d
+        )
+        const allVerified = updatedDocs.every((d) => d.verified)
+        const hasPending = updatedDocs.some((d) => d.status === "PENDING")
+        const anyRejected = updatedDocs.some((d) => d.status === "REJECTED")
+        useComplianceStore.getState().setSelectedDossier({
+          ...selectedDossier,
+          documents: updatedDocs,
+          status: allVerified ? "APPROVED" : hasPending ? "PENDING_REVIEW" : anyRejected ? "REJECTED" : "PENDING_REVIEW",
+        })
+      }
+      setTimeout(() => setSuccessMsg(null), 3000)
+    },
+    onError: (err: Error) => {
+      setErrorMsg(err.message || "Failed to update document status.")
+      setTimeout(() => setErrorMsg(null), 4000)
     },
   })
 
@@ -498,8 +557,12 @@ export const SplitScreenDocInspector: React.FC = () => {
                     >
                       <FileCheck className="w-3 h-3" />
                       <span>{doc.type.replace(/_/g, " ")}</span>
-                      {doc.verified && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-status-success ml-0.5" />
+                      {doc.verified ? (
+                        <span className="w-1.5 h-1.5 rounded-full bg-status-success ml-0.5" title="Verified" />
+                      ) : doc.status === "REJECTED" ? (
+                        <span className="w-1.5 h-1.5 rounded-full bg-status-danger ml-0.5" title="Rejected" />
+                      ) : (
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 ml-0.5" title="Pending Review" />
                       )}
                     </button>
                   ))}
@@ -510,9 +573,62 @@ export const SplitScreenDocInspector: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-on-surface">{activeDoc.filename}</span>
                     <span className="font-mono text-secondary">({activeDoc.fileSize})</span>
+                    {activeDoc.uploadedAt && (
+                      <span className="font-mono text-[10px] text-secondary">
+                        • {formatTimestamp(activeDoc.uploadedAt)}
+                      </span>
+                    )}
+                    {activeDoc.status === "REJECTED" || (!activeDoc.verified && activeDoc.rejectionReason) ? (
+                      <span className="px-1.5 py-0.2 rounded-[2px] font-mono text-[9px] font-bold bg-status-danger/15 text-status-danger border border-status-danger/30">
+                        REJECTED
+                      </span>
+                    ) : activeDoc.verified ? (
+                      <span className="px-1.5 py-0.2 rounded-[2px] font-mono text-[9px] font-bold bg-status-success/15 text-status-success border border-status-success/30">
+                        VERIFIED
+                      </span>
+                    ) : (
+                      <span className="px-1.5 py-0.2 rounded-[2px] font-mono text-[9px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 animate-pulse">
+                        PENDING REVIEW
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2">
+                    {/* Document Level Approval / Rejection Controls */}
+                    <div className="flex items-center gap-1.5 mr-2 pr-2 border-r border-border-subtle/60">
+                      <button
+                        type="button"
+                        onClick={() => verifyDocMutation.mutate({ isVerified: true })}
+                        disabled={verifyDocMutation.isPending || activeDoc.verified}
+                        className="px-2 py-0.5 rounded-[2px] bg-status-success/15 hover:bg-status-success/25 border border-status-success/30 text-status-success font-mono text-[10px] font-semibold flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-40"
+                        title="Approve this document"
+                      >
+                        <CheckCircle2 className="w-3 h-3" />
+                        <span>Approve Doc</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const reason = window.prompt(
+                            "Reason for rejecting this document:",
+                            "Document details unverified or illegible"
+                          )
+                          if (reason && reason.trim()) {
+                            verifyDocMutation.mutate({
+                              isVerified: false,
+                              rejectionReason: reason.trim(),
+                            })
+                          }
+                        }}
+                        disabled={verifyDocMutation.isPending}
+                        className="px-2 py-0.5 rounded-[2px] bg-status-danger/15 hover:bg-status-danger/25 border border-status-danger/30 text-status-danger font-mono text-[10px] font-semibold flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-40"
+                        title="Reject this document"
+                      >
+                        <XCircle className="w-3 h-3" />
+                        <span>Reject Doc</span>
+                      </button>
+                    </div>
+
                     {/* View Mode Switcher */}
                     <div className="flex items-center bg-bg-panel rounded-[3px] border border-border-subtle p-0.5 font-mono text-[10px]">
                       <button
@@ -565,6 +681,31 @@ export const SplitScreenDocInspector: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Rejection / Replacement Banner */}
+                {activeDoc.status === "REJECTED" && (
+                  <div className="px-4 py-2 bg-status-danger/10 border-b border-status-danger/30 text-xs text-status-danger flex items-center justify-between font-mono">
+                    <div className="flex items-center gap-2">
+                      <XCircle className="w-4 h-4 shrink-0" />
+                      <span>
+                        <strong>Document Rejected:</strong> {activeDoc.rejectionReason || "Details unverified or illegible."}
+                      </span>
+                    </div>
+                    {activeDoc.rejectedAt && (
+                      <span className="text-[10px] text-secondary">
+                        Rejected at {formatTimestamp(activeDoc.rejectedAt)}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {activeDoc.status === "PENDING" && typeof activeDoc.version === "number" && activeDoc.version > 1 && (
+                  <div className="px-4 py-2 bg-amber-500/10 border-b border-amber-500/30 text-xs text-amber-400 flex items-center gap-2 font-mono">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span>
+                      <strong>Replacement Document (v{activeDoc.version}):</strong> Re-uploaded document submitted following previous rejection. Please review and verify.
+                    </span>
+                  </div>
+                )}
 
                 {/* Document Preview Canvas */}
                 <div className="flex-1 p-6 overflow-auto flex items-center justify-center bg-black/40">

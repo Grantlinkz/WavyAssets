@@ -1,22 +1,40 @@
 import { IsString, IsNumber, IsPositive, IsIn, IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export const SUPPORTED_CRYPTO_SYMBOLS = [
+  'BTC',
+  'ETH',
+  'SOL',
+  'LINK',
+  'AVAX',
+  'USDC',
+  'BNB',
+  'XRP',
+  'USDT',
+] as const;
 
 export class CreateDcaScheduleDto {
   @IsString()
-  @IsIn(['BTC', 'ETH', 'SOL', 'LINK', 'AVAX'])
+  @IsIn(SUPPORTED_CRYPTO_SYMBOLS, {
+    message: `symbol must be one of: ${SUPPORTED_CRYPTO_SYMBOLS.join(', ')}`,
+  })
   symbol!: string;
 
+  @Type(() => Number)
   @IsNumber()
   @IsPositive()
   amountUsd!: number;
 
   @IsString()
-  @IsIn(['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY'])
-  frequency!: 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY';
+  @IsIn(['DAILY', 'WEEKLY', 'BIWEEKLY', 'BI_WEEKLY', 'MONTHLY'])
+  frequency!: 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'BI_WEEKLY' | 'MONTHLY';
 }
 
 export class CompoundStakingDto {
   @IsString()
-  @IsIn(['BTC', 'ETH', 'SOL', 'LINK', 'AVAX'])
+  @IsIn(SUPPORTED_CRYPTO_SYMBOLS, {
+    message: `symbol must be one of: ${SUPPORTED_CRYPTO_SYMBOLS.join(', ')}`,
+  })
   symbol!: string;
 }
 

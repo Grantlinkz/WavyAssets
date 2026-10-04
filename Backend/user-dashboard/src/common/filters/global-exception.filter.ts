@@ -47,6 +47,14 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           message = 'Validation failed on incoming request.';
         }
       }
+    } else if (
+      (exception as any)?.type === 'entity.too.large' ||
+      (exception as any)?.status === 413 ||
+      (exception instanceof Error && exception.name === 'PayloadTooLargeError')
+    ) {
+      statusCode = HttpStatus.PAYLOAD_TOO_LARGE;
+      errorCode = 'ERR_PAYLOAD_TOO_LARGE';
+      message = 'Uploaded file or document payload is too large. Maximum allowed size is 50MB.';
     } else if (this.isPrismaError(exception)) {
       const prismaError = exception as { code?: string; message?: string };
       // Translate known Prisma errors without leaking database internals

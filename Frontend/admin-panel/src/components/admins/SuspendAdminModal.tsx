@@ -45,7 +45,7 @@ export const SuspendAdminModal: React.FC = () => {
       setReason("")
       setErrorMsg(null)
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       setErrorMsg(err?.message || `Failed to ${actionLabel.toLowerCase()} personnel.`)
     },
   })

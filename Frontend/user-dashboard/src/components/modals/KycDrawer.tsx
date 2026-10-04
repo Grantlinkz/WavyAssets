@@ -31,13 +31,15 @@ interface KycSubmissions {
   level2?: {
     fileName: string;
     submittedAt: string;
-    status: 'PENDING_APPROVAL' | 'APPROVED';
+    status: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+    rejectionReason?: string;
   };
   level3?: {
     docCategory: 'UTILITY_BILL' | 'BANK_STATEMENT';
     fileName: string;
     submittedAt: string;
-    status: 'PENDING_APPROVAL' | 'APPROVED';
+    status: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+    rejectionReason?: string;
   };
 }
 
@@ -99,6 +101,9 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
       id: string;
       docType: string;
       isVerified: boolean;
+      status?: string;
+      rejectionReason?: string;
+      uploadedAt?: string;
       fileName?: string;
       createdAt?: string;
       submittedAt?: string;
@@ -119,6 +124,9 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
             id: string;
             docType: string;
             isVerified: boolean;
+            status?: string;
+            rejectionReason?: string;
+            uploadedAt?: string;
             fileName?: string;
             createdAt?: string;
             submittedAt?: string;
@@ -139,16 +147,26 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
             setActiveTab('level3');
           }
           if (Array.isArray(data.documents)) {
-            const l2Doc = data.documents.find((d) => d.docType === 'PASSPORT' || d.docType === 'GOVERNMENT_ID');
-            const l3Doc = data.documents.find((d) => d.docType === 'UTILITY_BILL' || d.docType === 'BANK_STATEMENT');
-            const l2Timestamp = l2Doc?.createdAt || l2Doc?.submittedAt;
-            const l3Timestamp = l3Doc?.createdAt || l3Doc?.submittedAt;
+            // Sort by uploadedAt desc so newest document is evaluated first
+            const sortedDocs = [...data.documents].sort(
+              (a, b) => new Date(b.uploadedAt || b.createdAt || 0).getTime() - new Date(a.uploadedAt || a.createdAt || 0).getTime()
+            );
+            const l2Doc = sortedDocs.find((d) => d.docType === 'PASSPORT' || d.docType === 'GOVERNMENT_ID');
+            const l3Doc = sortedDocs.find((d) => d.docType === 'UTILITY_BILL' || d.docType === 'BANK_STATEMENT');
+            const l2Timestamp = l2Doc?.createdAt || l2Doc?.uploadedAt || l2Doc?.submittedAt;
+            const l3Timestamp = l3Doc?.createdAt || l3Doc?.uploadedAt || l3Doc?.submittedAt;
+            const isL2DocApproved = l2Doc?.isVerified || l2Doc?.status === 'VERIFIED' || tierRank >= 2;
+            const isL2DocRejected = l2Doc?.status === 'REJECTED';
+            const isL3DocApproved = l3Doc?.isVerified || l3Doc?.status === 'VERIFIED' || tierRank >= 3;
+            const isL3DocRejected = l3Doc?.status === 'REJECTED';
+
             setSubmissions({
               level2: l2Doc
                 ? {
                     fileName: l2Doc.fileName || 'Government_ID_Verified.pdf',
                     submittedAt: l2Timestamp ? new Date(l2Timestamp).toISOString() : new Date().toISOString(),
-                    status: (l2Doc.isVerified || tierRank >= 2) ? 'APPROVED' : 'PENDING_APPROVAL',
+                    status: isL2DocApproved ? 'APPROVED' : isL2DocRejected ? 'REJECTED' : 'PENDING_APPROVAL',
+                    rejectionReason: l2Doc.rejectionReason,
                   }
                 : tierRank >= 2
                 ? {
@@ -162,7 +180,8 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
                     docCategory: l3Doc.docType === 'BANK_STATEMENT' ? 'BANK_STATEMENT' : 'UTILITY_BILL',
                     fileName: l3Doc.fileName || (l3Doc.docType === 'BANK_STATEMENT' ? 'Bank_Statement_Verified.pdf' : 'Proof_Of_Address.pdf'),
                     submittedAt: l3Timestamp ? new Date(l3Timestamp).toISOString() : new Date().toISOString(),
-                    status: (l3Doc.isVerified || tierRank >= 3) ? 'APPROVED' : 'PENDING_APPROVAL',
+                    status: isL3DocApproved ? 'APPROVED' : isL3DocRejected ? 'REJECTED' : 'PENDING_APPROVAL',
+                    rejectionReason: l3Doc.rejectionReason,
                   }
                 : undefined,
             });
@@ -209,9 +228,11 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
 
   const isLevel2Approved = highestTierRank >= 2 || hasServerVerifiedL2Doc || submissions.level2?.status === 'APPROVED';
   const isLevel2Pending = !isLevel2Approved && submissions.level2?.status === 'PENDING_APPROVAL';
+  const isLevel2Rejected = !isLevel2Approved && submissions.level2?.status === 'REJECTED';
 
   const isLevel3Approved = highestTierRank >= 3 || (isLevel2Approved && (hasServerVerifiedL3Doc || submissions.level3?.status === 'APPROVED'));
   const isLevel3Pending = !isLevel3Approved && submissions.level3?.status === 'PENDING_APPROVAL';
+  const isLevel3Rejected = !isLevel3Approved && submissions.level3?.status === 'REJECTED';
   const isLevel3Locked = !isLevel2Approved; // Level 3 is strictly locked until Level 2 has been approved
 
   const effectiveTier = isLevel3Approved ? 'TIER_3' : isLevel2Approved ? 'TIER_2' : 'TIER_1';
@@ -435,6 +456,8 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
               <Check className="w-3.5 h-3.5 text-tertiary" />
             ) : isLevel2Pending ? (
               <Clock className="w-3.5 h-3.5 text-primary animate-pulse" />
+            ) : isLevel2Rejected ? (
+              <X className="w-3.5 h-3.5 text-error" />
             ) : (
               <Award className="w-3.5 h-3.5 text-outline" />
             )}
@@ -458,6 +481,8 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
               <Check className="w-3.5 h-3.5 text-tertiary" />
             ) : isLevel3Pending ? (
               <Clock className="w-3.5 h-3.5 text-primary animate-pulse" />
+            ) : isLevel3Rejected ? (
+              <X className="w-3.5 h-3.5 text-error" />
             ) : (
               <Building className="w-3.5 h-3.5 text-outline" />
             )}
@@ -564,6 +589,21 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
                       Upload your official Government ID (Passport, National ID, or Driver's License). Ensure your name, DOB, and all details are clearly legible.
                     </p>
                   </div>
+
+                  {isLevel2Rejected && (
+                    <div className="p-3 bg-error/15 border border-error/40 text-error text-[11px] rounded-DEFAULT space-y-1.5 font-mono">
+                      <div className="flex items-center gap-2 font-bold text-xs">
+                        <AlertCircle className="w-4 h-4 shrink-0 text-error" />
+                        <span>Previous Document Rejected by Compliance</span>
+                      </div>
+                      <p className="text-[11px] text-on-surface">
+                        Reason: <strong className="text-error font-semibold">{submissions.level2?.rejectionReason || 'Document details unverified or illegible.'}</strong>
+                      </p>
+                      <p className="text-[10px] text-outline">
+                        Please upload a clear, legible replacement document to complete verification.
+                      </p>
+                    </div>
+                  )}
 
                   <div className="p-2.5 bg-primary/10 border border-primary/30 text-primary text-[11px] rounded-xs flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 shrink-0" />
@@ -720,6 +760,21 @@ export const KycDrawer: React.FC<KycDrawerProps> = ({
                       Upload a Utility Bill (Electricity, Water, Gas, Internet) or Bank Statement issued strictly less than 3 months old from today's date.
                     </p>
                   </div>
+
+                  {isLevel3Rejected && (
+                    <div className="p-3 bg-error/15 border border-error/40 text-error text-[11px] rounded-DEFAULT space-y-1.5 font-mono">
+                      <div className="flex items-center gap-2 font-bold text-xs">
+                        <AlertCircle className="w-4 h-4 shrink-0 text-error" />
+                        <span>Previous Document Rejected by Compliance</span>
+                      </div>
+                      <p className="text-[11px] text-on-surface">
+                        Reason: <strong className="text-error font-semibold">{submissions.level3?.rejectionReason || 'Document details unverified or illegible.'}</strong>
+                      </p>
+                      <p className="text-[10px] text-outline">
+                        Please upload a replacement statement or bill to complete verification.
+                      </p>
+                    </div>
+                  )}
 
                   <div className="p-2.5 bg-primary/10 border border-primary/30 text-primary text-[11px] rounded-xs flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 shrink-0" />

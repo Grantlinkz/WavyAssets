@@ -22,8 +22,10 @@ services:
       - PORT=80
       - BACKEND_HOST=${BACKEND_HOST:-wavyassets-landing-backend}
       - BACKEND_PORT=${BACKEND_PORT:-4000}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
-      - wavyassets-network
+      - wavyassets-landing-network
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:80/healthz || exit 1"]
       interval: 30s
@@ -45,6 +47,6 @@ services:
         max-file: "3"
 
 networks:
-  wavyassets-network:
-    name: wavyassets_institutional_network
+  wavyassets-landing-network:
+    name: wavyassets_landing_frontend_network
     driver: bridge

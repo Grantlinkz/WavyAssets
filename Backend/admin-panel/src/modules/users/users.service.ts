@@ -5,6 +5,7 @@ import {
   ConflictException,
   ForbiddenException,
   Logger,
+  Optional,
 } from "@nestjs/common";
 import * as crypto from "crypto";
 import { PrismaService } from "../../common/services/prisma.service";
@@ -26,7 +27,7 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cryptoService: CryptoService,
-    private readonly emailService: EmailService,
+    @Optional() private readonly emailService?: EmailService,
   ) {
     const resendApiKey = process.env.RESEND_API_KEY || "";
     if (resendApiKey && resendApiKey.startsWith("re_")) {
@@ -1073,10 +1074,10 @@ export class UsersService {
 
         // Dispatch transactional email notification advice to user for balance modification
         try {
-          if (user.email) {
+          if (user.email && this.emailService) {
             await this.emailService.sendTransactionNotification({
               toEmail: user.email,
-              userFullName: user.fullName,
+              userFullName: user.fullName ?? undefined,
               transactionType: dto.direction === BalanceFundDirection.CREDIT ? "DEPOSIT" : "ADJUSTMENT",
               direction: dto.direction === BalanceFundDirection.CREDIT ? "CREDIT" : "DEBIT",
               amount,

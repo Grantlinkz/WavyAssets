@@ -35,7 +35,7 @@ export const AdminSidebar: React.FC = () => {
     queryKey: ["admin-badge-counts"],
     queryFn: fetchBadgeCounts,
     enabled: isAuthenticated,
-    refetchInterval: 10000,
+    refetchInterval: 3000,
   })
 
   // Synchronize incoming badge telemetry with global nav store
@@ -99,9 +99,11 @@ export const AdminSidebar: React.FC = () => {
       label: "Treasury",
       icon: Wallet,
       badge:
-        treasuryCount > 0
-          ? { text: `${treasuryCount} Sign-Offs`, variant: "warning" }
-          : { text: "Live", variant: "success" },
+        urgentCount > 0
+          ? { text: `${urgentCount} Pending`, variant: "warning" }
+          : treasuryCount > 0
+            ? { text: `${treasuryCount} Sign-Offs`, variant: "warning" }
+            : { text: "Live", variant: "success" },
     },
     {
       id: "deposit-rails",

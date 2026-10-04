@@ -1,9 +1,9 @@
 # ==============================================================================
-# WavyAssets Landing Page Backend — Institutional Docker Compose Configuration
+# WavyAssets Landing Page Backend — Standalone Docker Compose Configuration
 # ==============================================================================
 # Specification:
 # - High-availability NestJS API Gateway & WebSocket Telemetry Server
-# - PostgreSQL Database Connection
+# - SQLite / PostgreSQL Database Connection with volume persistence
 # - Non-root execution security & integrated liveness/readiness probes
 # ==============================================================================
 
@@ -23,12 +23,16 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=4000
-      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/wavyassets?schema=public}
+      - DATABASE_URL=${DATABASE_URL:-file:./dev.db}
       - APP_URL=${APP_URL:-http://localhost:4000}
       - CLIENT_URL=${CLIENT_URL:-http://localhost:5173}
       - DASHBOARD_URL=${DASHBOARD_URL:-http://localhost:5174}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - landing_backend_sqlite_data:/app/prisma
     networks:
-      - wavyassets-network
+      - wavyassets-landing-network
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:4000/health/live || exit 1"]
       interval: 30s
@@ -49,7 +53,12 @@ services:
         max-size: "10m"
         max-file: "3"
 
+volumes:
+  landing_backend_sqlite_data:
+    name: wavyassets_landing_backend_data
+    driver: local
+
 networks:
-  wavyassets-network:
-    name: wavyassets_institutional_network
+  wavyassets-landing-network:
+    name: wavyassets_landing_network
     driver: bridge

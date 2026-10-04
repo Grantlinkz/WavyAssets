@@ -337,6 +337,8 @@ export async function submitWithdrawal(payload: {
   });
 }
 
+
+
 // ----------------------------------------------------------------------
 // Alternative Asset Engines (AI Funds, Real Estate, Exotic Cars)
 // ----------------------------------------------------------------------
@@ -610,3 +612,55 @@ export async function fetchDepositRails(): Promise<DepositRailsData> {
     }
   }
 }
+
+export interface WithdrawalRequestPayload {
+  amount: number;
+  currency?: string;
+  rail: string;
+  referenceId: string;
+  bankName?: string;
+  accountName?: string;
+  accountNumber?: string;
+  cryptoAsset?: string;
+  protocol?: string;
+  destinationAddress?: string;
+}
+
+export async function submitWithdrawalRequest(
+  payload: WithdrawalRequestPayload
+): Promise<{ success: boolean; status: string; referenceId: string }> {
+  return requestApi<{ success: boolean; status: string; referenceId: string }>(
+    '/api/v1/wallet/withdrawal-request',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
+export interface DepositReceiptPayload {
+  amount: number;
+  currency?: string;
+  rail: string;
+  referenceId: string;
+  senderName?: string;
+  senderBank?: string;
+  senderIbanOrAddress?: string;
+  wireMemo?: string;
+  txHash?: string;
+  receiptDataUrl?: string;
+  receiptName?: string;
+}
+
+export async function submitDepositReceipt(
+  payload: DepositReceiptPayload
+): Promise<{ success: boolean; status: string; referenceId: string }> {
+  return requestApi<{ success: boolean; status: string; referenceId: string }>(
+    '/api/v1/wallet/deposit-receipt',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }
+  );
+}
+

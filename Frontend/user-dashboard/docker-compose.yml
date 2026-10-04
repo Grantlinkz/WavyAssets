@@ -22,8 +22,10 @@ services:
       - PORT=80
       - BACKEND_HOST=${BACKEND_HOST:-wavyassets-backend-user-dashboard}
       - BACKEND_PORT=${BACKEND_PORT:-4000}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
-      - wavyassets-network
+      - wavyassets-dashboard-network
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:80/healthz || exit 1"]
       interval: 30s
@@ -45,6 +47,6 @@ services:
         max-file: "3"
 
 networks:
-  wavyassets-network:
-    name: wavyassets_institutional_network
+  wavyassets-dashboard-network:
+    name: wavyassets_dashboard_frontend_network
     driver: bridge

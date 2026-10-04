@@ -11,11 +11,17 @@ export type DocumentType =
 
 export interface ComplianceDocument {
   id: string
-  type: DocumentType
+  type: string
+  rawDocType?: string
   filename: string
   fileSize: string
   uploadedAt: string
   verified: boolean
+  status?: "VERIFIED" | "REJECTED" | "PENDING"
+  rejectionReason?: string
+  rejectedAt?: string
+  version?: number
+  isLatestVersion?: boolean
   documentUrl: string
   sha256Hash: string
 }
@@ -77,16 +83,22 @@ export function normalizeKycDossier(raw: Record<string, unknown>): KycDossier {
 
   const rawDocs = raw.documents as Record<string, unknown>[] | undefined
   const documents: ComplianceDocument[] = Array.isArray(rawDocs)
-    ? rawDocs.map((d) => ({
-        id: String(d.id || `doc-${Math.random().toString(36).slice(2, 8)}`),
-        type: (d.type || d.docType || "PASSPORT") as DocumentType,
-        filename: String(d.filename || `${(String(d.docType || "doc")).toLowerCase()}_${shortId}.pdf`),
-        fileSize: String(d.fileSize || "2.4 MB"),
-        uploadedAt: String(d.uploadedAt || new Date().toISOString()),
-        verified: Boolean(d.verified ?? d.isVerified),
-        documentUrl: String(d.documentUrl || d.fileUrl || "/api/v1/compliance/dossiers/passport.pdf"),
-        sha256Hash: String(d.sha256Hash || "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
-      }))
+    ? rawDocs.map((d) => {
+        const isVer = Boolean(d.verified ?? d.isVerified)
+        const docStat = (d.status as ComplianceDocument["status"]) || (isVer ? "VERIFIED" : "PENDING")
+        return {
+          id: String(d.id || `doc-${Math.random().toString(36).slice(2, 8)}`),
+          type: (d.type || d.docType || "PASSPORT") as DocumentType,
+          filename: String(d.filename || `${(String(d.docType || "doc")).toLowerCase()}_${shortId}.pdf`),
+          fileSize: String(d.fileSize || "2.4 MB"),
+          uploadedAt: String(d.uploadedAt || new Date().toISOString()),
+          verified: isVer,
+          status: docStat,
+          rejectionReason: d.rejectionReason as string | undefined,
+          documentUrl: String(d.documentUrl || d.fileUrl || "/api/v1/compliance/dossiers/passport.pdf"),
+          sha256Hash: String(d.sha256Hash || "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
+        }
+      })
     : [
         {
           id: `doc-${shortId}-1`,
@@ -95,6 +107,7 @@ export function normalizeKycDossier(raw: Record<string, unknown>): KycDossier {
           fileSize: "2.4 MB",
           uploadedAt: new Date().toISOString(),
           verified: status === "APPROVED",
+          status: status === "APPROVED" ? "VERIFIED" : status === "REJECTED" ? "REJECTED" : "PENDING",
           documentUrl: "/api/v1/compliance/dossiers/passport.pdf",
           sha256Hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         },
@@ -195,4 +208,27 @@ export async function updateFinmaChecklist(
       body: JSON.stringify({ checklist }),
     }
   )
+}
+
+export async function verifyComplianceDocument(payload: {
+  documentId: string
+  isVerified: boolean
+  rejectionReason?: string
+}): Promise<{
+  success: boolean
+  documentId: string
+  isVerified: boolean
+  message: string
+  dossier?: KycDossier
+}> {
+  return apiClient<{
+    success: boolean
+    documentId: string
+    isVerified: boolean
+    message: string
+    dossier?: KycDossier
+  }>(`/compliance/verify-document`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  })
 }
