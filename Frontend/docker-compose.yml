@@ -31,7 +31,7 @@ services:
           - landing-frontend
           - wavyassets-landing-frontend
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:80/healthz || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:$${PORT:-80}/healthz || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -73,7 +73,7 @@ services:
           - user-dashboard-frontend
           - wavyassets-user-dashboard
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:80/healthz || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:$${PORT:-80}/healthz || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -115,7 +115,7 @@ services:
           - admin-panel-frontend
           - wavyassets-admin-frontend
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:80/healthz || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:$${PORT:-80}/healthz || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3

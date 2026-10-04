@@ -1,11 +1,6 @@
 # ==============================================================================
 # WavyAssets Landing Page Backend — Standalone Docker Compose Configuration
 # ==============================================================================
-# Specification:
-# - High-availability NestJS API Gateway & WebSocket Telemetry Server
-# - SQLite / PostgreSQL Database Connection with volume persistence
-# - Non-root execution security & integrated liveness/readiness probes
-# ==============================================================================
 
 services:
   backend:
@@ -16,25 +11,26 @@ services:
     image: wavyassets/landing-page-backend:1.0.0
     container_name: wavyassets-landing-backend
     restart: unless-stopped
+    # Production Hardening: Bind internal API ports to host loopback (127.0.0.1) only
     ports:
-      - "${PORT:-4000}:4000"
+      - "${BACKEND_BIND_IP:-127.0.0.1}:${PORT:-4000}:4000"
     env_file:
       - .env
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=4000
-      - DATABASE_URL=${DATABASE_URL:-file:./dev.db}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/wavyassets?schema=public}
       - APP_URL=${APP_URL:-http://localhost:4000}
       - CLIENT_URL=${CLIENT_URL:-http://localhost:5173}
       - DASHBOARD_URL=${DASHBOARD_URL:-http://localhost:5174}
+    # Production Hardening: exec ensures tini directly supervises node for immediate SIGTERM handling
+    command: sh -c "npx prisma db push --skip-generate && exec node dist/main.js"
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    volumes:
-      - landing_backend_sqlite_data:/app/prisma
     networks:
       - wavyassets-landing-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:4000/health/live || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:$${PORT:-4000}/health/live || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -52,11 +48,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-volumes:
-  landing_backend_sqlite_data:
-    name: wavyassets_landing_backend_data
-    driver: local
 
 networks:
   wavyassets-landing-network:

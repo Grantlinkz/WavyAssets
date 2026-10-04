@@ -1,11 +1,6 @@
 # ==============================================================================
 # WavyAssets Global Institutional User Dashboard — Docker Compose Configuration
 # ==============================================================================
-# Architecture:
-# - High-performance Nginx web server with SPA catch-all routing
-# - Dynamic reverse proxy to Backend API Gateway (:4000)
-# - Static asset compression, long-term immutable caching & health probe (:5174 -> :80)
-# ==============================================================================
 
 services:
   dashboard:
@@ -27,7 +22,7 @@ services:
     networks:
       - wavyassets-dashboard-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:80/healthz || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:$${PORT:-80}/healthz || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
