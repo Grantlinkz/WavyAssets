@@ -61,9 +61,11 @@ export const ContactModal: React.FC<ContactModalProps> = ({
 
   useEffect(() => {
     if (!isLoading) return;
-    setElapsedSecs(0);
     const timer = setInterval(() => setElapsedSecs((s) => s + 1), 1000);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      setElapsedSecs(0);
+    };
   }, [isLoading]);
 
   const mapServiceToBackend = (serviceStr: string): LeadInquiryPayload['service'] => {

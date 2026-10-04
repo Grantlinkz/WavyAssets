@@ -117,11 +117,13 @@ export class TreasuryService {
     ]);
 
     // Query recent deposit receipt audit logs
-    const receiptAuditLogs = await this.prisma.auditLog.findMany({
-      where: { action: 'DEPOSIT_RECEIPT_UPLOAD' },
-      orderBy: { createdAt: 'desc' },
-      take: 200,
-    });
+    const receiptAuditLogs = typeof (this.prisma as any).auditLog?.findMany === 'function'
+      ? await (this.prisma as any).auditLog.findMany({
+          where: { action: 'DEPOSIT_RECEIPT_UPLOAD' },
+          orderBy: { createdAt: 'desc' },
+          take: 200,
+        })
+      : [];
 
     const receiptsByTx = new Map<string, { receiptUrl?: string; txHash?: string; senderName?: string; senderBank?: string }>();
     for (const log of receiptAuditLogs) {

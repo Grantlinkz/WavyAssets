@@ -7,6 +7,7 @@ describe('Argon2id Password Hashing & Constant-Time Verification', () => {
     get: (key: string) => {
       if (key === 'security.jwtSecret') return 'test_jwt_secret_64_bytes_long_string_for_testing_purposes!';
       if (key === 'security.fieldEncryptionKey') return '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+      if (key === 'security.handoffTicketSecret') return 'test_handoff_ticket_secret_key_minimum_32_chars!';
       return null;
     },
   } as ConfigService;

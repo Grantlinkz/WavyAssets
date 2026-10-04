@@ -113,11 +113,13 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
   // Monitor loading duration for cold-start UX (e.g. Render 50s spin-up)
   useEffect(() => {
     if (!isLoading) return;
-    setElapsedLoadingSecs(0);
     const interval = setInterval(() => {
       setElapsedLoadingSecs((prev) => prev + 1);
     }, 1000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      setElapsedLoadingSecs(0);
+    };
   }, [isLoading]);
 
   // Countdown timer in step 2 or reset-password

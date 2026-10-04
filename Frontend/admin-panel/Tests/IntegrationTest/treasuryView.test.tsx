@@ -173,7 +173,7 @@ describe("Treasury Operations & Dual Sign-Off Integration", () => {
     expect(html).toContain("data-testid=\"receipt-modal\"")
     expect(html).toContain("Deposit Wire Receipt Inspection")
     expect(html).toContain("Geneva Multi-Family Office")
-    expect(html).toContain("DOCUMENT TYPE: SWIFT MT103 SINGLE CUSTOMER CREDIT")
+    expect(html).toContain("DOCUMENT TYPE: SWIFT MT103 / DvP CLEARANCE MANDATE")
     expect(html).toContain("WY-MFO-TREASURY-03")
     expect(html).toContain("Approve &amp; Credit Balance")
   })
