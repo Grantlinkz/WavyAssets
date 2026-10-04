@@ -22,9 +22,17 @@ export interface VipCardData {
   cardNumberLast4: string;
   cardType: 'PHYSICAL' | 'VIRTUAL';
   tier: string;
+  substrate?: string;
+  cardholderName?: string;
+  celebrityCardholderLabel?: string | null;
+  validDate?: string;
+  destination?: string;
   isFrozen: boolean;
+  frozenByAdmin?: boolean;
   dailySpendLimit: number;
   shippingStatus: string;
+  createdAt?: string;
+  updatedAt?: string;
   tierProgression?: {
     currentTier: string;
     nextTier: string | null;
@@ -38,6 +46,9 @@ export interface VipCardData {
 interface GovernanceState {
   // VIP Cards Slice
   vipCard: VipCardData | null;
+  vipCards: VipCardData[];
+  hasAssignedCard: boolean;
+  adminFreezeNotice: string | null;
   isLoadingCard: boolean;
   isCardFrozen: boolean;
   cardMode: 'physical' | 'membership' | 'virtual';
@@ -47,7 +58,8 @@ interface GovernanceState {
   isConciergeModalOpen: boolean;
 
   loadVipCard: () => Promise<void>;
-  toggleFreezeCard: () => void;
+  toggleFreezeCard: (cardId?: string) => void;
+  dismissFreezeNotice: () => void;
   setCardMode: (mode: 'physical' | 'membership' | 'virtual') => void;
   openBiometricModal: () => void;
   closeBiometricModal: () => void;
@@ -84,6 +96,9 @@ let cvvTimer: ReturnType<typeof setInterval> | null = null;
 export const useGovernanceStore = create<GovernanceState>((set, get) => ({
   // VIP Card Initial State
   vipCard: null,
+  vipCards: [],
+  hasAssignedCard: false,
+  adminFreezeNotice: null,
   isLoadingCard: false,
   isCardFrozen: false,
   cardMode: 'physical',
@@ -92,46 +107,88 @@ export const useGovernanceStore = create<GovernanceState>((set, get) => ({
   isBiometricModalOpen: false,
   isConciergeModalOpen: false,
 
+  dismissFreezeNotice: () => set({ adminFreezeNotice: null }),
+
   loadVipCard: async () => {
     set({ isLoadingCard: true });
     try {
-      const data = await fetchVipCardStatus<VipCardData | null>(null);
-      if (data && data.cardNumberLast4) {
+      const data = await fetchVipCardStatus<Record<string, unknown> | null>(null);
+      if (data) {
+        const rawCards = (
+          Array.isArray(data.cards) ? data.cards : data.id ? [data] : []
+        ) as VipCardData[];
+        const hasAssigned = Boolean(data.hasAssignedCard ?? (rawCards.length > 0));
+        const primaryCard = (rawCards[0] || (data.id ? data : null)) as VipCardData | null;
+        const isFrozen = Boolean(primaryCard?.isFrozen || primaryCard?.frozenByAdmin);
+        const adminFrozen = Boolean(primaryCard?.frozenByAdmin);
+
         const initialMode =
-          data.tier === 'CELEBRITY'
+          primaryCard?.tier === 'CELEBRITY'
             ? 'membership'
-            : data.cardType === 'VIRTUAL'
+            : primaryCard?.cardType === 'VIRTUAL'
             ? 'virtual'
             : 'physical';
+
         set({
-          vipCard: data,
-          isCardFrozen: Boolean(data.isFrozen),
+          vipCard: primaryCard,
+          vipCards: rawCards,
+          hasAssignedCard: hasAssigned,
+          isCardFrozen: isFrozen,
+          adminFreezeNotice: adminFrozen ? 'Card has been frozen by Admin. Contact support!' : null,
           cardMode: initialMode,
           isLoadingCard: false,
         });
       } else {
-        set({ isLoadingCard: false });
+        set({
+          vipCard: null,
+          vipCards: [],
+          hasAssignedCard: false,
+          isCardFrozen: false,
+          adminFreezeNotice: null,
+          isLoadingCard: false,
+        });
       }
     } catch {
       set({ isLoadingCard: false });
     }
   },
 
-  toggleFreezeCard: () => {
+  toggleFreezeCard: (cardId?: string) => {
+    const activeCard = get().vipCard;
+
+    // Requirement 5: If frozen by admin, prevent user from unfreezing and notify
+    if (activeCard?.frozenByAdmin) {
+      set({
+        adminFreezeNotice: 'Card has been frozen by Admin. Contact support!',
+        isCardFrozen: true,
+      });
+      return;
+    }
+
     const prevFrozen = get().isCardFrozen;
     const nextFrozen = !prevFrozen;
     set((state) => ({
       isCardFrozen: nextFrozen,
       vipCard: state.vipCard ? { ...state.vipCard, isFrozen: nextFrozen } : null,
+      vipCards: state.vipCards.map((c) =>
+        c.id === (cardId || state.vipCard?.id) ? { ...c, isFrozen: nextFrozen } : c
+      ),
     }));
+
     // Persist freeze toggle to backend enclave
-    updateCardControlsApi({ isFrozen: nextFrozen }).catch((err) => {
-      console.warn('Failed to commit card freeze status to backend:', err);
-      set((state) => ({
-        isCardFrozen: prevFrozen,
-        vipCard: state.vipCard ? { ...state.vipCard, isFrozen: prevFrozen } : null,
-      }));
-    });
+    if (activeCard?.id) {
+      updateCardControlsApi({ isFrozen: nextFrozen, cardId: cardId || activeCard.id }).catch((err) => {
+        console.warn('Failed to commit card freeze status to backend:', err);
+        const isForbidden =
+          err?.message?.includes('frozen by Admin') ||
+          err?.response?.data?.message?.includes('frozen by Admin');
+        set((state) => ({
+          isCardFrozen: isForbidden ? true : prevFrozen,
+          adminFreezeNotice: isForbidden ? 'Card has been frozen by Admin. Contact support!' : null,
+          vipCard: state.vipCard ? { ...state.vipCard, isFrozen: isForbidden ? true : prevFrozen } : null,
+        }));
+      });
+    }
   },
 
   setCardMode: (mode) => {

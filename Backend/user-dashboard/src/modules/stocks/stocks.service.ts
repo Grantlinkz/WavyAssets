@@ -150,7 +150,7 @@ export class StocksService {
     const positions: StockPositionResponse[] = rawPositions.map((p) => {
       const stock = this.STOCKS_DATA[p.symbol] || {
         name: p.symbol,
-        exchange: p.exchange,
+        exchange: p.exchange || 'NASDAQ',
         price: p.avgCostBasis,
         beta: 1.0,
         range52w: { low: p.avgCostBasis * 0.8, high: p.avgCostBasis * 1.2 },
@@ -165,7 +165,7 @@ export class StocksService {
       return {
         id: p.id,
         symbol: p.symbol,
-        exchange: p.exchange,
+        exchange: p.exchange || stock.exchange || 'NASDAQ',
         shares: p.shares,
         avgCostBasis: p.avgCostBasis,
         currentPrice,

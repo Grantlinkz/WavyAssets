@@ -23,6 +23,10 @@ export enum CardTier {
 
 export class UpdateCardControlsDto {
   @IsOptional()
+  @IsString()
+  cardId?: string;
+
+  @IsOptional()
   @IsBoolean()
   isFrozen?: boolean;
 
@@ -38,6 +42,10 @@ export class UpdateCardControlsDto {
 }
 
 export class RevealSensitiveDataDto {
+  @IsOptional()
+  @IsString()
+  cardId?: string;
+
   @IsOptional()
   @IsString()
   passphrase?: string;

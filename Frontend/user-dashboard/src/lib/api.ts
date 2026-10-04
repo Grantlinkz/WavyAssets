@@ -440,6 +440,7 @@ export async function updateCardSpendingLimitApi(dailySpendLimit: number): Promi
 }
 
 export async function updateCardControlsApi(controls: {
+  cardId?: string;
   isFrozen?: boolean;
   cardType?: 'PHYSICAL' | 'VIRTUAL';
   dailySpendLimit?: number;

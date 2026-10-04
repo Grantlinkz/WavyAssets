@@ -109,7 +109,7 @@ export class UsersService {
           orderBy: { createdAt: "desc" },
           include: {
             ledgerAccounts: true,
-            vipCard: {
+            vipCards: {
               select: {
                 cardNumberLast4: true,
                 tier: true,
@@ -157,7 +157,7 @@ export class UsersService {
         totalBalance: availableCash + investedCapital,
         activeSessionsCount: user._count.sessions,
         kycDocumentsCount: user._count.kycDocuments,
-        vipCard: user.vipCard || null,
+        vipCard: user.vipCards?.[0] || null,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       };
@@ -201,7 +201,7 @@ export class UsersService {
         kycDocuments: {
           orderBy: { uploadedAt: "desc" },
         },
-        vipCard: true,
+        vipCards: true,
         sessions: {
           select: {
             id: true,
@@ -259,7 +259,7 @@ export class UsersService {
         })),
       },
       kycDocuments: user.kycDocuments,
-      vipCard: user.vipCard,
+      vipCard: user.vipCards?.[0] || null,
       activeSessions: user.sessions,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,

@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
   Query,
@@ -102,5 +103,14 @@ export class VipCardsController {
       admin?.sub || 'system-admin',
       dto,
     );
+  }
+
+  @Delete(':id')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.CONCIERGE)
+  async deleteCard(
+    @Param('id') id: string,
+    @CurrentAdmin() admin: CurrentAdminPayload,
+  ) {
+    return this.vipCardsService.deleteCard(id, admin?.sub || 'system-admin');
   }
 }

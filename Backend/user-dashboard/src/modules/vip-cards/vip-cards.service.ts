@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   UnauthorizedException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -38,36 +39,28 @@ export class VipCardsService {
    * Retrieves active card status, tier metrics, and spending limits
    */
   async getCardStatus(userId: string) {
-    let card = await this.prisma.vipCard.findUnique({
-      where: { userId },
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, fullName: true, email: true, tier: true },
     });
 
-    if (!card) {
-      // Auto-provision an Obsidian card if none exists
-      const defaultPin = '4821';
-      const pinEncrypted = CryptoUtils.encryptAes256Gcm(defaultPin, this.cipherKeyHex);
-      card = await this.prisma.vipCard.create({
-        data: {
-          userId,
-          cardNumberLast4: '8842',
-          cardType: CardType.PHYSICAL,
-          tier: CardTier.OBSIDIAN,
-          isFrozen: false,
-          dailySpendLimit: 100000.0,
-          pinEncrypted,
-          shippingStatus: 'DELIVERED',
-        },
-      });
-    }
+    const cards = await this.prisma.vipCard.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
 
     // Compute tier thresholds and progress
     const tierThresholds: Record<string, { min: number; nextTier: string | null; nextMin: number | null }> = {
       SILVER: { min: 100000, nextTier: 'OBSIDIAN', nextMin: 1000000 },
       OBSIDIAN: { min: 1000000, nextTier: 'BLACK', nextMin: 10000000 },
       BLACK: { min: 10000000, nextTier: null, nextMin: null },
+      Supreme: { min: 5000000, nextTier: 'TITANIUM', nextMin: 10000000 },
+      TITANIUM: { min: 10000000, nextTier: 'CELEBRITY', nextMin: 25000000 },
+      CELEBRITY: { min: 25000000, nextTier: null, nextMin: null },
     };
 
-    const currentTierConfig = tierThresholds[card.tier] || tierThresholds.OBSIDIAN;
+    const primaryTier = cards[0]?.tier || user?.tier || 'OBSIDIAN';
+    const currentTierConfig = tierThresholds[primaryTier] || tierThresholds.OBSIDIAN;
 
     // Calculate approximate AUM from cash + crypto + stocks
     const cashAccounts = await this.prisma.ledgerAccount.findMany({
@@ -92,24 +85,63 @@ export class VipCardsService {
       : 100;
     const amountToNextTier = nextMin ? Math.max(0, nextMin - estimatedAum) : 0;
 
+    const tierProgression = {
+      currentTier: primaryTier,
+      nextTier: currentTierConfig.nextTier,
+      currentAum: Math.round(estimatedAum * 100) / 100,
+      nextTierThreshold: nextMin,
+      progressPercentage: progressPct,
+      amountToNextTier: Math.round(amountToNextTier * 100) / 100,
+    };
+
+    if (!cards || cards.length === 0) {
+      return {
+        hasAssignedCard: false,
+        cards: [],
+        tierProgression,
+      };
+    }
+
+    const formattedCards = cards.map((card) => {
+      const substrate =
+        card.substrate ||
+        (card.tier === 'CELEBRITY'
+          ? 'Celebrity 24K Gold & Diamond'
+          : card.tier === 'TITANIUM'
+          ? 'Silver Titanium'
+          : card.tier === 'Supreme'
+          ? 'Black Supreme Stainless'
+          : 'Obsidian 42g Tungsten');
+
+      return {
+        id: card.id,
+        cardNumberMasked: `•••• •••• •••• ${card.cardNumberLast4}`,
+        cardNumberLast4: card.cardNumberLast4,
+        cardType: card.cardType,
+        tier: card.tier,
+        substrate,
+        cardholderName: card.cardholderName || user?.fullName || 'VIP Member',
+        celebrityCardholderLabel: card.celebrityCardholderLabel || null,
+        validDate: card.validDate || '12/29',
+        destination:
+          card.destination ||
+          (card.cardType === 'VIRTUAL'
+            ? 'Digital NFC Enclave'
+            : 'Vault Custody / Registered Address'),
+        isFrozen: card.isFrozen,
+        frozenByAdmin: card.frozenByAdmin ?? card.isFrozen ?? false,
+        dailySpendLimit: card.dailySpendLimit,
+        shippingStatus: card.shippingStatus,
+        createdAt: card.createdAt,
+        updatedAt: card.updatedAt,
+      };
+    });
+
     return {
-      id: card.id,
-      cardNumberMasked: `•••• •••• •••• ${card.cardNumberLast4}`,
-      cardNumberLast4: card.cardNumberLast4,
-      cardType: card.cardType,
-      tier: card.tier,
-      isFrozen: card.isFrozen,
-      dailySpendLimit: card.dailySpendLimit,
-      shippingStatus: card.shippingStatus,
-      tierProgression: {
-        currentTier: card.tier,
-        nextTier: currentTierConfig.nextTier,
-        currentAum: Math.round(estimatedAum * 100) / 100,
-        nextTierThreshold: nextMin,
-        progressPercentage: progressPct,
-        amountToNextTier: Math.round(amountToNextTier * 100) / 100,
-      },
-      updatedAt: card.updatedAt,
+      hasAssignedCard: true,
+      cards: formattedCards,
+      ...formattedCards[0],
+      tierProgression,
     };
   }
 
@@ -117,12 +149,24 @@ export class VipCardsService {
    * Updates card controls (freeze, type, daily spending limit)
    */
   async updateCardControls(userId: string, dto: UpdateCardControlsDto) {
-    const card = await this.prisma.vipCard.findUnique({
-      where: { userId },
-    });
+    let card;
+    if (dto.cardId) {
+      card = await this.prisma.vipCard.findFirst({
+        where: { id: dto.cardId, userId },
+      });
+    } else {
+      card = await this.prisma.vipCard.findFirst({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
 
     if (!card) {
       throw new NotFoundException('VIP card not found for this user');
+    }
+
+    if (card.frozenByAdmin && dto.isFrozen === false) {
+      throw new ForbiddenException('Card has been frozen by Admin. Contact support!');
     }
 
     // Validate limit boundaries based on tier
@@ -131,6 +175,9 @@ export class VipCardsService {
         SILVER: 25000,
         OBSIDIAN: 100000,
         BLACK: 500000,
+        Supreme: 250000,
+        TITANIUM: 500000,
+        CELEBRITY: 1000000,
       };
       const allowedMax = maxLimitByTier[card.tier] || 100000;
       if (dto.dailySpendLimit > allowedMax) {
@@ -141,7 +188,7 @@ export class VipCardsService {
     }
 
     const updated = await this.prisma.vipCard.update({
-      where: { userId },
+      where: { id: card.id },
       data: {
         ...(dto.isFrozen !== undefined && { isFrozen: dto.isFrozen }),
         ...(dto.cardType !== undefined && { cardType: dto.cardType }),
@@ -165,7 +212,7 @@ export class VipCardsService {
     });
 
     this.logger.log(
-      `User [${userId}] updated VIP card controls: frozen=${updated.isFrozen}, type=${updated.cardType}, limit=$${updated.dailySpendLimit}`,
+      `User [${userId}] updated VIP card [${card.id}] controls: frozen=${updated.isFrozen}, type=${updated.cardType}, limit=$${updated.dailySpendLimit}`,
     );
 
     return {
@@ -236,9 +283,14 @@ export class VipCardsService {
       throw new UnauthorizedException('Authentication failed for revealing sensitive card credentials');
     }
 
-    const card = await this.prisma.vipCard.findUnique({
-      where: { userId },
-    });
+    const card = dto.cardId
+      ? await this.prisma.vipCard.findFirst({
+          where: { id: dto.cardId, userId },
+        })
+      : await this.prisma.vipCard.findFirst({
+          where: { userId },
+          orderBy: { createdAt: 'desc' },
+        });
 
     if (!card) {
       throw new NotFoundException('VIP card not found');
@@ -291,8 +343,9 @@ export class VipCardsService {
    * Returns bespoke tier privileges and fee schedules
    */
   async getPrivileges(userId: string) {
-    const card = await this.prisma.vipCard.findUnique({
+    const card = await this.prisma.vipCard.findFirst({
       where: { userId },
+      orderBy: { createdAt: 'desc' },
     });
 
     const tier = card?.tier || 'OBSIDIAN';
@@ -340,8 +393,9 @@ export class VipCardsService {
    * Physical card courier shipping tracker
    */
   async getShippingTracker(userId: string) {
-    const card = await this.prisma.vipCard.findUnique({
+    const card = await this.prisma.vipCard.findFirst({
       where: { userId },
+      orderBy: { createdAt: 'desc' },
     });
 
     const isDelivered = card?.shippingStatus === 'DELIVERED';

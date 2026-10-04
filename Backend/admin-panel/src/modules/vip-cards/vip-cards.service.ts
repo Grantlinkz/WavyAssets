@@ -27,17 +27,19 @@ export class VipCardsService {
     const user = safeCard.user || {};
     const tier = safeCard.tier || 'OBSIDIAN';
     const substrate =
-      tier === 'CELEBRITY'
+      safeCard.substrate ||
+      (tier === 'CELEBRITY'
         ? 'Celebrity 24K Gold & Diamond'
         : tier === 'TITANIUM'
         ? 'Silver Titanium'
         : tier === 'Supreme'
         ? 'Black Supreme Stainless'
-        : 'Obsidian 42g Tungsten';
+        : 'Obsidian 42g Tungsten');
 
     return {
       ...safeCard,
-      userName: user.fullName || 'VIP Member',
+      userName: safeCard.cardholderName || user.fullName || 'VIP Member',
+      cardholderName: safeCard.cardholderName || user.fullName || 'VIP Member',
       userCif: `CIF-${(safeCard.userId || safeCard.id || '0000').slice(0, 8).toUpperCase()}`,
       userTier: user.tier ? `${user.tier} Tier` : 'Institutional Tier',
       maskedPan: `•••• •••• •••• ${safeCard.cardNumberLast4 || '0000'}`,
@@ -50,8 +52,9 @@ export class VipCardsService {
           ? 'Registered Address (Vault Enclave)'
           : 'Armored Vault Custody'),
       issuedAt: safeCard.createdAt || safeCard.updatedAt,
-      validDate: card.validDate || '12/29',
-      celebrityCardholderLabel: card.celebrityCardholderLabel || null,
+      validDate: safeCard.validDate || '12/29',
+      celebrityCardholderLabel: safeCard.celebrityCardholderLabel || null,
+      frozenByAdmin: safeCard.frozenByAdmin ?? safeCard.isFrozen ?? false,
     };
   }
 
@@ -248,10 +251,6 @@ export class VipCardsService {
       throw new NotFoundException(`User with ID '${dto.userId}' not found`);
     }
 
-    const existingCard = await this.prisma.vipCard.findUnique({
-      where: { userId: dto.userId },
-    });
-
     // Encrypt temporary PIN with AES-256-GCM
     const pin = dto.temporaryPin || randomInt(1000, 10000).toString();
     const pinEncrypted = this.cryptoService.encrypt(pin);
@@ -261,119 +260,85 @@ export class VipCardsService {
       dto.cardNumberLast4 ||
       randomInt(1000, 10000).toString();
 
+    const tier = dto.tier || 'OBSIDIAN';
+    const substrate =
+      dto.substrate ||
+      (tier === 'CELEBRITY'
+        ? 'Celebrity 24K Gold & Diamond'
+        : tier === 'TITANIUM'
+        ? 'Silver Titanium'
+        : tier === 'Supreme'
+        ? 'Black Supreme Stainless'
+        : 'Obsidian 42g Tungsten');
+    const cardholderName = dto.cardholderName || user.fullName || 'VIP Member';
+    const validDate = dto.validDate || '12/29';
+    const destination =
+      dto.destination ||
+      (dto.cardType === 'VIRTUAL'
+        ? 'Digital NFC Enclave'
+        : dto.shippingStatus === 'DELIVERED'
+        ? 'Registered Address (Vault Enclave)'
+        : 'Armored Vault Custody');
+
     const card = await this.prisma.$transaction(async (tx) => {
-      let cardRecord;
-
-      if (existingCard) {
-        cardRecord = await tx.vipCard.update({
-          where: { id: existingCard.id },
-          data: {
-            cardNumberLast4,
-            cardType: dto.cardType || 'PHYSICAL',
-            tier: dto.tier || 'OBSIDIAN',
-            isFrozen: false,
-            dailySpendLimit: dto.dailySpendLimit ?? 50000.0,
-            pinEncrypted,
-            shippingStatus:
-              dto.shippingStatus ||
-              (dto.cardType === 'VIRTUAL' ? 'DELIVERED' : 'IN_TRANSIT'),
-          },
-          include: {
-            user: {
-              select: {
-                id: true,
-                fullName: true,
-                email: true,
-                tier: true,
-                kycTier: true,
-              },
+      const cardRecord = await tx.vipCard.create({
+        data: {
+          userId: dto.userId,
+          cardNumberLast4,
+          cardType: dto.cardType || 'PHYSICAL',
+          tier,
+          substrate,
+          cardholderName,
+          celebrityCardholderLabel: dto.celebrityCardholderLabel || null,
+          validDate,
+          destination,
+          isFrozen: false,
+          frozenByAdmin: false,
+          dailySpendLimit: dto.dailySpendLimit ?? 50000.0,
+          pinEncrypted,
+          shippingStatus:
+            dto.shippingStatus ||
+            (dto.cardType === 'VIRTUAL' ? 'DELIVERED' : 'IN_TRANSIT'),
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              tier: true,
+              kycTier: true,
             },
           },
-        });
+        },
+      });
 
-        // Record Immutable Differential Audit Log
-        await tx.adminAuditLog.create({
-          data: {
-            adminId,
-            action: 'VIP_CARD_MINT',
-            targetEntity: 'VipCard',
-            targetId: cardRecord.id,
-            diffBefore: JSON.stringify({
-              cardId: existingCard.id,
-              userId: existingCard.userId,
-              cardNumberLast4: existingCard.cardNumberLast4,
-              tier: existingCard.tier,
-              cardType: existingCard.cardType,
-              dailySpendLimit: existingCard.dailySpendLimit,
-              shippingStatus: existingCard.shippingStatus,
-              isFrozen: existingCard.isFrozen,
-            }),
-            diffAfter: JSON.stringify({
-              cardId: cardRecord.id,
-              userId: cardRecord.userId,
-              cardNumberLast4,
-              tier: cardRecord.tier,
-              cardType: cardRecord.cardType,
-              dailySpendLimit: cardRecord.dailySpendLimit,
-              shippingStatus: cardRecord.shippingStatus,
-              validDate: dto.validDate || '12/29',
-              celebrityCardholderLabel: dto.celebrityCardholderLabel || null,
-            }),
-            reason: `Re-issued / upgraded Supreme VIP card (${cardRecord.tier}) for user ${user.email} (superseding active card ${existingCard.id})`,
-            ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(adminId).slice(0, 16),
-          },
-        });
-      } else {
-        cardRecord = await tx.vipCard.create({
-          data: {
-            userId: dto.userId,
+      // Record Immutable Differential Audit Log
+      await tx.adminAuditLog.create({
+        data: {
+          adminId,
+          action: 'VIP_CARD_MINT',
+          targetEntity: 'VipCard',
+          targetId: cardRecord.id,
+          diffBefore: null,
+          diffAfter: JSON.stringify({
+            cardId: cardRecord.id,
+            userId: cardRecord.userId,
             cardNumberLast4,
-            cardType: dto.cardType || 'PHYSICAL',
-            tier: dto.tier || 'OBSIDIAN',
-            isFrozen: false,
-            dailySpendLimit: dto.dailySpendLimit ?? 50000.0,
-            pinEncrypted,
-            shippingStatus:
-              dto.shippingStatus ||
-              (dto.cardType === 'VIRTUAL' ? 'DELIVERED' : 'IN_TRANSIT'),
-          },
-          include: {
-            user: {
-              select: {
-                id: true,
-                fullName: true,
-                email: true,
-                tier: true,
-                kycTier: true,
-              },
-            },
-          },
-        });
-
-        // Record Immutable Differential Audit Log
-        await tx.adminAuditLog.create({
-          data: {
-            adminId,
-            action: 'VIP_CARD_MINT',
-            targetEntity: 'VipCard',
-            targetId: cardRecord.id,
-            diffBefore: null,
-            diffAfter: JSON.stringify({
-              cardId: cardRecord.id,
-              userId: cardRecord.userId,
-              cardNumberLast4,
-              tier: cardRecord.tier,
-              cardType: cardRecord.cardType,
-              dailySpendLimit: cardRecord.dailySpendLimit,
-              shippingStatus: cardRecord.shippingStatus,
-              validDate: dto.validDate || '12/29',
-              celebrityCardholderLabel: dto.celebrityCardholderLabel || null,
-            }),
-            reason: `Minted Supreme VIP card for user ${user.email}`,
-            ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(adminId).slice(0, 16),
-          },
-        });
-      }
+            tier: cardRecord.tier,
+            cardType: cardRecord.cardType,
+            substrate,
+            cardholderName,
+            celebrityCardholderLabel: cardRecord.celebrityCardholderLabel,
+            validDate,
+            destination,
+            dailySpendLimit: cardRecord.dailySpendLimit,
+            shippingStatus: cardRecord.shippingStatus,
+          }),
+          reason: `Minted VIP card (${cardRecord.tier}) for user ${user.email}`,
+          ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(adminId).slice(0, 16),
+        },
+      });
 
       return cardRecord;
     });
@@ -382,10 +347,7 @@ export class VipCardsService {
       `Minted VIP card '${card.id}' (tier: ${card.tier}, last4: ${card.cardNumberLast4}) for user '${card.userId}' by operator '${adminId}'`,
     );
 
-    const safeCard = this.formatSafeCard(card);
-    if (dto.validDate) safeCard.validDate = dto.validDate;
-    if (dto.celebrityCardholderLabel) safeCard.celebrityCardholderLabel = dto.celebrityCardholderLabel;
-    return safeCard;
+    return this.formatSafeCard(card);
   }
 
   /**
@@ -420,6 +382,7 @@ export class VipCardsService {
         },
         data: {
           isFrozen: nextFrozenState,
+          frozenByAdmin: nextFrozenState,
         },
       });
 
@@ -451,8 +414,8 @@ export class VipCardsService {
           action: 'VIP_CARD_FREEZE_TOGGLE',
           targetEntity: 'VipCard',
           targetId: card.id,
-          diffBefore: JSON.stringify({ isFrozen: previousFrozenState }),
-          diffAfter: JSON.stringify({ isFrozen: nextFrozenState }),
+          diffBefore: JSON.stringify({ isFrozen: previousFrozenState, frozenByAdmin: card.frozenByAdmin }),
+          diffAfter: JSON.stringify({ isFrozen: nextFrozenState, frozenByAdmin: nextFrozenState }),
           reason:
             reason ||
             `Toggled VIP card freeze state to ${nextFrozenState ? 'LOCKED' : 'ACTIVE'}`,
@@ -477,8 +440,59 @@ export class VipCardsService {
       `VIP card '${card.id}' freeze toggled to ${nextFrozenState} by operator '${adminId}'`,
     );
 
-    const { pinEncrypted, ...safeCard } = updatedCard;
-    return safeCard;
+    return this.formatSafeCard(updatedCard);
+  }
+
+  /**
+   * Deletes a VIP card permanently
+   */
+  async deleteCard(cardId: string, adminId: string) {
+    const card = await this.prisma.vipCard.findUnique({
+      where: { id: cardId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            fullName: true,
+          },
+        },
+      },
+    });
+
+    if (!card) {
+      throw new NotFoundException(`VIP Card with ID '${cardId}' not found`);
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.vipCard.delete({
+        where: { id: cardId },
+      });
+
+      await tx.adminAuditLog.create({
+        data: {
+          adminId,
+          action: 'VIP_CARD_DELETE',
+          targetEntity: 'VipCard',
+          targetId: cardId,
+          diffBefore: JSON.stringify({
+            id: card.id,
+            userId: card.userId,
+            cardNumberLast4: card.cardNumberLast4,
+            tier: card.tier,
+          }),
+          diffAfter: null,
+          reason: `Deleted VIP card '${cardId}' (tier: ${card.tier}, last4: ${card.cardNumberLast4}) for user '${card.user?.email || card.userId}'`,
+          ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(adminId).slice(0, 16),
+        },
+      });
+    });
+
+    this.logger.log(
+      `Deleted VIP card '${cardId}' for user '${card.userId}' by operator '${adminId}'`,
+    );
+
+    return { success: true, deletedCardId: cardId, userId: card.userId };
   }
 
   /**
