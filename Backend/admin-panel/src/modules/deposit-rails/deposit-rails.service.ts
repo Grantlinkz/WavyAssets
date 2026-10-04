@@ -365,13 +365,12 @@ export class DepositRailsService {
       },
     });
 
-    this.logger.log(
-      `Deposit rail cache invalidation executed by operator ${adminId || 'SYSTEM'}`,
-    );
+    const propagatedRailsCount = cryptoRails.length + (fiatRail ? 1 : 0);
 
     return {
       success: true,
       message: 'Global deposit rail configuration propagated and cache invalidated.',
+      propagatedRailsCount,
     };
   }
 }

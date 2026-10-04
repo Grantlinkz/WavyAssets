@@ -722,8 +722,15 @@ export class TreasuryService {
       if (!dto.officerToken || !dto.officerToken.trim()) {
         throw new BadRequestException('officerToken is required for withdrawal approval.');
       }
-      if (!dto.complianceAttestations) {
-        throw new BadRequestException('complianceAttestations are required for withdrawal approval.');
+      if (
+        !dto.complianceAttestations ||
+        dto.complianceAttestations.ibanMatchesMandate !== true ||
+        dto.complianceAttestations.liquidityVerified !== true ||
+        dto.complianceAttestations.voiceOrHardwareOtpConfirmed !== true
+      ) {
+        throw new BadRequestException(
+          'Approval requires explicit confirmation of all compliance attestations (ibanMatchesMandate, liquidityVerified, and voiceOrHardwareOtpConfirmed).',
+        );
       }
     }
 
@@ -948,7 +955,10 @@ export class TreasuryService {
       }
 
       // 2. Locate user's debit entry or account to refund
-      let userAccount = tx.entries.find((e) => e.account)?.account || null;
+      let userAccount =
+        tx.entries.find((e) => e.account?.accountType === 'AVAILABLE_CASH')?.account ||
+        tx.entries.find((e) => e.account)?.account ||
+        null;
 
       if (!userAccount && tx.accountNumber) {
         userAccount = await prismaTx.ledgerAccount.findFirst({
@@ -980,7 +990,7 @@ export class TreasuryService {
       });
       const newBalance = Number(updatedAccount.balance);
 
-      // Create compensatory credit entry
+      // Create compensatory credit entry for user cash
       await prismaTx.ledgerEntry.create({
         data: {
           transactionId: tx.id,
@@ -988,6 +998,26 @@ export class TreasuryService {
           amount: amount,
         },
       });
+
+      // Reverse clearing balance for original FEE_RECEIVABLE credit
+      const clearingEntry = tx.entries.find(
+        (e) => e.account?.accountType === 'FEE_RECEIVABLE',
+      );
+      if (clearingEntry && clearingEntry.account) {
+        await prismaTx.ledgerAccount.update({
+          where: { id: clearingEntry.account.id },
+          data: {
+            balance: { decrement: amount },
+          },
+        });
+        await prismaTx.ledgerEntry.create({
+          data: {
+            transactionId: tx.id,
+            accountId: clearingEntry.account.id,
+            amount: -amount,
+          },
+        });
+      }
 
       // 4. Record Audit Log
       await prismaTx.adminAuditLog.create({

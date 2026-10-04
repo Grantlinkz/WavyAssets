@@ -147,19 +147,26 @@ The platform implements an air-gapped cryptographic handoff protocol to transiti
 Launch the entire institutional cluster (3 Frontends + 3 Backends) with automated container healthchecks and dependency management:
 
 ```bash
-# Build and launch all 6 containers simultaneously
+# Build and launch all containers with edge Nginx reverse proxy
 docker compose up -d --build
 
-# Verify container health across all 6 services
+# Verify container health across all cluster services
 docker compose ps
 
-# Service Entrypoints:
-# - Frontend Landing Page:    http://localhost:5173
-# - Backend Landing Gateway:  http://localhost:4000 (Swagger: /api/docs)
-# - Frontend User Dashboard:  http://localhost:5174
-# - Backend User Dashboard:   http://localhost:4001
-# - Frontend Admin Panel:     http://localhost:5175
-# - Backend Admin Panel:      http://localhost:4002
+# Production Edge Ingress Entrypoints:
+# - Edge Nginx Ingress:       https://localhost (Ports 80 & 443 with TLS termination)
+#   ├── Landing Page:         https://wavyassets.com (or https://localhost/)
+#   ├── User Dashboard:       https://dashboard.wavyassets.com (or https://localhost/dashboard/)
+#   └── Admin Panel:          https://admin.wavyassets.com (or https://localhost/admin/)
+#
+# Internal Loopback Bindings (Host 127.0.0.1 Debugging):
+# - Frontend Landing Page:    http://127.0.0.1:5173
+# - Backend Landing Gateway:  http://127.0.0.1:4000 (Swagger: /api/docs)
+# - Frontend User Dashboard:  http://127.0.0.1:5174
+# - Backend User Dashboard:   http://127.0.0.1:4001
+# - Frontend Admin Panel:     http://127.0.0.1:5175
+# - Backend Admin Panel:      http://127.0.0.1:4002
+# - PostgreSQL Database:      127.0.0.1:5432
 
 # Follow aggregated logs
 docker compose logs -f

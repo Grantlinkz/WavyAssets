@@ -283,25 +283,30 @@ export class EmailService {
       maximumFractionDigits: 2,
     })} ${currency}`;
 
+    const safeRail = escapeHtml(rail);
+    const safeReason = escapeHtml(reason);
+    const safeUserFullName = escapeHtml(userFullName || 'Valued Client');
+    const safeReferenceId = escapeHtml(referenceId);
+
     let badgeColor = '#D4AF37'; // Amber for PENDING
     let badgeBg = 'rgba(212, 175, 55, 0.12)';
     let badgeLabel = 'DEPOSIT PENDING TREASURY VERIFICATION';
     let headline = 'Deposit Inflow Registered';
-    let explanation = `Your incoming deposit of ${formattedAmount} via ${rail} has been registered and is awaiting manual treasury receipt verification.`;
+    let explanation = `Your incoming deposit of ${formattedAmount} via ${safeRail} has been registered and is awaiting manual treasury receipt verification.`;
 
     if (status === 'APPROVED') {
       badgeColor = '#00C288';
       badgeBg = 'rgba(0, 194, 136, 0.12)';
       badgeLabel = 'DEPOSIT APPROVED & CREDITED';
       headline = 'Deposit Cleared & Allocated';
-      explanation = `Your incoming deposit of +${formattedAmount} via ${rail} has been verified and credited to your Available Cash balance.`;
+      explanation = `Your incoming deposit of +${formattedAmount} via ${safeRail} has been verified and credited to your Available Cash balance.`;
     } else if (status === 'REJECTED') {
       badgeColor = '#E5484D';
       badgeBg = 'rgba(229, 72, 77, 0.12)';
       badgeLabel = 'DEPOSIT REJECTED';
       headline = 'Deposit Verification Failed';
-      explanation = `Your incoming deposit of ${formattedAmount} via ${rail} could not be verified by treasury operations.${
-        reason ? ` Reason: ${reason}` : ''
+      explanation = `Your incoming deposit of ${formattedAmount} via ${safeRail} could not be verified by treasury operations.${
+        reason ? ` Reason: ${safeReason}` : ''
       }`;
     }
 
@@ -322,7 +327,7 @@ export class EmailService {
       reason && status === 'REJECTED'
         ? `<tr>
             <td style="padding: 10px 0; color: #8F9CAE; font-size: 13px; font-family: monospace;">AUDIT REASON:</td>
-            <td style="padding: 10px 0; color: #E5484D; font-size: 13px; font-family: monospace; text-align: right;">${reason}</td>
+            <td style="padding: 10px 0; color: #E5484D; font-size: 13px; font-family: monospace; text-align: right;">${safeReason}</td>
           </tr>`
         : '';
 
@@ -331,7 +336,7 @@ export class EmailService {
 <html>
 <head>
   <meta charset="utf-8">
-  <title>${subject}</title>
+  <title>${escapeHtml(subject)}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #08090B; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #FFFFFF;">
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #08090B; padding: 40px 16px;">
@@ -364,7 +369,7 @@ export class EmailService {
                 ${headline}
               </div>
               <p style="font-size: 14px; line-height: 22px; color: #ADB8C8; margin: 0 0 24px 0;">
-                Dear ${userFullName || 'Valued Client'},<br><br>
+                Dear ${safeUserFullName},<br><br>
                 ${explanation}
               </p>
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #0B0D11; border: 1px solid #1E222A; border-radius: 4px; padding: 16px 20px; margin-bottom: 24px;">
@@ -374,7 +379,7 @@ export class EmailService {
                 </tr>
                 <tr>
                   <td style="padding: 6px 0; color: #8F9CAE; font-size: 13px; font-family: monospace;">SETTLEMENT RAIL:</td>
-                  <td style="padding: 6px 0; color: #D4AF37; font-size: 13px; font-family: monospace; font-weight: 600; text-align: right;">${rail}</td>
+                  <td style="padding: 6px 0; color: #D4AF37; font-size: 13px; font-family: monospace; font-weight: 600; text-align: right;">${safeRail}</td>
                 </tr>
                 <tr>
                   <td style="padding: 6px 0; color: #8F9CAE; font-size: 13px; font-family: monospace;">STATUS:</td>
@@ -382,7 +387,7 @@ export class EmailService {
                 </tr>
                 <tr>
                   <td style="padding: 6px 0; color: #8F9CAE; font-size: 13px; font-family: monospace;">REFERENCE ID:</td>
-                  <td style="padding: 6px 0; color: #ADB8C8; font-size: 13px; font-family: monospace; text-align: right;">${referenceId}</td>
+                  <td style="padding: 6px 0; color: #ADB8C8; font-size: 13px; font-family: monospace; text-align: right;">${safeReferenceId}</td>
                 </tr>
                 <tr>
                   <td style="padding: 6px 0; color: #8F9CAE; font-size: 13px; font-family: monospace;">TIMESTAMP:</td>
@@ -444,19 +449,25 @@ export class EmailService {
       maximumFractionDigits: 2,
     })} ${currency}`;
 
+    const safeRail = escapeHtml(rail);
+    const safeReason = escapeHtml(reason);
+    const safeDestination = escapeHtml(destination);
+    const safeUserFullName = escapeHtml(userFullName || 'Valued Client');
+    const safeReferenceId = escapeHtml(referenceId);
+
     let badgeColor = '#D4AF37'; // Amber for PENDING
     let badgeBg = 'rgba(212, 175, 55, 0.12)';
     let badgeLabel = 'WITHDRAWAL PENDING CO-SIGNATURE';
     let headline = 'Withdrawal Request Queued';
-    let explanation = `Your withdrawal request of ${formattedAmount} via ${rail} has been securely queued and is undergoing FINMA dual-officer co-signature review.`;
+    let explanation = `Your withdrawal request of ${formattedAmount} via ${safeRail} has been securely queued and is undergoing FINMA dual-officer co-signature review.`;
 
     if (status === 'APPROVED') {
       badgeColor = '#00C288';
       badgeBg = 'rgba(0, 194, 136, 0.12)';
       badgeLabel = 'WITHDRAWAL APPROVED & DISBURSED';
       headline = 'Withdrawal Authorization Complete';
-      explanation = `Your withdrawal of -${formattedAmount} via ${rail} has received all required officer signatures and has been disbursed${
-        destination ? ` to ${destination}` : ''
+      explanation = `Your withdrawal of -${formattedAmount} via ${safeRail} has received all required officer signatures and has been disbursed${
+        destination ? ` to ${safeDestination}` : ''
       }.`;
     } else if (status === 'REJECTED') {
       badgeColor = '#E5484D';
@@ -464,7 +475,7 @@ export class EmailService {
       badgeLabel = 'WITHDRAWAL DECLINED & REFUNDED';
       headline = 'Withdrawal Request Declined';
       explanation = `Your withdrawal request of ${formattedAmount} was declined during compliance review and the reserved capital has been refunded to your Available Cash balance.${
-        reason ? ` Reason: ${reason}` : ''
+        reason ? ` Reason: ${safeReason}` : ''
       }`;
     }
 
@@ -473,7 +484,7 @@ export class EmailService {
     const destRow = destination
       ? `<tr>
           <td style="padding: 6px 0; color: #8F9CAE; font-size: 13px; font-family: monospace;">DESTINATION:</td>
-          <td style="padding: 6px 0; color: #FFFFFF; font-size: 12px; font-family: monospace; text-align: right; word-break: break-all;">${destination}</td>
+          <td style="padding: 6px 0; color: #FFFFFF; font-size: 12px; font-family: monospace; text-align: right; word-break: break-all;">${safeDestination}</td>
         </tr>`
       : '';
 
@@ -492,7 +503,7 @@ export class EmailService {
       reason && status === 'REJECTED'
         ? `<tr>
             <td style="padding: 10px 0; color: #8F9CAE; font-size: 13px; font-family: monospace;">AUDIT REASON:</td>
-            <td style="padding: 10px 0; color: #E5484D; font-size: 13px; font-family: monospace; text-align: right;">${reason}</td>
+            <td style="padding: 10px 0; color: #E5484D; font-size: 13px; font-family: monospace; text-align: right;">${safeReason}</td>
           </tr>`
         : '';
 
@@ -501,7 +512,7 @@ export class EmailService {
 <html>
 <head>
   <meta charset="utf-8">
-  <title>${subject}</title>
+  <title>${escapeHtml(subject)}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #08090B; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #FFFFFF;">
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #08090B; padding: 40px 16px;">
@@ -534,7 +545,7 @@ export class EmailService {
                 ${headline}
               </div>
               <p style="font-size: 14px; line-height: 22px; color: #ADB8C8; margin: 0 0 24px 0;">
-                Dear ${userFullName || 'Valued Client'},<br><br>
+                Dear ${safeUserFullName},<br><br>
                 ${explanation}
               </p>
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #0B0D11; border: 1px solid #1E222A; border-radius: 4px; padding: 16px 20px; margin-bottom: 24px;">
@@ -544,7 +555,7 @@ export class EmailService {
                 </tr>
                 <tr>
                   <td style="padding: 6px 0; color: #8F9CAE; font-size: 13px; font-family: monospace;">DISBURSEMENT RAIL:</td>
-                  <td style="padding: 6px 0; color: #D4AF37; font-size: 13px; font-family: monospace; font-weight: 600; text-align: right;">${rail}</td>
+                  <td style="padding: 6px 0; color: #D4AF37; font-size: 13px; font-family: monospace; font-weight: 600; text-align: right;">${safeRail}</td>
                 </tr>
                 ${destRow}
                 <tr>
@@ -553,7 +564,7 @@ export class EmailService {
                 </tr>
                 <tr>
                   <td style="padding: 6px 0; color: #8F9CAE; font-size: 13px; font-family: monospace;">REFERENCE ID:</td>
-                  <td style="padding: 6px 0; color: #ADB8C8; font-size: 13px; font-family: monospace; text-align: right;">${referenceId}</td>
+                  <td style="padding: 6px 0; color: #ADB8C8; font-size: 13px; font-family: monospace; text-align: right;">${safeReferenceId}</td>
                 </tr>
                 <tr>
                   <td style="padding: 6px 0; color: #8F9CAE; font-size: 13px; font-family: monospace;">TIMESTAMP:</td>

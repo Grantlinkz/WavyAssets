@@ -54,7 +54,7 @@ export const DepositRailsView: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["deposit-rails"] })
       setNotification({
         type: "info",
-        text: `${res.message} (${res.flushedNodesCount} edge cache nodes invalidated).`,
+        text: `${res.message} (${res.propagatedRailsCount} rail updates propagated).`,
       })
       setTimeout(() => setNotification(null), 6000)
     },

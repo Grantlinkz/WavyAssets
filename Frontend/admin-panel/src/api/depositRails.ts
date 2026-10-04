@@ -119,12 +119,14 @@ export async function testClientMeshConnection(): Promise<{
 
 export async function flushInvalidationCache(): Promise<{
   success: boolean
-  flushedNodesCount: number
+  propagatedRailsCount: number
+  flushedNodesCount?: number
   message: string
 }> {
   return apiClient<{
     success: boolean
-    flushedNodesCount: number
+    propagatedRailsCount: number
+    flushedNodesCount?: number
     message: string
   }>("/deposit-rails/flush-cache", {
     method: "POST",

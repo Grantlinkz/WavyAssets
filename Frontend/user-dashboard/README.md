@@ -212,6 +212,9 @@ docker run -d -p 5174:80 \
 
 ### 3. Standalone Docker Compose
 ```bash
+# Create external network matching compose definition
+docker network create wavyassets_dashboard_network
+
 # Launch production container
 docker compose up -d --build
 
@@ -221,6 +224,9 @@ curl -f http://localhost:5174/healthz
 
 ### 4. Live Containerized Development (Hot Reload)
 ```bash
+# Ensure external network exists before starting development containers
+docker network create wavyassets_dashboard_network 2>/dev/null || true
+
 # Mounts ./src and Vite dev server on port 5174
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```

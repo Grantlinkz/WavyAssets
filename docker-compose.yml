@@ -1,14 +1,15 @@
 # ==============================================================================
-# WavyAssets Global Institutional Platform — Unified Monorepo Docker Compose
+# WavyAssets Global Institutional Platform — Production Monorepo Docker Compose
 # ==============================================================================
 # Full Multi-Tier Platform Topology:
 # 0. PostgreSQL Database:      PostgreSQL 16 Alpine Relational Engine (:5432)
 # 1. Landing Page Backend:     NestJS API Gateway & Showcase Telemetry (:4000)
-# 2. Landing Page Frontend:    React 19 / Vite 8 / Three.js Showcase via Nginx (:5173)
-# 3. User Dashboard Backend:   Transactional Core & Double-Entry Ledger (:4001)
-# 4. User Dashboard Frontend:  Sovereign Command Deck & Smartsupp Concierge (:5174)
+# 2. Landing Page Frontend:    React 19 / Vite 8 / Three.js Showcase via Nginx (:80)
+# 3. User Dashboard Backend:   Transactional Core & Double-Entry Ledger (:4000)
+# 4. User Dashboard Frontend:  Sovereign Command Deck & Smartsupp Concierge (:80)
 # 5. Admin Panel Backend:      Supreme Admin Deck & Treasury Operations (:4002)
-# 6. Admin Panel Frontend:     Operational Command Terminal via Nginx (:5175)
+# 6. Admin Panel Frontend:     Operational Command Terminal via Nginx (:80)
+# 7. Edge Ingress Proxy:       Hardened Nginx Edge Ingress with TLS 1.2/1.3 (:80/:443)
 # ==============================================================================
 
 services:
@@ -19,6 +20,7 @@ services:
     image: postgres:16-alpine
     container_name: wavyassets-postgres
     restart: unless-stopped
+    # Production Hardening: Bind DB port to host loopback (127.0.0.1) only
     ports:
       - "${POSTGRES_BIND_IP:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432"
     environment:
@@ -67,14 +69,11 @@ services:
     ports:
       - "${BACKEND_BIND_IP:-127.0.0.1}:${LANDING_BACKEND_PORT:-${BACKEND_PORT:-4000}}:4000"
     env_file:
-      - ./Backend/landing-page/.env
+      - ${LANDING_BACKEND_ENV:-./Backend/landing-page/.env.prod}
     environment:
       - NODE_ENV=production
       - PORT=4000
-      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/wavyassets?schema=public}
-      - APP_URL=http://localhost:4000
-      - CLIENT_URL=http://localhost:5173
-      - DASHBOARD_URL=http://localhost:5174
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-wavyassets}?schema=public}
     # Production Hardening: exec ensures tini directly supervises node for immediate SIGTERM handling
     command: sh -c "npx prisma db push --skip-generate && exec node dist/main.js"
     extra_hosts:
@@ -115,11 +114,15 @@ services:
       context: ./Frontend/landing-page
       dockerfile: Dockerfile
       target: runner
+      args:
+        VITE_API_BASE_URL: ${VITE_LANDING_API_BASE_URL:-/api/v1}
+        VITE_BACKEND_ORIGIN: ${VITE_LANDING_BACKEND_ORIGIN:-}
     image: wavyassets/landing-page-frontend:1.0.0
     container_name: wavyassets-landing-frontend
     restart: unless-stopped
+    # Internal loopback binding; public ingress handled via edge reverse proxy (:80/:443)
     ports:
-      - "${LANDING_FRONTEND_PORT:-${FRONTEND_PORT:-5173}}:80"
+      - "${FRONTEND_BIND_IP:-127.0.0.1}:${LANDING_FRONTEND_PORT:-${FRONTEND_PORT:-5173}}:80"
     environment:
       - PORT=80
       - BACKEND_HOST=wavyassets-landing-backend
@@ -169,11 +172,11 @@ services:
     ports:
       - "${BACKEND_BIND_IP:-127.0.0.1}:${USER_DASHBOARD_BACKEND_PORT:-${BACKEND_DASHBOARD_PORT:-4001}}:4000"
     env_file:
-      - ./Backend/user-dashboard/.env
+      - ${USER_DASHBOARD_BACKEND_ENV:-./Backend/user-dashboard/.env.prod}
     environment:
       - NODE_ENV=production
       - PORT=4000
-      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/wavyassets?schema=public}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-wavyassets}?schema=public}
     # Production Hardening: exec ensures tini directly supervises node for immediate SIGTERM handling
     command: sh -c "npx prisma db push --skip-generate && exec node dist/src/main.js"
     extra_hosts:
@@ -214,11 +217,15 @@ services:
       context: ./Frontend/user-dashboard
       dockerfile: Dockerfile
       target: runner
+      args:
+        VITE_API_BASE_URL: ${VITE_DASHBOARD_API_BASE_URL:-/api/v1}
+        VITE_BACKEND_ORIGIN: ${VITE_DASHBOARD_BACKEND_ORIGIN:-}
     image: wavyassets/user-dashboard:1.0.0
     container_name: wavyassets-user-dashboard
     restart: unless-stopped
+    # Internal loopback binding; public ingress handled via edge reverse proxy (:80/:443)
     ports:
-      - "${DASHBOARD_FRONTEND_PORT:-${DASHBOARD_PORT:-5174}}:80"
+      - "${FRONTEND_BIND_IP:-127.0.0.1}:${DASHBOARD_FRONTEND_PORT:-${DASHBOARD_PORT:-5174}}:80"
     environment:
       - PORT=80
       - BACKEND_HOST=wavyassets-backend-user-dashboard
@@ -268,11 +275,11 @@ services:
     ports:
       - "${BACKEND_BIND_IP:-127.0.0.1}:${ADMIN_BACKEND_PORT:-4002}:4002"
     env_file:
-      - ./Backend/admin-panel/.env
+      - ${ADMIN_BACKEND_ENV:-./Backend/admin-panel/.env.prod}
     environment:
       - NODE_ENV=production
       - PORT=4002
-      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/wavyassets?schema=public}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-wavyassets}?schema=public}
     # Production Hardening: exec ensures tini directly supervises node for immediate SIGTERM handling
     command: sh -c "npx prisma db push --skip-generate && exec node dist/src/main.js"
     extra_hosts:
@@ -313,11 +320,15 @@ services:
       context: ./Frontend/admin-panel
       dockerfile: Dockerfile
       target: runner
+      args:
+        VITE_API_BASE_URL: ${VITE_ADMIN_API_BASE_URL:-/api/v1}
+        VITE_BACKEND_ORIGIN: ${VITE_ADMIN_BACKEND_ORIGIN:-}
     image: wavyassets/admin-panel-frontend:1.0.0
     container_name: wavyassets-admin-frontend
     restart: unless-stopped
+    # Internal loopback binding; public ingress handled via edge reverse proxy (:80/:443)
     ports:
-      - "${ADMIN_FRONTEND_PORT:-5175}:80"
+      - "${FRONTEND_BIND_IP:-127.0.0.1}:${ADMIN_FRONTEND_PORT:-5175}:80"
     environment:
       - PORT=80
       - BACKEND_HOST=wavyassets-backend-admin-panel
@@ -352,9 +363,63 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # ----------------------------------------------------------------------------
+  # 7. Edge Ingress & SSL/TLS Reverse Proxy (Nginx)
+  # ----------------------------------------------------------------------------
+  nginx-ingress:
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+    image: wavyassets/edge-ingress:1.0.0
+    container_name: wavyassets-edge-ingress
+    restart: unless-stopped
+    ports:
+      - "${INGRESS_HTTP_PORT:-80}:80"
+      - "${INGRESS_HTTPS_PORT:-443}:443"
+    environment:
+      - LANDING_DOMAIN=${LANDING_DOMAIN:-wavyassets.com}
+      - LANDING_WWW_DOMAIN=${LANDING_WWW_DOMAIN:-www.wavyassets.com}
+      - DASHBOARD_DOMAIN=${DASHBOARD_DOMAIN:-dashboard.wavyassets.com}
+      - DASHBOARD_ALT_DOMAIN=${DASHBOARD_ALT_DOMAIN:-app.wavyassets.com}
+      - ADMIN_DOMAIN=${ADMIN_DOMAIN:-admin.wavyassets.com}
+    volumes:
+      - ./docker/nginx/ssl:/etc/nginx/ssl
+      - certbot_www:/var/www/certbot:ro
+    depends_on:
+      frontend:
+        condition: service_healthy
+      dashboard:
+        condition: service_healthy
+      admin-panel:
+        condition: service_healthy
+    networks:
+      - wavyassets-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 256M
+        reservations:
+          cpus: "0.10"
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   postgres_data:
     name: wavyassets_postgres_data
+    driver: local
+  certbot_www:
+    name: wavyassets_certbot_www
     driver: local
 
 networks:

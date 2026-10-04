@@ -41,16 +41,16 @@ export class ComplianceService {
       return isDossierRejected ? 'REJECTED' : 'PENDING_REVIEW';
     }
 
-    if (kycTier === 'TIER_3' || unverifiedCount === 0) {
-      return 'APPROVED';
-    }
-
     if (hasPendingDoc) {
       return 'PENDING_REVIEW';
     }
 
     if (isDossierRejected || hasAnyDocRejected) {
       return 'REJECTED';
+    }
+
+    if (kycTier === 'TIER_3' || unverifiedCount === 0) {
+      return 'APPROVED';
     }
 
     return 'PENDING_REVIEW';

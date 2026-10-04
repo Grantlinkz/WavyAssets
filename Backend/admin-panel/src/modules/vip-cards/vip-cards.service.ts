@@ -267,54 +267,58 @@ export class VipCardsService {
       dto.cardNumberLast4 ||
       randomInt(1000, 10000).toString();
 
-    const card = await this.prisma.vipCard.create({
-      data: {
-        userId: dto.userId,
-        cardNumberLast4,
-        cardType: dto.cardType || 'PHYSICAL',
-        tier: dto.tier || 'OBSIDIAN',
-        isFrozen: false,
-        dailySpendLimit: dto.dailySpendLimit ?? 50000.0,
-        pinEncrypted,
-        shippingStatus:
-          dto.shippingStatus ||
-          (dto.cardType === 'VIRTUAL' ? 'DELIVERED' : 'IN_TRANSIT'),
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
-            tier: true,
-            kycTier: true,
+    const card = await this.prisma.$transaction(async (tx) => {
+      const createdCard = await tx.vipCard.create({
+        data: {
+          userId: dto.userId,
+          cardNumberLast4,
+          cardType: dto.cardType || 'PHYSICAL',
+          tier: dto.tier || 'OBSIDIAN',
+          isFrozen: false,
+          dailySpendLimit: dto.dailySpendLimit ?? 50000.0,
+          pinEncrypted,
+          shippingStatus:
+            dto.shippingStatus ||
+            (dto.cardType === 'VIRTUAL' ? 'DELIVERED' : 'IN_TRANSIT'),
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              tier: true,
+              kycTier: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    // Record Immutable Differential Audit Log
-    await this.prisma.adminAuditLog.create({
-      data: {
-        adminId,
-        action: 'VIP_CARD_MINT',
-        targetEntity: 'VipCard',
-        targetId: card.id,
-        diffBefore: null,
-        diffAfter: JSON.stringify({
-          cardId: card.id,
-          userId: card.userId,
-          cardNumberLast4,
-          tier: card.tier,
-          cardType: card.cardType,
-          dailySpendLimit: card.dailySpendLimit,
-          shippingStatus: card.shippingStatus,
-          validDate: dto.validDate || '12/29',
-          celebrityCardholderLabel: dto.celebrityCardholderLabel || null,
-        }),
-        reason: `Minted Supreme VIP card for user ${user.email}`,
-        ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(adminId).slice(0, 16),
-      },
+      // Record Immutable Differential Audit Log
+      await tx.adminAuditLog.create({
+        data: {
+          adminId,
+          action: 'VIP_CARD_MINT',
+          targetEntity: 'VipCard',
+          targetId: createdCard.id,
+          diffBefore: null,
+          diffAfter: JSON.stringify({
+            cardId: createdCard.id,
+            userId: createdCard.userId,
+            cardNumberLast4,
+            tier: createdCard.tier,
+            cardType: createdCard.cardType,
+            dailySpendLimit: createdCard.dailySpendLimit,
+            shippingStatus: createdCard.shippingStatus,
+            validDate: dto.validDate || '12/29',
+            celebrityCardholderLabel: dto.celebrityCardholderLabel || null,
+          }),
+          reason: `Minted Supreme VIP card for user ${user.email}`,
+          ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(adminId).slice(0, 16),
+        },
+      });
+
+      return createdCard;
     });
 
     this.logger.log(
@@ -456,34 +460,38 @@ export class VipCardsService {
       dataToUpdate.shippingStatus = dto.shippingStatus;
     }
 
-    const updatedCard = await this.prisma.vipCard.update({
-      where: { id: cardId },
-      data: dataToUpdate,
-      include: {
-        user: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
-            tier: true,
-            kycTier: true,
+    const updatedCard = await this.prisma.$transaction(async (tx) => {
+      const cardRecord = await tx.vipCard.update({
+        where: { id: cardId },
+        data: dataToUpdate,
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              tier: true,
+              kycTier: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    // Record Immutable Differential Audit Log
-    await this.prisma.adminAuditLog.create({
-      data: {
-        adminId,
-        action: 'VIP_CARD_PARAMETERS_UPDATE',
-        targetEntity: 'VipCard',
-        targetId: card.id,
-        diffBefore: JSON.stringify(diffBefore),
-        diffAfter: JSON.stringify(diffAfter),
-        reason: `Updated VIP card parameters for card ${card.id}`,
-        ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(adminId).slice(0, 16),
-      },
+      // Record Immutable Differential Audit Log
+      await tx.adminAuditLog.create({
+        data: {
+          adminId,
+          action: 'VIP_CARD_PARAMETERS_UPDATE',
+          targetEntity: 'VipCard',
+          targetId: card.id,
+          diffBefore: JSON.stringify(diffBefore),
+          diffAfter: JSON.stringify(diffAfter),
+          reason: `Updated VIP card parameters for card ${card.id}`,
+          ipAddressHash: '0x' + this.cryptoService.hashBlindIndex(adminId).slice(0, 16),
+        },
+      });
+
+      return cardRecord;
     });
 
     this.logger.log(
