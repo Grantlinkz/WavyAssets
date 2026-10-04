@@ -9,8 +9,8 @@ import {
   ShieldCheck,
   Power,
   ArrowLeft,
-  Loader2,
 } from "lucide-react"
+import { FaviconSpinner } from "../common/FaviconSpinner"
 import { useAdminNavStore } from "../../store/useAdminNavStore"
 import { useEmergencyStore, REQUIRED_FREEZE_PHRASE, MIN_JUSTIFICATION_LENGTH } from "../../store/useEmergencyStore"
 import { useAdminAuthStore } from "../../store/useAdminAuthStore"
@@ -327,7 +327,7 @@ export const EmergencyFreezeModal: React.FC<EmergencyFreezeModalProps> = ({ isOp
           >
             {freezeMutation.isPending ? (
               <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <FaviconSpinner size="xs" variant="minimal" />
                 <span>Broadcasting Lockdown...</span>
               </>
             ) : (

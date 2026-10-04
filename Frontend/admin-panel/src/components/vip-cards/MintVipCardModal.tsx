@@ -1,6 +1,7 @@
 import React, { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { X, CreditCard, ShieldCheck, Check, Loader2, Info } from "lucide-react"
+import { X, CreditCard, ShieldCheck, Check, Info } from "lucide-react"
+import { FaviconSpinner } from "../common/FaviconSpinner"
 import { useVipCardsStore } from "../../store/useVipCardsStore"
 import { useAdminAuthStore } from "../../store/useAdminAuthStore"
 import { mintVipCard, type VipCardSubstrate, type VipCardTier } from "../../api/vipCards"
@@ -505,7 +506,7 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
               >
                 {mutation.isPending ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <FaviconSpinner size="xs" variant="minimal" />
                     <span>Engraving &amp; Encrypting...</span>
                   </>
                 ) : isSuccess ? (

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
-import { Shield, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Shield, CheckCircle2, AlertCircle } from 'lucide-react';
+import { FaviconSpinner } from '../ui/FaviconSpinner';
 import { Button } from '../ui/button';
 import { getLandingUrl } from '../../lib/utils';
 
@@ -106,7 +107,7 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onComplete, ticketOv
         <div className="p-4 rounded-xs border border-border-hairline bg-surface-container-lowest flex flex-col items-center space-y-3">
           {ticketStatus === 'verifying' && (
             <>
-              <Loader2 className="h-6 w-6 text-primary animate-spin" />
+              <FaviconSpinner size="sm" />
               <div className="space-y-1">
                 <span className="text-xs font-mono font-medium text-on-surface block">
                   Exchanging Authentication...

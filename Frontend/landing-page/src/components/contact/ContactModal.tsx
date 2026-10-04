@@ -14,8 +14,8 @@ import {
   CheckCircle2,
   AlertCircle,
   ShieldCheck,
-  Loader2,
 } from 'lucide-react';
+import { FaviconSpinner } from '../ui/FaviconSpinner';
 import { leadsApi, ApiError, type LeadInquiryPayload } from '../../lib/api';
 import { motion } from 'framer-motion';
 
@@ -447,7 +447,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <FaviconSpinner size="xs" variant="minimal" />
                     <span>{elapsedSecs > 5 ? `SENDING (${elapsedSecs}s)...` : 'SENDING...'}</span>
                   </>
                 ) : (

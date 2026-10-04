@@ -11,9 +11,9 @@ import {
   Shield,
   Server,
   AlertCircle,
-  Loader2,
   X,
 } from 'lucide-react';
+import { FaviconSpinner } from '../../ui/FaviconSpinner';
 import { type AiStrategyAsset } from '../../../lib/alternativeAssetData';
 import { useAlternativeStore } from '../../../store/useAlternativeStore';
 import { usePortfolioStore } from '../../../store/usePortfolioStore';
@@ -349,7 +349,7 @@ export const AiActionModal: React.FC<AiActionModalProps> = ({
                 >
                   {isProcessing ? (
                     <span className="flex items-center gap-1.5">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <FaviconSpinner size="xs" variant="minimal" />
                       Executing Clearing...
                     </span>
                   ) : (
@@ -453,7 +453,7 @@ export const AiActionModal: React.FC<AiActionModalProps> = ({
                 >
                   {isProcessing ? (
                     <span className="flex items-center gap-1.5">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <FaviconSpinner size="xs" variant="minimal" />
                       Provisioning Rack...
                     </span>
                   ) : (

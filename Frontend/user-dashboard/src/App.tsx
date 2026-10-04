@@ -28,7 +28,7 @@ import { useLiquidStore } from './store/useLiquidStore';
 import { useAlternativeStore } from './store/useAlternativeStore';
 import { refreshSessionToken, fetchCommandBarData, fetchUserProfile } from './lib/api';
 import { calculateStocksEquitiesNav } from './lib/liquidAssetData';
-import { Loader2 } from 'lucide-react';
+import { FaviconSpinner } from './components/ui/FaviconSpinner';
 import type { AssetVertical } from './store/useDashboardStore';
 
 interface AppProps {
@@ -200,12 +200,11 @@ export const App: React.FC<AppProps> = ({
   if (isCheckingSession) {
     return (
       <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-6 text-on-surface">
-        <div className="flex flex-col items-center gap-3 p-6 rounded-sm border border-border-hairline bg-surface-container-low shadow-lg">
-          <Loader2 className="w-6 h-6 text-primary animate-spin" />
-          <span className="text-xs font-mono tracking-wider uppercase text-on-surface-variant">
-            Verifying Global Credentials...
-          </span>
-        </div>
+        <FaviconSpinner
+          size="lg"
+          label="Verifying Sovereign Credentials..."
+          sublabel="Connecting to Institutional Hardware Vault"
+        />
       </div>
     );
   }
