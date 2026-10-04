@@ -1,16 +1,15 @@
-import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
 
-export default [
-  js.configs.recommended,
+export default tseslint.config(
   {
-    ignores: ['dist/**', 'node_modules/**', 'vitest.config.ts'],
-    languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-    },
+    ignores: ['dist/**', 'node_modules/**', '**/*.js', 'vitest.config.ts'],
+  },
+  ...tseslint.configs.recommended,
+  {
     rules: {
-      'no-unused-vars': 'off',
-      'no-undef': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-namespace': 'off',
     },
   },
-];
+);

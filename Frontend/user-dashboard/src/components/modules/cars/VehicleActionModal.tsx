@@ -15,11 +15,11 @@ import {
   Calendar,
   DollarSign,
   AlertCircle,
-  Loader2,
   X,
   Gauge,
   Lock,
 } from 'lucide-react';
+import { FaviconSpinner } from '../../ui/FaviconSpinner';
 import { type ExoticAsset } from '../../../lib/alternativeAssetData';
 import { useAlternativeStore } from '../../../store/useAlternativeStore';
 import { usePortfolioStore } from '../../../store/usePortfolioStore';
@@ -310,7 +310,7 @@ export const VehicleActionModal: React.FC<VehicleActionModalProps> = ({
                   <span>US NHTSA Public API VIN Verification</span>
                 </span>
                 {loadingVin ? (
-                  <Loader2 className="w-3 h-3 animate-spin text-primary" />
+                  <FaviconSpinner size="xs" variant="minimal" />
                 ) : nhtsaData?.verified ? (
                   <span className="text-[10px] text-tertiary">
                     ✓ NHTSA Verified: {nhtsaData?.plantCountry}
@@ -495,7 +495,7 @@ export const VehicleActionModal: React.FC<VehicleActionModalProps> = ({
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <FaviconSpinner size="xs" variant="minimal" />
                     <span>Executing Escrow &amp; Transferring Title...</span>
                   </>
                 ) : (
@@ -655,7 +655,7 @@ export const VehicleActionModal: React.FC<VehicleActionModalProps> = ({
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <FaviconSpinner size="xs" variant="minimal" />
                     <span>Authorizing Concierge Dispatch...</span>
                   </>
                 ) : (

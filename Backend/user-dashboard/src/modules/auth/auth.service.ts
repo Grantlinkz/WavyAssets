@@ -251,4 +251,21 @@ export class AuthService {
 
     return { success: true };
   }
+
+  /**
+   * Retrieves fresh user profile directly from database for dynamic synchronization
+   */
+  async getDbUser(userId: string) {
+    return this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        tier: true,
+        kycTier: true,
+        isCorporate: true,
+      },
+    });
+  }
 }

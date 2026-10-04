@@ -2,6 +2,9 @@ import {
   Controller,
   Get,
   Put,
+  Post,
+  Delete,
+  Param,
   Body,
   Req,
   UseGuards,
@@ -35,7 +38,7 @@ export class DepositRailsController {
   }
 
   @Put('fiat')
-  @Roles(AdminRole.SUPER_ADMIN, AdminRole.TREASURY_OFFICER)
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.TREASURY_OFFICER, AdminRole.DESK_LEAD)
   async updateFiatRail(
     @Body() dto: UpdateFiatRailDto,
     @CurrentAdmin() admin: CurrentAdminPayload,
@@ -46,7 +49,7 @@ export class DepositRailsController {
   }
 
   @Put('crypto')
-  @Roles(AdminRole.SUPER_ADMIN, AdminRole.TREASURY_OFFICER)
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.TREASURY_OFFICER, AdminRole.DESK_LEAD)
   async upsertCryptoRail(
     @Body() dto: UpdateCryptoRailDto,
     @CurrentAdmin() admin: CurrentAdminPayload,
@@ -54,6 +57,37 @@ export class DepositRailsController {
   ) {
     const adminId = admin?.id || (admin as any)?.sub;
     return this.depositRailsService.upsertCryptoRail(dto, adminId, req.ip);
+  }
+
+  @Delete('crypto/:id')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.TREASURY_OFFICER, AdminRole.DESK_LEAD)
+  async deleteCryptoRail(
+    @Param('id') id: string,
+    @CurrentAdmin() admin: CurrentAdminPayload,
+    @Req() req: Request,
+  ) {
+    const adminId = admin?.id || (admin as any)?.sub;
+    return this.depositRailsService.deleteCryptoRail(id, adminId, req.ip);
+  }
+
+  @Post('flush-cache')
+  @Roles(
+    AdminRole.SUPER_ADMIN,
+    AdminRole.TREASURY_OFFICER,
+    AdminRole.DESK_LEAD,
+  )
+  async flushInvalidationCache() {
+    return this.depositRailsService.flushInvalidationCache();
+  }
+
+  @Post('test-mesh')
+  @Roles(
+    AdminRole.SUPER_ADMIN,
+    AdminRole.TREASURY_OFFICER,
+    AdminRole.DESK_LEAD,
+  )
+  async testClientMeshConnection() {
+    return this.depositRailsService.testClientMeshConnection();
   }
 }
 

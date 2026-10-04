@@ -14,6 +14,9 @@ describe('CryptoService Blind Indexing & Encryption Utilities', () => {
         if (key === 'security.fieldEncryptionKey') {
           return '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
         }
+        if (key === 'security.handoffTicketSecret') {
+          return 'test_handoff_ticket_secret_key_minimum_32_chars!';
+        }
         return null;
       },
     } as unknown as ConfigService;

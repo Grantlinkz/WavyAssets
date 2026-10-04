@@ -21,6 +21,7 @@ import { useLiquidStore } from '../../store/useLiquidStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { checkKycWithdrawalLimit } from '../../lib/kycLimits';
 import { formatMaskedCurrency } from '../../lib/calculations';
+import { submitWithdrawalRequest } from '../../lib/api';
 
 export interface WithdrawModalProps {
   isOpen?: boolean;
@@ -103,19 +104,16 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
     setSelectedProtocol(availableProtocols[0]);
   };
 
-  const handleAuthorize = () => {
+  const handleAuthorize = async () => {
     if (!isValidAmount || !kycCheck.allowed) return;
     setIsVerifying(true);
 
-    setTimeout(() => {
+    try {
       const currentCash = usePortfolioStore.getState().availableCash;
       if (parsedAmount > currentCash) {
         setIsVerifying(false);
         return;
       }
-
-      // Deduct cash from available balance
-      adjustAvailableCash(-parsedAmount);
 
       const refId =
         activeRail === 'bank'
@@ -134,6 +132,24 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
               protocol: selectedProtocol,
               destinationAddress: withdrawalAddress,
             };
+
+      // Call backend to persist transaction to PostgreSQL, write audit log, and send PENDING email
+      await submitWithdrawalRequest({
+        amount: parsedAmount,
+        currency: 'USD',
+        rail: activeRail === 'bank' ? 'BANK_WIRE' : 'CRYPTO',
+        referenceId: refId,
+        ...(activeRail === 'bank'
+          ? { bankName, accountName, accountNumber }
+          : {
+              cryptoAsset: selectedCrypto,
+              protocol: selectedProtocol,
+              destinationAddress: withdrawalAddress,
+            }),
+      });
+
+      // Deduct cash from available balance
+      adjustAvailableCash(-parsedAmount);
 
       // Add to transaction log as PENDING withdrawal
       try {
@@ -165,9 +181,11 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
           second: '2-digit',
         }),
       });
-
+    } catch (err) {
+      console.error('Failed to submit withdrawal request:', err);
+    } finally {
       setIsVerifying(false);
-    }, 800);
+    }
   };
 
   const handleResetForNew = () => {

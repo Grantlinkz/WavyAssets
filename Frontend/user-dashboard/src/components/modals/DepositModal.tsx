@@ -24,6 +24,11 @@ import {
 } from '../ui/dialog';
 import { usePortfolioStore, type DepositRailTab } from '../../store/usePortfolioStore';
 import { useLiquidStore } from '../../store/useLiquidStore';
+import {
+  fetchDepositRails,
+  submitDepositReceipt,
+  type DepositRailsData,
+} from '../../lib/api';
 
 export interface DepositModalProps {
   isOpen?: boolean;
@@ -37,7 +42,7 @@ export interface TokenStandardConfig {
   addresses: Record<string, string>;
 }
 
-export const ASSET_STANDARDS_CONFIG: Record<string, TokenStandardConfig> = {
+const ASSET_STANDARDS_CONFIG: Record<string, TokenStandardConfig> = {
   USDC: {
     standards: ['ERC-20', 'BEP-20', 'Polygon'],
     defaultStandard: 'ERC-20',
@@ -75,7 +80,7 @@ export const ASSET_STANDARDS_CONFIG: Record<string, TokenStandardConfig> = {
   },
 };
 
-export const ASSET_USD_RATES: Record<string, number> = {
+const ASSET_USD_RATES: Record<string, number> = {
   USDC: 1.0,
   USDT: 1.0,
   BTC: 89420.0,
@@ -98,6 +103,31 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   const closeModal = propClose !== undefined ? propClose : storeClose;
 
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [railsConfig, setRailsConfig] = useState<DepositRailsData | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchDepositRails()
+      .then((data) => {
+        if (isMounted && data) {
+          setRailsConfig(data);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const fiatConfig = railsConfig?.fiat || {
+    id: 'GLOBAL_FIAT_RAIL',
+    beneficiaryName: 'Grant Global Holdings AG / Escrow Treuhand Zurich',
+    depositoryBank: 'UBS Switzerland AG (Zurich Enclave)',
+    swissIban: 'CH93 0023 8812 4019 8821 0',
+    bicSwift: 'UBSWCHZH80A',
+    clearingRail: 'Swiss SIC RTGS / Fedwire DvP',
+    memoFormat: 'WY-9942-TREASURY-03',
+  };
 
   // Web3 State
   const [selectedAsset, setSelectedAsset] = useState<string>('USDC');
@@ -110,6 +140,42 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     installUrl: string;
     message: string;
   } | null>(null);
+
+  // Dynamic standards and addresses strictly sourced from DB so old settings are gone upon update
+  const dynamicCryptoConfig = React.useMemo(() => {
+    const config: Record<string, TokenStandardConfig> = {};
+
+    if (railsConfig?.crypto && railsConfig.crypto.length > 0) {
+      for (const r of railsConfig.crypto) {
+        if (!r.isActive) continue;
+        const asset = r.asset?.toUpperCase();
+        const network = r.network;
+        if (!asset || !network) continue;
+        if (!config[asset]) {
+          config[asset] = {
+            standards: [network],
+            defaultStandard: network,
+            addresses: { [network]: r.vaultAddress },
+          };
+        } else {
+          if (!config[asset].standards.includes(network)) {
+            config[asset].standards.push(network);
+          }
+          config[asset].addresses[network] = r.vaultAddress;
+        }
+      }
+    }
+
+    // For any assets with zero DB config, fallback to default standards
+    for (const [fallbackAsset, fallbackConfig] of Object.entries(ASSET_STANDARDS_CONFIG)) {
+      if (!config[fallbackAsset] || config[fallbackAsset].standards.length === 0) {
+        config[fallbackAsset] = JSON.parse(JSON.stringify(fallbackConfig));
+      }
+    }
+
+    return config;
+  }, [railsConfig]);
+
 
   // Transaction & Review State
   const [depositAmount, setDepositAmount] = useState<string>('25000');
@@ -132,19 +198,23 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     name: string;
     size: string;
   } | null>(null);
+  const [receiptDataUrl, setReceiptDataUrl] = useState<string | null>(null);
   const [receiptSubmitted, setReceiptSubmitted] = useState<boolean>(false);
+  const [isSubmittingReceipt, setIsSubmittingReceipt] = useState<boolean>(false);
+  const [wireDepositAmount, setWireDepositAmount] = useState<string>('50000');
+  const [wireSenderName, setWireSenderName] = useState<string>('');
 
   // Handle asset switch
   const handleSelectAsset = (asset: string) => {
     setSelectedAsset(asset);
-    const config = ASSET_STANDARDS_CONFIG[asset];
+    const config = dynamicCryptoConfig[asset] || ASSET_STANDARDS_CONFIG[asset];
     if (config) {
-      setSelectedStandard(config.defaultStandard);
+      setSelectedStandard(config.defaultStandard || config.standards[0] || 'ERC-20');
     }
   };
 
   const currentDepositAddress =
-    ASSET_STANDARDS_CONFIG[selectedAsset]?.addresses[selectedStandard] ||
+    dynamicCryptoConfig[selectedAsset]?.addresses[selectedStandard] ||
     '0x94A8D19F200c9261a81eC97669d0339dE78E916B';
 
   interface EthereumProvider {
@@ -470,6 +540,22 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         reference: refId,
       });
 
+      // Call backend to persist deposit in PostgreSQL and dispatch PENDING deposit email
+      try {
+        await submitDepositReceipt({
+          amount: amountUsd,
+          currency: selectedAsset,
+          rail: 'CRYPTO',
+          referenceId: refId,
+          senderIbanOrAddress: connectedWallet || '0x94A8D19F200c9261a81eC97669d0339dE78E916B',
+          txHash,
+          receiptDataUrl: receiptDataUrl || undefined,
+          receiptName: uploadedReceipt?.name || `${selectedAsset}-transfer-receipt.png`,
+        });
+      } catch (e) {
+        console.warn('Backend deposit registration failed:', e);
+      }
+
       setPendingTxData(txData);
       setIsDepositing(false);
       setIsPendingApproval(true);
@@ -490,21 +576,138 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         size: `${sizeMb} MB`,
       });
       setReceiptSubmitted(false);
+
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const maxDim = 1600;
+            let { width, height } = img;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+            const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            setReceiptDataUrl(optimizedDataUrl);
+          };
+          img.src = event.target?.result as string;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          setReceiptDataUrl(event.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
-  const handleConfirmReceipt = () => {
-    setReceiptSubmitted(true);
-    setTimeout(() => {
-      // Keep pending state visible so user can see verification status
-    }, 1000);
+  const handleConfirmReceipt = async () => {
+    if (!pendingTxData) return;
+    setIsSubmittingReceipt(true);
+    try {
+      const rate = ASSET_USD_RATES[pendingTxData.asset] ?? 1.0;
+      const numAmount = parseFloat(pendingTxData.amount || '0');
+      const amountUsd = pendingTxData.asset === 'USD' ? numAmount : numAmount * rate;
+      await submitDepositReceipt({
+        amount: amountUsd,
+        currency: pendingTxData.asset || 'USDC',
+        rail: activeDepositTab === 'wire' ? 'BANK_WIRE' : 'CRYPTO',
+        referenceId: pendingTxData.refId,
+        senderName: wireSenderName || undefined,
+        senderBank: activeDepositTab === 'wire' ? fiatConfig.depositoryBank : undefined,
+        senderIbanOrAddress: pendingTxData.walletAddress,
+        wireMemo: activeDepositTab === 'wire' ? fiatConfig.memoFormat : undefined,
+        txHash: pendingTxData.txHash,
+        receiptDataUrl: receiptDataUrl || undefined,
+        receiptName: uploadedReceipt?.name || 'deposit-receipt.png',
+      });
+      setReceiptSubmitted(true);
+    } catch (err) {
+      console.error('Failed to submit deposit receipt:', err);
+    } finally {
+      setIsSubmittingReceipt(false);
+    }
+  };
+
+  const handleWireReceiptSubmit = async () => {
+    setDepositError(null);
+    const parsedAmount = parseFloat(wireDepositAmount || '0');
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      setDepositError('Please enter a valid wire deposit amount.');
+      return;
+    }
+    if (!uploadedReceipt) {
+      setDepositError('Please attach a bank wire transfer receipt before submitting.');
+      return;
+    }
+
+    setIsSubmittingReceipt(true);
+    const refId = `WY-DEP-BANK-${Date.now().toString().slice(-6)}`;
+    try {
+      await submitDepositReceipt({
+        amount: parsedAmount,
+        currency: 'USD',
+        rail: 'BANK_WIRE',
+        referenceId: refId,
+        senderName: wireSenderName || fiatConfig.beneficiaryName,
+        senderBank: fiatConfig.depositoryBank,
+        senderIbanOrAddress: fiatConfig.swissIban,
+        wireMemo: fiatConfig.memoFormat,
+        receiptDataUrl: receiptDataUrl || undefined,
+        receiptName: uploadedReceipt?.name || 'bank-wire-receipt.pdf',
+      });
+
+      addTransaction({
+        id: `tx-${Date.now()}`,
+        timestamp: 'Just now',
+        vertical: 'CASH',
+        type: 'DEPOSIT',
+        description: `Bank Wire Inbound (${fiatConfig.depositoryBank})`,
+        amountUsd: parsedAmount,
+        status: 'PENDING',
+        reference: refId,
+      });
+
+      setPendingTxData({
+        refId,
+        asset: 'USD',
+        standard: fiatConfig.clearingRail,
+        amount: parsedAmount.toString(),
+        vaultAddress: fiatConfig.swissIban,
+        walletAddress: wireSenderName || 'Client Mandate Account',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      });
+      setIsPendingApproval(true);
+      setReceiptSubmitted(true);
+    } catch (err) {
+      console.error('Failed to submit wire deposit receipt:', err);
+      setDepositError('Failed to record wire deposit receipt. Please try again.');
+    } finally {
+      setIsSubmittingReceipt(false);
+    }
   };
 
   const handleResetFlow = () => {
     setIsPendingApproval(false);
     setPendingTxData(null);
     setUploadedReceipt(null);
+    setReceiptDataUrl(null);
     setReceiptSubmitted(false);
+    setIsSubmittingReceipt(false);
+    setDepositError(null);
     closeModal();
   };
 
@@ -611,7 +814,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 </span>
               </div>
               <p className="text-xs font-sans text-on-surface font-semibold select-all">
-                Grant Global Holdings AG / Escrow Treuhand Zurich
+                {fiatConfig.beneficiaryName}
               </p>
 
               <div className="h-px bg-border-hairline my-0.5" />
@@ -624,12 +827,12 @@ export const DepositModal: React.FC<DepositModalProps> = ({
               </div>
               <div className="flex items-center justify-between bg-surface-container-lowest px-2.5 py-1.5 rounded-DEFAULT border border-border-hairline/80">
                 <code className="text-xs font-mono font-semibold tracking-wider text-on-surface tabular-nums">
-                  CH93 0023 8812 4019 8821 0
+                  {fiatConfig.swissIban}
                 </code>
                 <button
                   type="button"
                   data-testid="copy-iban-btn"
-                  onClick={() => handleCopy('CH93 0023 8812 4019 8821 0', 'iban')}
+                  onClick={() => handleCopy(fiatConfig.swissIban, 'iban')}
                   className="flex items-center gap-1 text-primary hover:text-primary-fixed text-[11px] font-mono font-semibold ml-2 cursor-pointer"
                 >
                   {copiedKey === 'iban' ? <Check className="w-3.5 h-3.5 text-tertiary" /> : <Copy className="w-3.5 h-3.5" />}
@@ -642,14 +845,16 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   <span className="text-[10px] font-mono text-outline uppercase tracking-wider block">
                     BIC / SWIFT
                   </span>
-                  <span className="text-xs font-mono font-semibold text-on-surface">UBSWCHZH80A</span>
-                  <span className="block text-[10px] text-outline font-sans">UBS Zurich Custody</span>
+                  <span className="text-xs font-mono font-semibold text-on-surface">{fiatConfig.bicSwift}</span>
+                  <span className="block text-[10px] text-outline font-sans">
+                    {fiatConfig.depositoryBank || 'UBS Zurich Custody'}
+                  </span>
                 </div>
                 <div>
                   <span className="text-[10px] font-mono text-outline uppercase tracking-wider block">
                     Clearing Rail
                   </span>
-                  <span className="text-xs font-sans font-medium text-on-surface">Swiss SIC RTGS</span>
+                  <span className="text-xs font-sans font-medium text-on-surface">{fiatConfig.clearingRail}</span>
                   <span className="block text-[10px] text-tertiary font-mono font-semibold">
                     Instant Inbound DvP
                   </span>
@@ -666,7 +871,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 <button
                   type="button"
                   data-testid="copy-memo-btn"
-                  onClick={() => handleCopy('WY-9942-TREASURY-03', 'memo')}
+                  onClick={() => handleCopy(fiatConfig.memoFormat, 'memo')}
                   className="text-primary hover:text-primary-fixed text-[11px] font-mono font-semibold flex items-center gap-1 cursor-pointer"
                 >
                   {copiedKey === 'memo' ? <Check className="w-3.5 h-3.5 text-tertiary" /> : <Copy className="w-3.5 h-3.5" />}
@@ -674,13 +879,173 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 </button>
               </div>
               <div className="mt-1 px-2.5 py-1.5 bg-surface-container-lowest rounded-DEFAULT border border-border-hairline flex items-center justify-between">
-                <code className="text-xs font-mono font-bold text-primary">WY-9942-TREASURY-03</code>
+                <code className="text-xs font-mono font-bold text-primary">{fiatConfig.memoFormat}</code>
                 <span className="text-[10px] font-mono text-outline">Unique Mandate ID</span>
               </div>
               <p className="text-[11px] text-outline mt-1.5 leading-relaxed font-sans">
                 Notice: All incoming wires without this mandatory mandate reference code will undergo an extended 48h compliance manual audit.
               </p>
             </div>
+
+            {/* Wire Deposit Receipt Upload Section */}
+            {isPendingApproval && pendingTxData ? (
+              <div className="bg-surface-container-low p-3.5 rounded-DEFAULT border border-secondary/50 flex flex-col gap-3">
+                <div className="flex items-start gap-2.5 bg-secondary/10 border border-secondary/30 p-2.5 rounded-DEFAULT">
+                  <Clock className="w-5 h-5 text-secondary shrink-0 mt-0.5 animate-pulse" />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono font-bold text-secondary uppercase tracking-wider">
+                        STATUS: PENDING ADMIN APPROVAL
+                      </span>
+                      <span className="px-1.5 py-0.2 bg-secondary/20 text-secondary text-[9px] font-mono font-bold rounded-xs">
+                        TREASURY AUDIT
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-on-surface-variant font-sans mt-0.5 leading-relaxed">
+                      Your wire transfer receipt has been registered. Treasury officers will verify inbound clearing and credit your account upon confirmation.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-surface-container-lowest p-2.5 rounded-DEFAULT border border-border-hairline space-y-2 text-xs font-mono">
+                  <div className="flex justify-between items-center pb-1.5 border-b border-border-hairline/60">
+                    <span className="text-outline">Declared Wire Amount:</span>
+                    <span className="text-primary font-bold">
+                      ${parseFloat(pendingTxData.amount || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })} USD
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pb-1.5 border-b border-border-hairline/60">
+                    <span className="text-outline">Depository Bank:</span>
+                    <span className="text-on-surface font-semibold">{fiatConfig.depositoryBank}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-1.5 border-b border-border-hairline/60">
+                    <span className="text-outline">IBAN Destination:</span>
+                    <span className="text-on-surface text-[10px] truncate max-w-[200px]">
+                      {pendingTxData.vaultAddress}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pb-1.5 border-b border-border-hairline/60">
+                    <span className="text-outline">Remitter / Entity:</span>
+                    <span className="text-on-surface text-[10px] truncate max-w-[200px]">
+                      {pendingTxData.walletAddress}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-outline">Reference ID:</span>
+                    <span className="text-secondary font-bold">{pendingTxData.refId}</span>
+                  </div>
+                </div>
+
+                {uploadedReceipt && (
+                  <div className="p-2.5 bg-surface-container rounded-DEFAULT border border-border-hairline flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-mono text-tertiary">
+                      <FileText className="w-4 h-4 text-tertiary" />
+                      <span className="font-bold truncate max-w-[200px]">{uploadedReceipt.name}</span>
+                      <span className="text-outline">({uploadedReceipt.size})</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-tertiary flex items-center gap-1 font-semibold">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Receipt Attached ✓
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleResetFlow}
+                    className="w-full py-2 bg-surface-container-high hover:bg-surface-container text-on-surface font-mono text-xs font-bold uppercase tracking-wider rounded-DEFAULT transition-colors cursor-pointer"
+                  >
+                    Done & Return to Command Deck
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-surface-container-low p-3 rounded-DEFAULT border border-primary/30 flex flex-col gap-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Upload className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-[10px] font-mono text-on-surface font-semibold uppercase tracking-wider">
+                      Upload Bank Wire Receipt / Proof of Transfer
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono text-tertiary">PDF / PNG / JPG</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-mono text-outline uppercase tracking-wider">
+                      Wire Amount (USD)
+                    </label>
+                    <input
+                      type="number"
+                      value={wireDepositAmount}
+                      onChange={(e) => setWireDepositAmount(e.target.value)}
+                      placeholder="50000"
+                      className="w-full bg-surface-container-lowest border border-border-hairline rounded-DEFAULT px-2.5 py-1.5 text-xs font-mono text-on-surface focus:outline-none focus:border-primary font-bold"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-mono text-outline uppercase tracking-wider">
+                      Remitter Name / Entity
+                    </label>
+                    <input
+                      type="text"
+                      value={wireSenderName}
+                      onChange={(e) => setWireSenderName(e.target.value)}
+                      placeholder="e.g. Apex Family Office"
+                      className="w-full bg-surface-container-lowest border border-border-hairline rounded-DEFAULT px-2.5 py-1.5 text-xs font-mono text-on-surface focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                </div>
+
+                <label className="border-2 border-dashed border-border-hairline hover:border-primary/60 rounded-DEFAULT p-3 text-center cursor-pointer transition-colors block bg-surface-container-lowest">
+                  <input
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    onChange={handleReceiptUpload}
+                    className="hidden"
+                  />
+                  {uploadedReceipt ? (
+                    <div className="flex items-center justify-center gap-2 text-xs font-mono text-tertiary">
+                      <FileText className="w-4 h-4 text-tertiary" />
+                      <span className="font-bold">{uploadedReceipt.name}</span>
+                      <span className="text-outline">({uploadedReceipt.size})</span>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <Upload className="w-5 h-5 text-outline mx-auto" />
+                      <p className="text-[11px] font-sans text-on-surface">
+                        Click or drag bank debit advice / wire confirmation receipt here
+                      </p>
+                      <p className="text-[10px] font-mono text-outline">Max size: 15MB</p>
+                    </div>
+                  )}
+                </label>
+
+                {depositError && (
+                  <div className="p-2 bg-error/10 border border-error/20 rounded-DEFAULT text-xs font-mono text-error flex items-start gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    <span>{depositError}</span>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  data-testid="submit-wire-receipt-btn"
+                  disabled={isSubmittingReceipt || !uploadedReceipt}
+                  onClick={handleWireReceiptSubmit}
+                  className="w-full py-2 bg-primary text-on-primary hover:bg-primary-container font-mono text-xs font-bold uppercase tracking-wider rounded-DEFAULT transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-sm"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>
+                    {isSubmittingReceipt
+                      ? 'Submitting Proof to Zurich Treasury...'
+                      : 'Submit Wire Transfer Receipt for Clearance'}
+                  </span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -900,7 +1265,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                           <span className="text-tertiary font-bold">{selectedStandard}</span>
                         </div>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          {ASSET_STANDARDS_CONFIG[selectedAsset]?.standards.map((standard) => (
+                          {(dynamicCryptoConfig[selectedAsset]?.standards || ASSET_STANDARDS_CONFIG[selectedAsset]?.standards || []).map((standard) => (
                             <button
                               key={standard}
                               type="button"
@@ -1052,7 +1417,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   {/* Token Standard Pills for Manual Transfer */}
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[10px] font-mono text-outline">Network:</span>
-                    {ASSET_STANDARDS_CONFIG[selectedAsset]?.standards.map((standard) => (
+                    {(dynamicCryptoConfig[selectedAsset]?.standards || ASSET_STANDARDS_CONFIG[selectedAsset]?.standards || []).map((standard) => (
                       <button
                         key={standard}
                         type="button"

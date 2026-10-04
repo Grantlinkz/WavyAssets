@@ -4,7 +4,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict_v6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-8.2-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-v4-38B2AC?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![Vitest](https://img.shields.io/badge/Vitest-5.0_(131_tests)-729B1B?logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Vitest-5.0_(204_tests_passing)-729B1B?logo=vitest&logoColor=white)](https://vitest.dev/)
 [![FINMA AMLA Art. 9](https://img.shields.io/badge/Compliance-FINMA_AMLA_Art._9-D4AF37)](https://www.finma.ch/)
 
 > **Institutional-grade sovereign asset management dashboard** serving family offices, high-net-worth sovereign individuals, and institutional allocators across **all seven sovereign asset verticals**.
@@ -168,6 +168,24 @@ npm run preview
 
 ---
 
+## 💬 Smartsupp 24/7 Institutional Live Concierge
+
+The User Dashboard features a direct integration with **Smartsupp Live Chat**, offering 24/7 institutional client desk support:
+
+- **Dynamic Script Loading**: Managed via [`src/lib/smartsupp.ts`](file:///c:/Users/ANIK/Desktop/WavyAssets/Frontend/user-dashboard/src/lib/smartsupp.ts) with defensive SSR fallback and zero layout impact.
+- **Client Identity Synchronization**: Automatically syncs the authenticated client's full name, email, account ID, institutional tier, and KYC level into the Smartsupp session.
+- **Multiple Entry Points**:
+  - **Floating Concierge Launcher**: Luxury bottom-right button with live pulse indicator (`SmartsuppChat.tsx`).
+  - **Header Support Action**: Quick-action live chat trigger in the top header navigation (`TopHeader.tsx`).
+  - **Sidebar 24/7 Concierge**: Dedicated navigation item in the docked rail (`SidebarRail.tsx`).
+  - **Mobile Slide-Over Drawer**: Full support access for mobile clients (`MobileHeader.tsx`).
+- **Configuration**:
+  ```env
+  VITE_SMARTSUPP_KEY=your_smartsupp_project_key
+  ```
+
+---
+
 ## 🚢 Production Deployment
 
 ### 1. Vercel Deployment
@@ -185,18 +203,35 @@ docker build -t wavyassets/user-dashboard:1.0.0 .
 
 # Run container with dynamic backend proxy
 docker run -d -p 5174:80 \
-  -e BACKEND_HOST=wavyassets-backend-user-dashboard \
+  -e BACKEND_HOST=host.docker.internal \
   -e BACKEND_PORT=4000 \
   --name wavyassets-user-dashboard \
   wavyassets/user-dashboard:1.0.0
 ```
-Or orchestrate via Docker Compose:
+
+### 3. Standalone Docker Compose
 ```bash
-docker compose up -d
+# Launch production container
+docker compose up -d --build
+
+# Verify container liveness probe
+curl -f http://localhost:5174/healthz
 ```
-Container liveness probe is available at `http://localhost:5174/healthz`.
+
+### 4. Live Containerized Development (Hot Reload)
+```bash
+# Mounts ./src and Vite dev server on port 5174
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+### 5. Monorepo Integration
+- **Root Compose**: `docker compose up -d` (All 6 frontends & backends on `wavyassets-network`)
+- **Frontend Stack Compose**: `docker compose -f Frontend/docker-compose.yml up -d` (All 3 frontends on `wavyassets-frontend-network`)
+- **Container Name**: `wavyassets-user-dashboard`
+- **Dynamic Proxy**: Nginx proxies `/api/` to `wavyassets-backend-user-dashboard:4000`
 
 ---
+
 
 ## 🔐 Security Architecture
 

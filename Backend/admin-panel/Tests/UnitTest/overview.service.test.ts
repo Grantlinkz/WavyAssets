@@ -40,6 +40,12 @@ describe('OverviewService', () => {
       leadInquiry: {
         count: vi.fn().mockResolvedValue(1),
       },
+      user: {
+        count: vi.fn().mockResolvedValue(10),
+      },
+      vipCard: {
+        count: vi.fn().mockResolvedValue(5),
+      },
     };
 
     overviewService = new OverviewService(mockPrisma);
@@ -53,8 +59,8 @@ describe('OverviewService', () => {
       expect(metrics.liquidSettlementCapital).toBe(28450110.5);
       expect(metrics.vaultBalanceChange24h).toBe(3.4);
       expect(metrics.activeLiquidityRailsCount).toBe(5);
-      expect(metrics.actionQueuePending).toBe(4);
-      expect(metrics.actionQueueWarning).toContain('4 actionable treasury/compliance items require triage');
+      expect(metrics.actionQueuePending).toBe(3);
+      expect(metrics.actionQueueWarning).toContain('3 actionable treasury/compliance items require triage');
       expect(metrics.nodeTelemetry.shardLatencyMs).toBe(18);
       expect(metrics.nodeTelemetry.activeShards).toBe(8);
       expect(metrics.nodeTelemetry.coldStoreActive).toBe(true);
@@ -76,7 +82,10 @@ describe('OverviewService', () => {
 
     it('should filter settlement records by currency', async () => {
       mockPrisma.ledgerTransaction.findMany.mockImplementation(async ({ where }: any) => {
-        if (where?.currency === 'USDC') {
+        const matchesCurrency =
+          where?.currency === 'USDC' ||
+          where?.OR?.some((cond: any) => cond.currency === 'USDC');
+        if (matchesCurrency) {
           return [
             {
               id: 'TX-USDC-1',

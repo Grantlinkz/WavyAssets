@@ -7,14 +7,14 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Install build tools and utilities
+# Install native build tools for compiling native dependencies (e.g. argon2)
 RUN apk add --no-cache python3 make g++ curl
 
-# Copy dependency manifests
+# Copy dependency manifests and Prisma schema
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install all dependencies including devDependencies for build
+# Install full dependencies
 RUN npm ci
 
 # Generate Prisma Client
@@ -27,42 +27,38 @@ COPY src ./src/
 # Compile TypeScript to dist/
 RUN npm run build
 
-# Prune development dependencies
-RUN npm prune --production
+# Prune development dependencies while retaining prisma CLI for runtime migrations
+RUN npm prune --production && npm install prisma@^6.4.1 --omit=dev --no-save
 
 # --- Stage 2: Hardened Production Runtime ---
 FROM node:22-alpine AS runner
 
 WORKDIR /app
 
-# Set non-root execution environment
+# Install runtime utilities, su-exec, and tini for PID 1 signal forwarding
+RUN apk add --no-cache curl su-exec tini
+
 ENV NODE_ENV=production
 ENV PORT=4000
 
-# Install runtime utilities
-RUN apk add --no-cache curl su-exec
-
-# Copy entrypoint script and set executable permissions
+# Copy entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Create unprivileged application user
-USER node
-
-# Copy compiled application and production dependencies from builder
+# Copy compiled application and production dependencies with unprivileged ownership
 COPY --chown=node:node --from=builder /app/package*.json ./
 COPY --chown=node:node --from=builder /app/node_modules ./node_modules
 COPY --chown=node:node --from=builder /app/dist ./dist
 COPY --chown=node:node --from=builder /app/prisma ./prisma
 
-# Expose standard gateway port
+USER node
+
 EXPOSE 4000
 
 # Integrated Health Probe
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD curl -f http://localhost:4000/health/live || exit 1
 
-# Launch institutional NestJS API Gateway via entrypoint
-ENTRYPOINT ["docker-entrypoint.sh"]
+# Launch institutional NestJS API Gateway via tini and entrypoint
+ENTRYPOINT ["/sbin/tini", "--", "docker-entrypoint.sh"]
 CMD ["node", "dist/main.js"]
-

@@ -4,4 +4,8 @@ export class ApproveDepositDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  transactionId?: string;
 }

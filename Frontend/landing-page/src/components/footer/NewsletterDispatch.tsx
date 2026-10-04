@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Mail, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Mail, CheckCircle2, AlertCircle } from 'lucide-react';
+import { FaviconSpinner } from '../ui/FaviconSpinner';
 import { newsletterApi, ApiError } from '../../lib/api';
 
 export const NewsletterDispatch: React.FC = () => {
@@ -11,7 +12,6 @@ export const NewsletterDispatch: React.FC = () => {
 
   React.useEffect(() => {
     if (!isLoading) return;
-    setElapsedSecs(0);
     const timer = setInterval(() => setElapsedSecs((s) => s + 1), 1000);
     return () => clearInterval(timer);
   }, [isLoading]);
@@ -30,6 +30,7 @@ export const NewsletterDispatch: React.FC = () => {
 
     setStatus('idle');
     setErrorMessage('');
+    setElapsedSecs(0);
     setIsLoading(true);
 
     try {
@@ -95,7 +96,7 @@ export const NewsletterDispatch: React.FC = () => {
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <FaviconSpinner size="xs" variant="minimal" />
                   <span>{elapsedSecs > 5 ? `Joining (${elapsedSecs}s)...` : 'Joining...'}</span>
                 </>
               ) : (

@@ -102,4 +102,22 @@ describe("VIP Cards & Metal Minting Integration", () => {
     expect(html).toContain("Secure Armored Destination")
     expect(html).toContain("Mint &amp; Issue Card")
   })
+
+  it("renders celebrity membership card with ACCESS branding, MEMBERSHIP CARD badge, and custom designation", () => {
+    const html = renderToString(
+      <VipCard3DPreview
+        cardholderName="LEONARDO DICAPRIO"
+        substrate="Celebrity 24K Gold & Diamond"
+        celebrityCardholderLabel="Special VIP Headliner"
+        expiryDate="12/28"
+      />
+    )
+
+    expect(html).toContain("LEONARDO DICAPRIO")
+    expect(html).toContain("Special VIP Headliner")
+    expect(html).toContain("12/28")
+    expect(html).toContain("ACCESS")
+    expect(html).toContain("MEMBERSHIP CARD")
+    expect(html).not.toContain("•••• •••• •••• 5590")
+  })
 })

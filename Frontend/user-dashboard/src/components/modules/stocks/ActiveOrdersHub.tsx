@@ -89,7 +89,7 @@ export const ActiveOrdersHub: React.FC<{ maskBalances?: boolean }> = ({ maskBala
         type,
         shares,
         limitPrice,
-        status: 'PENDING',
+        status: 'Active',
         expires: duration,
       },
       user?.id

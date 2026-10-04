@@ -12,12 +12,14 @@ import {
   KeyRound,
   LogOut,
   X,
+  Headphones,
 } from 'lucide-react';
 import { BrandLogo } from '../common/BrandLogo';
 import { useDashboardStore, type AssetVertical } from '../../store/useDashboardStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { logoutUser } from '../../lib/api';
 import { cn } from '../../lib/utils';
+import { openSmartsuppChat } from '../../lib/smartsupp';
 
 const MOBILE_NAV_ITEMS: { id: AssetVertical; label: string; badge?: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'overview', label: 'Executive Overview', icon: LayoutDashboard },
@@ -105,6 +107,22 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({ isOpen }) => {
               </button>
             );
           })}
+
+          {/* Live Concierge Live Chat Trigger */}
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              openSmartsuppChat();
+            }}
+            data-testid="mobile-nav-live-chat-btn"
+            className="flex items-center space-x-3 w-full px-3 py-2 rounded-sm text-xs font-medium text-primary hover:bg-primary/10 transition-colors text-left cursor-pointer"
+          >
+            <Headphones className="h-4 w-4 text-primary" />
+            <span className="flex-1">Live Concierge (Smartsupp)</span>
+            <span className="text-[9px] font-mono px-1 py-0.5 rounded-xs font-semibold uppercase bg-emerald-500/20 text-emerald-400">
+              24/7
+            </span>
+          </button>
 
           {/* Sign Out Action after Security & Access Vault */}
           <button

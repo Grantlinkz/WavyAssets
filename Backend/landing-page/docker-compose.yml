@@ -1,10 +1,5 @@
 # ==============================================================================
-# WavyAssets Landing Page Backend — Institutional Docker Compose Configuration
-# ==============================================================================
-# Specification:
-# - High-availability NestJS API Gateway & WebSocket Telemetry Server
-# - PostgreSQL Database Connection
-# - Non-root execution security & integrated liveness/readiness probes
+# WavyAssets Landing Page Backend — Standalone Docker Compose Configuration
 # ==============================================================================
 
 services:
@@ -16,21 +11,26 @@ services:
     image: wavyassets/landing-page-backend:1.0.0
     container_name: wavyassets-landing-backend
     restart: unless-stopped
+    # Production Hardening: Bind internal API ports to host loopback (127.0.0.1) only
     ports:
-      - "${PORT:-4000}:4000"
+      - "${BACKEND_BIND_IP:-127.0.0.1}:${PORT:-4000}:4000"
     env_file:
       - .env
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=4000
-      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/wavyassets?schema=public}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/wavyassets?schema=public}
       - APP_URL=${APP_URL:-http://localhost:4000}
       - CLIENT_URL=${CLIENT_URL:-http://localhost:5173}
       - DASHBOARD_URL=${DASHBOARD_URL:-http://localhost:5174}
+    # Production Hardening: exec ensures tini directly supervises node for immediate SIGTERM handling
+    command: sh -c "npx prisma db push --skip-generate && exec node dist/main.js"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
-      - wavyassets-network
+      - wavyassets-landing-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:4000/health/live || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:$${PORT:-4000}/health/live || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -50,6 +50,6 @@ services:
         max-file: "3"
 
 networks:
-  wavyassets-network:
-    name: wavyassets_institutional_network
+  wavyassets-landing-network:
+    name: wavyassets_landing_network
     driver: bridge

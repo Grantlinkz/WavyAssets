@@ -311,16 +311,23 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ### 3. Standalone Docker Run
 ```bash
 # Manual image build and container launch
-docker build -t wavyassets/landing-page-backend:latest .
-docker run -d -p 4000:4000 --name wavyassets-backend --env-file .env wavyassets/landing-page-backend:latest
-docker inspect --format='{{json .State.Health.Status}}' wavyassets-backend
+docker build -t wavyassets/landing-page-backend:1.0.0 .
+docker run -d -p 4000:4000 -v landing_backend_data:/app/prisma --name wavyassets-landing-backend --env-file .env wavyassets/landing-page-backend:1.0.0
+docker inspect --format='{{json .State.Health.Status}}' wavyassets-landing-backend
 ```
+
+### 4. Monorepo Integration
+- **Root Compose**: `docker compose up -d` (All 6 frontends & backends on `wavyassets-network`)
+- **Backend Stack Compose**: `docker compose -f Backend/docker-compose.yml up -d` (All 3 backends on `wavyassets-backend-network`)
+- **Container Name**: `wavyassets-landing-backend`
+- **Internal API Gateway**: Port `:4000` (Swagger: `http://localhost:4000/api/docs`, Health: `http://localhost:4000/health/live`)
 
 ---
 
-## 7. Quality & Verification Metrics
+## 8. Quality & Verification Metrics
 
 - **Automated Vitest Suites**: **22 test files, 72 / 72 tests passing (100%)**.
 - **TypeScript Strict Mode**: **0 type errors**.
 - **OpenAPI / Swagger Documentation**: Available at **`/api/docs`**.
 - **Governance Alignment**: Fully compliant with [`GEMINI.MD`](GEMINI.MD) and [`.ai/`](.ai/) specifications.
+

@@ -23,8 +23,9 @@ const FILTER_TABS: { label: string; value: ComplianceFilter }[] = [
   { label: "All Queue", value: "ALL" },
   { label: "Pending Review", value: "PENDING_REVIEW" },
   { label: "In Inspection", value: "IN_INSPECTION" },
-  { label: "Escalated FINMA", value: "ESCALATED_FINMA" },
   { label: "Approved", value: "APPROVED" },
+  { label: "Rejected", value: "REJECTED" },
+  { label: "Escalated FINMA", value: "ESCALATED_FINMA" },
 ]
 
 export const KycQueueTable: React.FC = () => {
@@ -41,6 +42,7 @@ export const KycQueueTable: React.FC = () => {
   } = useQuery<KycDossier[], Error>({
     queryKey: ["compliance", activeFilter],
     queryFn: () => fetchKycQueue(activeFilter),
+    refetchInterval: 3000,
   })
 
   const safeDossiers = Array.isArray(dossiers) ? dossiers : []
@@ -62,6 +64,13 @@ export const KycQueueTable: React.FC = () => {
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] font-mono text-[10px] font-semibold bg-status-success/15 text-status-success border border-status-success/30">
             <span className="w-1.5 h-1.5 rounded-full bg-status-success" />
             APPROVED
+          </span>
+        )
+      case "REJECTED":
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] font-mono text-[10px] font-semibold bg-status-danger/15 text-status-danger border border-status-danger/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-status-danger" />
+            REJECTED
           </span>
         )
       case "ESCALATED_FINMA":
@@ -195,13 +204,13 @@ export const KycQueueTable: React.FC = () => {
             Compliance Queue Clean
           </h3>
           <p className="text-xs text-secondary max-w-md mb-4">
-            No dossiers match current status filter. All pending FINMA AML submissions have been processed.
+            No users match current status filter. All pending FINMA AML submissions have been processed.
           </p>
           <button
             onClick={() => setActiveFilter("ALL")}
             className="px-4 py-1.5 rounded-[4px] bg-bg-panel hover:bg-state-hover border border-border-subtle text-xs text-secondary hover:text-on-surface font-medium cursor-pointer"
           >
-            View All Dossiers
+            View All Users
           </button>
         </div>
       ) : (

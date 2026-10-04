@@ -234,6 +234,10 @@ export async function fetchActionRails<T = unknown>(fallback?: T): Promise<T> {
 // Liquid Asset Engines (Crypto, Stocks, Wallet)
 // ----------------------------------------------------------------------
 
+export async function fetchUserTransactions<T = unknown>(limit = 50, fallback?: T): Promise<T> {
+  return requestApi<T>(`/api/v1/wallet/transactions?limit=${limit}`, { method: 'GET' }, fallback);
+}
+
 export async function fetchCryptoHoldings<T = unknown>(fallback?: T): Promise<T> {
   return requestApi<T>('/api/v1/crypto/holdings', { method: 'GET' }, fallback);
 }
@@ -332,6 +336,8 @@ export async function submitWithdrawal(payload: {
     }),
   });
 }
+
+
 
 // ----------------------------------------------------------------------
 // Alternative Asset Engines (AI Funds, Real Estate, Exotic Cars)
@@ -433,6 +439,17 @@ export async function updateCardSpendingLimitApi(dailySpendLimit: number): Promi
   });
 }
 
+export async function updateCardControlsApi(controls: {
+  isFrozen?: boolean;
+  cardType?: 'PHYSICAL' | 'VIRTUAL';
+  dailySpendLimit?: number;
+}): Promise<unknown> {
+  return requestApi<unknown>('/api/v1/vip-cards/controls', {
+    method: 'PATCH',
+    body: JSON.stringify(controls),
+  });
+}
+
 // ----------------------------------------------------------------------
 // Governance & Security (VIP Cards, Compliance, 48h Time-Lock)
 // ----------------------------------------------------------------------
@@ -467,11 +484,33 @@ export async function uploadDossierDocument<T = unknown>(
   },
   fallback?: T
 ): Promise<T> {
-  const fileUrl =
-    payload.fileUrl ||
-    (payload.file
-      ? `https://vault.wavyassets.com/dossier/vault_${Date.now()}_${encodeURIComponent(payload.file.name)}`
-      : 'https://vault.wavyassets.com/dossier/dossier_upload.pdf');
+  let fileUrl = payload.fileUrl;
+  if (!fileUrl && payload.file) {
+    if (typeof FileReader !== 'undefined') {
+      try {
+        fileUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+              resolve(reader.result);
+            } else {
+              resolve(`https://vault.wavyassets.com/dossier/vault_${Date.now()}_${encodeURIComponent(payload.file!.name)}`);
+            }
+          };
+          reader.onerror = () => {
+            resolve(`https://vault.wavyassets.com/dossier/vault_${Date.now()}_${encodeURIComponent(payload.file!.name)}`);
+          };
+          reader.readAsDataURL(payload.file!);
+        });
+      } catch {
+        fileUrl = `https://vault.wavyassets.com/dossier/vault_${Date.now()}_${encodeURIComponent(payload.file.name)}`;
+      }
+    } else {
+      fileUrl = `https://vault.wavyassets.com/dossier/vault_${Date.now()}_${encodeURIComponent(payload.file.name)}`;
+    }
+  } else if (!fileUrl) {
+    fileUrl = 'https://vault.wavyassets.com/dossier/dossier_upload.pdf';
+  }
 
   const bodyData = { ...payload };
   delete bodyData.file;
@@ -520,3 +559,108 @@ export async function registerWhitelistDestination(payload: {
     body: JSON.stringify(body),
   });
 }
+
+// ----------------------------------------------------------------------
+// Deposit Rails (Bank Wire & Web3 Crypto Matrix)
+// ----------------------------------------------------------------------
+
+export interface DepositRailsData {
+  fiat: {
+    id: string;
+    beneficiaryName: string;
+    depositoryBank?: string;
+    swissIban: string;
+    bicSwift: string;
+    clearingRail: string;
+    memoFormat: string;
+    updatedAt?: string;
+  };
+  crypto: Array<{
+    id: string;
+    asset: string;
+    name?: string;
+    network: string;
+    standard?: string;
+    vaultAddress: string;
+    isActive: boolean;
+    minDepositUsd?: number;
+    confirmations?: number;
+  }>;
+}
+
+export async function fetchDepositRails(): Promise<DepositRailsData> {
+  const fallback: DepositRailsData = {
+    fiat: {
+      id: 'GLOBAL_FIAT_RAIL',
+      beneficiaryName: 'Grant Global Holdings AG / Escrow Treuhand Zurich',
+      depositoryBank: 'UBS Switzerland AG (Zurich Enclave)',
+      swissIban: 'CH93 0023 8812 4019 8821 0',
+      bicSwift: 'UBSWCHZH80A',
+      clearingRail: 'Swiss SIC RTGS / Fedwire DvP',
+      memoFormat: 'WY-9942-TREASURY-03',
+    },
+    crypto: [],
+  };
+
+  try {
+    return await requestApi<DepositRailsData>('/api/v1/wallet/deposit-rails', { method: 'GET' }, fallback);
+  } catch {
+    try {
+      return await requestApi<DepositRailsData>('/api/v1/deposit-rails', { method: 'GET' }, fallback);
+    } catch {
+      return fallback;
+    }
+  }
+}
+
+export interface WithdrawalRequestPayload {
+  amount: number;
+  currency?: string;
+  rail: string;
+  referenceId: string;
+  bankName?: string;
+  accountName?: string;
+  accountNumber?: string;
+  cryptoAsset?: string;
+  protocol?: string;
+  destinationAddress?: string;
+}
+
+export async function submitWithdrawalRequest(
+  payload: WithdrawalRequestPayload
+): Promise<{ success: boolean; status: string; referenceId: string }> {
+  return requestApi<{ success: boolean; status: string; referenceId: string }>(
+    '/api/v1/wallet/withdrawal-request',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
+export interface DepositReceiptPayload {
+  amount: number;
+  currency?: string;
+  rail: string;
+  referenceId: string;
+  senderName?: string;
+  senderBank?: string;
+  senderIbanOrAddress?: string;
+  wireMemo?: string;
+  txHash?: string;
+  receiptDataUrl?: string;
+  receiptName?: string;
+}
+
+export async function submitDepositReceipt(
+  payload: DepositReceiptPayload
+): Promise<{ success: boolean; status: string; referenceId: string }> {
+  return requestApi<{ success: boolean; status: string; referenceId: string }>(
+    '/api/v1/wallet/deposit-receipt',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }
+  );
+}
+

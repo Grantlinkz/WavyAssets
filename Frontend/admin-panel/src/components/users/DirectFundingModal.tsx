@@ -257,7 +257,7 @@ export const DirectFundingModal: React.FC = () => {
                 }`}
               >
                 <span className="w-2 h-2 rounded-full bg-status-success inline-block"></span>
-                Credit (Inject / Deposit)
+                Credit (Deposit)
               </button>
               <button
                 type="button"
@@ -269,7 +269,7 @@ export const DirectFundingModal: React.FC = () => {
                 }`}
               >
                 <span className="w-2 h-2 rounded-full bg-status-danger inline-block"></span>
-                Debit (Extract / Withdraw)
+                Debit (Withdraw)
               </button>
             </div>
           </div>

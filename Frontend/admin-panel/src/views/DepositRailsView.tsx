@@ -10,7 +10,6 @@ import {
 } from "lucide-react"
 import {
   fetchDepositRails,
-  testClientMeshConnection,
   flushInvalidationCache,
   type DepositRailsData,
 } from "../api/depositRails"
@@ -22,10 +21,7 @@ import { DepositQrModal } from "../components/deposit-rails/DepositQrModal"
 export const DepositRailsView: React.FC = () => {
   const queryClient = useQueryClient()
   const {
-    isTestingMesh,
     isFlushingCache,
-    setIsTestingMesh,
-    setTestMeshResult,
     setIsFlushingCache,
     setFlushCacheMessage,
   } = useDepositRailsStore()
@@ -46,28 +42,6 @@ export const DepositRailsView: React.FC = () => {
     queryFn: fetchDepositRails,
   })
 
-  const testMeshMutation = useMutation({
-    mutationFn: async () => {
-      setIsTestingMesh(true)
-      return testClientMeshConnection()
-    },
-    onSuccess: (res) => {
-      setIsTestingMesh(false)
-      setTestMeshResult(res)
-      setNotification({
-        type: "success",
-        text: `Client connection verified across ${res.activeTerminals} client terminals with ${res.latencyMs}ms RTT.`,
-      })
-      setTimeout(() => setNotification(null), 6000)
-    },
-    onError: (err: Error) => {
-      setIsTestingMesh(false)
-      setNotification({
-        type: "error",
-        text: err.message || "Diagnostic test mesh ping failed.",
-      })
-    },
-  })
 
   const flushCacheMutation = useMutation({
     mutationFn: async () => {
@@ -97,47 +71,37 @@ export const DepositRailsView: React.FC = () => {
     <div className="flex flex-col gap-5 w-full" data-testid="deposit-rails-view">
       {/* Top Section: Header & Live Broadcaster Telemetry Bar */}
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-bg-panel border border-border-subtle p-5 rounded-sm">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-bg-panel border border-border-subtle p-5 rounded-[6px] shadow-sm">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="font-serif text-lg font-bold text-on-surface tracking-tight">
                 Global Deposit Coordinates
               </h1>
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-sm bg-status-success/10 border border-status-success/30">
+              <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-[3px] bg-status-success/10 border border-status-success/30">
                 <span className="w-2 h-2 rounded-full bg-status-success animate-pulse" />
-                <span className="font-label-caps text-label-caps uppercase text-status-success">
+                <span className="font-mono text-[10px] text-status-success uppercase font-semibold">
                   Production Inflow Stream
                 </span>
               </div>
-              <span className="font-mono text-body-sm text-secondary bg-bg-elevated px-2 py-0.5 rounded-sm border border-border-subtle">
-                Config: {railsData?.telemetry?.configVersion}
+              <span className="font-mono text-xs text-secondary bg-bg-elevated px-2.5 py-0.5 rounded-[3px] border border-border-subtle">
+                Config Version: {railsData?.telemetry?.configVersion || "v4.88.2-CH"}
               </span>
             </div>
-            <p className="font-body-md text-body-md text-secondary max-w-4xl">
+            <p className="font-sans text-xs text-secondary max-w-4xl leading-relaxed">
               Update institutional bank wire clearing parameters and cryptographic cold storage endpoints. Modifications propagate deterministically to connected tier-1 client deposit modals across all regional nodes.
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0 flex-wrap">
-            <button
-              type="button"
-              disabled={isTestingMesh}
-              onClick={() => testMeshMutation.mutate()}
-              className="h-8 px-3 rounded-sm border border-border-subtle bg-bg-elevated text-on-surface hover:bg-state-hover hover:border-gold-accent font-title-sm text-body-sm flex items-center gap-2 transition-all disabled:opacity-50"
-              id="btn-test-mesh"
-            >
-              <Network className="w-4 h-4 text-telemetry-cyan" />
-              <span>{isTestingMesh ? "Testing Mesh..." : "Test Client Connection"}</span>
-            </button>
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
 
             <button
               type="button"
               disabled={isFlushingCache}
               onClick={() => flushCacheMutation.mutate()}
-              className="h-8 px-3 rounded-sm border border-status-warning/40 bg-status-warning/10 text-status-warning hover:bg-status-warning/20 font-title-sm text-body-sm flex items-center gap-2 transition-all disabled:opacity-50"
+              className="h-8 px-3.5 rounded-[4px] border border-status-warning/40 bg-status-warning/10 text-status-warning hover:bg-status-warning/20 font-sans text-xs font-medium flex items-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
               id="btn-emergency-broadcast"
             >
-              <RefreshCw className={`w-4 h-4 ${isFlushingCache ? "animate-spin" : ""}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isFlushingCache ? "animate-spin" : ""}`} />
               <span>{isFlushingCache ? "Flushing..." : "Flush Invalidation Cache"}</span>
             </button>
           </div>
@@ -166,61 +130,61 @@ export const DepositRailsView: React.FC = () => {
 
         {/* Real-time Cluster Diagnostic Strip */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-bg-panel border border-border-subtle p-3 rounded-sm flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-sm bg-status-success/10 border border-status-success/20 flex items-center justify-center">
+          <div className="bg-bg-panel border border-border-subtle p-3.5 rounded-[6px] flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-[4px] bg-status-success/10 border border-status-success/20 flex items-center justify-center">
                 <Radio className="w-4 h-4 text-status-success" />
               </div>
               <div className="flex flex-col">
-                <span className="font-label-caps text-[10px] uppercase text-secondary">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-secondary font-semibold">
                   Broadcaster Bridge
                 </span>
-                <span className="font-title-sm text-body-sm text-on-surface">
+                <span className="font-sans text-xs font-semibold text-on-surface">
                   {railsData?.telemetry?.broadcasterConnected !== false
                     ? "Live Broadcast Connected"
                     : "Connecting..."}
                 </span>
               </div>
             </div>
-            <span className="font-mono text-body-sm text-status-success bg-status-success/10 px-2 py-0.5 rounded-sm border border-status-success/30">
+            <span className="font-mono text-xs text-status-success bg-status-success/10 px-2.5 py-1 rounded-[3px] border border-status-success/30 font-semibold">
               Active Feed
             </span>
           </div>
 
-          <div className="bg-bg-panel border border-border-subtle p-3 rounded-sm flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-sm bg-telemetry-cyan/10 border border-telemetry-cyan/20 flex items-center justify-center">
+          <div className="bg-bg-panel border border-border-subtle p-3.5 rounded-[6px] flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-[4px] bg-telemetry-cyan/10 border border-telemetry-cyan/20 flex items-center justify-center">
                 <Network className="w-4 h-4 text-telemetry-cyan" />
               </div>
               <div className="flex flex-col">
-                <span className="font-label-caps text-[10px] uppercase text-secondary">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-secondary font-semibold">
                   WebSocket Sync Latency
                 </span>
-                <span className="font-mono text-body-sm text-on-surface">
+                <span className="font-mono text-xs text-on-surface font-semibold">
                   {railsData?.telemetry?.wsLatencyMs || 14}ms Average RTT
                 </span>
               </div>
             </div>
-            <span className="font-mono text-body-sm text-telemetry-cyan bg-telemetry-cyan/10 px-2 py-0.5 rounded-sm border border-telemetry-cyan/30">
-              {railsData?.telemetry?.activeTerminalsCount || 1429} Terminals
+            <span className="font-mono text-xs text-telemetry-cyan bg-telemetry-cyan/10 px-2.5 py-1 rounded-[3px] border border-telemetry-cyan/30 font-semibold">
+              {railsData?.telemetry?.activeTerminalsCount?.toLocaleString() || "1,429"} Terminals
             </span>
           </div>
 
-          <div className="bg-bg-panel border border-border-subtle p-3 rounded-sm flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-sm bg-gold-accent/10 border border-gold-accent/30 flex items-center justify-center">
+          <div className="bg-bg-panel border border-border-subtle p-3.5 rounded-[6px] flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-[4px] bg-gold-accent/10 border border-gold-accent/30 flex items-center justify-center">
                 <KeyRound className="w-4 h-4 text-gold-accent" />
               </div>
               <div className="flex flex-col">
-                <span className="font-label-caps text-[10px] uppercase text-secondary">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-secondary font-semibold">
                   Ledger Verification HSM
                 </span>
-                <span className="font-title-sm text-body-sm text-on-surface">
-                  {railsData?.telemetry?.hsmStatus}
+                <span className="font-sans text-xs font-semibold text-on-surface">
+                  {railsData?.telemetry?.hsmStatus || "Gemalto SafeNet Luna 7"}
                 </span>
               </div>
             </div>
-            <span className="font-mono text-body-sm text-gold-accent bg-gold-accent/10 px-2 py-0.5 rounded-sm border border-gold-accent/30">
+            <span className="font-mono text-xs text-gold-accent bg-gold-accent/10 px-2.5 py-1 rounded-[3px] border border-gold-accent/30 font-semibold">
               FIPS 140-2 Level 3
             </span>
           </div>

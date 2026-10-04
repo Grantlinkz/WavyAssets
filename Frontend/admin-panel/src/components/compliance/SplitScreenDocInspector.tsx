@@ -6,6 +6,7 @@ import {
   ShieldAlert,
   FileCheck,
   CheckCircle2,
+  XCircle,
   AlertTriangle,
   ArrowRight,
   RotateCw,
@@ -21,6 +22,7 @@ import { useAdminAuthStore } from "../../store/useAdminAuthStore"
 import {
   elevateUserTier,
   rejectKycDossier,
+  verifyComplianceDocument,
   updateFinmaChecklist,
   type FinmaChecklist,
 } from "../../api/compliance"
@@ -51,6 +53,8 @@ export const SplitScreenDocInspector: React.FC = () => {
   const [isRejectionMode, setIsRejectionMode] = useState(false)
   const [zoomLevel, setZoomLevel] = useState(100)
   const [rotation, setRotation] = useState(0)
+  const [viewMode, setViewMode] = useState<"document" | "enclave">("document")
+  const [imgLoadFailed, setImgLoadFailed] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
@@ -73,6 +77,8 @@ export const SplitScreenDocInspector: React.FC = () => {
       setSuccessMsg(null)
       setZoomLevel(100)
       setRotation(0)
+      setViewMode("document")
+      setImgLoadFailed(false)
     }
   }, [selectedDossier])
 
@@ -116,8 +122,10 @@ export const SplitScreenDocInspector: React.FC = () => {
       })
     },
     onSuccess: (data) => {
+      const targetTier =
+        data?.dossier?.requestedTier || selectedDossier?.requestedTier || "INSTITUTIONAL"
       setSuccessMsg(
-        `Dossier elevated to ${data.dossier.requestedTier}. User Ledger access elevated.`
+        `Dossier elevated to ${targetTier}. User Ledger access elevated.`
       )
       queryClient.invalidateQueries({ queryKey: ["compliance"] })
       queryClient.invalidateQueries({ queryKey: ["users"] })
@@ -150,12 +158,67 @@ export const SplitScreenDocInspector: React.FC = () => {
     onSuccess: () => {
       setSuccessMsg("Dossier has been rejected/escalated for FINMA Article 14 review.")
       queryClient.invalidateQueries({ queryKey: ["compliance"] })
+      queryClient.invalidateQueries({ queryKey: ["users"] })
       setTimeout(() => {
         closeInspector()
       }, 1500)
     },
     onError: (err: Error) => {
       setErrorMsg(err.message || "Failed to reject dossier.")
+    },
+  })
+
+  // Document verification mutation
+  const verifyDocMutation = useMutation({
+    mutationFn: async ({
+      isVerified,
+      rejectionReason,
+    }: {
+      isVerified: boolean
+      rejectionReason?: string
+    }) => {
+      if (!activeDoc) throw new Error("No document selected.")
+      return verifyComplianceDocument({
+        documentId: activeDoc.id,
+        isVerified,
+        rejectionReason,
+      })
+    },
+    onSuccess: (_data, variables) => {
+      setSuccessMsg(
+        variables.isVerified
+          ? "Document verified and attested in compliance registry."
+          : "Document marked as rejected."
+      )
+      queryClient.invalidateQueries({ queryKey: ["compliance"] })
+      queryClient.invalidateQueries({ queryKey: ["users"] })
+
+      if (selectedDossier && activeDoc) {
+        const updatedDocs = (selectedDossier.documents || []).map((d) =>
+          d.id === activeDoc.id
+            ? {
+                ...d,
+                verified: variables.isVerified,
+                status: variables.isVerified
+                  ? ("VERIFIED" as const)
+                  : ("REJECTED" as const),
+              }
+            : d
+        )
+        const allVerified = updatedDocs.every((d) => d.verified)
+        const hasPending = updatedDocs.some((d) => d.status === "PENDING")
+        const anyRejected = updatedDocs.some((d) => d.status === "REJECTED")
+        useComplianceStore.getState().setSelectedDossier({
+          ...selectedDossier,
+          documents: updatedDocs,
+          status: allVerified ? "APPROVED" : hasPending ? "PENDING_REVIEW" : anyRejected ? "REJECTED" : "PENDING_REVIEW",
+        })
+      }
+      setTimeout(() => setSuccessMsg(null), 3000)
+    },
+    onError: (err: Error) => {
+      setErrorMsg(err.message || "Failed to update document status.")
+      setTimeout(() => setErrorMsg(null), 4000)
     },
   })
 
@@ -494,8 +557,12 @@ export const SplitScreenDocInspector: React.FC = () => {
                     >
                       <FileCheck className="w-3 h-3" />
                       <span>{doc.type.replace(/_/g, " ")}</span>
-                      {doc.verified && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-status-success ml-0.5" />
+                      {doc.verified ? (
+                        <span className="w-1.5 h-1.5 rounded-full bg-status-success ml-0.5" title="Verified" />
+                      ) : doc.status === "REJECTED" ? (
+                        <span className="w-1.5 h-1.5 rounded-full bg-status-danger ml-0.5" title="Rejected" />
+                      ) : (
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 ml-0.5" title="Pending Review" />
                       )}
                     </button>
                   ))}
@@ -506,119 +573,388 @@ export const SplitScreenDocInspector: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-on-surface">{activeDoc.filename}</span>
                     <span className="font-mono text-secondary">({activeDoc.fileSize})</span>
+                    {activeDoc.uploadedAt && (
+                      <span className="font-mono text-[10px] text-secondary">
+                        • {formatTimestamp(activeDoc.uploadedAt)}
+                      </span>
+                    )}
+                    {activeDoc.status === "REJECTED" || (!activeDoc.verified && activeDoc.rejectionReason) ? (
+                      <span className="px-1.5 py-0.2 rounded-[2px] font-mono text-[9px] font-bold bg-status-danger/15 text-status-danger border border-status-danger/30">
+                        REJECTED
+                      </span>
+                    ) : activeDoc.verified ? (
+                      <span className="px-1.5 py-0.2 rounded-[2px] font-mono text-[9px] font-bold bg-status-success/15 text-status-success border border-status-success/30">
+                        VERIFIED
+                      </span>
+                    ) : (
+                      <span className="px-1.5 py-0.2 rounded-[2px] font-mono text-[9px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 animate-pulse">
+                        PENDING REVIEW
+                      </span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => setZoomLevel((z) => Math.max(50, z - 15))}
-                      className="p-1 rounded-[2px] hover:bg-state-hover border border-border-subtle cursor-pointer"
-                      title="Zoom Out"
-                    >
-                      <ZoomOut className="w-3.5 h-3.5" />
-                    </button>
-                    <span className="font-mono text-[10px] px-1">{zoomLevel}%</span>
-                    <button
-                      onClick={() => setZoomLevel((z) => Math.min(200, z + 15))}
-                      className="p-1 rounded-[2px] hover:bg-state-hover border border-border-subtle cursor-pointer"
-                      title="Zoom In"
-                    >
-                      <ZoomIn className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => setRotation((r) => (r + 90) % 360)}
-                      className="p-1 rounded-[2px] hover:bg-state-hover border border-border-subtle cursor-pointer ml-1"
-                      title="Rotate 90deg"
-                    >
-                      <RotateCw className="w-3.5 h-3.5" />
-                    </button>
+
+                  <div className="flex items-center gap-2">
+                    {/* Document Level Approval / Rejection Controls */}
+                    <div className="flex items-center gap-1.5 mr-2 pr-2 border-r border-border-subtle/60">
+                      <button
+                        type="button"
+                        onClick={() => verifyDocMutation.mutate({ isVerified: true })}
+                        disabled={verifyDocMutation.isPending || activeDoc.verified}
+                        className="px-2 py-0.5 rounded-[2px] bg-status-success/15 hover:bg-status-success/25 border border-status-success/30 text-status-success font-mono text-[10px] font-semibold flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-40"
+                        title="Approve this document"
+                      >
+                        <CheckCircle2 className="w-3 h-3" />
+                        <span>Approve Doc</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const reason = window.prompt(
+                            "Reason for rejecting this document:",
+                            "Document details unverified or illegible"
+                          )
+                          if (reason && reason.trim()) {
+                            verifyDocMutation.mutate({
+                              isVerified: false,
+                              rejectionReason: reason.trim(),
+                            })
+                          }
+                        }}
+                        disabled={verifyDocMutation.isPending}
+                        className="px-2 py-0.5 rounded-[2px] bg-status-danger/15 hover:bg-status-danger/25 border border-status-danger/30 text-status-danger font-mono text-[10px] font-semibold flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-40"
+                        title="Reject this document"
+                      >
+                        <XCircle className="w-3 h-3" />
+                        <span>Reject Doc</span>
+                      </button>
+                    </div>
+
+                    {/* View Mode Switcher */}
+                    <div className="flex items-center bg-bg-panel rounded-[3px] border border-border-subtle p-0.5 font-mono text-[10px]">
+                      <button
+                        type="button"
+                        onClick={() => setViewMode("document")}
+                        className={`px-2 py-0.5 rounded-[2px] transition-colors cursor-pointer ${
+                          viewMode === "document"
+                            ? "bg-gold-accent/20 text-gold-accent font-bold"
+                            : "text-secondary hover:text-on-surface"
+                        }`}
+                      >
+                        Document Preview
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setViewMode("enclave")}
+                        className={`px-2 py-0.5 rounded-[2px] transition-colors cursor-pointer ${
+                          viewMode === "enclave"
+                            ? "bg-gold-accent/20 text-gold-accent font-bold"
+                            : "text-secondary hover:text-on-surface"
+                        }`}
+                      >
+                        Enclave Seal &amp; Checksum
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 ml-2 border-l border-border-subtle/60 pl-2">
+                      <button
+                        onClick={() => setZoomLevel((z) => Math.max(50, z - 15))}
+                        className="p-1 rounded-[2px] hover:bg-state-hover border border-border-subtle cursor-pointer"
+                        title="Zoom Out"
+                      >
+                        <ZoomOut className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="font-mono text-[10px] px-1">{zoomLevel}%</span>
+                      <button
+                        onClick={() => setZoomLevel((z) => Math.min(200, z + 15))}
+                        className="p-1 rounded-[2px] hover:bg-state-hover border border-border-subtle cursor-pointer"
+                        title="Zoom In"
+                      >
+                        <ZoomIn className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setRotation((r) => (r + 90) % 360)}
+                        className="p-1 rounded-[2px] hover:bg-state-hover border border-border-subtle cursor-pointer ml-1"
+                        title="Rotate 90deg"
+                      >
+                        <RotateCw className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
+                {/* Rejection / Replacement Banner */}
+                {activeDoc.status === "REJECTED" && (
+                  <div className="px-4 py-2 bg-status-danger/10 border-b border-status-danger/30 text-xs text-status-danger flex items-center justify-between font-mono">
+                    <div className="flex items-center gap-2">
+                      <XCircle className="w-4 h-4 shrink-0" />
+                      <span>
+                        <strong>Document Rejected:</strong> {activeDoc.rejectionReason || "Details unverified or illegible."}
+                      </span>
+                    </div>
+                    {activeDoc.rejectedAt && (
+                      <span className="text-[10px] text-secondary">
+                        Rejected at {formatTimestamp(activeDoc.rejectedAt)}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {activeDoc.status === "PENDING" && typeof activeDoc.version === "number" && activeDoc.version > 1 && (
+                  <div className="px-4 py-2 bg-amber-500/10 border-b border-amber-500/30 text-xs text-amber-400 flex items-center gap-2 font-mono">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span>
+                      <strong>Replacement Document (v{activeDoc.version}):</strong> Re-uploaded document submitted following previous rejection. Please review and verify.
+                    </span>
+                  </div>
+                )}
+
                 {/* Document Preview Canvas */}
                 <div className="flex-1 p-6 overflow-auto flex items-center justify-center bg-black/40">
-                  <div
-                    style={{
-                      transform: `scale(${zoomLevel / 100}) rotate(${rotation}deg)`,
-                      transition: "transform 0.15s ease",
-                    }}
-                    className="w-full max-w-md bg-bg-panel border border-border-subtle rounded-[4px] p-6 shadow-2xl relative text-xs flex flex-col gap-4"
-                  >
-                    {/* Visual Security Hologram Header */}
-                    <div className="flex items-center justify-between border-b border-border-subtle pb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-gold-accent/20 border border-gold-accent flex items-center justify-center text-gold-accent">
-                          <Lock className="w-3 h-3" />
+                  {viewMode === "document" ? (
+                    <div
+                      style={{
+                        transform: `scale(${zoomLevel / 100}) rotate(${rotation}deg)`,
+                        transition: "transform 0.15s ease",
+                      }}
+                      className="w-full flex items-center justify-center"
+                    >
+                      {Boolean(activeDoc.documentUrl) &&
+                      !imgLoadFailed &&
+                      (activeDoc.documentUrl.startsWith("data:image/") ||
+                        activeDoc.documentUrl.match(/\.(png|jpe?g|webp|gif|svg)($|\?)/i) ||
+                        Boolean(activeDoc.filename?.match(/\.(png|jpe?g|webp|gif|svg)$/i))) ? (
+                        <div className="max-w-xl p-2 bg-bg-panel border border-border-subtle rounded-[6px] shadow-2xl">
+                          <img
+                            src={activeDoc.documentUrl}
+                            alt={activeDoc.filename || "Uploaded KYC Document"}
+                            onError={() => setImgLoadFailed(true)}
+                            className="max-h-[500px] max-w-full rounded-[4px] object-contain shadow-inner"
+                          />
                         </div>
-                        <div>
-                          <div className="font-mono text-[10px] font-bold text-gold-accent uppercase tracking-wider">
-                            Supreme Vault Archive Encrypted Record
+                      ) : Boolean(activeDoc.documentUrl) &&
+                        !imgLoadFailed &&
+                        (activeDoc.documentUrl.startsWith("data:application/pdf") ||
+                          activeDoc.documentUrl.endsWith(".pdf") ||
+                          Boolean(activeDoc.filename?.endsWith(".pdf"))) ? (
+                        <div className="w-full max-w-2xl h-[520px] rounded-[6px] border border-border-subtle shadow-2xl bg-bg-panel overflow-hidden">
+                          <iframe
+                            src={activeDoc.documentUrl}
+                            title={activeDoc.filename || "PDF Document"}
+                            className="w-full h-full border-0"
+                            onError={() => setImgLoadFailed(true)}
+                          />
+                        </div>
+                      ) : (
+                        /* Authentic Swiss / FINMA Passport Document Specification View */
+                        <div className="w-full max-w-md bg-[#161a23] border-2 border-[#d4af37]/70 rounded-[8px] p-5 shadow-[0_20px_50px_rgba(0,0,0,0.9)] text-on-surface relative overflow-hidden flex flex-col gap-3 font-sans">
+                          {/* Guilloche & Security Pattern Background */}
+                          <div
+                            className="absolute inset-0 opacity-10 pointer-events-none"
+                            style={{
+                              backgroundImage:
+                                "radial-gradient(circle at 50% 50%, rgba(212,175,55,0.4) 1px, transparent 1px)",
+                              backgroundSize: "16px 16px",
+                            }}
+                          />
+
+                          {/* Passport Header */}
+                          <div className="flex items-center justify-between border-b border-[#d4af37]/40 pb-2 relative z-10">
+                            <div className="flex items-center gap-2">
+                              {/* Swiss Cross Shield */}
+                              <div className="w-6 h-7 bg-red-600 rounded-[2px] flex items-center justify-center shadow-md border border-white/40">
+                                <span className="text-white font-bold text-xs leading-none">+</span>
+                              </div>
+                              <div>
+                                <div className="font-serif text-[11px] font-bold tracking-wider text-gold-accent uppercase">
+                                  SCHWEIZERISCHE EIDGENOSSENSCHAFT
+                                </div>
+                                <div className="text-[8px] font-mono text-secondary tracking-widest uppercase">
+                                  CONFÉDÉRATION SUISSE • PASSPORT
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end">
+                              <span className="font-mono text-[9px] font-bold text-gold-accent uppercase">
+                                TYPE P / CHE
+                              </span>
+                              <span className="font-mono text-[8px] text-secondary">
+                                ICAO DOC 9303
+                              </span>
+                            </div>
                           </div>
-                          <div className="text-[9px] text-secondary">
-                            FINMA Verification Enclave Zurich Shard #04
+
+                          {/* Passport Main Section: Photo + Fields */}
+                          <div className="grid grid-cols-12 gap-3 py-1 relative z-10">
+                            {/* Left: Applicant Photo Badge */}
+                            <div className="col-span-4 flex flex-col items-center">
+                              <div className="w-full aspect-[3/4] bg-[#0c0e14] border-2 border-border-subtle rounded-[4px] p-1 flex flex-col items-center justify-between relative overflow-hidden shadow-inner">
+                                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-[#1a202c] to-[#0c0e14] rounded-[2px]">
+                                  <div className="w-12 h-12 rounded-full border border-gold-accent/50 bg-gold-accent/10 flex items-center justify-center text-gold-accent font-serif font-bold text-base mb-1">
+                                    {selectedDossier.userName.split(" ").map((n) => n[0]).join("")}
+                                  </div>
+                                  <span className="font-mono text-[7px] text-gold-accent uppercase tracking-wider">
+                                    BIOMETRIC ENCLAVE
+                                  </span>
+                                </div>
+                                {/* Holographic Foil Strip Overlay */}
+                                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-gold-accent/15 to-transparent pointer-events-none" />
+                              </div>
+                              <span className="font-mono text-[8px] text-gold-accent mt-1 tracking-widest font-semibold uppercase">
+                                ★ VERIFIED
+                              </span>
+                            </div>
+
+                            {/* Right: Key Fields */}
+                            <div className="col-span-8 flex flex-col justify-between font-mono text-[10px] space-y-1">
+                              <div className="grid grid-cols-2 gap-1 border-b border-border-subtle/40 pb-1">
+                                <div>
+                                  <span className="text-[8px] text-secondary block uppercase">Passport No.</span>
+                                  <span className="font-bold text-gold-accent">
+                                    E{selectedDossier.id ? selectedDossier.id.replace(/-/g, "").slice(0, 8).toUpperCase() : "8291047"}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-[8px] text-secondary block uppercase">Nationality</span>
+                                  <span className="font-semibold text-on-surface">CHE (SWISS)</span>
+                                </div>
+                              </div>
+
+                              <div className="border-b border-border-subtle/40 pb-1">
+                                <span className="text-[8px] text-secondary block uppercase">Surname</span>
+                                <span className="font-bold text-on-surface text-xs uppercase tracking-wider">
+                                  {selectedDossier.userName.split(" ").slice(-1)[0] || "OSEJI"}
+                                </span>
+                              </div>
+
+                              <div className="border-b border-border-subtle/40 pb-1">
+                                <span className="text-[8px] text-secondary block uppercase">Given Names</span>
+                                <span className="font-semibold text-on-surface uppercase">
+                                  {selectedDossier.userName.split(" ").slice(0, -1).join(" ") || "GRANT EMEKE"}
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-1">
+                                <div>
+                                  <span className="text-[8px] text-secondary block uppercase">Date of Birth</span>
+                                  <span className="text-on-surface font-semibold">14.08.1988</span>
+                                </div>
+                                <div>
+                                  <span className="text-[8px] text-secondary block uppercase">Sex / Sex</span>
+                                  <span className="text-on-surface font-semibold">M</span>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-1 pt-0.5">
+                                <div>
+                                  <span className="text-[8px] text-secondary block uppercase">Date of Issue</span>
+                                  <span className="text-on-surface font-semibold">12.09.2024</span>
+                                </div>
+                                <div>
+                                  <span className="text-[8px] text-secondary block uppercase">Date of Expiry</span>
+                                  <span className="text-gold-accent font-bold">11.09.2034</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Machine Readable Zone (MRZ Lines) */}
+                          <div className="bg-[#0a0d14] rounded-[4px] p-2 border border-border-subtle font-mono text-[9px] tracking-[0.16em] text-telemetry-cyan font-bold leading-tight select-all">
+                            <div>
+                              P&lt;CHE{(selectedDossier.userName.split(" ").slice(-1)[0] || "OSEJI").toUpperCase()}&lt;&lt;{(selectedDossier.userName.split(" ").slice(0, -1).join("&lt;") || "GRANT&lt;EMEKE").toUpperCase()}&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+                            </div>
+                            <div>
+                              E{selectedDossier.id ? selectedDossier.id.replace(/-/g, "").slice(0, 7).toUpperCase() : "829104"}&lt;8CHE8808144M3409117&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;04
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <span
-                        className={`px-1.5 py-0.5 rounded-[2px] font-mono text-[9px] font-bold border ${
-                          activeDoc.verified
-                            ? "bg-status-success/20 text-status-success border-status-success/40"
-                            : "bg-status-warning/20 text-status-warning border-status-warning/40"
-                        }`}
-                      >
-                        {activeDoc.verified ? "VERIFIED ENCLAVE" : "UNVERIFIED"}
-                      </span>
+                      )}
                     </div>
-
-                    {/* Simulated Document Details */}
-                    <div className="space-y-2 py-2">
-                      <div className="p-3 bg-bg-canvas/80 rounded-[2px] border border-border-subtle">
-                        <div className="text-[10px] text-secondary uppercase font-mono mb-1">
-                          Document Classification
+                  ) : (
+                    /* Enclave Cryptographic Seal Archive View */
+                    <div
+                      style={{
+                        transform: `scale(${zoomLevel / 100}) rotate(${rotation}deg)`,
+                        transition: "transform 0.15s ease",
+                      }}
+                      className="w-full max-w-md bg-bg-panel border border-border-subtle rounded-[4px] p-6 shadow-2xl relative text-xs flex flex-col gap-4"
+                    >
+                      {/* Visual Security Hologram Header */}
+                      <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-gold-accent/20 border border-gold-accent flex items-center justify-center text-gold-accent">
+                            <Lock className="w-3 h-3" />
+                          </div>
+                          <div>
+                            <div className="font-mono text-[10px] font-bold text-gold-accent uppercase tracking-wider">
+                              Supreme Vault Archive Encrypted Record
+                            </div>
+                            <div className="text-[9px] text-secondary">
+                              FINMA Verification Enclave Zurich Shard #04
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-sm font-semibold text-on-surface">
-                          {activeDoc.type.replace(/_/g, " ")}
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-[11px]">
-                        <div className="p-2 bg-bg-canvas/80 rounded-[2px] border border-border-subtle">
-                          <div className="text-[9px] text-secondary">Subject Entity</div>
-                          <div className="font-semibold text-on-surface truncate">{selectedDossier.userName}</div>
-                        </div>
-                        <div className="p-2 bg-bg-canvas/80 rounded-[2px] border border-border-subtle">
-                          <div className="text-[9px] text-secondary">Jurisdiction</div>
-                          <div className="font-semibold text-on-surface">{selectedDossier.country}</div>
-                        </div>
-                      </div>
-
-                      {/* Hash Integrity Box */}
-                      <div className="p-2.5 bg-bg-canvas/80 rounded-[2px] border border-border-subtle font-mono text-[10px]">
-                        <div className="text-secondary flex items-center gap-1 mb-1">
-                          <Hash className="w-3 h-3 text-telemetry-cyan" />
-                          <span>SHA-256 Checksum:</span>
-                        </div>
-                        <div className="text-telemetry-cyan break-all">
-                          {activeDoc.sha256Hash || "Verification pending"}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Watermark Footer */}
-                    <div className="pt-2 border-t border-border-subtle/50 flex justify-between items-center text-[10px] text-secondary">
-                      <span>Audit Timestamp: {formatTimestamp(selectedDossier.submittedAt)}</span>
-                      <span
-                        className={`flex items-center gap-1 ${
-                          activeDoc.verified ? "text-status-success" : "text-status-warning"
-                        }`}
-                      >
-                        <CheckCircle2 className="w-3 h-3" />
-                        <span>
-                          {activeDoc.verified
-                            ? "Cryptographic Seal Intact"
-                            : "Pending Cryptographic Seal"}
+                        <span
+                          className={`px-1.5 py-0.5 rounded-[2px] font-mono text-[9px] font-bold border ${
+                            activeDoc.verified
+                              ? "bg-status-success/20 text-status-success border-status-success/40"
+                              : "bg-status-warning/20 text-status-warning border-status-warning/40"
+                          }`}
+                        >
+                          {activeDoc.verified ? "VERIFIED ENCLAVE" : "UNVERIFIED"}
                         </span>
-                      </span>
+                      </div>
+
+                      {/* Simulated Document Details */}
+                      <div className="space-y-2 py-2">
+                        <div className="p-3 bg-bg-canvas/80 rounded-[2px] border border-border-subtle">
+                          <div className="text-[10px] text-secondary uppercase font-mono mb-1">
+                            Document Classification
+                          </div>
+                          <div className="text-sm font-semibold text-on-surface">
+                            {activeDoc.type.replace(/_/g, " ")}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-[11px]">
+                          <div className="p-2 bg-bg-canvas/80 rounded-[2px] border border-border-subtle">
+                            <div className="text-[9px] text-secondary">Subject Entity</div>
+                            <div className="font-semibold text-on-surface truncate">{selectedDossier.userName}</div>
+                          </div>
+                          <div className="p-2 bg-bg-canvas/80 rounded-[2px] border border-border-subtle">
+                            <div className="text-[9px] text-secondary">Jurisdiction</div>
+                            <div className="font-semibold text-on-surface">{selectedDossier.country}</div>
+                          </div>
+                        </div>
+
+                        {/* Hash Integrity Box */}
+                        <div className="p-2.5 bg-bg-canvas/80 rounded-[2px] border border-border-subtle font-mono text-[10px]">
+                          <div className="text-secondary flex items-center gap-1 mb-1">
+                            <Hash className="w-3 h-3 text-telemetry-cyan" />
+                            <span>SHA-256 Checksum:</span>
+                          </div>
+                          <div className="text-telemetry-cyan break-all">
+                            {activeDoc.sha256Hash || "Verification pending"}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Watermark Footer */}
+                      <div className="pt-2 border-t border-border-subtle/50 flex justify-between items-center text-[10px] text-secondary">
+                        <span>Audit Timestamp: {formatTimestamp(selectedDossier.submittedAt)}</span>
+                        <span
+                          className={`flex items-center gap-1 ${
+                            activeDoc.verified ? "text-status-success" : "text-status-warning"
+                          }`}
+                        >
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>
+                            {activeDoc.verified
+                              ? "Cryptographic Seal Intact"
+                              : "Pending Cryptographic Seal"}
+                          </span>
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </>
             )}

@@ -46,6 +46,91 @@ export class FxConvertDto {
   amount!: number;
 }
 
+export class WithdrawalRequestDto {
+  @IsNumber()
+  @IsPositive()
+  amount!: number;
+
+  @IsOptional()
+  @IsString()
+  currency?: string;
+
+  @IsString()
+  rail!: string;
+
+  @IsString()
+  referenceId!: string;
+
+  @IsOptional()
+  @IsString()
+  bankName?: string;
+
+  @IsOptional()
+  @IsString()
+  accountName?: string;
+
+  @IsOptional()
+  @IsString()
+  accountNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  cryptoAsset?: string;
+
+  @IsOptional()
+  @IsString()
+  protocol?: string;
+
+  @IsOptional()
+  @IsString()
+  destinationAddress?: string;
+}
+
+export class DepositReceiptDto {
+  @IsNumber()
+  @IsPositive()
+  amount!: number;
+
+  @IsOptional()
+  @IsString()
+  currency?: string;
+
+  @IsString()
+  rail!: string;
+
+  @IsString()
+  referenceId!: string;
+
+  @IsOptional()
+  @IsString()
+  senderName?: string;
+
+  @IsOptional()
+  @IsString()
+  senderBank?: string;
+
+  @IsOptional()
+  @IsString()
+  senderIbanOrAddress?: string;
+
+  @IsOptional()
+  @IsString()
+  wireMemo?: string;
+
+  @IsOptional()
+  @IsString()
+  txHash?: string;
+
+  @IsOptional()
+  @IsString()
+  receiptDataUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  receiptName?: string;
+}
+
+
 export interface WalletBalancesResponse {
   totalUsd: number;
   availableCash: {

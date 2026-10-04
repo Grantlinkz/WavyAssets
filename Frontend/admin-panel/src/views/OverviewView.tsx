@@ -71,6 +71,7 @@ export const OverviewView: React.FC = () => {
               <option value="24h" className="bg-bg-panel text-on-surface">Last 24 Hours</option>
               <option value="7d" className="bg-bg-panel text-on-surface">Last 7 Days</option>
               <option value="30d" className="bg-bg-panel text-on-surface">Last 30 Days</option>
+              <option value="ALL" className="bg-bg-panel text-on-surface">All Time</option>
             </select>
           </div>
 
@@ -152,11 +153,29 @@ export const OverviewView: React.FC = () => {
         <MetricCard
           title="Action Queue"
           value={pendingActions}
-          description={metrics?.actionQueueWarning || ""}
+          description={
+            metrics
+              ? metrics.actionQueueWarning || `${metrics.actionQueuePending} actionable items require triage`
+              : ""
+          }
           icon={PenTool}
-          iconColorClass="text-status-warning"
-          badgeText="SIGNATURE REQUIRED"
-          badgeColorClass="text-status-warning bg-status-warning/10 border-status-warning/40"
+          iconColorClass={
+            metrics && metrics.actionQueuePending > 0
+              ? "text-status-warning"
+              : "text-status-success"
+          }
+          badgeText={
+            metrics && (metrics.badgeCounts?.treasurySignOffs ?? 0) > 0
+              ? "SIGNATURE REQUIRED"
+              : metrics && metrics.actionQueuePending > 0
+              ? "TRIAGE REQUIRED"
+              : "QUEUE CLEAR"
+          }
+          badgeColorClass={
+            metrics && metrics.actionQueuePending > 0
+              ? "text-status-warning bg-status-warning/10 border-status-warning/40"
+              : "text-status-success bg-status-success/10 border-status-success/40"
+          }
           isLoading={isLoading}
         />
 

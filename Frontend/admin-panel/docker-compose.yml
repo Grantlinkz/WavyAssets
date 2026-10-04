@@ -1,0 +1,47 @@
+# ==============================================================================
+# WavyAssets Supreme Institutional Admin Panel Frontend — Standalone Compose
+# ==============================================================================
+
+services:
+  admin-panel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    image: wavyassets/admin-panel-frontend:1.0.0
+    container_name: wavyassets-admin-frontend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-5175}:80"
+    environment:
+      - PORT=80
+      - BACKEND_HOST=${BACKEND_HOST:-wavyassets-backend-admin-panel}
+      - BACKEND_PORT=${BACKEND_PORT:-4002}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - wavyassets-admin-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:$${PORT:-80}/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 256M
+        reservations:
+          cpus: "0.10"
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  wavyassets-admin-network:
+    name: wavyassets_admin_frontend_network
+    driver: bridge

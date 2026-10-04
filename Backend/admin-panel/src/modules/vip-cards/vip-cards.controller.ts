@@ -38,6 +38,18 @@ export class VipCardsController {
     return this.vipCardsService.getCards(query);
   }
 
+  @Get('telemetry')
+  @Roles(
+    AdminRole.SUPER_ADMIN,
+    AdminRole.CONCIERGE,
+    AdminRole.DESK_LEAD,
+    AdminRole.TREASURY_OFFICER,
+    AdminRole.COMPLIANCE_OFFICER,
+  )
+  async getTelemetry() {
+    return this.vipCardsService.getTelemetry();
+  }
+
   @Get(':id')
   @Roles(
     AdminRole.SUPER_ADMIN,

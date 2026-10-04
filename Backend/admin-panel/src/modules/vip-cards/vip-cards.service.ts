@@ -21,6 +21,37 @@ export class VipCardsService {
     private readonly eventsGateway: EventsGateway,
   ) {}
 
+  private formatSafeCard(card: any) {
+    const { pinEncrypted, ...safeCard } = card;
+    const user = safeCard.user || {};
+    const tier = safeCard.tier || 'OBSIDIAN';
+    const substrate =
+      tier === 'CELEBRITY'
+        ? 'Celebrity 24K Gold & Diamond'
+        : tier === 'TITANIUM'
+        ? 'Silver Titanium'
+        : tier === 'Supreme'
+        ? 'Black Supreme Stainless'
+        : 'Obsidian 42g Tungsten';
+
+    return {
+      ...safeCard,
+      userName: user.fullName || 'VIP Member',
+      userCif: `CIF-${(safeCard.userId || safeCard.id || '0000').slice(0, 8).toUpperCase()}`,
+      userTier: user.tier ? `${user.tier} Tier` : 'Institutional Tier',
+      maskedPan: `•••• •••• •••• ${safeCard.cardNumberLast4 || '0000'}`,
+      substrate,
+      destination:
+        safeCard.destination ||
+        (safeCard.cardType === 'VIRTUAL'
+          ? 'Digital NFC Enclave'
+          : safeCard.shippingStatus === 'DELIVERED'
+          ? 'Registered Address (Vault Enclave)'
+          : 'Armored Vault Custody'),
+      issuedAt: safeCard.createdAt || safeCard.updatedAt,
+    };
+  }
+
   /**
    * Retrieves paginated catalog of VIP cards with executive metrics
    */
@@ -39,6 +70,17 @@ export class VipCardsService {
     }
     if (query.isFrozen !== undefined) {
       where.isFrozen = query.isFrozen;
+    }
+
+    if (query.status && query.status.toUpperCase() !== 'ALL') {
+      const s = query.status.toUpperCase();
+      if (s === 'ACTIVE') {
+        where.isFrozen = false;
+      } else if (s === 'LOCKED') {
+        where.isFrozen = true;
+      } else if (s === 'IN_TRANSIT') {
+        where.shippingStatus = 'IN_TRANSIT';
+      }
     }
 
     if (query.search) {
@@ -77,11 +119,8 @@ export class VipCardsService {
       }),
     ]);
 
-    // Sanitize cards: never leak encrypted PIN
-    const cards = rawCards.map((card) => {
-      const { pinEncrypted, ...safeCard } = card;
-      return safeCard;
-    });
+    // Sanitize cards: never leak encrypted PIN, enrich with display attributes
+    const cards = rawCards.map((card) => this.formatSafeCard(card));
 
     // Compute executive portfolio telemetry
     const totalIssued = allCards.length;
@@ -110,6 +149,60 @@ export class VipCardsService {
   }
 
   /**
+   * Computes real-time executive VIP card portfolio telemetry from database
+   */
+  async getTelemetry() {
+    const [activeCards, lockedCards, allCards, transactions24h] = await Promise.all([
+      this.prisma.vipCard.count({ where: { isFrozen: false } }),
+      this.prisma.vipCard.count({ where: { isFrozen: true } }),
+      this.prisma.vipCard.findMany({
+        where: { isFrozen: false },
+        select: { dailySpendLimit: true },
+      }),
+      this.prisma.ledgerTransaction.findMany({
+        where: {
+          createdAt: {
+            gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+          },
+        },
+        select: {
+          amount: true,
+          status: true,
+        },
+      }),
+    ]);
+
+    const authorizedDailyCapacity = allCards.reduce(
+      (sum, c) => sum + (c.dailySpendLimit || 0),
+      0,
+    );
+
+    const settledTxs = transactions24h.filter((t) => t.status === 'SETTLED');
+    const volume24h = settledTxs.reduce(
+      (sum, t) => sum + (Number(t.amount) || 0),
+      0,
+    );
+
+    const authRate24h =
+      transactions24h.length > 0
+        ? Number(((settledTxs.length / transactions24h.length) * 100).toFixed(1))
+        : 100.0;
+
+    // Real blank inventory: 500 initial safe vault capacity minus total minted cards
+    const totalMinted = activeCards + lockedCards;
+    const vaultInventoryBlanks = Math.max(0, 500 - totalMinted);
+
+    return {
+      activeCards,
+      authorizedDailyCapacity,
+      volume24h,
+      authRate24h,
+      lockedCards,
+      vaultInventoryBlanks,
+    };
+  }
+
+  /**
    * Retrieves single VIP card by ID
    */
   async getCardById(cardId: string) {
@@ -132,8 +225,7 @@ export class VipCardsService {
       throw new NotFoundException(`VIP Card with ID '${cardId}' not found`);
     }
 
-    const { pinEncrypted, ...safeCard } = card;
-    return safeCard;
+    return this.formatSafeCard(card);
   }
 
   /**
@@ -159,7 +251,8 @@ export class VipCardsService {
     }
 
     // Encrypt temporary PIN with AES-256-GCM
-    const pinEncrypted = this.cryptoService.encrypt(dto.temporaryPin);
+    const pin = dto.temporaryPin || Math.floor(1000 + Math.random() * 9000).toString();
+    const pinEncrypted = this.cryptoService.encrypt(pin);
 
     // Auto-generate unique last 4 digits if not provided
     const cardNumberLast4 =
@@ -218,8 +311,7 @@ export class VipCardsService {
       `Minted VIP card '${card.id}' (tier: ${card.tier}, last4: ${card.cardNumberLast4}) for user '${card.userId}' by operator '${adminId}'`,
     );
 
-    const { pinEncrypted: _, ...safeCard } = card;
-    return safeCard;
+    return this.formatSafeCard(card);
   }
 
   /**

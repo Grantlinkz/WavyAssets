@@ -191,7 +191,7 @@ export const AuditLogTable: React.FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Date Range Pills */}
           <div className="flex items-center gap-1 bg-bg-canvas p-1 rounded-[4px] border border-border-subtle">
-            {["Today", "Past 7 Days", "Past 30 Days"].map((range) => (
+            {["Today", "Past 7 Days", "Past 30 Days", "All"].map((range) => (
               <button
                 key={range}
                 onClick={() => setSelectedDateRange(range)}

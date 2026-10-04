@@ -31,4 +31,8 @@ export class VipCardQueryDto {
   })
   @IsBoolean()
   isFrozen?: boolean;
+
+  @IsOptional()
+  @IsString()
+  status?: string;
 }

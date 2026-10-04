@@ -1,0 +1,35 @@
+# ==============================================================================
+# WavyAssets Supreme Admin Panel Frontend — Development Compose Override
+# ==============================================================================
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# ==============================================================================
+
+services:
+  admin-panel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: wavyassets-admin-frontend-dev
+    command: npm run dev -- --host 0.0.0.0 --port 5175
+    ports:
+      - "5175:5175"
+    environment:
+      - VITE_API_BASE_URL=/api/v1
+      - VITE_BACKEND_ORIGIN=http://wavyassets-backend-admin-panel:4002
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./index.html:/app/index.html
+      - ./vite.config.ts:/app/vite.config.ts
+      - ./postcss.config.mjs:/app/postcss.config.mjs
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.app.json:/app/tsconfig.app.json
+      - ./tsconfig.node.json:/app/tsconfig.node.json
+      - /app/node_modules
+    deploy:
+      resources:
+        limits:
+          cpus: "2.00"
+          memory: 1G

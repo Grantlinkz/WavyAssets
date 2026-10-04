@@ -13,11 +13,13 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Headphones,
 } from 'lucide-react';
 import { useDashboardStore, type AssetVertical } from '../../store/useDashboardStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { logoutUser } from '../../lib/api';
 import { cn } from '../../lib/utils';
+import { openSmartsuppChat } from '../../lib/smartsupp';
 
 interface NavItem {
   id: AssetVertical;
@@ -130,6 +132,29 @@ export const SidebarRail: React.FC<SidebarRailProps> = ({ isCollapsed, activeTab
             </button>
           );
         })}
+
+        {/* Live Concierge (Smartsupp) Action */}
+        <button
+          onClick={() => openSmartsuppChat()}
+          data-testid="sidebar-live-chat-btn"
+          title={isSidebarCollapsed ? 'Live Concierge (Smartsupp)' : undefined}
+          className={cn(
+            'group relative flex items-center w-full h-9 rounded-sm transition-all duration-150 cursor-pointer font-sans text-xs text-primary/90 hover:bg-primary/10 hover:text-primary',
+            isSidebarCollapsed ? 'justify-center px-0' : 'px-2.5 space-x-3'
+          )}
+        >
+          <Headphones className="h-4 w-4 shrink-0 transition-colors text-primary" />
+          {!isSidebarCollapsed && (
+            <span className="truncate flex-1 text-left tracking-wide font-medium">
+              Live Concierge
+            </span>
+          )}
+          {!isSidebarCollapsed && (
+            <span className="text-[9px] font-mono px-1 py-0.5 rounded-xs font-semibold shrink-0 uppercase bg-emerald-500/20 text-emerald-400">
+              24/7
+            </span>
+          )}
+        </button>
 
         {/* Sign Out Action after Security & Access Vault */}
         <button

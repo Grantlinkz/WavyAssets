@@ -1,12 +1,60 @@
 # ==============================================================================
 # WavyAssets Global Institutional Platform — Unified Monorepo Docker Compose
 # ==============================================================================
-# Services:
-# - backend:  NestJS 11 Gateway, WebSocket Broadcaster & SQLite DB (:4000)
-# - frontend: React 19 / Vite 8 Terminal served via Nginx (:5173 -> :80)
+# Full Multi-Tier Platform Topology:
+# 0. PostgreSQL Database:      PostgreSQL 16 Alpine Relational Engine (:5432)
+# 1. Landing Page Backend:     NestJS API Gateway & Showcase Telemetry (:4000)
+# 2. Landing Page Frontend:    React 19 / Vite 8 / Three.js Showcase via Nginx (:5173)
+# 3. User Dashboard Backend:   Transactional Core & Double-Entry Ledger (:4001)
+# 4. User Dashboard Frontend:  Sovereign Command Deck & Smartsupp Concierge (:5174)
+# 5. Admin Panel Backend:      Supreme Admin Deck & Treasury Operations (:4002)
+# 6. Admin Panel Frontend:     Operational Command Terminal via Nginx (:5175)
 # ==============================================================================
 
 services:
+  # ----------------------------------------------------------------------------
+  # 0. PostgreSQL Enterprise Database Service
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: wavyassets-postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_BIND_IP:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-wavyassets}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      wavyassets-network:
+        aliases:
+          - postgres
+          - db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-wavyassets} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "2.00"
+          memory: 1024M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ----------------------------------------------------------------------------
+  # 1. Landing Page Backend Service
+  # ----------------------------------------------------------------------------
   backend:
     build:
       context: ./Backend/landing-page
@@ -15,23 +63,32 @@ services:
     image: wavyassets/landing-page-backend:1.0.0
     container_name: wavyassets-landing-backend
     restart: unless-stopped
+    # Production Hardening: Bind internal API ports to host loopback (127.0.0.1) only
     ports:
-      - "${BACKEND_PORT:-4000}:4000"
+      - "${BACKEND_BIND_IP:-127.0.0.1}:${LANDING_BACKEND_PORT:-${BACKEND_PORT:-4000}}:4000"
     env_file:
       - ./Backend/landing-page/.env
     environment:
       - NODE_ENV=production
       - PORT=4000
-      - DATABASE_URL=file:./dev.db
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/wavyassets?schema=public}
       - APP_URL=http://localhost:4000
       - CLIENT_URL=http://localhost:5173
       - DASHBOARD_URL=http://localhost:5174
-    volumes:
-      - backend_sqlite_data:/app/prisma
+    # Production Hardening: exec ensures tini directly supervises node for immediate SIGTERM handling
+    command: sh -c "npx prisma db push --skip-generate && exec node dist/main.js"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
-      - wavyassets-network
+      wavyassets-network:
+        aliases:
+          - backend-landing
+          - wavyassets-landing-backend
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:4000/health/live || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:$${PORT:-4000}/health/live || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -50,6 +107,9 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # ----------------------------------------------------------------------------
+  # 2. Landing Page Frontend Service
+  # ----------------------------------------------------------------------------
   frontend:
     build:
       context: ./Frontend/landing-page
@@ -59,18 +119,23 @@ services:
     container_name: wavyassets-landing-frontend
     restart: unless-stopped
     ports:
-      - "${FRONTEND_PORT:-5173}:80"
+      - "${LANDING_FRONTEND_PORT:-${FRONTEND_PORT:-5173}}:80"
     environment:
       - PORT=80
       - BACKEND_HOST=wavyassets-landing-backend
       - BACKEND_PORT=4000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       backend:
         condition: service_healthy
     networks:
-      - wavyassets-network
+      wavyassets-network:
+        aliases:
+          - landing-frontend
+          - wavyassets-landing-frontend
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:80/healthz || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:$${PORT:-80}/healthz || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -89,6 +154,9 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # ----------------------------------------------------------------------------
+  # 3. User Dashboard Backend Service
+  # ----------------------------------------------------------------------------
   backend-user-dashboard:
     build:
       context: ./Backend/user-dashboard
@@ -97,21 +165,29 @@ services:
     image: wavyassets/user-dashboard-backend:1.0.0
     container_name: wavyassets-backend-user-dashboard
     restart: unless-stopped
+    # Production Hardening: Bind internal API ports to host loopback (127.0.0.1) only
     ports:
-      - "${BACKEND_DASHBOARD_PORT:-4001}:4000"
+      - "${BACKEND_BIND_IP:-127.0.0.1}:${USER_DASHBOARD_BACKEND_PORT:-${BACKEND_DASHBOARD_PORT:-4001}}:4000"
     env_file:
       - ./Backend/user-dashboard/.env
     environment:
       - NODE_ENV=production
       - PORT=4000
-      - DATABASE_URL=file:./dev.db
-    command: sh -c "npx prisma db push --skip-generate && node dist/src/main.js"
-    volumes:
-      - backend_dashboard_sqlite_data:/app/prisma
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/wavyassets?schema=public}
+    # Production Hardening: exec ensures tini directly supervises node for immediate SIGTERM handling
+    command: sh -c "npx prisma db push --skip-generate && exec node dist/src/main.js"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
-      - wavyassets-network
+      wavyassets-network:
+        aliases:
+          - user-dashboard-backend
+          - wavyassets-backend-user-dashboard
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:4000/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:$${PORT:-4000}/health || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -130,6 +206,9 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # ----------------------------------------------------------------------------
+  # 4. User Dashboard Frontend Service
+  # ----------------------------------------------------------------------------
   dashboard:
     build:
       context: ./Frontend/user-dashboard
@@ -139,18 +218,122 @@ services:
     container_name: wavyassets-user-dashboard
     restart: unless-stopped
     ports:
-      - "${DASHBOARD_PORT:-5174}:80"
+      - "${DASHBOARD_FRONTEND_PORT:-${DASHBOARD_PORT:-5174}}:80"
     environment:
       - PORT=80
       - BACKEND_HOST=wavyassets-backend-user-dashboard
       - BACKEND_PORT=4000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       backend-user-dashboard:
         condition: service_healthy
     networks:
-      - wavyassets-network
+      wavyassets-network:
+        aliases:
+          - user-dashboard-frontend
+          - wavyassets-user-dashboard
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:80/healthz || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:$${PORT:-80}/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 256M
+        reservations:
+          cpus: "0.10"
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ----------------------------------------------------------------------------
+  # 5. Supreme Admin Panel Backend Service
+  # ----------------------------------------------------------------------------
+  backend-admin-panel:
+    build:
+      context: ./Backend/admin-panel
+      dockerfile: Dockerfile
+      target: runner
+    image: wavyassets/admin-panel-backend:1.0.0
+    container_name: wavyassets-backend-admin-panel
+    restart: unless-stopped
+    # Production Hardening: Bind internal API ports to host loopback (127.0.0.1) only
+    ports:
+      - "${BACKEND_BIND_IP:-127.0.0.1}:${ADMIN_BACKEND_PORT:-4002}:4002"
+    env_file:
+      - ./Backend/admin-panel/.env
+    environment:
+      - NODE_ENV=production
+      - PORT=4002
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/wavyassets?schema=public}
+    # Production Hardening: exec ensures tini directly supervises node for immediate SIGTERM handling
+    command: sh -c "npx prisma db push --skip-generate && exec node dist/src/main.js"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      wavyassets-network:
+        aliases:
+          - admin-panel-backend
+          - wavyassets-backend-admin-panel
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:$${PORT:-4002}/api/v1/overview/summary || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.50"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ----------------------------------------------------------------------------
+  # 6. Supreme Admin Panel Frontend Service
+  # ----------------------------------------------------------------------------
+  admin-panel:
+    build:
+      context: ./Frontend/admin-panel
+      dockerfile: Dockerfile
+      target: runner
+    image: wavyassets/admin-panel-frontend:1.0.0
+    container_name: wavyassets-admin-frontend
+    restart: unless-stopped
+    ports:
+      - "${ADMIN_FRONTEND_PORT:-5175}:80"
+    environment:
+      - PORT=80
+      - BACKEND_HOST=wavyassets-backend-admin-panel
+      - BACKEND_PORT=4002
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      backend-admin-panel:
+        condition: service_healthy
+    networks:
+      wavyassets-network:
+        aliases:
+          - admin-panel-frontend
+          - wavyassets-admin-frontend
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:$${PORT:-80}/healthz || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -170,15 +353,11 @@ services:
         max-file: "3"
 
 volumes:
-  backend_sqlite_data:
-    name: wavyassets_landing_backend_data
-    driver: local
-  backend_dashboard_sqlite_data:
-    name: wavyassets_dashboard_backend_data
+  postgres_data:
+    name: wavyassets_postgres_data
     driver: local
 
 networks:
   wavyassets-network:
     name: wavyassets_institutional_network
     driver: bridge
-

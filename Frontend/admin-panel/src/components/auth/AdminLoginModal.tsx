@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { ShieldCheck, Key, Mail, ShieldAlert } from "lucide-react"
 import { useAdminAuthStore } from "../../store/useAdminAuthStore"
 import { BrandLogo } from "../common/BrandLogo"
+import { FaviconSpinner } from "../common/FaviconSpinner"
 import { loginAdmin } from "../../api/auth"
 
 export const AdminLoginModal: React.FC = () => {
@@ -112,8 +113,17 @@ export const AdminLoginModal: React.FC = () => {
               disabled={isSubmitting}
               className="px-4 py-2 rounded-[4px] bg-gold-accent hover:bg-[#C5A028] text-bg-canvas font-semibold text-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
-              <ShieldCheck className="w-4 h-4" />
-              <span>{isSubmitting ? "Authenticating..." : "Authorize Session"}</span>
+              {isSubmitting ? (
+                <>
+                  <FaviconSpinner size="xs" variant="minimal" />
+                  <span>Authenticating...</span>
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Authorize Session</span>
+                </>
+              )}
             </button>
           </div>
         </form>

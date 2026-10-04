@@ -4,9 +4,11 @@ import {
   BadRequestException,
   ConflictException,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/services/prisma.service';
 import { CryptoService } from '../../common/services/crypto.service';
+import { EmailService } from '../../common/services/email.service';
 import { EventsGateway } from '../events/events.gateway';
 import { ApproveDepositDto } from './dto/approve-deposit.dto';
 import { RejectDepositDto } from './dto/reject-deposit.dto';
@@ -33,7 +35,9 @@ export class TreasuryService {
     private readonly prisma: PrismaService,
     private readonly cryptoService: CryptoService,
     private readonly eventsGateway: EventsGateway,
+    @Optional() private readonly emailService?: EmailService,
   ) {}
+
 
   /**
    * Retrieves pending inbound deposits requiring treasury receipt verification
@@ -60,6 +64,20 @@ export class TreasuryService {
         { counterparty: { contains: term } },
         { accountNumber: { contains: term } },
       ];
+    }
+
+    // Backfill any zero/null amounts on LedgerTransaction from their ledger entry
+    try {
+      await this.prisma.$executeRawUnsafe(`
+        UPDATE "LedgerTransaction" lt
+        SET "amount" = ABS(le."amount")
+        FROM "LedgerEntry" le
+        WHERE lt."id" = le."transactionId"
+          AND (lt."amount" IS NULL OR lt."amount" = 0)
+          AND le."amount" != 0
+      `);
+    } catch {
+      // Continue gracefully if engine restricts update
     }
 
     const [total, pendingGrouped, transactions] = await Promise.all([
@@ -98,42 +116,59 @@ export class TreasuryService {
       }),
     ]);
 
-    let totalPendingAmountUsd = 0;
-    const pendingByCurrency: Record<string, number> = {};
+    // Query recent deposit receipt audit logs
+    const receiptAuditLogs = typeof (this.prisma as any).auditLog?.findMany === 'function'
+      ? await (this.prisma as any).auditLog.findMany({
+          where: { action: 'DEPOSIT_RECEIPT_UPLOAD' },
+          orderBy: { createdAt: 'desc' },
+          take: 200,
+        })
+      : [];
 
-    if (pendingGrouped.length > 0) {
-      for (const group of pendingGrouped) {
-        const cur = (group.currency || 'USD').toUpperCase();
-        const sum = Number(group._sum.amount || 0);
-        pendingByCurrency[cur] = sum;
-        const rate = FX_TO_USD[cur] ?? 1.0;
-        totalPendingAmountUsd += sum * rate;
-      }
-    } else {
-      for (const tx of transactions) {
-        const amt = Number(tx.amount || 0);
-        const cur = (tx.currency || 'USD').toUpperCase();
-        pendingByCurrency[cur] = (pendingByCurrency[cur] || 0) + amt;
-        const rate = FX_TO_USD[cur] ?? 1.0;
-        totalPendingAmountUsd += amt * rate;
+    const receiptsByTx = new Map<string, { receiptUrl?: string; txHash?: string; senderName?: string; senderBank?: string }>();
+    for (const log of receiptAuditLogs) {
+      try {
+        if (!log.metadata) continue;
+        const meta = JSON.parse(log.metadata);
+        if (meta.transactionId && !receiptsByTx.has(meta.transactionId)) {
+          receiptsByTx.set(meta.transactionId, meta);
+        }
+        if (meta.referenceId && !receiptsByTx.has(meta.referenceId)) {
+          receiptsByTx.set(meta.referenceId, meta);
+        }
+      } catch {
+        // Continue gracefully on JSON parse error
       }
     }
 
+    let totalPendingAmountUsd = 0;
+    const pendingByCurrency: Record<string, number> = {};
+
     const items = transactions.map((tx) => {
-      const amt = Number(tx.amount);
+      const positiveEntry = tx.entries.find((e) => Number(e.amount) > 0);
+      const entryAmt = positiveEntry ? Math.abs(Number(positiveEntry.amount)) : 0;
+      const amt = Number(tx.amount) > 0 ? Number(tx.amount) : entryAmt;
+      const cur = (tx.currency || 'USD').toUpperCase();
+
+      pendingByCurrency[cur] = (pendingByCurrency[cur] || 0) + amt;
+      const rate = FX_TO_USD[cur] ?? 1.0;
+      totalPendingAmountUsd += amt * rate;
 
       const userEntry = tx.entries.find((e) => e.account?.user);
       const user = userEntry?.account?.user || null;
+      const receiptMeta = receiptsByTx.get(tx.id) || receiptsByTx.get(tx.referenceId);
 
       return {
         id: tx.id,
         referenceId: tx.referenceId,
         amount: amt,
-        currency: tx.currency,
+        currency: tx.currency || 'USD',
         rail: tx.rail || 'SWISS_SIC',
-        counterparty: tx.counterparty || 'Institutional Depositor',
-        accountNumber: tx.accountNumber || 'CH93 0023 8812 4019 8821 0',
+        counterparty: receiptMeta?.senderName || tx.counterparty || 'Institutional Depositor',
+        accountNumber: receiptMeta?.senderBank || tx.accountNumber || 'CH93 0023 8812 4019 8821 0',
         description: tx.description,
+        proofReceiptUrl: receiptMeta?.receiptUrl || null,
+        txHash: receiptMeta?.txHash || null,
         status: tx.status,
         createdAt: tx.createdAt,
         user: user
@@ -147,6 +182,7 @@ export class TreasuryService {
           : null,
       };
     });
+
 
     return {
       items,
@@ -198,7 +234,9 @@ export class TreasuryService {
       );
     }
 
-    const amount = Number(tx.amount);
+    const positiveEntry = tx.entries.find((e) => Number(e.amount) > 0);
+    const entryAmt = positiveEntry ? Math.abs(Number(positiveEntry.amount)) : 0;
+    const amount = Number(tx.amount) > 0 ? Number(tx.amount) : entryAmt;
     const currency = (tx.currency || 'USD').toUpperCase();
 
     const result = await this.prisma.$transaction(async (prismaTx) => {
@@ -207,6 +245,7 @@ export class TreasuryService {
         where: { id: tx.id, type: 'DEPOSIT', status: 'PENDING' },
         data: {
           status: 'SETTLED',
+          amount,
         },
       });
 
@@ -330,6 +369,28 @@ export class TreasuryService {
       status: 'SETTLED',
     });
 
+    // Dispatch institutional email notification to client
+    if (result.userId && this.emailService) {
+      this.prisma.user
+        .findUnique({ where: { id: result.userId } })
+        .then((user) => {
+          if (user?.email) {
+            this.emailService?.sendDepositNotification({
+              toEmail: user.email,
+              userFullName: user.fullName ?? undefined,
+              amount: result.amount,
+              currency: result.currency,
+              referenceId: result.referenceId,
+              rail: tx.rail || 'SWISS_SIC',
+              status: 'APPROVED',
+              newBalance: result.newBalance,
+              timestamp: new Date(),
+            });
+          }
+        })
+        .catch((e) => this.logger.warn(`Failed to dispatch deposit approved email: ${e?.message}`));
+    }
+
     return result;
   }
 
@@ -344,6 +405,15 @@ export class TreasuryService {
   ) {
     const tx = await this.prisma.ledgerTransaction.findUnique({
       where: { id: txId },
+      include: {
+        entries: {
+          include: {
+            account: {
+              include: { user: true },
+            },
+          },
+        },
+      },
     });
 
     if (!tx) {
@@ -401,8 +471,30 @@ export class TreasuryService {
       status: 'FAILED',
     });
 
+    // Dispatch institutional email notification to client
+    if (this.emailService) {
+      this.resolveUserForTx(tx)
+        .then((user: { id: string; email: string; fullName: string | null } | null) => {
+          if (user?.email) {
+            this.emailService?.sendDepositNotification({
+              toEmail: user.email,
+              userFullName: user.fullName ?? undefined,
+              amount: Number(tx.amount),
+              currency: tx.currency || 'USD',
+              referenceId: tx.referenceId,
+              rail: tx.rail || 'SWISS_SIC',
+              status: 'REJECTED',
+              reason: dto?.reason,
+              timestamp: new Date(),
+            });
+          }
+        })
+        .catch((e: any) => this.logger.warn(`Failed to dispatch deposit rejected email: ${e?.message}`));
+    }
+
     return result;
   }
+
 
   /**
    * Retrieves pending outbound withdrawals requiring treasury clearance
@@ -752,6 +844,27 @@ export class TreasuryService {
       currency: result.currency,
     });
 
+    // Dispatch institutional email notification to client if fully settled
+    if (result.isFullySettled && this.emailService) {
+      this.resolveUserForTx(tx)
+        .then((user: { id: string; email: string; fullName: string | null } | null) => {
+          if (user?.email) {
+            this.emailService!.sendWithdrawalNotification({
+              toEmail: user.email,
+              userFullName: user.fullName ?? undefined,
+              amount: result.amount,
+              currency: result.currency || 'USD',
+              referenceId: result.referenceId,
+              rail: tx.rail || 'SWISS_SIC',
+              status: 'APPROVED',
+              destination: (tx.accountNumber || tx.counterparty) ?? undefined,
+              timestamp: new Date(),
+            });
+          }
+        })
+        .catch((e: any) => this.logger.warn(`Failed to dispatch withdrawal approved email: ${e?.message}`));
+    }
+
     return result;
   }
 
@@ -894,7 +1007,63 @@ export class TreasuryService {
       refundedAmount: amount,
     });
 
+    // Dispatch institutional email notification to client
+    if (this.emailService) {
+      this.resolveUserForTx(tx)
+        .then((user: { id: string; email: string; fullName: string | null } | null) => {
+          if (user?.email) {
+            this.emailService!.sendWithdrawalNotification({
+              toEmail: user.email,
+              userFullName: user.fullName ?? undefined,
+              amount: result.refundedAmount,
+              currency: result.currency || 'USD',
+              referenceId: tx.referenceId,
+              rail: tx.rail || 'SWISS_SIC',
+              status: 'REJECTED',
+              destination: (tx.accountNumber || tx.counterparty) ?? undefined,
+              reason: dto?.reason,
+              newBalance: result.newBalance,
+              timestamp: new Date(),
+            });
+          }
+        })
+        .catch((e: any) => this.logger.warn(`Failed to dispatch withdrawal rejected email: ${e?.message}`));
+    }
+
     return result;
   }
+
+  /**
+   * Helper to resolve the user associated with a ledger transaction
+   */
+  private async resolveUserForTx(
+    tx: any,
+  ): Promise<{ id: string; email: string; fullName: string | null } | null> {
+    if (tx.entries && tx.entries.length > 0) {
+      const userEntry = tx.entries.find((e: any) => e.account?.user);
+      if (userEntry?.account?.user) return userEntry.account.user;
+    }
+
+    if (tx.accountNumber) {
+      const matched = await this.prisma.user.findFirst({
+        where: {
+          OR: [{ id: tx.accountNumber }, { email: tx.accountNumber }],
+        },
+      });
+      if (matched) return matched;
+    }
+
+    const entry = await this.prisma.ledgerEntry.findFirst({
+      where: { transactionId: tx.id },
+      include: {
+        account: {
+          include: { user: true },
+        },
+      },
+    });
+
+    return entry?.account?.user || null;
+  }
 }
+
 

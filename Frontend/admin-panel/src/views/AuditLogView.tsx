@@ -15,13 +15,6 @@ export const AuditLogView: React.FC = () => {
   } = useQuery({
     queryKey: ["audit-telemetry"],
     queryFn: fetchAuditTelemetry,
-    initialData: {
-      totalLogEntries: 14892,
-      todayExecutions: 38,
-      merkleBlock: 19842109,
-      merkleRoot: "0x7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
-      retentionYears: 10,
-    },
   })
 
   return (

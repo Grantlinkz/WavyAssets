@@ -162,16 +162,71 @@ export const DepositReceiptViewerModal: React.FC<DepositReceiptViewerModalProps>
 
           {/* Proof Receipt Viewer Card */}
           <div className="flex flex-col gap-2">
-            <span className="font-label-caps text-label-caps text-secondary uppercase tracking-wider">
-              Cryptographic Swift MT103 / Fedwire Receipt Document
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="font-label-caps text-label-caps text-secondary uppercase tracking-wider">
+                Cryptographic Receipt &amp; Proof of Payment Document
+              </span>
+              {selectedDeposit.proofReceiptUrl && (
+                <span className="bg-status-success/10 text-status-success border border-status-success/30 font-mono text-[11px] px-2 py-0.5 rounded font-semibold">
+                  Client Receipt Attached ✓
+                </span>
+              )}
+            </div>
+
+            {selectedDeposit.proofReceiptUrl ? (
+              <div className="bg-bg-canvas border border-border-subtle rounded p-4 flex flex-col gap-3">
+                <div className="flex justify-between items-center text-on-surface border-b border-border-subtle pb-2">
+                  <span className="font-bold font-mono text-body-sm text-gold-accent">
+                    UPLOADED RECEIPT DOCUMENT
+                  </span>
+                  <a
+                    href={selectedDeposit.proofReceiptUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    download={`receipt_${selectedDeposit.id}.png`}
+                    className="text-gold-accent hover:underline font-mono text-[11px]"
+                  >
+                    Open / Download Original &rarr;
+                  </a>
+                </div>
+
+                {selectedDeposit.proofReceiptUrl.startsWith("data:image/") ||
+                selectedDeposit.proofReceiptUrl.match(/\.(png|jpe?g|webp|gif)/i) ? (
+                  <div className="relative rounded overflow-hidden border border-border-subtle bg-black/40 max-h-[360px] flex items-center justify-center p-2">
+                    <img
+                      src={selectedDeposit.proofReceiptUrl}
+                      alt="Deposit Transfer Receipt"
+                      className="max-h-[340px] max-w-full object-contain rounded"
+                    />
+                  </div>
+                ) : (
+                  <div className="p-4 bg-bg-panel border border-border-subtle rounded flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-gold-accent" />
+                      <span className="font-mono text-body-sm text-on-surface">
+                        Receipt Attachment (PDF / Document)
+                      </span>
+                    </div>
+                    <a
+                      href={selectedDeposit.proofReceiptUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1 bg-gold-accent text-bg-canvas font-mono font-semibold text-xs rounded hover:opacity-90 transition-opacity"
+                    >
+                      View Document
+                    </a>
+                  </div>
+                )}
+              </div>
+            ) : null}
+
             <div className="bg-bg-canvas border border-border-subtle rounded p-4 font-mono text-body-sm text-secondary flex flex-col gap-2">
               <div className="flex justify-between items-center text-on-surface border-b border-border-subtle pb-2">
-                <span className="font-bold">DOCUMENT TYPE: SWIFT MT103 SINGLE CUSTOMER CREDIT</span>
+                <span className="font-bold">DOCUMENT TYPE: SWIFT MT103 / DvP CLEARANCE MANDATE</span>
                 <span className="text-status-success font-semibold">AUTHENTICATED SWIFT DvP</span>
               </div>
               <div className="text-[12px] leading-relaxed text-secondary/90">
-                :20: TRANSACTION REFERENCE NUMBER: {selectedDeposit.txHash || `CH-SIC-${selectedDeposit.id}`}
+                :20: TRANSACTION REFERENCE NUMBER: {selectedDeposit.txHash || selectedDeposit.wireMemo || `CH-SIC-${selectedDeposit.id}`}
                 <br />
                 :23B: BANK OPERATION CODE: CRED
                 <br />
@@ -187,6 +242,7 @@ export const DepositReceiptViewerModal: React.FC<DepositReceiptViewerModalProps>
               </div>
             </div>
           </div>
+
 
           {/* Reject Reason Input if rejecting */}
           {isRejecting && (

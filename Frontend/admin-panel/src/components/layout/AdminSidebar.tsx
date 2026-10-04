@@ -10,6 +10,7 @@ import {
   CreditCard,
   History,
   CheckCircle2,
+  UserCog,
 } from "lucide-react"
 import { useAdminNavStore, type AdminRoute } from "../../store/useAdminNavStore"
 import { fetchBadgeCounts } from "../../api/overview"
@@ -34,7 +35,7 @@ export const AdminSidebar: React.FC = () => {
     queryKey: ["admin-badge-counts"],
     queryFn: fetchBadgeCounts,
     enabled: isAuthenticated,
-    refetchInterval: 10000,
+    refetchInterval: 3000,
   })
 
   // Synchronize incoming badge telemetry with global nav store
@@ -98,9 +99,11 @@ export const AdminSidebar: React.FC = () => {
       label: "Treasury",
       icon: Wallet,
       badge:
-        treasuryCount > 0
-          ? { text: `${treasuryCount} Sign-Offs`, variant: "warning" }
-          : { text: "Live", variant: "success" },
+        urgentCount > 0
+          ? { text: `${urgentCount} Pending`, variant: "warning" }
+          : treasuryCount > 0
+            ? { text: `${treasuryCount} Sign-Offs`, variant: "warning" }
+            : { text: "Live", variant: "success" },
     },
     {
       id: "deposit-rails",
@@ -121,6 +124,12 @@ export const AdminSidebar: React.FC = () => {
       id: "audit-log",
       label: "Audit Log",
       icon: History,
+    },
+    {
+      id: "admin-directory",
+      label: "Admin Directory",
+      icon: UserCog,
+      badge: { text: "RBAC", variant: "cyan" },
     },
   ]
 

@@ -10,6 +10,7 @@ export type AdminRoute =
   | "deposit-rails"
   | "vip-cards"
   | "audit-log"
+  | "admin-directory"
 
 export interface AdminNavState {
   activeRoute: AdminRoute

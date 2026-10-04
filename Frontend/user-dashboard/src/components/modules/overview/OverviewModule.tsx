@@ -92,6 +92,7 @@ export const OverviewModule: React.FC = () => {
   ];
 
   const transactions = useLiquidStore((s) => s.transactions);
+  const dcaSchedules = useLiquidStore((s) => s.dcaSchedules);
   const userRealEstateHoldings = useAlternativeStore((s) => s.userRealEstateHoldings);
   const userVehicleHoldings = useAlternativeStore((s) => s.userVehicleHoldings);
 
@@ -132,6 +133,26 @@ export const OverviewModule: React.FC = () => {
         status: tx.status,
         time: tx.timestamp,
       });
+    });
+
+    // Active crypto DCA execution schedules (ensure immediate appearance on refresh)
+    dcaSchedules.forEach((dca) => {
+      const alreadyInBlotter = list.some(
+        (item) => item.id === dca.id || item.id === `tx-${dca.id}` || (item.asset.includes(dca.asset) && Math.abs(item.numericPrice - dca.amountUsd) < 0.01)
+      );
+      if (!alreadyInBlotter) {
+        list.push({
+          id: `dca-pos-${dca.id}`,
+          asset: `DCA Buy: ${dca.asset} (${dca.frequency})`,
+          side: 'SWAP',
+          size: formatMaskedCurrency(dca.amountUsd, maskBalances),
+          price: formatMaskedCurrency(dca.amountUsd, maskBalances),
+          numericPrice: dca.amountUsd,
+          venue: 'Geneva OTC Bunker',
+          status: dca.active ? 'CLEARED' : 'PAUSED',
+          time: dca.nextExecution || 'Active Schedule',
+        });
+      }
     });
 
     // Active real estate holdings
@@ -180,7 +201,7 @@ export const OverviewModule: React.FC = () => {
       const cmp = a.time.localeCompare(b.time);
       return blotterSortOrder === 'asc' ? cmp : -cmp;
     });
-  }, [transactions, userRealEstateHoldings, userVehicleHoldings, blotterSortField, blotterSortOrder, maskBalances]);
+  }, [transactions, dcaSchedules, userRealEstateHoldings, userVehicleHoldings, blotterSortField, blotterSortOrder, maskBalances]);
 
   const totalBlotterPages = Math.max(1, Math.ceil(dynamicBlotter.length / BLOTTER_PAGE_SIZE));
   const safeBlotterPage = Math.min(blotterPage, totalBlotterPages);
