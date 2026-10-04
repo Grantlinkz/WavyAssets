@@ -7,7 +7,7 @@
 [![NestJS](https://img.shields.io/badge/NestJS-11.0-E0234E?logo=nestjs)](https://nestjs.com/)
 [![Prisma ORM](https://img.shields.io/badge/Prisma-6.4-2D3748?logo=prisma)](https://www.prisma.io/)
 [![Vitest](https://img.shields.io/badge/Tests-630%2B_Passing-brightgreen?logo=vitest)](https://vitest.dev/)
-[![Docker](https://img.shields.io/badge/Docker-6_Container_Cluster-2496ED?logo=docker)](https://www.docker.com/)
+[![Docker](https://img.shields.io/badge/Docker-8_Container_Cluster-2496ED?logo=docker)](https://www.docker.com/)
 
 > **WavyAssets Sovereign Wealth Management & Institutional Operating System**  
 > High-discretion digital wealth management, institutional custody, double-entry financial ledgering, supreme administrative command, and multi-asset orchestration across 7 sovereign asset verticals.
@@ -32,7 +32,15 @@ Integrated across the User Dashboard via [`src/lib/smartsupp.ts`](./Frontend/use
 
 ---
 
-## 2. Monorepo Repository Structure
+## 2. Visual Showcase & Platform Tour
+
+| <img src="./snapshot/Home%20page.png" width="100%" alt="Institutional Landing Page" /><br /><sub>**01. Institutional Landing Showcase**</sub> | <img src="./snapshot/About.png" width="100%" alt="About Philosophy & Architecture" /><br /><sub>**02. Architecture & Philosophy**</sub> | <img src="./snapshot/Contact.png" width="100%" alt="Global Concierge & Desks" /><br /><sub>**03. Global Desks & Concierge Inquiry**</sub> |
+| :---: | :---: | :---: |
+| <img src="./snapshot/Signin.png" width="100%" alt="Unified Sovereign Authentication" /><br /><sub>**04. Unified Sovereign Auth & OTP**</sub> | <img src="./snapshot/User%20DashBoard.png" width="100%" alt="Authenticated User Dashboard" /><br /><sub>**05. Authenticated Command Deck**</sub> | <img src="./snapshot/Admin.png" width="100%" alt="Supreme Operational Admin Panel" /><br /><sub>**06. Supreme Admin & Treasury Blotter**</sub> |
+
+---
+
+## 3. Monorepo Repository Structure
 
 ```
 WavyAssets/ (Git Root)
@@ -84,14 +92,17 @@ WavyAssets/ (Git Root)
 │   │   └── README.md                         # Terminal documentation
 │   ├── docker-compose.yml                    # Unified compose orchestrating all 3 frontend terminals
 │   └── README.md                             # Frontend architecture & design system guide
-├── docker-compose.yml                        # Unified Monorepo Compose (All 6 services on shared network)
+├── docker/                                   # Hardened Edge Ingress & Network Security
+│   └── nginx/                                # Production Nginx reverse proxy with TLS 1.2/1.3 & Certbot
+├── snapshot/                                 # Platform visual snapshots & UI interface previews
+├── docker-compose.yml                        # Unified Monorepo Compose (8 services: 3 Frontends, 3 Backends, Postgres, Nginx Ingress)
 ├── render.yaml                               # Cloud infrastructure deployment blueprint
 └── README.md                                 # Master platform architecture & operating guide
 ```
 
 ---
 
-## 3. Technology Stack & Service Architecture
+## 4. Technology Stack & Service Architecture
 
 | Domain / Service | Framework & Runtime | Host Port | Internal Port | Health Probe | Key Capabilities & Protocols |
 | :--- | :--- | :---: | :---: | :--- | :--- |
@@ -101,10 +112,12 @@ WavyAssets/ (Git Root)
 | **Backend: Dashboard** | NestJS 11 + Express + SWC (Node 22) | `:4001` | `:4000` | `GET /health` | Double-entry ledger, 48h withdrawal quarantine, WebAuthn/FIDO2, `/ws/portfolio`. |
 | **Frontend: Admin Panel** | React 19 + Vite 8 + Tailwind CSS v4 | `:5175` | `:80` | `GET /healthz` | Administrative KPI blotters, KYC approval triage, cold rail setup, emergency deck. |
 | **Backend: Admin Panel** | NestJS 11 + Express + SWC (Node 22) | `:4002` | `:4002` | `GET /api/v1/overview/summary` | Granular RBAC, audit blotter, emergency lockdown, TOTP 2FA, `/api/v1/overview`. |
+| **Database: PostgreSQL** | PostgreSQL 16 Alpine Relational Core | `:5432` | `:5432` | `pg_isready` | ACID double-entry transactions, relational integrity, connection pooling. |
+| **Edge Ingress: Nginx** | Hardened Nginx Alpine Reverse Proxy | `:80, :443` | `:80, :443` | `GET /healthz` | TLS 1.2/1.3 cryptographic termination, virtual host routing, Certbot ACME support. |
 
 ---
 
-## 4. Cross-Domain Authentication & Seamless Handoff Lifecycle
+## 5. Cross-Domain Authentication & Seamless Handoff Lifecycle
 
 The platform implements an air-gapped cryptographic handoff protocol to transition users seamlessly from public landing pages into the authenticated dashboard:
 
@@ -128,7 +141,7 @@ The platform implements an air-gapped cryptographic handoff protocol to transiti
 
 ---
 
-## 5. Engineering Invariants & Quality Standards
+## 6. Engineering Invariants & Quality Standards
 
 1. **Sub-50ms View Swapping**: Client-side reactive vertical switching executes in $<50$ms with zero full-page browser reloads.
 2. **Zero Cumulative Layout Shift (CLS)**: Pre-dimensioned structural skeletons (`min-height: 540px`) eliminate layout shifts.
@@ -141,10 +154,10 @@ The platform implements an air-gapped cryptographic handoff protocol to transiti
 
 ---
 
-## 6. Docker Orchestration Workflows
+## 7. Docker Orchestration Workflows
 
-### Option A: Complete 6-Service Monorepo Stack
-Launch the entire institutional cluster (3 Frontends + 3 Backends) with automated container healthchecks and dependency management:
+### Option A: Complete 8-Service Monorepo Stack
+Launch the entire institutional cluster (3 Frontends + 3 Backends + PostgreSQL + Nginx Ingress) with automated container healthchecks and dependency management:
 
 ```bash
 # Build and launch all containers with edge Nginx reverse proxy
@@ -223,7 +236,7 @@ docker compose -f Frontend/admin-panel/docker-compose.yml -f Frontend/admin-pane
 
 ---
 
-## 7. Local Development Workflows (Native Node)
+## 8. Local Development Workflows (Native Node)
 
 Run each service in separate terminal sessions during local development without Docker:
 
@@ -249,7 +262,7 @@ cd Frontend/admin-panel && npm ci && npm run dev
 
 ---
 
-## 8. Automated Test Verification (630+ Tests Passing)
+## 9. Automated Test Verification (630+ Tests Passing)
 
 All projects maintain comprehensive automated test suites powered by **Vitest**:
 
@@ -275,7 +288,7 @@ cd Backend/admin-panel && npm test
 
 ---
 
-## 9. Security, Compliance & License
+## 10. Security, Compliance & License
 
 - **FINMA AMLA & SOC-2 Alignment**: Designed to comply with Swiss FINMA AMLA guidelines, corporate UBO transparency registries, and institutional KYC tier hierarchies.
 - **Hardware Enclave Signatures**: Native WebAuthn/FIDO2 hardware key authentication (YubiKey 5C NFC, Apple Touch ID / Secure Enclave).

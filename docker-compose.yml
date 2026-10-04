@@ -73,7 +73,6 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4000
-      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-wavyassets}?schema=public}
     # Production Hardening: exec ensures tini directly supervises node for immediate SIGTERM handling
     command: sh -c "npx prisma db push --skip-generate && exec node dist/main.js"
     extra_hosts:
@@ -176,7 +175,6 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4000
-      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-wavyassets}?schema=public}
     # Production Hardening: exec ensures tini directly supervises node for immediate SIGTERM handling
     command: sh -c "npx prisma db push --skip-generate && exec node dist/src/main.js"
     extra_hosts:
@@ -279,7 +277,6 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4002
-      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-wavyassets}?schema=public}
     # Production Hardening: exec ensures tini directly supervises node for immediate SIGTERM handling
     command: sh -c "npx prisma db push --skip-generate && exec node dist/src/main.js"
     extra_hosts:
@@ -382,6 +379,8 @@ services:
       - DASHBOARD_DOMAIN=${DASHBOARD_DOMAIN:-dashboard.wavyassets.com}
       - DASHBOARD_ALT_DOMAIN=${DASHBOARD_ALT_DOMAIN:-app.wavyassets.com}
       - ADMIN_DOMAIN=${ADMIN_DOMAIN:-admin.wavyassets.com}
+      - INGRESS_HTTPS_PORT=${INGRESS_HTTPS_PORT:-443}
+      - NODE_ENV=${NODE_ENV:-production}
     volumes:
       - ./docker/nginx/ssl:/etc/nginx/ssl
       - certbot_www:/var/www/certbot:ro

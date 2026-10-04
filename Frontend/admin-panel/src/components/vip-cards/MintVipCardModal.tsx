@@ -4,7 +4,7 @@ import { X, CreditCard, ShieldCheck, Check, Info } from "lucide-react"
 import { FaviconSpinner } from "../common/FaviconSpinner"
 import { useVipCardsStore } from "../../store/useVipCardsStore"
 import { useAdminAuthStore } from "../../store/useAdminAuthStore"
-import { mintVipCard, type VipCardSubstrate, type VipCardTier } from "../../api/vipCards"
+import { mintVipCard, fetchVipCards, type VipCardSubstrate, type VipCardTier } from "../../api/vipCards"
 import { fetchUsers } from "../../api/users"
 import { VipCard3DPreview } from "./VipCard3DPreview"
 import { formatCurrency } from "../../lib/formatters"
@@ -23,6 +23,13 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
     queryKey: ["users-mint-list"],
     queryFn: () => fetchUsers(),
   })
+
+  const { data: existingCards } = useQuery({
+    queryKey: ["vip-cards-mint-modal"],
+    queryFn: () => fetchVipCards({ status: "ALL", limit: 500 }),
+  })
+
+  const existingUserCard = existingCards?.find((c) => c.userId === draftMint.userId)
 
   const [formError, setFormError] = useState<string | null>(null)
   const [isSuccess, setIsSuccess] = useState(false)
@@ -163,9 +170,17 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
 
               {/* Client Selection */}
               <div className="space-y-1">
-                <label className="block font-mono text-[10px] uppercase tracking-wider text-secondary">
-                  Client &amp; Supreme Entity <span className="text-status-danger">*</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="block font-mono text-[10px] uppercase tracking-wider text-secondary">
+                    Client &amp; Supreme Entity <span className="text-status-danger">*</span>
+                  </label>
+                  {existingUserCard && (
+                    <span className="font-mono text-[10px] text-gold-accent flex items-center gap-1.5 font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-gold-accent animate-pulse" />
+                      Active: {existingUserCard.tier} (•••• {existingUserCard.cardNumberLast4}) — Will Upgrade
+                    </span>
+                  )}
+                </div>
                 <select
                   value={draftMint.userId}
                   onChange={(e) => {
@@ -519,7 +534,13 @@ export const MintVipCardModal: React.FC<MintVipCardModalProps> = ({ isOpen }) =>
                 ) : (
                   <>
                     <CreditCard className="w-3.5 h-3.5" />
-                    <span>Mint &amp; Issue Card</span>
+                    <span>
+                      {existingUserCard
+                        ? isCelebrity
+                          ? "Upgrade to Celebrity Pass"
+                          : "Re-Issue / Upgrade VIP Card"
+                        : "Mint & Issue Card"}
+                    </span>
                   </>
                 )}
               </button>

@@ -748,17 +748,17 @@ export class WalletService {
         });
 
         if (existingTx) {
-          if (existingTx.type !== 'DEPOSIT' || existingTx.status !== 'PENDING') {
-            throw new BadRequestException(
-              `Receipt can only be uploaded for PENDING deposits. Current type: ${existingTx.type}, status: ${existingTx.status}`,
-            );
-          }
           for (const entry of existingTx.entries) {
             if (entry.account && entry.account.userId && entry.account.userId !== userId) {
               throw new ForbiddenException(
                 'Cannot attach deposit receipt to a transaction belonging to another user.',
               );
             }
+          }
+          if (existingTx.type !== 'DEPOSIT' || existingTx.status !== 'PENDING') {
+            throw new BadRequestException(
+              `Receipt can only be uploaded for PENDING deposits. Current type: ${existingTx.type}, status: ${existingTx.status}`,
+            );
           }
         } else {
           existingTx = await prismaTx.ledgerTransaction.create({

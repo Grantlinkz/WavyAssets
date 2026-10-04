@@ -18,6 +18,13 @@ upstream admin_panel_upstream {
     keepalive 32;
 }
 
+# Map configured public HTTPS port to URL suffix (standard 443 port is omitted)
+map "${INGRESS_HTTPS_PORT}" $ingress_https_port_suffix {
+    default ":${INGRESS_HTTPS_PORT}";
+    ""      "";
+    "443"   "";
+}
+
 # ------------------------------------------------------------------------------
 # HTTP (Port 80) — ACME Challenge & Global HTTPS Redirect
 # ------------------------------------------------------------------------------
@@ -41,7 +48,7 @@ server {
 
     # 301 Permanent Redirect to HTTPS
     location / {
-        return 301 https://$host$request_uri;
+        return 301 https://$host$ingress_https_port_suffix$request_uri;
     }
 }
 
