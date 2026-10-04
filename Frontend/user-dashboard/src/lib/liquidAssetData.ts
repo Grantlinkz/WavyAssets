@@ -57,6 +57,7 @@ export interface WalletTransaction {
   amountUsd: number;
   status: 'CLEARED' | 'PENDING' | 'SETTLING';
   reference: string;
+  dcaScheduleId?: string;
 }
 
 export const CRYPTO_HOLDINGS_DATA: CryptoHolding[] = [
@@ -1671,7 +1672,7 @@ export function calculateStocksEquitiesNav(
   orders: { symbol: string; shares: number; limitPrice: number; status: string }[]
 ): number {
   return orders
-    .filter((o) => o.status !== 'CANCELLED')
+    .filter((o) => o.status !== 'CANCELLED' && o.status !== 'Cancelled')
     .reduce((sum, o) => {
       const mark =
         STOCKS_HOLDINGS_DATA.find((s) => s.symbol === o.symbol)?.currentMark ?? o.limitPrice;

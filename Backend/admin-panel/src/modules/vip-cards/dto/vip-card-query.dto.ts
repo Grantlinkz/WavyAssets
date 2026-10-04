@@ -2,6 +2,13 @@ import { IsOptional, IsString, IsBoolean, IsEnum } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { VipCardTier, VipCardType } from './mint-card.dto';
 
+export enum VipCardStatusFilter {
+  ALL = 'ALL',
+  ACTIVE = 'ACTIVE',
+  LOCKED = 'LOCKED',
+  IN_TRANSIT = 'IN_TRANSIT',
+}
+
 export class VipCardQueryDto {
   @IsOptional()
   @Type(() => Number)
@@ -31,4 +38,8 @@ export class VipCardQueryDto {
   })
   @IsBoolean()
   isFrozen?: boolean;
+
+  @IsOptional()
+  @IsEnum(VipCardStatusFilter)
+  status?: VipCardStatusFilter;
 }

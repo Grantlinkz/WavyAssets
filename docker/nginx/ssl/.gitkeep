@@ -1,0 +1,3 @@
+# Place production SSL/TLS certificates here:
+# - cert.pem (Full certificate chain)
+# - key.pem  (Private key)

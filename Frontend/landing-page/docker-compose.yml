@@ -1,11 +1,6 @@
 # ==============================================================================
 # WavyAssets Landing Page Frontend — Institutional Docker Compose Configuration
 # ==============================================================================
-# Architecture:
-# - High-performance Nginx web server with SPA catch-all routing
-# - Dynamic reverse proxy to Backend API Gateway (:4000)
-# - Static asset compression, long-term immutable caching & health probe
-# ==============================================================================
 
 services:
   frontend:
@@ -22,10 +17,12 @@ services:
       - PORT=80
       - BACKEND_HOST=${BACKEND_HOST:-wavyassets-landing-backend}
       - BACKEND_PORT=${BACKEND_PORT:-4000}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
-      - wavyassets-network
+      - wavyassets-landing-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:80/healthz || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:$${PORT:-80}/healthz || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -45,6 +42,6 @@ services:
         max-file: "3"
 
 networks:
-  wavyassets-network:
-    name: wavyassets_institutional_network
-    driver: bridge
+  wavyassets-landing-network:
+    name: wavyassets_landing_network
+    external: true

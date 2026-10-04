@@ -5,10 +5,6 @@ import {
   X,
   AlertTriangle,
   CheckCircle2,
-  Lock,
-  Layers,
-  FileText,
-  DollarSign,
 } from "lucide-react"
 import { useUserRegistryStore } from "../../store/useUserRegistryStore"
 import { deleteUser } from "../../api/users"

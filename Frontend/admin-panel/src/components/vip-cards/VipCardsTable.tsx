@@ -56,11 +56,17 @@ export const VipCardsTable: React.FC = () => {
     toggleMutation.mutate({ id: card.id, isFrozen: !card.isFrozen })
   }
 
+  const { data: allCardsData } = useQuery({
+    queryKey: ["vip-cards", searchQuery, "ALL", "aggregate"],
+    queryFn: () => fetchVipCards({ search: searchQuery, status: "ALL", limit: 1000 }),
+  })
+  const allCards: VipCardItem[] = Array.isArray(allCardsData) ? allCardsData : cards
+
   // Filter calculations
-  const totalCount = cards.length
-  const activeCount = cards.filter((c) => !c.isFrozen).length
-  const lockedCount = cards.filter((c) => c.isFrozen).length
-  const transitCount = cards.filter((c) => c.shippingStatus === "IN_TRANSIT").length
+  const totalCount = allCards.length
+  const activeCount = allCards.filter((c) => !c.isFrozen).length
+  const lockedCount = allCards.filter((c) => c.isFrozen).length
+  const transitCount = allCards.filter((c) => c.shippingStatus === "IN_TRANSIT").length
 
   const getSubstrateBadge = (sub: string) => {
     if (sub.includes("Tungsten")) {
@@ -76,6 +82,14 @@ export const VipCardsTable: React.FC = () => {
         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-bg-canvas border border-secondary/40 text-secondary font-mono text-[10px]">
           <span className="w-1.5 h-1.5 rounded-full bg-secondary shrink-0" />
           <span>Silver Titanium 18g</span>
+        </span>
+      )
+    }
+    if (sub.includes("Celebrity") || sub.includes("Gold")) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-bg-canvas border border-[#FFD700]/50 text-[#FFD700] font-mono text-[10px]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#FFD700] shrink-0" />
+          <span>Celebrity Membership Card</span>
         </span>
       )
     }
@@ -192,41 +206,85 @@ export const VipCardsTable: React.FC = () => {
                   >
                     {/* Cardholder & Account */}
                     <td className="py-2.5 px-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-[4px] bg-bg-elevated border border-border-subtle flex items-center justify-center font-mono text-xs text-gold-accent font-bold">
-                          {card.userName
-                            .split(" ")
-                            .map((n) => n[0])
-                            .slice(0, 2)
-                            .join("")}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-on-surface group-hover:text-gold-accent transition-colors">
-                            {card.userName}
-                          </span>
-                          <span className="font-mono text-[10px] text-secondary">
-                            {card.userCif} • {card.userTier}
-                          </span>
-                        </div>
-                      </div>
+                      {(() => {
+                        const rawCard = card as unknown as Record<string, unknown>
+                        const rawUser = rawCard.user as Record<string, unknown> | undefined
+                        const displayName =
+                          card.userName ||
+                          (typeof rawUser?.fullName === "string" ? rawUser.fullName : null) ||
+                          (typeof rawCard.cardholderName === "string" ? rawCard.cardholderName : null) ||
+                          "VIP Client"
+                        const initials = displayName
+                          .split(" ")
+                          .filter(Boolean)
+                          .map((n) => n[0])
+                          .slice(0, 2)
+                          .join("") || "VC"
+                        const userCif =
+                          card.userCif ||
+                          `CIF-${(card.userId || card.id || "0000").slice(0, 8).toUpperCase()}`
+                        const userTier =
+                          card.userTier ||
+                          (typeof rawUser?.tier === "string" ? `${rawUser.tier} Tier` : "Institutional Tier")
+
+                        return (
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-[4px] bg-bg-elevated border border-border-subtle flex items-center justify-center font-mono text-xs text-gold-accent font-bold">
+                              {initials}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-on-surface group-hover:text-gold-accent transition-colors">
+                                {displayName}
+                              </span>
+                              <span className="font-mono text-[10px] text-secondary">
+                                {userCif} • {userTier}
+                              </span>
+                            </div>
+                          </div>
+                        )
+                      })()}
                     </td>
 
                     {/* Substrate & Tier */}
-                    <td className="py-2.5 px-3">{getSubstrateBadge(card.substrate)}</td>
+                    <td className="py-2.5 px-3">
+                      {getSubstrateBadge(
+                        card.substrate ||
+                          (card.tier === "CELEBRITY"
+                            ? "Celebrity 24K Gold & Diamond"
+                            : card.tier === "TITANIUM"
+                            ? "Silver Titanium"
+                            : card.tier === "Supreme"
+                            ? "Black Supreme Stainless"
+                            : "Obsidian 42g Tungsten")
+                      )}
+                    </td>
 
                     {/* Masked PAN */}
                     <td className="py-2.5 px-3">
                       <span className="font-mono text-xs tracking-widest text-on-surface font-semibold">
-                        {card.maskedPan}
+                        {card.tier === "CELEBRITY" || card.substrate?.includes("Celebrity")
+                          ? "MEMBERSHIP PASS"
+                          : card.maskedPan || `•••• •••• •••• ${card.cardNumberLast4 || "0000"}`}
                       </span>
                     </td>
 
                     {/* Daily Limit */}
                     <td className="py-2.5 px-3 text-right">
-                      <span className="font-mono text-xs text-on-surface font-semibold">
-                        {formatCurrency(card.dailySpendLimit)}
-                      </span>
-                      <span className="block font-mono text-[10px] text-secondary">USD / 24h</span>
+                      {card.tier === "CELEBRITY" || card.substrate?.includes("Celebrity") ? (
+                        <>
+                          <span className="font-mono text-xs text-gold-accent font-semibold">
+                            Event Access Only
+                          </span>
+                          <span className="block font-mono text-[10px] text-secondary">Non-Spending Pass</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="font-mono text-xs text-on-surface font-semibold">
+                            {formatCurrency(card.dailySpendLimit)}
+                          </span>
+                          <span className="block font-mono text-[10px] text-secondary">USD / 24h</span>
+                        </>
+                      )}
                     </td>
 
                     {/* Medium */}

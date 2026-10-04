@@ -6,6 +6,7 @@ describe('Cryptographic OTP Generation & Bearer Token Hashing', () => {
   const mockConfigService = {
     get: (key: string) => {
       if (key === 'security.jwtSecret') return 'test_hmac_secret_key_64_bytes_long_string_for_testing!';
+      if (key === 'security.handoffTicketSecret') return 'test_handoff_ticket_secret_key_minimum_32_chars!';
       return null;
     },
   } as ConfigService;

@@ -22,13 +22,18 @@ interface VipCardsModuleProps {
 export const VipCardsModule: React.FC<VipCardsModuleProps> = ({ maskBalances: propMask }) => {
   const storeMask = useDashboardStore((s) => s.maskBalances);
   const maskBalances = propMask ?? storeMask;
-  const { openConciergeModal } = useGovernanceStore();
+  const { openConciergeModal, loadVipCard, vipCard } = useGovernanceStore();
   const isSsr = isSsrOrTestEnv();
   const storeNetWorth = usePortfolioStore((s) => s.netWorth);
   const netWorth = isSsr ? usePortfolioStore.getState().netWorth : storeNetWorth;
 
+  React.useEffect(() => {
+    loadVipCard().catch(console.error);
+  }, [loadVipCard]);
+
   const nextTierAum = 25000000.0;
   const progressPct = nextTierAum > 0 ? Math.min(100, Number(((netWorth / nextTierAum) * 100).toFixed(1))) : 0;
+  const standingTier = vipCard?.tier ? `${vipCard.tier} Tier` : 'Obsidian Elite Tier (42g Tungsten)';
 
   return (
     <div
@@ -72,7 +77,7 @@ export const VipCardsModule: React.FC<VipCardsModuleProps> = ({ maskBalances: pr
           <div className="flex items-center gap-2">
             <Award className="w-4 h-4 text-primary" />
             <span className="text-xs font-bold text-on-surface uppercase">
-              Current Standing: Obsidian Elite Tier (42g Tungsten)
+              Current Standing: {standingTier}
             </span>
           </div>
           <div className="text-[11px] text-outline">

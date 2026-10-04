@@ -3,11 +3,15 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/services/prisma.service';
 import { CryptoService } from '../../common/services/crypto.service';
 import { UpdateInquiryStatusDto } from './dto/update-status.dto';
 import { ConvertLeadDto } from './dto/convert-lead.dto';
+import { SendSubscriberEmailDto } from './dto/send-subscriber-email.dto';
+import { BroadcastSubscribersEmailDto } from './dto/broadcast-subscribers-email.dto';
+import { Resend } from 'resend';
 
 export type InquiryStatus = 'NEW' | 'IN_REVIEW' | 'MANDATE_SENT' | 'ARCHIVED';
 
@@ -35,10 +39,105 @@ export interface LeadInquiryResponse {
 
 @Injectable()
 export class InquiriesService {
+  private readonly logger = new Logger(InquiriesService.name);
+  private readonly resendClient: Resend | null = null;
+  private readonly emailFrom: string;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly cryptoService: CryptoService,
-  ) {}
+  ) {
+    const resendApiKey = process.env.RESEND_API_KEY || '';
+    if (resendApiKey && resendApiKey.startsWith('re_')) {
+      this.resendClient = new Resend(resendApiKey);
+      this.logger.log('Resend email client successfully initialized for newsletter subscribers.');
+    } else {
+      this.logger.warn(
+        '[Resend Config] RESEND_API_KEY is not configured or invalid (must start with re_). Emails will be simulated.',
+      );
+    }
+
+    const rawFrom =
+      process.env.EMAIL_FROM || 'WavyAssets Intelligence <security@wavyassets.com>';
+    if (!rawFrom.includes('@')) {
+      const sanitizedName = rawFrom.replace(/["']/g, '').trim();
+      this.emailFrom = `${sanitizedName} <onboarding@resend.dev>`;
+    } else {
+      this.emailFrom = rawFrom.replace(/["']/g, '').trim();
+    }
+  }
+
+  /**
+   * Generates brand header HTML containing official project Favicon SVG and Logo Typography
+   */
+  private generateBrandHeader(): string {
+    return `
+      <table cellpadding="0" cellspacing="0" border="0" style="vertical-align: middle; margin-bottom: 24px;">
+        <tr>
+          <td style="vertical-align: middle; padding-right: 14px; width: 40px;">
+            <!-- Official WavyAssets Favicon Squircle SVG Emblem -->
+            <svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block; width: 40px; height: 40px;">
+              <rect width="64" height="64" rx="14" fill="#08090B"/>
+              <rect x="1" y="1" width="62" height="62" rx="13" stroke="#D4AF37" stroke-width="2.5" stroke-opacity="0.8"/>
+              <circle cx="32" cy="32" r="18" fill="#D4AF37" fill-opacity="0.15"/>
+              <path d="M 12 33 C 18 19, 26 19, 32 33 C 38 47, 46 47, 52 33" stroke="#D4AF37" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M 12 42 C 18 28, 26 28, 32 42 C 38 56, 46 56, 52 42" stroke="#00C288" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.95"/>
+              <circle cx="32" cy="17" r="3.2" fill="#D4AF37"/>
+            </svg>
+          </td>
+          <td style="vertical-align: middle; white-space: nowrap;">
+            <!-- Official WavyAssets Brand Logo Typography -->
+            <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 800; letter-spacing: 2.2px; color: #FFFFFF; vertical-align: middle;">WAVY</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 800; letter-spacing: 2.2px; color: #D4AF37; vertical-align: middle;">ASSETS</span><sup style="font-family: 'SF Mono', Monaco, 'Courier New', Courier, monospace; font-size: 8px; font-weight: 700; letter-spacing: 1px; color: #00C288; margin-left: 6px; vertical-align: baseline;">&#9679; SECURED</sup>
+          </td>
+        </tr>
+      </table>
+    `.trim();
+  }
+
+  private escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  /**
+   * Generates institutional HTML email template containing project logo and favicon
+   */
+  private generateSubscriberEmailHtml(subject: string, message: string): string {
+    const escapedSubject = this.escapeHtml(subject);
+    const formattedMessage = message
+      .split('\n')
+      .map((p) => (p.trim() ? `<p style="margin: 0 0 16px 0; line-height: 1.65;">${this.escapeHtml(p)}</p>` : ''))
+      .join('');
+
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapedSubject}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #08090b; color: #f1f5f9; padding: 32px 16px; margin: 0;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #0f131a; border: 1px solid #1f2937; border-radius: 8px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
+    <div style="padding: 28px 32px; background: linear-gradient(135deg, #0c1017 0%, #161c28 100%); border-bottom: 1px solid #1f2937;">
+      ${this.generateBrandHeader()}
+      <h2 style="font-size: 18px; font-weight: 700; color: #f8fafc; margin: 0; letter-spacing: -0.01em;">${escapedSubject}</h2>
+    </div>
+    <div style="padding: 32px; font-size: 14px; line-height: 1.65; color: #cbd5e1;">
+      ${formattedMessage}
+    </div>
+    <div style="padding: 20px 32px; background-color: #080a0f; border-top: 1px solid #1f2937; font-size: 11px; color: #64748b; text-align: center;">
+      <p style="margin: 0 0 6px 0;">This publication is transmitted by WavyAssets Global Intelligence &amp; Research.</p>
+      <p style="margin: 0;">&copy; ${new Date().getFullYear()} WavyAssets AG &bull; Zurich FreePort &bull; FinSA / AMLA Compliant</p>
+    </div>
+  </div>
+</body>
+</html>`.trim();
+  }
 
   async findAll(statusFilter?: string, search?: string): Promise<LeadInquiryResponse[]> {
     const where: any = {};
@@ -80,6 +179,191 @@ export class InquiriesService {
     }
     await this.prisma.newsletterSubscriber.delete({ where: { id } });
     return { success: true, message: `Subscriber '${subscriber.email}' removed from list.` };
+  }
+
+  /**
+   * Dispatches direct email to a specific newsletter subscriber using Resend
+   */
+  async sendSubscriberEmail(
+    id: string,
+    dto: SendSubscriberEmailDto,
+    adminId?: string,
+    ipAddress?: string,
+  ) {
+    const subscriber = await this.prisma.newsletterSubscriber.findUnique({
+      where: { id },
+    });
+
+    if (!subscriber) {
+      throw new NotFoundException(`Newsletter subscriber with ID '${id}' not found`);
+    }
+
+    let emailDelivered = false;
+    let resendMessageId: string | null = null;
+    let deliveryError: string | null = null;
+
+    const html = this.generateSubscriberEmailHtml(dto.subject, dto.message);
+
+    if (this.resendClient) {
+      try {
+        const response = await this.resendClient.emails.send({
+          from: this.emailFrom,
+          to: subscriber.email,
+          subject: dto.subject,
+          html,
+          text: dto.message,
+        });
+
+        if (response.error) {
+          deliveryError = response.error.message;
+          this.logger.error(`Resend API error sending to recipient ${subscriber.id}: ${deliveryError}`);
+        } else {
+          emailDelivered = true;
+          resendMessageId = response.data?.id || null;
+          this.logger.log(`Resend sent email to recipient ${subscriber.id}. ID: ${resendMessageId}`);
+        }
+      } catch (err: any) {
+        deliveryError = err?.message || 'Unexpected Resend exception';
+        this.logger.error(`Resend exception sending to recipient ${subscriber.id}: ${deliveryError}`, err);
+      }
+    } else {
+      this.logger.warn(`Resend client inactive. Simulated subscriber email to ${subscriber.id}`);
+      emailDelivered = true;
+      resendMessageId = `sim_${Date.now()}`;
+    }
+
+    // Record Immutable Audit Log
+    await this.prisma.adminAuditLog.create({
+      data: {
+        adminId: adminId || null,
+        action: 'SUBSCRIBER_EMAIL_DISPATCH',
+        targetEntity: 'NewsletterSubscriber',
+        targetId: id,
+        diffAfter: JSON.stringify({
+          recipient: subscriber.email,
+          subject: dto.subject,
+          provider: 'resend',
+          delivered: emailDelivered,
+          resendId: resendMessageId,
+          error: deliveryError,
+        }),
+        reason: `Direct newsletter subscriber dispatch: ${dto.subject}`,
+        ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
+      },
+    });
+
+    if (deliveryError && !emailDelivered) {
+      throw new BadRequestException(`Failed to dispatch email via Resend: ${deliveryError}`);
+    }
+
+    return {
+      success: true,
+      recipient: subscriber.email,
+      subject: dto.subject,
+      message: `Email successfully dispatched to ${subscriber.email} via Resend.`,
+      resendId: resendMessageId,
+      sentAt: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Broadcasts newsletter publication to all subscribers using Resend
+   */
+  async broadcastSubscribersEmail(
+    dto: BroadcastSubscribersEmailDto,
+    adminId?: string,
+    ipAddress?: string,
+  ) {
+    const where: any = {};
+    if (dto.filter === 'CONFIRMED') {
+      where.isConfirmed = true;
+    }
+
+    const subscribers = await this.prisma.newsletterSubscriber.findMany({
+      where,
+      select: { id: true, email: true },
+    });
+
+    if (subscribers.length === 0) {
+      throw new BadRequestException('No subscribers found matching the target criteria.');
+    }
+
+    const html = this.generateSubscriberEmailHtml(dto.subject, dto.message);
+    const recipientEmails = subscribers.map((s) => s.email);
+
+    let deliveredCount = 0;
+    let failedCount = 0;
+    const errors: string[] = [];
+
+    if (this.resendClient) {
+      const batchSize = 100;
+      for (let i = 0; i < recipientEmails.length; i += batchSize) {
+        const batchSlice = recipientEmails.slice(i, i + batchSize);
+        const batchPayload = batchSlice.map((email) => ({
+          from: this.emailFrom,
+          to: email,
+          subject: dto.subject,
+          html,
+          text: dto.message,
+        }));
+
+        try {
+          const response: any = await this.resendClient.batch.send(batchPayload);
+          if (response?.error) {
+            failedCount += batchSlice.length;
+            errors.push(`Batch chunk ${Math.floor(i / batchSize) + 1}: ${response.error.message}`);
+          } else if (response?.data?.data && Array.isArray(response.data.data)) {
+            for (let j = 0; j < response.data.data.length; j++) {
+              const item = response.data.data[j];
+              if (item?.error) {
+                failedCount++;
+                errors.push(`${batchSlice[j]}: ${item.error.message}`);
+              } else {
+                deliveredCount++;
+              }
+            }
+          } else {
+            deliveredCount += batchSlice.length;
+          }
+        } catch (err: any) {
+          failedCount += batchSlice.length;
+          errors.push(`Batch chunk ${Math.floor(i / batchSize) + 1} exception: ${err?.message || 'Unknown error'}`);
+        }
+      }
+    } else {
+      this.logger.warn(`Resend client inactive. Simulated broadcast to ${recipientEmails.length} subscribers.`);
+      deliveredCount = recipientEmails.length;
+    }
+
+    // Record Immutable Audit Log
+    await this.prisma.adminAuditLog.create({
+      data: {
+        adminId: adminId || null,
+        action: 'SUBSCRIBERS_BROADCAST_DISPATCH',
+        targetEntity: 'NewsletterSubscriber',
+        targetId: `broadcast_${Date.now()}`,
+        diffAfter: JSON.stringify({
+          totalRecipients: recipientEmails.length,
+          filter: dto.filter || 'ALL',
+          subject: dto.subject,
+          deliveredCount,
+          failedCount,
+          provider: 'resend',
+        }),
+        reason: `Newsletter broadcast dispatch to ${recipientEmails.length} subscribers: ${dto.subject}`,
+        ipAddressHash: this.cryptoService.hashIpAddress(ipAddress || '127.0.0.1'),
+      },
+    });
+
+    return {
+      success: true,
+      totalRecipients: recipientEmails.length,
+      deliveredCount,
+      failedCount,
+      errors: errors.slice(0, 5),
+      message: `Newsletter broadcast completed. ${deliveredCount} of ${recipientEmails.length} emails dispatched via Resend.`,
+      sentAt: new Date().toISOString(),
+    };
   }
 
   async findById(id: string): Promise<LeadInquiryResponse> {

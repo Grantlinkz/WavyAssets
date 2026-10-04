@@ -35,6 +35,7 @@ export const PendingDepositsTable: React.FC = () => {
         rail: railFilter !== "ALL" ? railFilter : undefined,
         search: searchQuery || undefined,
       }),
+    refetchInterval: 15000,
   })
 
   const approveMutation = useMutation({

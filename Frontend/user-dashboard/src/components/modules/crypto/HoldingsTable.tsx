@@ -54,7 +54,28 @@ export const HoldingsTable: React.FC<{ maskBalances?: boolean }> = ({ maskBalanc
   }, [dcaSchedules]);
 
   const liveHoldings = useMemo(() => {
-    return CRYPTO_HOLDINGS_DATA.map((item) => {
+    const list = [...CRYPTO_HOLDINGS_DATA];
+    Object.keys(activeScheduleMap).forEach((symbol) => {
+      if (!list.some((item) => item.symbol.toUpperCase() === symbol.toUpperCase())) {
+        list.push({
+          symbol: symbol.toUpperCase(),
+          name: `${symbol.toUpperCase()} ENCLAVE POSITION`,
+          enclave: 'Zurich Vault 01',
+          custodyType: 'Global_CUSTODY',
+          custodyLabel: 'Global MPC Cold',
+          balance: 0.0,
+          unit: symbol.toUpperCase(),
+          entryPrice: livePrices[symbol] || 10.0,
+          spotPrice: livePrices[symbol] || 10.0,
+          unrealizedPnl: 0.0,
+          pnlPct: 0.0,
+          riskRating: 'AA',
+          stakingApy: 5.0,
+        });
+      }
+    });
+
+    return list.map((item) => {
       const balanceUsd = activeScheduleMap[item.symbol] || 0;
       const metrics = calculateLiveHoldingMetrics(
         item.symbol,

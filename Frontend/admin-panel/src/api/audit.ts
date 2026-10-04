@@ -45,13 +45,47 @@ export async function fetchAuditLogs(params?: {
   if (params?.dateRange) queryParts.push(`dateRange=${encodeURIComponent(params.dateRange)}`)
 
   const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : ""
-  const res = await apiClient<AuditLogEntry[] | { logs?: AuditLogEntry[]; items?: AuditLogEntry[] }>(`/audit/logs${queryString}`)
-  if (Array.isArray(res)) return res
-  if (res && typeof res === "object") {
-    if ("logs" in res && Array.isArray(res.logs)) return res.logs
-    if ("items" in res && Array.isArray(res.items)) return res.items
+  const res = await apiClient<unknown>(`/audit/logs${queryString}`)
+  let rawList: Record<string, unknown>[] = []
+  if (Array.isArray(res)) {
+    rawList = res as Record<string, unknown>[]
+  } else if (res && typeof res === "object") {
+    const obj = res as Record<string, unknown>
+    if ("logs" in obj && Array.isArray(obj.logs)) {
+      rawList = obj.logs as Record<string, unknown>[]
+    } else if ("items" in obj && Array.isArray(obj.items)) {
+      rawList = obj.items as Record<string, unknown>[]
+    }
   }
-  return []
+  return rawList.map((l: Record<string, unknown>) => {
+    const admin = l.admin as Record<string, unknown> | undefined
+    const categoryStr = String(l.actionCategory || "")
+    const computedCategory: AuditCategory =
+      categoryStr === "CREDIT" ||
+      categoryStr === "LOCK" ||
+      categoryStr === "KYC" ||
+      categoryStr === "RAIL" ||
+      categoryStr === "VIP_CARD"
+        ? (categoryStr as AuditCategory)
+        : String(l.action || "").includes("CREDIT")
+        ? "CREDIT"
+        : String(l.action || "").includes("LOCK")
+        ? "LOCK"
+        : String(l.action || "").includes("KYC")
+        ? "KYC"
+        : "ALL"
+
+    return {
+      ...(l as unknown as AuditLogEntry),
+      timestamp: String(l.timestamp || (l.createdAt ? new Date(String(l.createdAt)).toISOString().replace("T", " ").substring(0, 19) : "")),
+      officerName: String(l.officerName || admin?.fullName || "System Officer"),
+      officerDepartment: String(l.officerDepartment || (admin?.role ? String(admin.role).replace(/_/g, " ") : "Operations")),
+      targetLabel: String(l.targetLabel || l.targetEntity || "Client Entity"),
+      nodeOrigin: String(l.nodeOrigin || (l.ipAddressHash ? `SHA256:${String(l.ipAddressHash).substring(0, 8)}` : "Node CH-ZUR-01")),
+      ledgerState: String(l.ledgerState || "COMMITTED"),
+      actionCategory: computedCategory,
+    }
+  })
 }
 
 export async function fetchAuditLogById(id: string): Promise<AuditLogEntry> {

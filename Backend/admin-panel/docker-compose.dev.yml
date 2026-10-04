@@ -1,0 +1,29 @@
+# ==============================================================================
+# WavyAssets Supreme Admin Panel Backend — Development Compose Override
+# ==============================================================================
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# ==============================================================================
+
+services:
+  backend-admin-panel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: wavyassets-admin-backend-dev
+    command: npm run start:dev
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./src:/app/src
+      - ./prisma:/app/prisma
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.build.json:/app/tsconfig.build.json
+      - ./nest-cli.json:/app/nest-cli.json
+      - /app/node_modules
+    deploy:
+      resources:
+        limits:
+          cpus: "2.00"
+          memory: 1G

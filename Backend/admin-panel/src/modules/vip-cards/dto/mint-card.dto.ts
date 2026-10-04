@@ -13,6 +13,9 @@ export enum VipCardTier {
   OBSIDIAN = 'OBSIDIAN',
   BLACK = 'BLACK',
   SILVER = 'SILVER',
+  Supreme = 'Supreme',
+  TITANIUM = 'TITANIUM',
+  CELEBRITY = 'CELEBRITY',
 }
 
 export enum VipCardType {
@@ -41,7 +44,7 @@ export class MintCardDto {
 
   @IsOptional()
   @IsNumber()
-  @Min(1000)
+  @Min(0)
   @Max(1000000)
   dailySpendLimit?: number = 50000.0;
 
@@ -49,12 +52,12 @@ export class MintCardDto {
   @IsEnum(VipShippingStatus)
   shippingStatus?: VipShippingStatus = VipShippingStatus.IN_TRANSIT;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @Matches(/^\d{4,6}$/, {
     message: 'temporaryPin must be a 4-to-6 digit numeric string',
   })
-  temporaryPin!: string;
+  temporaryPin?: string;
 
   @IsOptional()
   @IsString()
@@ -62,4 +65,28 @@ export class MintCardDto {
     message: 'cardNumberLast4 must be exactly 4 digits',
   })
   cardNumberLast4?: string;
+
+  @IsOptional()
+  @IsString()
+  cardholderName?: string;
+
+  @IsOptional()
+  @IsString()
+  substrate?: string;
+
+  @IsOptional()
+  @IsString()
+  destination?: string;
+
+  @IsOptional()
+  @IsString()
+  operatorNotes?: string;
+
+  @IsOptional()
+  @IsString()
+  validDate?: string;
+
+  @IsOptional()
+  @IsString()
+  celebrityCardholderLabel?: string;
 }

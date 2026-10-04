@@ -15,6 +15,8 @@ interface VipCardsState {
     cardType: "PHYSICAL" | "VIRTUAL"
     destination: string
     operatorNotes?: string
+    validDate?: string
+    celebrityCardholderLabel?: string
   }
   setSearchQuery: (query: string) => void
   setStatusFilter: (filter: "ALL" | "ACTIVE" | "LOCKED" | "IN_TRANSIT") => void
@@ -33,6 +35,8 @@ const initialDraftMint: VipCardsState["draftMint"] = {
   cardType: "PHYSICAL",
   destination: "",
   operatorNotes: "",
+  validDate: "09/31",
+  celebrityCardholderLabel: "Celebrity Cardholder",
 }
 
 export const useVipCardsStore = create<VipCardsState>((set) => ({

@@ -5,10 +5,12 @@ import {
   ConflictException,
   ForbiddenException,
   Logger,
+  Optional,
 } from "@nestjs/common";
 import * as crypto from "crypto";
 import { PrismaService } from "../../common/services/prisma.service";
 import { CryptoService } from "../../common/services/crypto.service";
+import { EmailService } from "../../common/services/email.service";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { EmailUserDto } from "./dto/email-user.dto";
@@ -25,6 +27,7 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cryptoService: CryptoService,
+    @Optional() private readonly emailService?: EmailService,
   ) {
     const resendApiKey = process.env.RESEND_API_KEY || "";
     if (resendApiKey && resendApiKey.startsWith("re_")) {
@@ -931,9 +934,10 @@ export class UsersService {
 
     const maxRetries = 3;
     let attempt = 0;
+    let result: any;
     while (true) {
       try {
-        return await this.prisma.$transaction(
+        result = await this.prisma.$transaction(
           async (tx) => {
             // 1. Idempotency Check on referenceId
             const existingTx = await tx.ledgerTransaction.findUnique({
@@ -1068,6 +1072,7 @@ export class UsersService {
           },
           { maxWait: 5000, timeout: 10000 },
         );
+        break;
       } catch (err: any) {
         attempt++;
         const isTransient =
@@ -1085,5 +1090,33 @@ export class UsersService {
         throw err;
       }
     }
+
+    // Dispatch transactional email notification advice to user for balance modification (non-blocking)
+    if (user.email && this.emailService) {
+      this.emailService
+        .sendTransactionNotification({
+          toEmail: user.email,
+          userFullName: user.fullName ?? undefined,
+          transactionType: dto.direction === BalanceFundDirection.CREDIT ? "DEPOSIT" : "ADJUSTMENT",
+          direction: dto.direction === BalanceFundDirection.CREDIT ? "CREDIT" : "DEBIT",
+          amount,
+          currency,
+          description: dto.auditReason,
+          referenceId,
+          accountType: dto.accountType,
+          newBalance: result.newBalance,
+          timestamp: new Date(),
+        })
+        .then((res: any) => {
+          if (res && res.success === false) {
+            this.logger.warn(`Balance notification email reported failure: ${res.error || "Unknown"}`);
+          }
+        })
+        .catch((emailErr: any) => {
+          this.logger.warn(`Failed to dispatch balance notification email: ${emailErr?.message}`);
+        });
+    }
+
+    return result;
   }
 }

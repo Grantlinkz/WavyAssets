@@ -18,9 +18,48 @@ export class ComplianceService {
   ) {}
 
   /**
+   * Evaluates dossier status with consistent FINMA AML compliance criteria
+   */
+  private computeDossierStatus(params: {
+    kycTier: string;
+    documentsCount: number;
+    unverifiedCount: number;
+    hasPendingDoc: boolean;
+    isDossierRejected: boolean;
+    hasAnyDocRejected: boolean;
+  }): 'APPROVED' | 'REJECTED' | 'PENDING_REVIEW' {
+    const {
+      kycTier,
+      documentsCount,
+      unverifiedCount,
+      hasPendingDoc,
+      isDossierRejected,
+      hasAnyDocRejected,
+    } = params;
+
+    if (documentsCount === 0) {
+      return isDossierRejected ? 'REJECTED' : 'PENDING_REVIEW';
+    }
+
+    if (hasPendingDoc) {
+      return 'PENDING_REVIEW';
+    }
+
+    if (isDossierRejected || hasAnyDocRejected) {
+      return 'REJECTED';
+    }
+
+    if (kycTier === 'TIER_3' || unverifiedCount === 0) {
+      return 'APPROVED';
+    }
+
+    return 'PENDING_REVIEW';
+  }
+
+  /**
    * Retrieves pending identity dossiers in the FINMA AML review queue
    */
-  async getQueue(query?: { search?: string; tier?: string }) {
+  async getQueue(query?: { search?: string; tier?: string; status?: string }) {
     const where: any = {};
 
     if (query?.search && query.search.trim()) {
@@ -62,7 +101,32 @@ export class ComplianceService {
       orderBy: { updatedAt: 'desc' },
     });
 
-    const queueItems = usersWithDocs.map((user) => {
+    const userIds = usersWithDocs.map((u) => u.id);
+    const docIds = usersWithDocs.flatMap((u) => u.kycDocuments.map((d) => d.id));
+
+    let auditLogs: any[] = [];
+    if (this.prisma.adminAuditLog?.findMany && (userIds.length > 0 || docIds.length > 0)) {
+      try {
+        auditLogs = await this.prisma.adminAuditLog.findMany({
+          where: {
+            OR: [
+              { targetEntity: 'User', targetId: { in: userIds } },
+              { targetEntity: 'KycDocument', targetId: { in: docIds } },
+            ],
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+      } catch {
+        auditLogs = [];
+      }
+    }
+
+    let queueItems = usersWithDocs.map((user) => {
+      const userAudit = auditLogs.find(
+        (a) => a.targetEntity === 'User' && a.targetId === user.id && (a.action === 'KYC_DOSSIER_REJECTED' || a.action === 'KYC_TIER_UPGRADE')
+      );
+      const isDossierRejected = userAudit?.action === 'KYC_DOSSIER_REJECTED';
+
       const unverifiedCount = user.kycDocuments.filter((d) => !d.isVerified).length;
       const latestDoc = user.kycDocuments[0];
 
@@ -77,7 +141,69 @@ export class ComplianceService {
       }
 
       const shortId = user.id.replace(/-/g, '').slice(0, 4).toUpperCase();
-      const status = unverifiedCount > 0 ? 'PENDING_REVIEW' : 'APPROVED';
+
+      // Count occurrences of each docType to determine versioning for re-uploaded documents
+      const docTypeCounts: Record<string, number> = {};
+      for (const d of user.kycDocuments) {
+        docTypeCounts[d.docType] = (docTypeCounts[d.docType] || 0) + 1;
+      }
+      const docTypeTracker: Record<string, number> = { ...docTypeCounts };
+
+      const mappedDocs = user.kycDocuments.map((doc) => {
+        const totalForType = docTypeCounts[doc.docType] || 1;
+        const currentVersion = docTypeTracker[doc.docType]--;
+        const isMultiple = totalForType > 1;
+
+        const docAudit = auditLogs.find(
+          (a) => a.targetEntity === 'KycDocument' && a.targetId === doc.id
+        );
+        const isDocRejected = !doc.isVerified && docAudit?.action === 'KYC_DOC_REJECTED';
+        const docStatus: 'VERIFIED' | 'REJECTED' | 'PENDING' = doc.isVerified
+          ? 'VERIFIED'
+          : isDocRejected
+          ? 'REJECTED'
+          : 'PENDING';
+
+        const versionLabel = isMultiple
+          ? ` (v${currentVersion}${currentVersion === totalForType ? ' - New' : ''})`
+          : '';
+        const filename = isMultiple
+          ? `${doc.docType.toLowerCase()}_v${currentVersion}_${shortId}.pdf`
+          : `${doc.docType.toLowerCase()}_${shortId}.pdf`;
+
+        return {
+          id: doc.id,
+          type: `${doc.docType}${versionLabel}`,
+          rawDocType: doc.docType,
+          docType: doc.docType,
+          version: currentVersion,
+          isLatestVersion: currentVersion === totalForType,
+          filename,
+          fileSize: '2.4 MB',
+          uploadedAt: doc.uploadedAt.toISOString(),
+          verified: doc.isVerified,
+          isVerified: doc.isVerified,
+          status: docStatus,
+          rejectionReason: isDocRejected ? docAudit?.reason || 'Document unverified or details illegible' : undefined,
+          rejectedAt: isDocRejected ? docAudit?.createdAt?.toISOString() : undefined,
+          documentUrl: doc.fileUrl,
+          fileUrl: doc.fileUrl,
+          sha256Hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        };
+      });
+
+      const hasPendingDoc = mappedDocs.some((d) => d.status === 'PENDING');
+      const hasAnyDocRejected = mappedDocs.some((d) => d.status === 'REJECTED');
+
+      const status = this.computeDossierStatus({
+        kycTier: user.kycTier,
+        documentsCount: mappedDocs.length,
+        unverifiedCount,
+        hasPendingDoc,
+        isDossierRejected,
+        hasAnyDocRejected,
+      });
+
       const dossierNumber = `FINMA-KYC-${shortId}`;
       const submittedAt = latestDoc ? latestDoc.uploadedAt.toISOString() : user.createdAt.toISOString();
 
@@ -109,27 +235,20 @@ export class ComplianceService {
         isCorporate: user.isCorporate,
         documentsCount: user.kycDocuments.length,
         unverifiedCount,
-        hasPendingReview: unverifiedCount > 0,
+        hasPendingReview: status === 'PENDING_REVIEW',
         sourceOfWealth: user.isCorporate
           ? 'Corporate Operating Treasury & Capital Reserves'
           : `Liquid Portfolio ($${totalWealthUsd.toLocaleString('en-US', { maximumFractionDigits: 0 })} USD)`,
         pepClassification: user.isCorporate ? 'Corporate Entity (Standard Risk)' : 'Low Risk / Standard Due Diligence',
         watchlistStatus: 'World-Check & SECO Validated (CLEARED)',
-        documents: user.kycDocuments.map((doc) => ({
-          id: doc.id,
-          type: doc.docType,
-          docType: doc.docType,
-          filename: `${doc.docType.toLowerCase()}_${shortId}.pdf`,
-          fileSize: '2.4 MB',
-          uploadedAt: doc.uploadedAt.toISOString(),
-          verified: doc.isVerified,
-          isVerified: doc.isVerified,
-          documentUrl: doc.fileUrl,
-          fileUrl: doc.fileUrl,
-          sha256Hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-        })),
+        documents: mappedDocs,
       };
     });
+
+    if (query?.status && query.status !== 'ALL') {
+      const targetStatus = query.status.toUpperCase();
+      queueItems = queueItems.filter((q) => q.status.toUpperCase() === targetStatus);
+    }
 
     return {
       queue: queueItems,
@@ -318,27 +437,93 @@ export class ComplianceService {
 
   async getDossierById(dossierId: string) {
     const rawId = dossierId.startsWith('dossier-') ? dossierId.replace('dossier-', '') : dossierId;
-    const user = await this.prisma.user.findFirst({
-      where: {
-        OR: [{ id: rawId }, { id: dossierId }],
-      },
-      include: {
-        kycDocuments: { orderBy: { uploadedAt: 'desc' } },
-        ledgerAccounts: true,
-      },
-    });
+    const user = await (this.prisma.user.findFirst
+      ? this.prisma.user.findFirst({
+          where: {
+            OR: [{ id: rawId }, { id: dossierId }],
+          },
+          include: {
+            kycDocuments: { orderBy: { uploadedAt: 'desc' } },
+            ledgerAccounts: true,
+          },
+        })
+      : this.prisma.user.findUnique({
+          where: { id: rawId },
+          include: {
+            kycDocuments: { orderBy: { uploadedAt: 'desc' } },
+            ledgerAccounts: true,
+          },
+        }));
 
     if (!user) {
       throw new NotFoundException(`KYC Dossier with ID '${dossierId}' not found.`);
     }
 
-    const unverifiedCount = user.kycDocuments.filter((d) => !d.isVerified).length;
+    const docIds = (user.kycDocuments || []).map((d) => d.id);
+    let auditLogs: any[] = [];
+    if (this.prisma.adminAuditLog?.findMany) {
+      try {
+        auditLogs = await this.prisma.adminAuditLog.findMany({
+          where: {
+            OR: [
+              { targetEntity: 'User', targetId: user.id },
+              { targetEntity: 'KycDocument', targetId: { in: docIds } },
+            ],
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+      } catch {
+        auditLogs = [];
+      }
+    }
+
+    const userAudit = auditLogs.find(
+      (a) => a.targetEntity === 'User' && a.targetId === user.id && (a.action === 'KYC_DOSSIER_REJECTED' || a.action === 'KYC_TIER_UPGRADE')
+    );
+    const isDossierRejected = userAudit?.action === 'KYC_DOSSIER_REJECTED';
+
+    const shortId = user.id.replace(/-/g, '').slice(0, 4).toUpperCase();
+    const mappedDocs = (user.kycDocuments || []).map((doc) => {
+      const docAudit = auditLogs.find(
+        (a) => a.targetEntity === 'KycDocument' && a.targetId === doc.id
+      );
+      const isDocRejected = !doc.isVerified && docAudit?.action === 'KYC_DOC_REJECTED';
+      const docStatus = doc.isVerified ? 'VERIFIED' : isDocRejected ? 'REJECTED' : 'PENDING';
+      return {
+        id: doc.id,
+        type: doc.docType,
+        docType: doc.docType,
+        filename: `${doc.docType.toLowerCase()}_${shortId}.pdf`,
+        fileSize: '2.4 MB',
+        uploadedAt: doc.uploadedAt.toISOString(),
+        verified: doc.isVerified,
+        isVerified: doc.isVerified,
+        status: docStatus,
+        rejectionReason: isDocRejected ? docAudit?.reason : undefined,
+        documentUrl: doc.fileUrl,
+        fileUrl: doc.fileUrl,
+        sha256Hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+      };
+    });
+
+    const unverifiedCount = (user.kycDocuments || []).filter((d) => !d.isVerified).length;
+    const hasPendingDoc = mappedDocs.some((d) => d.status === 'PENDING');
+    const hasAnyDocRejected = mappedDocs.some((d) => d.status === 'REJECTED');
+
+    const status = this.computeDossierStatus({
+      kycTier: user.kycTier,
+      documentsCount: mappedDocs.length,
+      unverifiedCount,
+      hasPendingDoc,
+      isDossierRejected,
+      hasAnyDocRejected,
+    });
+
     let requestedTier = 'INSTITUTIONAL';
     if (user.kycTier === 'TIER_1') requestedTier = 'TIER_2';
     else if (user.kycTier === 'TIER_2') requestedTier = 'TIER_3';
 
-    const shortId = user.id.replace(/-/g, '').slice(0, 4).toUpperCase();
-    const latestDoc = user.kycDocuments[0];
+    const latestDoc = user.kycDocuments?.[0];
 
     return {
       id: `dossier-${user.id}`,
@@ -351,7 +536,7 @@ export class ComplianceService {
       submittedAt: latestDoc ? latestDoc.uploadedAt.toISOString() : user.createdAt.toISOString(),
       currentTier: user.tier,
       requestedTier,
-      status: unverifiedCount > 0 ? 'PENDING_REVIEW' : 'APPROVED',
+      status,
       riskScore: (user as any).riskScore ?? 12,
       pepCheckPassed: true,
       sanctionListClear: true,
@@ -362,19 +547,7 @@ export class ComplianceService {
         uboIdentified: true,
         riskCategorizationSigned: true,
       },
-      documents: user.kycDocuments.map((doc) => ({
-        id: doc.id,
-        type: doc.docType,
-        docType: doc.docType,
-        filename: `${doc.docType.toLowerCase()}_${shortId}.pdf`,
-        fileSize: '2.4 MB',
-        uploadedAt: doc.uploadedAt.toISOString(),
-        verified: doc.isVerified,
-        isVerified: doc.isVerified,
-        documentUrl: doc.fileUrl,
-        fileUrl: doc.fileUrl,
-        sha256Hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-      })),
+      documents: mappedDocs,
     };
   }
 
@@ -393,9 +566,12 @@ export class ComplianceService {
       },
     });
 
+    const updatedDossier = await this.getDossierById(rawId).catch(() => null);
+
     return {
       success: true,
       message: 'Dossier rejected/escalated for FINMA review.',
+      dossier: updatedDossier,
       dossierId,
     };
   }

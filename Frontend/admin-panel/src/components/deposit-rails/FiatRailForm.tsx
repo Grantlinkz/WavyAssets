@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 import {
   updateFiatRail,
+  flushInvalidationCache,
   type FiatDepositRailConfig,
 } from "../../api/depositRails"
 
@@ -54,11 +55,11 @@ export const FiatRailForm: React.FC<FiatRailFormProps> = ({ initialConfig }) => 
     }
   }, [initialConfig])
 
-  // Swiss IBAN pattern and ISO 13616 Mod 97 checksum validation
+  // Swiss/International IBAN pattern and ISO 13616 Mod 97 checksum validation
   const cleanIban = swissIban.replace(/\s+/g, "").toUpperCase()
-  const isIbanPatternValid = /^CH\d{2}[0-9A-Z]{17}$/.test(cleanIban)
+  const isIbanPatternValid = /^[A-Z]{2}\d{2}[0-9A-Z]{10,30}$/.test(cleanIban)
   const isIbanValid = (() => {
-    if (!isIbanPatternValid) return false
+    if (!cleanIban || !isIbanPatternValid) return false
     try {
       const rearranged = cleanIban.slice(4) + cleanIban.slice(0, 4)
       const numericString = rearranged
@@ -69,9 +70,9 @@ export const FiatRailForm: React.FC<FiatRailFormProps> = ({ initialConfig }) => 
         })
         .join("")
       const mod = BigInt(numericString) % 97n
-      return mod === 1n || isIbanPatternValid
+      return mod === 1n
     } catch {
-      return isIbanPatternValid
+      return false
     }
   })()
 
@@ -85,11 +86,19 @@ export const FiatRailForm: React.FC<FiatRailFormProps> = ({ initialConfig }) => 
         bicSwift,
         memoFormat,
       }),
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
+      try {
+        await flushInvalidationCache()
+      } catch (cacheErr) {
+        console.warn("Cache invalidation notice:", cacheErr)
+      }
       queryClient.invalidateQueries({ queryKey: ["deposit-rails"] })
+      const resMsg =
+        (res as { message?: string })?.message ||
+        "Bank coordinates broadcasted successfully across all client terminals."
       setStatusMessage({
         type: "success",
-        text: res.message || "Bank coordinates broadcasted successfully across all client terminals.",
+        text: resMsg,
       })
       setTimeout(() => setStatusMessage(null), 5000)
     },
@@ -116,34 +125,42 @@ export const FiatRailForm: React.FC<FiatRailFormProps> = ({ initialConfig }) => 
     setMemoFormat(initialConfig?.memoFormat || "")
   }
 
+  const [copiedSwift, setCopiedSwift] = useState(false)
+
+  const handleCopySwift = () => {
+    navigator.clipboard.writeText(bicSwift)
+    setCopiedSwift(true)
+    setTimeout(() => setCopiedSwift(false), 2000)
+  }
+
   return (
     <section
-      className="bg-bg-panel border border-border-subtle rounded-sm p-5 flex flex-col gap-4"
+      className="bg-bg-panel border border-border-subtle rounded-[6px] p-5 flex flex-col gap-5 shadow-sm"
       data-testid="fiat-rail-form"
     >
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 pb-3 border-b border-border-subtle">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-border-subtle">
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <h2 className="font-headline-md text-headline-md text-on-surface">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h2 className="font-serif text-base font-bold text-on-surface tracking-tight">
               Institutional Fiat Wire Coordinates (Swiss SIC / Fedwire)
             </h2>
-            <span className="font-label-caps text-label-caps uppercase text-gold-accent bg-gold-accent/10 px-2 py-0.5 rounded-sm border border-gold-accent/40 font-semibold">
-              Primary Inflow Rail
+            <span className="font-mono text-[10px] uppercase text-gold-accent bg-gold-accent/10 px-2 py-0.5 rounded-[3px] border border-gold-accent/40 font-semibold tracking-wider">
+              PRIMARY INFLOW RAIL
             </span>
           </div>
-          <p className="font-body-md text-body-md text-secondary">
+          <p className="font-sans text-xs text-secondary">
             Configures real-time wire payment instructions surfaced to institutional tier accounts in CHF, EUR, and USD.
           </p>
         </div>
-        <div className="flex items-center gap-2 text-secondary">
+        <div className="flex items-center gap-1.5 text-xs text-secondary">
           <ShieldCheck className="w-4 h-4 text-telemetry-cyan" />
-          <span className="font-mono text-body-sm">Dual-Authorizer Protocol Active</span>
+          <span className="font-mono text-[11px] text-on-surface">Dual-Authorizer Protocol Active</span>
         </div>
       </div>
 
       {statusMessage && (
         <div
-          className={`p-3 rounded text-body-sm flex items-center gap-2 ${
+          className={`p-3 rounded-[4px] text-xs flex items-center gap-2 ${
             statusMessage.type === "success"
               ? "bg-status-success/10 border border-status-success/30 text-status-success"
               : "bg-status-danger/10 border border-status-danger/30 text-status-danger"
@@ -158,59 +175,59 @@ export const FiatRailForm: React.FC<FiatRailFormProps> = ({ initialConfig }) => 
         </div>
       )}
 
-      {/* 2-Column Form */}
+      {/* 2-Column Modern Form */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Column */}
         <div className="flex flex-col gap-4">
           {/* Beneficiary Name */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <label className="font-label-caps text-label-caps text-secondary uppercase tracking-wider">
-                Beneficiary Name
+              <label className="font-mono text-[10px] text-secondary uppercase tracking-wider font-semibold">
+                BENEFICIARY NAME
               </label>
-              <span className="font-mono text-body-sm text-secondary">Entity ID: CHE-492.110.829</span>
+              <span className="font-mono text-[11px] text-secondary">Entity ID: CHE-492.110.829</span>
             </div>
             <input
               type="text"
               value={beneficiaryName}
               onChange={(e) => setBeneficiaryName(e.target.value)}
-              className="w-full bg-bg-elevated border border-border-subtle rounded-sm px-3 py-2 font-body-md text-body-md text-on-surface focus:border-gold-accent focus:outline-none transition-colors"
+              className="w-full bg-bg-elevated border border-border-subtle rounded-[4px] px-3 py-2 font-sans text-sm text-on-surface focus:border-gold-accent focus:outline-none transition-colors"
             />
-            <span className="font-body-sm text-secondary flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-status-success" />
-              FINMA-licensed depository entity registered in Zurich, Switzerland
+            <span className="text-[11px] text-secondary flex items-center gap-1.5 pt-0.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-status-success shrink-0" />
+              <span>FINMA-licensed depository entity registered in Zurich, Switzerland</span>
             </span>
           </div>
 
           {/* Depository Bank */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <label className="font-label-caps text-label-caps text-secondary uppercase tracking-wider">
-                Depository Bank Name &amp; Branch
+              <label className="font-mono text-[10px] text-secondary uppercase tracking-wider font-semibold">
+                DEPOSITORY BANK NAME &amp; BRANCH
               </label>
-              <span className="font-mono text-body-sm text-secondary">BC/IID: 0023</span>
+              <span className="font-mono text-[11px] text-secondary">BC/IID: 0023</span>
             </div>
             <input
               type="text"
               value={depositoryBank}
               onChange={(e) => setDepositoryBank(e.target.value)}
-              className="w-full bg-bg-elevated border border-border-subtle rounded-sm px-3 py-2 font-body-md text-body-md text-on-surface focus:border-gold-accent focus:outline-none transition-colors"
+              className="w-full bg-bg-elevated border border-border-subtle rounded-[4px] px-3 py-2 font-sans text-sm text-on-surface focus:border-gold-accent focus:outline-none transition-colors"
             />
-            <span className="font-body-sm text-secondary flex items-center gap-1">
-              <Landmark className="w-3.5 h-3.5 text-telemetry-cyan" />
-              Clearing Node: Paradeplatz 6, 8001 Zürich • Domestic Clearing CH-SIC-8000
+            <span className="text-[11px] text-secondary flex items-center gap-1.5 pt-0.5">
+              <Landmark className="w-3.5 h-3.5 text-telemetry-cyan shrink-0" />
+              <span>Clearing Node: Paradeplatz 6, 8001 Zürich • Domestic Clearing CH-SIC-8000</span>
             </span>
           </div>
 
           {/* Clearing System */}
           <div className="flex flex-col gap-1.5">
-            <label className="font-label-caps text-label-caps text-secondary uppercase tracking-wider">
-              Clearing System &amp; Settlement Mode
+            <label className="font-mono text-[10px] text-secondary uppercase tracking-wider font-semibold">
+              CLEARING SYSTEM &amp; SETTLEMENT MODE
             </label>
             <select
               value={clearingRail}
               onChange={(e) => setClearingRail(e.target.value)}
-              className="w-full bg-bg-elevated border border-border-subtle rounded-sm px-3 py-2 font-body-md text-body-md text-on-surface focus:border-gold-accent focus:outline-none transition-colors"
+              className="w-full bg-bg-elevated border border-border-subtle rounded-[4px] px-3 py-2 font-sans text-sm text-on-surface focus:border-gold-accent focus:outline-none transition-colors cursor-pointer"
             >
               <option value="Swiss SIC RTGS or Fedwire DvP (Gross Instantaneous)">
                 Swiss SIC RTGS or Fedwire DvP (Gross Instantaneous)
@@ -225,6 +242,21 @@ export const FiatRailForm: React.FC<FiatRailFormProps> = ({ initialConfig }) => 
                 CHIPS Continuous Linked Settlement (CLS) Netting
               </option>
             </select>
+
+            {/* 3 Pills under Clearing Mode */}
+            <div className="flex items-center gap-2 pt-1 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] bg-bg-elevated border border-border-subtle text-[11px] font-sans text-on-surface">
+                <span className="w-1.5 h-1.5 rounded-full bg-status-success" />
+                SIC Direct Participant
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] bg-bg-elevated border border-border-subtle text-[11px] font-sans text-on-surface">
+                <span className="w-1.5 h-1.5 rounded-full bg-telemetry-cyan" />
+                Fedwire Sub-tier 1
+              </span>
+              <span className="inline-flex items-center px-2 py-1 text-[11px] font-sans text-secondary">
+                Max Wire: CHF 50,000,000 / Tx
+              </span>
+            </div>
           </div>
         </div>
 
@@ -233,11 +265,11 @@ export const FiatRailForm: React.FC<FiatRailFormProps> = ({ initialConfig }) => 
           {/* Swiss IBAN */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <label className="font-label-caps text-label-caps text-secondary uppercase tracking-wider">
-                Swiss IBAN (Settlement Account)
+              <label className="font-mono text-[10px] text-secondary uppercase tracking-wider font-semibold">
+                SWISS IBAN (SETTLEMENT ACCOUNT)
               </label>
               <div
-                className={`flex items-center gap-1 font-mono text-body-sm ${
+                className={`flex items-center gap-1 font-mono text-[11px] ${
                   isIbanValid ? "text-status-success" : "text-status-warning"
                 }`}
               >
@@ -250,72 +282,105 @@ export const FiatRailForm: React.FC<FiatRailFormProps> = ({ initialConfig }) => 
                 type="text"
                 value={swissIban}
                 onChange={(e) => setSwissIban(e.target.value)}
-                className="w-full bg-bg-elevated border border-border-subtle rounded-sm pl-3 pr-20 py-2 font-mono font-bold text-body-md text-gold-accent tracking-wider focus:border-gold-accent focus:outline-none transition-colors"
+                className="w-full bg-bg-elevated border border-border-subtle rounded-[4px] pl-3 pr-20 py-2 font-mono font-bold text-sm text-gold-accent tracking-wider focus:border-gold-accent focus:outline-none transition-colors"
               />
               <button
                 type="button"
                 onClick={handleCopyIban}
-                className="absolute right-1 px-2.5 py-1 bg-bg-canvas hover:bg-state-hover border border-border-subtle rounded-sm font-title-sm text-body-sm text-secondary hover:text-on-surface flex items-center gap-1 transition-colors"
+                className="absolute right-1 px-2.5 py-1 bg-bg-canvas hover:bg-state-hover border border-border-subtle rounded-[3px] font-mono text-xs text-secondary hover:text-on-surface flex items-center gap-1 transition-colors cursor-pointer"
               >
                 {copiedIban ? <Check className="w-3.5 h-3.5 text-status-success" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiedIban ? "Copied" : "Copy"}</span>
               </button>
             </div>
-            <span className="font-body-sm text-secondary">
-              Direct participant settlement account at Swiss National Bank (SNB).
+            <span className="text-[11px] text-secondary pt-0.5">
+              Direct settlement account tied to omnibus custody vault reserve under FINMA circular 08/21.
             </span>
           </div>
 
           {/* BIC / SWIFT */}
           <div className="flex flex-col gap-1.5">
-            <label className="font-label-caps text-label-caps text-secondary uppercase tracking-wider">
-              BIC / SWIFT Code
-            </label>
-            <input
-              type="text"
-              value={bicSwift}
-              onChange={(e) => setBicSwift(e.target.value)}
-              className="w-full bg-bg-elevated border border-border-subtle rounded-sm px-3 py-2 font-mono text-body-md text-on-surface focus:border-gold-accent focus:outline-none transition-colors"
-            />
-            <span className="font-body-sm text-secondary">
-              Universal SWIFT identifier for direct routing via SWIFT Alliance Gateway.
+            <div className="flex items-center justify-between">
+              <label className="font-mono text-[10px] text-secondary uppercase tracking-wider font-semibold">
+                SWIFT / BIC CODE
+              </label>
+              <span className="font-mono text-[10px] text-status-success bg-status-success/10 px-2 py-0.5 rounded-[3px] border border-status-success/30 font-medium">
+                SWIFT Connected • Direct BIC
+              </span>
+            </div>
+            <div className="relative flex items-center">
+              <input
+                type="text"
+                value={bicSwift}
+                onChange={(e) => setBicSwift(e.target.value)}
+                className="w-full bg-bg-elevated border border-border-subtle rounded-[4px] pl-3 pr-20 py-2 font-mono text-sm text-on-surface font-semibold focus:border-gold-accent focus:outline-none transition-colors"
+              />
+              <button
+                type="button"
+                onClick={handleCopySwift}
+                className="absolute right-1 px-2.5 py-1 bg-bg-canvas hover:bg-state-hover border border-border-subtle rounded-[3px] font-mono text-xs text-secondary hover:text-on-surface flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                {copiedSwift ? <Check className="w-3.5 h-3.5 text-status-success" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedSwift ? "Copied" : "Copy"}</span>
+              </button>
+            </div>
+            <span className="text-[11px] text-secondary pt-0.5">
+              Routing node identifier for international Fedwire/SWIFT MT103 and ISO 20022 pacs.008 cross-border messages.
             </span>
           </div>
 
           {/* Memo Format */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <label className="font-label-caps text-label-caps text-secondary uppercase tracking-wider">
-                Mandatory Reference Memo Format
+              <label className="font-mono text-[10px] text-secondary uppercase tracking-wider font-semibold">
+                MANDATORY WIRE REFERENCE MEMO FORMAT
               </label>
-              <span className="text-gold-accent font-mono text-[11px]">Dynamic Variable</span>
+              <span className="text-gold-accent font-mono text-[10px] bg-gold-accent/10 px-2 py-0.5 rounded-[3px] border border-gold-accent/30 font-medium">
+                Field 70 / Tag 72 Format
+              </span>
             </div>
             <input
               type="text"
               value={memoFormat}
               onChange={(e) => setMemoFormat(e.target.value)}
-              className="w-full bg-bg-elevated border border-border-subtle rounded-sm px-3 py-2 font-mono text-body-md text-gold-accent focus:border-gold-accent focus:outline-none transition-colors"
+              className="w-full bg-bg-elevated border border-border-subtle rounded-[4px] px-3 py-2 font-mono text-sm text-gold-accent font-semibold focus:border-gold-accent focus:outline-none transition-colors"
             />
-            <span className="font-body-sm text-secondary">
-              Must include <code className="text-gold-accent">{"{USER_REF}"}</code> placeholder to ensure automatic match.
-            </span>
+            {/* Warning Callout Box */}
+            <div className="p-2.5 rounded-[4px] bg-status-warning/10 border border-status-warning/30 flex items-start gap-2 text-xs text-status-warning mt-1">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span className="leading-relaxed text-[11px]">
+                The token <strong className="font-mono text-gold-accent font-bold">{"{USER_REF}"}</strong> is automatically parsed and injected with the client's verified internal account sequence ID. Any manual change requires compliance re-ratification.
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Fiat Action & Audit Footer */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-3 border-t border-border-subtle">
-        <div className="flex items-center gap-2 text-secondary">
-          <History className="w-4 h-4 text-gold-accent" />
-          <span className="font-body-sm text-body-sm">
-            Updates propagate deterministically to connected client deposit modals.
+        <div className="flex items-center gap-2 text-secondary text-xs">
+          <History className="w-4 h-4 text-gold-accent shrink-0" />
+          <span>
+            Last updated{" "}
+            {initialConfig?.updatedAt
+              ? new Date(initialConfig.updatedAt).toLocaleString("en-US", {
+                  timeZone: "UTC",
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                }) + " UTC"
+              : "recently"}{" "}
+            by{" "}
+            <strong className="text-on-surface font-semibold">
+              {initialConfig?.updatedBy || "Treasury Officer"}
+            </strong>{" "}
+            • Requires cryptographic key sign to apply changes
           </span>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
           <button
             type="button"
             onClick={handleReset}
-            className="h-8 px-3 rounded-sm border border-border-subtle bg-bg-elevated text-secondary hover:text-on-surface hover:bg-state-hover font-title-sm text-body-sm transition-all"
+            className="h-8 px-3.5 rounded-[4px] border border-border-subtle bg-bg-elevated text-secondary hover:text-on-surface hover:bg-state-hover font-sans text-xs transition-all cursor-pointer"
           >
             Reset to Defaults
           </button>
@@ -323,9 +388,9 @@ export const FiatRailForm: React.FC<FiatRailFormProps> = ({ initialConfig }) => 
             type="button"
             disabled={mutation.isPending || !isIbanValid}
             onClick={() => mutation.mutate()}
-            className="h-8 px-4 rounded-sm bg-primary hover:bg-[#C5A028] text-bg-canvas font-headline-md text-body-sm font-semibold flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-50"
+            className="h-8 px-4 rounded-[4px] bg-gold-accent hover:bg-[#C5A028] text-bg-canvas font-sans text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-50 cursor-pointer"
           >
-            <Radio className="w-4 h-4" />
+            <Radio className="w-3.5 h-3.5" />
             <span>
               {mutation.isPending ? "Broadcasting..." : "Save & Broadcast Bank Coordinates"}
             </span>

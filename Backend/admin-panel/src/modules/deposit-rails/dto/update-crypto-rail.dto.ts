@@ -26,12 +26,10 @@ export const SUPPORTED_CRYPTO_NETWORKS = [
 export class UpdateCryptoRailDto {
   @IsNotEmpty()
   @IsString()
-  @IsIn(SUPPORTED_CRYPTO_ASSETS)
   asset!: string;
 
   @IsNotEmpty()
   @IsString()
-  @IsIn(SUPPORTED_CRYPTO_NETWORKS)
   network!: string;
 
   @IsNotEmpty()
@@ -53,4 +51,16 @@ export class UpdateCryptoRailDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean = true;
+
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  confirmationTimeEst?: string;
 }

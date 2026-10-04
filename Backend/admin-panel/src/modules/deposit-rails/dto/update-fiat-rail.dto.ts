@@ -1,18 +1,23 @@
-import { IsNotEmpty, IsString, IsIBAN, IsBIC } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional, Matches } from 'class-validator';
 
 export class UpdateFiatRailDto {
   @IsNotEmpty()
   @IsString()
   beneficiaryName!: string;
 
+  @IsOptional()
+  @IsString()
+  depositoryBank?: string;
+
   @IsNotEmpty()
   @IsString()
-  @IsIBAN()
+  @Matches(/^[A-Z]{2}\d{2}[\s0-9A-Z]{10,34}$/, {
+    message: 'swissIban must be a valid IBAN format',
+  })
   swissIban!: string;
 
   @IsNotEmpty()
   @IsString()
-  @IsBIC()
   bicSwift!: string;
 
   @IsNotEmpty()
@@ -22,4 +27,8 @@ export class UpdateFiatRailDto {
   @IsNotEmpty()
   @IsString()
   memoFormat!: string;
+
+  @IsOptional()
+  @IsString()
+  id?: string;
 }

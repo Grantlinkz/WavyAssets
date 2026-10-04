@@ -23,7 +23,30 @@
   <body
     class="bg-surface font-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container min-h-screen"
   >
-    <div id="root"></div>
+    <div id="root">
+      <!-- WavyAssets Institutional Favicon Preloader (Instant 0ms Splash Screen) -->
+      <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #08090B; color: #D4AF37; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;">
+        <div style="position: relative; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center;">
+          <!-- Rotating Orbital Conduit -->
+          <div style="position: absolute; inset: -10px; border-radius: 22px; border: 2px solid transparent; border-top-color: #D4AF37; border-right-color: #00C288; animation: wavy-preloader-spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;"></div>
+          <!-- WavyAssets Favicon with Breathing Pulse -->
+          <img src="/favicon.svg" alt="Loading WavyAssets..." width="48" height="48" style="animation: wavy-preloader-pulse 2s ease-in-out infinite; filter: drop-shadow(0 0 14px rgba(212, 175, 55, 0.4));" />
+        </div>
+        <div style="margin-top: 26px; font-size: 11px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #8F96A3; font-family: 'JetBrains Mono', monospace;">
+          Loading WavyAssets...
+        </div>
+        <style>
+          @keyframes wavy-preloader-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          @keyframes wavy-preloader-pulse {
+            0%, 100% { transform: scale(0.96); opacity: 0.85; filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.3)); }
+            50% { transform: scale(1.04); opacity: 1; filter: drop-shadow(0 0 18px rgba(212, 175, 55, 0.6)); }
+          }
+        </style>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -21,6 +21,7 @@ import { useLiquidStore } from '../../store/useLiquidStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { checkKycWithdrawalLimit } from '../../lib/kycLimits';
 import { formatMaskedCurrency } from '../../lib/calculations';
+import { submitWithdrawalRequest } from '../../lib/api';
 
 export interface WithdrawModalProps {
   isOpen?: boolean;
@@ -86,6 +87,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
     };
     submittedAt: string;
   } | null>(null);
+  const [withdrawalError, setWithdrawalError] = useState<string | null>(null);
 
   // Active form validation
   const currentAmountStr = activeRail === 'bank' ? bankAmount : cryptoAmount;
@@ -103,19 +105,17 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
     setSelectedProtocol(availableProtocols[0]);
   };
 
-  const handleAuthorize = () => {
+  const handleAuthorize = async () => {
     if (!isValidAmount || !kycCheck.allowed) return;
+    setWithdrawalError(null);
     setIsVerifying(true);
 
-    setTimeout(() => {
+    try {
       const currentCash = usePortfolioStore.getState().availableCash;
       if (parsedAmount > currentCash) {
         setIsVerifying(false);
         return;
       }
-
-      // Deduct cash from available balance
-      adjustAvailableCash(-parsedAmount);
 
       const refId =
         activeRail === 'bank'
@@ -134,6 +134,24 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
               protocol: selectedProtocol,
               destinationAddress: withdrawalAddress,
             };
+
+      // Call backend to persist transaction to PostgreSQL, write audit log, and send PENDING email
+      await submitWithdrawalRequest({
+        amount: parsedAmount,
+        currency: 'USD',
+        rail: activeRail === 'bank' ? 'BANK_WIRE' : 'CRYPTO',
+        referenceId: refId,
+        ...(activeRail === 'bank'
+          ? { bankName, accountName, accountNumber }
+          : {
+              cryptoAsset: selectedCrypto,
+              protocol: selectedProtocol,
+              destinationAddress: withdrawalAddress,
+            }),
+      });
+
+      // Deduct cash from available balance
+      adjustAvailableCash(-parsedAmount);
 
       // Add to transaction log as PENDING withdrawal
       try {
@@ -165,12 +183,17 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
           second: '2-digit',
         }),
       });
-
+    } catch (err: unknown) {
+      console.error('Failed to submit withdrawal request:', err);
+      const errMsg = err instanceof Error ? err.message : 'Failed to submit withdrawal request';
+      setWithdrawalError(errMsg);
+    } finally {
       setIsVerifying(false);
-    }, 800);
+    }
   };
 
   const handleResetForNew = () => {
+    setWithdrawalError(null);
     setPendingWithdrawal(null);
   };
 
@@ -567,6 +590,12 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
 
               {/* Hardware Key / FIDO2 Trigger */}
               <div className="pt-1">
+                {withdrawalError && (
+                  <div className="mb-2 p-2 bg-error/10 border border-error/20 rounded-DEFAULT text-xs font-mono text-error flex items-start gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    <span>{withdrawalError}</span>
+                  </div>
+                )}
                 <button
                   type="button"
                   data-testid="authorize-withdraw-btn"

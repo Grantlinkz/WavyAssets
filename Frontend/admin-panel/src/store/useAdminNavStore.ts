@@ -10,6 +10,7 @@ export type AdminRoute =
   | "deposit-rails"
   | "vip-cards"
   | "audit-log"
+  | "admin-directory"
 
 export interface AdminNavState {
   activeRoute: AdminRoute
@@ -29,6 +30,7 @@ export interface AdminNavState {
     pendingCompliance: number | null
     treasurySignOffs: number | null
     activeCards: number | null
+    pendingWithdrawals: number | null
   }
 
   // Actions
@@ -57,6 +59,7 @@ export const useAdminNavStore = create<AdminNavState>((set) => ({
     pendingCompliance: null,
     treasurySignOffs: null,
     activeCards: null,
+    pendingWithdrawals: null,
   },
 
   setActiveRoute: (route) => set({ activeRoute: route }),

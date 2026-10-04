@@ -245,31 +245,45 @@ The server will log:
 
 Build and launch the backend container on host port `4001` (mapped to container internal port `4000` where the healthcheck evaluates `/health`):
 
-```powershell
+```bash
+# Standalone production container launch
 docker compose up --build -d
+
+# Verify container health status
+docker compose ps
+
+# Follow logs
+docker compose logs -f backend-user-dashboard
+
+# Graceful shutdown
+docker compose down
 ```
 
 > **Port Configuration**: In local non-containerized development, `src/main.ts` listens on `PORT=4001` from `.env`. In Docker Compose, the internal container port is set to `PORT: 4000` with host mapping `"4001:4000"`, matching the container's internal healthcheck `http://localhost:4000/health`.
 
-Verify container health status:
-```powershell
-docker compose ps
+### Live Containerized Development (Hot Reload)
+```bash
+# Mounts ./src and runs NestJS watch mode inside the container
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
 ### Monorepo Unified Container Network
 
-From the repository root (`c:\Users\ANIK\Desktop\WavyAssets`), launch the complete sovereign platform (Landing Page, Landing Backend, User Dashboard Frontend, and Backend User Dashboard):
+From the repository root (`c:\Users\ANIK\Desktop\WavyAssets`), launch the complete sovereign 6-service platform:
 
-```powershell
+```bash
 docker compose up --build -d
 ```
 
 | Container | Image | Port | Description |
 | :--- | :--- | :--- | :--- |
+| `wavyassets-landing-backend` | `wavyassets/landing-page-backend:1.0.0` | `4000` | Public landing page API & handoff ticket producer |
+| `wavyassets-landing-frontend` | `wavyassets/landing-page-frontend:1.0.0` | `5173` | Public landing showcase terminal |
 | `wavyassets-backend-user-dashboard` | `wavyassets/user-dashboard-backend:1.0.0` | `4001` | Core transactional backend & Socket.IO gateway |
 | `wavyassets-user-dashboard` | `wavyassets/user-dashboard:1.0.0` | `5174` | React 19 / Obsidian institutional dashboard |
-| `wavyassets-landing-backend` | `wavyassets/landing-page-backend:1.0.0` | `4000` | Public landing page API & handoff ticket producer |
-| `wavyassets-landing-frontend` | `wavyassets/landing-page-frontend:1.0.0` | `5173` | Public landing terminal |
+| `wavyassets-backend-admin-panel` | `wavyassets/admin-panel-backend:1.0.0` | `4002` | Supreme Admin Panel & Treasury Operations |
+| `wavyassets-admin-frontend` | `wavyassets/admin-panel-frontend:1.0.0` | `5175` | Supreme Operational Command Terminal |
+
 
 ---
 

@@ -15,9 +15,9 @@ import {
   Calendar,
   DollarSign,
   AlertCircle,
-  Loader2,
   X,
 } from 'lucide-react';
+import { FaviconSpinner } from '../../ui/FaviconSpinner';
 import { type RealEstateAsset } from '../../../lib/alternativeAssetData';
 import { useAlternativeStore } from '../../../store/useAlternativeStore';
 import { usePortfolioStore } from '../../../store/usePortfolioStore';
@@ -285,7 +285,7 @@ export const RealEstateActionModal: React.FC<RealEstateActionModalProps> = ({
                 <span>Live OpenStreetMap Cadastre Telemetry</span>
               </span>
               {loadingGeo ? (
-                <Loader2 className="w-3 h-3 animate-spin text-primary" />
+                <FaviconSpinner size="xs" variant="minimal" />
               ) : geoData?.verified ? (
                 <span className="text-[10px] text-tertiary">
                   Lat: {geoData?.lat}° | Lon: {geoData?.lon}°
@@ -478,7 +478,7 @@ export const RealEstateActionModal: React.FC<RealEstateActionModalProps> = ({
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <FaviconSpinner size="xs" variant="minimal" />
                     <span>Transacting on Land Registry...</span>
                   </>
                 ) : (
@@ -577,7 +577,7 @@ export const RealEstateActionModal: React.FC<RealEstateActionModalProps> = ({
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <FaviconSpinner size="xs" variant="minimal" />
                     <span>Registering Lease Contract...</span>
                   </>
                 ) : (

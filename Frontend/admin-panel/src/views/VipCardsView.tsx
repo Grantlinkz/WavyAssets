@@ -21,14 +21,6 @@ export const VipCardsView: React.FC = () => {
   } = useQuery({
     queryKey: ["vip-cards-telemetry"],
     queryFn: fetchVipCardsTelemetry,
-    initialData: {
-      activeCards: 38,
-      authorizedDailyCapacity: 15400000,
-      volume24h: 3184920,
-      authRate24h: 99.8,
-      lockedCards: 3,
-      vaultInventoryBlanks: 142,
-    },
   })
 
   return (
@@ -109,16 +101,7 @@ export const VipCardsView: React.FC = () => {
       </div>
 
       {/* High-Density KPI Metric Row */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="bg-bg-panel border border-border-subtle rounded-[4px] p-3.5 h-24 wavy-skeleton"
-            />
-          ))}
-        </div>
-      ) : isError ? (
+      {isError ? (
         <div className="bg-bg-panel border border-status-danger/30 p-4 rounded-[4px] flex items-center justify-between text-xs text-status-danger">
           <span>{error?.message || "Failed to load VIP card telemetry."}</span>
           <button
@@ -132,29 +115,29 @@ export const VipCardsView: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-bg-panel border border-border-subtle rounded-[4px] p-3.5 flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">Active Card Portfolio</span>
+              <span className="font-mono text-[10px] text-secondary uppercase tracking-wider font-semibold">Active Card Portfolio</span>
               <CreditCard className="w-4 h-4 text-status-success" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="font-mono text-xl text-on-surface font-semibold">
-                {telemetry?.activeCards ?? "—"}
+                {isLoading ? <span className="inline-block w-8 h-5 wavy-skeleton rounded-[2px]" /> : (telemetry?.activeCards ?? 0)}
               </span>
             </div>
             <span className="font-mono text-[10px] text-secondary mt-1">
-              Total Capacity: {telemetry ? formatCurrency(telemetry.authorizedDailyCapacity) : "—"} / day
+              Total Capacity: {isLoading ? "..." : (telemetry ? formatCurrency(telemetry.authorizedDailyCapacity) : "$0.00")} / day
             </span>
           </div>
 
           <div className="bg-bg-panel border border-border-subtle rounded-[4px] p-3.5 flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">24h Settlement Volume</span>
+              <span className="font-mono text-[10px] text-secondary uppercase tracking-wider font-semibold">24h Settlement Volume</span>
               <Terminal className="w-4 h-4 text-gold-accent" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="font-mono text-xl text-gold-accent font-semibold">
-                {telemetry ? formatCurrency(telemetry.volume24h) : "—"}
+                {isLoading ? <span className="inline-block w-16 h-5 wavy-skeleton rounded-[2px]" /> : (telemetry ? formatCurrency(telemetry.volume24h) : "$0.00")}
               </span>
-              {telemetry?.authRate24h !== undefined && (
+              {!isLoading && telemetry?.authRate24h !== undefined && (
                 <span className="font-mono text-xs text-status-success">
                   {telemetry.authRate24h}% Auth Rate
                 </span>
@@ -165,12 +148,12 @@ export const VipCardsView: React.FC = () => {
 
           <div className="bg-bg-panel border border-border-subtle rounded-[4px] p-3.5 flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">Terminal Killswitches</span>
+              <span className="font-mono text-[10px] text-secondary uppercase tracking-wider font-semibold">Terminal Killswitches</span>
               <Lock className="w-4 h-4 text-status-danger" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="font-mono text-xl text-status-danger font-semibold">
-                {telemetry?.lockedCards ?? "—"}
+                {isLoading ? <span className="inline-block w-8 h-5 wavy-skeleton rounded-[2px]" /> : (telemetry?.lockedCards ?? 0)}
               </span>
               <span className="font-mono text-xs text-secondary">Vault Locked</span>
             </div>
@@ -179,12 +162,12 @@ export const VipCardsView: React.FC = () => {
 
           <div className="bg-bg-panel border border-border-subtle rounded-[4px] p-3.5 flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[10px] text-secondary uppercase tracking-wider">Swiss Vault Inventory</span>
+              <span className="font-mono text-[10px] text-secondary uppercase tracking-wider font-semibold">Swiss Vault Inventory</span>
               <Shield className="w-4 h-4 text-telemetry-cyan" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="font-mono text-xl text-telemetry-cyan font-semibold">
-                {telemetry?.vaultInventoryBlanks ?? "—"} Blanks
+                {isLoading ? <span className="inline-block w-8 h-5 wavy-skeleton rounded-[2px]" /> : (telemetry?.vaultInventoryBlanks ?? 500)} Blanks
               </span>
               <span className="font-mono text-xs text-secondary">42g Tungsten</span>
             </div>

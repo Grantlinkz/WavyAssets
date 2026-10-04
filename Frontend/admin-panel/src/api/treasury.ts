@@ -30,6 +30,7 @@ export interface OfficerSignOffRecord {
 
 export interface PendingWithdrawal {
   id: string
+  referenceId?: string
   userId: string
   userName: string
   userCif: string
@@ -112,16 +113,32 @@ export function normalizePendingDeposit(raw: Record<string, unknown>): PendingDe
 export function normalizePendingWithdrawal(raw: Record<string, unknown>): PendingWithdrawal {
   const user = (raw.user && typeof raw.user === "object" ? raw.user : {}) as Record<string, unknown>
   const id = String(raw.id || `wth-${Math.random().toString(36).slice(2, 8)}`)
+  const referenceId = String(raw.referenceId || id)
   const userId = String(raw.userId || user.id || "")
   const userName = String(raw.userName || user.fullName || raw.counterparty || "Institutional Client")
   const userCif = String(raw.userCif || (userId ? `CIF-${userId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase()}` : "CIF-INST-001"))
   const userTier = String(raw.userTier || user.tier || "INSTITUTIONAL")
   const settlementRail = String(raw.settlementRail || raw.rail || "SWISS_SIC")
   const routingMode = String(raw.routingMode || "RTGS / Direct Bridge")
-  const targetInstitution = String(
-    raw.targetInstitution ||
-    (settlementRail === "SWISS_SIC" ? "Swiss National Bank (SIC)" : settlementRail === "FEDWIRE" ? "Federal Reserve Fedwire" : "Institutional Custody Desk")
-  )
+
+  const desc = String(raw.description || "")
+  let targetInstitution = String(raw.targetInstitution || "")
+  if (!targetInstitution) {
+    if (desc.includes("to UBS")) {
+      targetInstitution = "UBS Switzerland AG"
+    } else if (desc.includes("Bank Wire Transfer to ")) {
+      targetInstitution = desc.split("Bank Wire Transfer to ")[1]?.split(" (")[0] || "Bank Wire Transfer"
+    } else if (desc.includes("Crypto Disbursement (")) {
+      targetInstitution = desc.split("Crypto Disbursement (")[1]?.split(")")[0] || "Crypto Vault Rail"
+    } else if (settlementRail === "SWISS_SIC") {
+      targetInstitution = "UBS Switzerland AG"
+    } else if (settlementRail === "FEDWIRE") {
+      targetInstitution = "Federal Reserve Fedwire"
+    } else {
+      targetInstitution = settlementRail
+    }
+  }
+
   const beneficiaryIbanOrAddress = String(raw.beneficiaryIbanOrAddress || raw.accountNumber || "CH93 0023 8812 4019 8821 0")
   const beneficiaryName = String(raw.beneficiaryName || raw.counterparty || userName)
   const amount = Number(raw.amount) || 0
@@ -141,6 +158,7 @@ export function normalizePendingWithdrawal(raw: Record<string, unknown>): Pendin
 
   return {
     id,
+    referenceId,
     userId,
     userName,
     userCif,
@@ -161,6 +179,7 @@ export function normalizePendingWithdrawal(raw: Record<string, unknown>): Pendin
     createdAt: String(raw.createdAt || new Date().toISOString()),
   }
 }
+
 
 export async function fetchPendingDeposits(params?: {
   rail?: string
@@ -207,11 +226,12 @@ export async function fetchPendingWithdrawals(params?: {
 export async function approveDeposit(
   payload: ApproveDepositPayload
 ): Promise<{ success: boolean; transaction: PendingDeposit; message: string }> {
+  const { transactionId, ...body } = payload
   return apiClient<{ success: boolean; transaction: PendingDeposit; message: string }>(
-    `/treasury/deposits/${payload.transactionId}/approve`,
+    `/treasury/deposits/${transactionId}/approve`,
     {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     }
   )
 }
@@ -219,11 +239,12 @@ export async function approveDeposit(
 export async function rejectDeposit(
   payload: RejectDepositPayload
 ): Promise<{ success: boolean; transaction: PendingDeposit; message: string }> {
+  const { transactionId, ...body } = payload
   return apiClient<{ success: boolean; transaction: PendingDeposit; message: string }>(
-    `/treasury/deposits/${payload.transactionId}/reject`,
+    `/treasury/deposits/${transactionId}/reject`,
     {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     }
   )
 }

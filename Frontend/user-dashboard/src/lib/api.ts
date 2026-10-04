@@ -234,6 +234,10 @@ export async function fetchActionRails<T = unknown>(fallback?: T): Promise<T> {
 // Liquid Asset Engines (Crypto, Stocks, Wallet)
 // ----------------------------------------------------------------------
 
+export async function fetchUserTransactions<T = unknown>(limit = 50, fallback?: T): Promise<T> {
+  return requestApi<T>(`/api/v1/wallet/transactions?limit=${limit}`, { method: 'GET' }, fallback);
+}
+
 export async function fetchCryptoHoldings<T = unknown>(fallback?: T): Promise<T> {
   return requestApi<T>('/api/v1/crypto/holdings', { method: 'GET' }, fallback);
 }
@@ -332,6 +336,8 @@ export async function submitWithdrawal(payload: {
     }),
   });
 }
+
+
 
 // ----------------------------------------------------------------------
 // Alternative Asset Engines (AI Funds, Real Estate, Exotic Cars)
@@ -433,6 +439,17 @@ export async function updateCardSpendingLimitApi(dailySpendLimit: number): Promi
   });
 }
 
+export async function updateCardControlsApi(controls: {
+  isFrozen?: boolean;
+  cardType?: 'PHYSICAL' | 'VIRTUAL';
+  dailySpendLimit?: number;
+}): Promise<unknown> {
+  return requestApi<unknown>('/api/v1/vip-cards/controls', {
+    method: 'PATCH',
+    body: JSON.stringify(controls),
+  });
+}
+
 // ----------------------------------------------------------------------
 // Governance & Security (VIP Cards, Compliance, 48h Time-Lock)
 // ----------------------------------------------------------------------
@@ -467,11 +484,28 @@ export async function uploadDossierDocument<T = unknown>(
   },
   fallback?: T
 ): Promise<T> {
-  const fileUrl =
-    payload.fileUrl ||
-    (payload.file
-      ? `https://vault.wavyassets.com/dossier/vault_${Date.now()}_${encodeURIComponent(payload.file.name)}`
-      : 'https://vault.wavyassets.com/dossier/dossier_upload.pdf');
+  let fileUrl = payload.fileUrl;
+  if (!fileUrl && payload.file) {
+    if (typeof FileReader === 'undefined') {
+      throw new Error('FileReader is unavailable in this environment');
+    }
+    fileUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          resolve(reader.result);
+        } else {
+          reject(new Error('FileReader did not produce a string result'));
+        }
+      };
+      reader.onerror = () => {
+        reject(reader.error || new Error('FileReader failed to read document'));
+      };
+      reader.readAsDataURL(payload.file!);
+    });
+  } else if (!fileUrl) {
+    throw new Error('Document file or fileUrl is required for dossier submission');
+  }
 
   const bodyData = { ...payload };
   delete bodyData.file;
@@ -520,3 +554,105 @@ export async function registerWhitelistDestination(payload: {
     body: JSON.stringify(body),
   });
 }
+
+// ----------------------------------------------------------------------
+// Deposit Rails (Bank Wire & Web3 Crypto Matrix)
+// ----------------------------------------------------------------------
+
+export interface DepositRailsData {
+  fiat: {
+    id: string;
+    beneficiaryName: string;
+    depositoryBank?: string;
+    swissIban: string;
+    bicSwift: string;
+    clearingRail: string;
+    memoFormat: string;
+    updatedAt?: string;
+  };
+  crypto: Array<{
+    id: string;
+    asset: string;
+    name?: string;
+    network: string;
+    standard?: string;
+    vaultAddress: string;
+    isActive: boolean;
+    minDepositUsd?: number;
+    confirmations?: number;
+  }>;
+}
+
+export async function fetchDepositRails(): Promise<DepositRailsData> {
+  try {
+    return await requestApi<DepositRailsData>('/api/v1/wallet/deposit-rails', { method: 'GET' });
+  } catch {
+    try {
+      return await requestApi<DepositRailsData>('/api/v1/deposit-rails', { method: 'GET' });
+    } catch {
+      return {
+        fiat: {
+          id: 'UNAVAILABLE',
+          beneficiaryName: 'Deposit Instructions Unavailable',
+          swissIban: '',
+          bicSwift: '',
+          clearingRail: 'Unavailable',
+          memoFormat: '',
+        },
+        crypto: [],
+      };
+    }
+  }
+}
+
+export interface WithdrawalRequestPayload {
+  amount: number;
+  currency?: string;
+  rail: string;
+  referenceId: string;
+  bankName?: string;
+  accountName?: string;
+  accountNumber?: string;
+  cryptoAsset?: string;
+  protocol?: string;
+  destinationAddress?: string;
+}
+
+export async function submitWithdrawalRequest(
+  payload: WithdrawalRequestPayload
+): Promise<{ success: boolean; status: string; referenceId: string }> {
+  return requestApi<{ success: boolean; status: string; referenceId: string }>(
+    '/api/v1/wallet/withdrawal-request',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
+export interface DepositReceiptPayload {
+  amount: number;
+  currency?: string;
+  rail: string;
+  referenceId: string;
+  senderName?: string;
+  senderBank?: string;
+  senderIbanOrAddress?: string;
+  wireMemo?: string;
+  txHash?: string;
+  receiptDataUrl?: string;
+  receiptName?: string;
+}
+
+export async function submitDepositReceipt(
+  payload: DepositReceiptPayload
+): Promise<{ success: boolean; status: string; referenceId: string }> {
+  return requestApi<{ success: boolean; status: string; referenceId: string }>(
+    '/api/v1/wallet/deposit-receipt',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }
+  );
+}
+

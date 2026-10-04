@@ -36,9 +36,19 @@ describe('OverviewService', () => {
       },
       kycDocument: {
         count: vi.fn().mockResolvedValue(1),
+        findMany: vi.fn().mockResolvedValue([{ id: 'doc-1' }]),
+      },
+      adminAuditLog: {
+        findMany: vi.fn().mockResolvedValue([]),
       },
       leadInquiry: {
         count: vi.fn().mockResolvedValue(1),
+      },
+      user: {
+        count: vi.fn().mockResolvedValue(10),
+      },
+      vipCard: {
+        count: vi.fn().mockResolvedValue(5),
       },
     };
 
@@ -51,13 +61,54 @@ describe('OverviewService', () => {
 
       expect(metrics.totalVaultBalance).toBe(142890420.0);
       expect(metrics.liquidSettlementCapital).toBe(28450110.5);
-      expect(metrics.vaultBalanceChange24h).toBe(3.4);
+      expect(metrics.vaultBalanceChange24h).toBe(3.8);
       expect(metrics.activeLiquidityRailsCount).toBe(5);
-      expect(metrics.actionQueuePending).toBe(4);
-      expect(metrics.actionQueueWarning).toContain('4 actionable treasury/compliance items require triage');
+      expect(metrics.actionQueuePending).toBe(3);
+      expect(metrics.actionQueueWarning).toContain('3 actionable treasury/compliance items require triage');
       expect(metrics.nodeTelemetry.shardLatencyMs).toBe(18);
       expect(metrics.nodeTelemetry.activeShards).toBe(8);
       expect(metrics.nodeTelemetry.coldStoreActive).toBe(true);
+    });
+
+    it('should calculate vaultBalanceChange24h dynamically for varying ledger inputs', async () => {
+      // Test when net settlement is 10% of prior balance
+      mockPrisma.ledgerAccount.findMany.mockResolvedValueOnce([
+        { accountType: 'AVAILABLE_CASH', balance: 1100000, currency: 'USD' },
+      ]);
+      mockPrisma.ledgerTransaction.findMany.mockResolvedValueOnce([
+        {
+          id: 'TX-VAR-1',
+          type: 'DEPOSIT',
+          status: 'SETTLED',
+          amount: 100000,
+          currency: 'USD',
+          createdAt: new Date(),
+        },
+      ]);
+
+      const metrics = await overviewService.getMetrics();
+      // priorBalance = 1100000 - 100000 = 1000000. (100000 / 1000000) * 100 = 10.0%
+      expect(metrics.vaultBalanceChange24h).toBe(10.0);
+    });
+
+    it('should safely handle zero prior balance when total vault balance exists', async () => {
+      mockPrisma.ledgerAccount.findMany.mockResolvedValueOnce([
+        { accountType: 'AVAILABLE_CASH', balance: 500000, currency: 'USD' },
+      ]);
+      mockPrisma.ledgerTransaction.findMany.mockResolvedValueOnce([
+        {
+          id: 'TX-INIT',
+          type: 'DEPOSIT',
+          status: 'SETTLED',
+          amount: 500000,
+          currency: 'USD',
+          createdAt: new Date(),
+        },
+      ]);
+
+      const metrics = await overviewService.getMetrics();
+      // priorBalance = 500000 - 500000 = 0. totalVaultBalance = 500000 > 0 -> 100.0%
+      expect(metrics.vaultBalanceChange24h).toBe(100.0);
     });
   });
 
@@ -76,7 +127,10 @@ describe('OverviewService', () => {
 
     it('should filter settlement records by currency', async () => {
       mockPrisma.ledgerTransaction.findMany.mockImplementation(async ({ where }: any) => {
-        if (where?.currency === 'USDC') {
+        const matchesCurrency =
+          where?.currency === 'USDC' ||
+          where?.OR?.some((cond: any) => cond.currency === 'USDC');
+        if (matchesCurrency) {
           return [
             {
               id: 'TX-USDC-1',

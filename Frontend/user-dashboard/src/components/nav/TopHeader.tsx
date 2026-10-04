@@ -7,11 +7,13 @@ import {
   EyeOff,
   UserCheck,
   Menu,
+  MessageSquare,
 } from 'lucide-react';
 import { BrandLogo } from '../common/BrandLogo';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { usePortfolioStore } from '../../store/usePortfolioStore';
+import { openSmartsuppChat } from '../../lib/smartsupp';
 
 export const TopHeader: React.FC = () => {
   const {
@@ -125,6 +127,18 @@ export const TopHeader: React.FC = () => {
           ) : (
             <Moon className="h-4 w-4 text-primary" />
           )}
+        </button>
+
+        {/* Smartsupp Live Chat Support */}
+        <button
+          onClick={() => openSmartsuppChat()}
+          data-testid="header-live-chat-btn"
+          title="Open Live Concierge Chat (Smartsupp)"
+          aria-label="Open Live Concierge Chat"
+          className="h-8 px-2.5 rounded-sm hidden sm:flex items-center space-x-1.5 border border-primary/40 bg-surface-container-low text-primary hover:bg-surface-container hover:border-primary transition-colors cursor-pointer"
+        >
+          <MessageSquare className="h-3.5 w-3.5" />
+          <span className="text-[11px] font-mono font-medium hidden md:inline">Live Chat</span>
         </button>
 
         {/* Account Profile Summary */}

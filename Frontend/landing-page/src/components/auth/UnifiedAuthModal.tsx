@@ -19,12 +19,12 @@ import {
   CheckCircle2,
   AlertCircle,
   User,
-  Loader2,
   Eye,
   EyeOff,
   ArrowLeft,
   Key,
 } from 'lucide-react';
+import { FaviconSpinner } from '../ui/FaviconSpinner';
 
 interface UnifiedAuthModalProps {
   forceInline?: boolean;
@@ -113,11 +113,13 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
   // Monitor loading duration for cold-start UX (e.g. Render 50s spin-up)
   useEffect(() => {
     if (!isLoading) return;
-    setElapsedLoadingSecs(0);
     const interval = setInterval(() => {
       setElapsedLoadingSecs((prev) => prev + 1);
     }, 1000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      setElapsedLoadingSecs(0);
+    };
   }, [isLoading]);
 
   // Countdown timer in step 2 or reset-password
@@ -485,7 +487,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <FaviconSpinner size="xs" variant="minimal" />
                 <span>
                   {elapsedLoadingSecs > 5
                     ? `Waking Gateway (${elapsedLoadingSecs}s)...`
@@ -631,7 +633,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <FaviconSpinner size="xs" variant="minimal" />
                   <span>
                     {elapsedLoadingSecs > 5
                       ? `Updating (${elapsedLoadingSecs}s)...`
@@ -838,7 +840,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <FaviconSpinner size="xs" variant="minimal" />
                 <span>
                   {elapsedLoadingSecs > 5
                     ? `Waking Gateway (${elapsedLoadingSecs}s)...`
@@ -958,7 +960,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <FaviconSpinner size="xs" variant="minimal" />
                   <span>
                     {elapsedLoadingSecs > 5
                       ? `Verifying (${elapsedLoadingSecs}s)...`

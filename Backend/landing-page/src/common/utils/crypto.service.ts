@@ -15,7 +15,9 @@ export class CryptoService {
       this.configService.get<string>('security.jwtSecret') ||
       'wavy_default_Global_hmac_secret_key_minimum_64_characters_length_required!';
 
-    const handoffConfig = this.configService.get<string>('security.handoffTicketSecret');
+    const handoffConfig =
+      this.configService.get<string>('security.handoffTicketSecret') ||
+      (process.env.NODE_ENV === 'test' ? 'test_handoff_ticket_secret_fallback_key_32_chars!' : undefined);
     if (!handoffConfig) {
       throw new Error('HANDOFF_TICKET_SECRET is missing from configuration');
     }

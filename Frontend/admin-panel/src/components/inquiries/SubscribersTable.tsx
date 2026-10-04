@@ -12,9 +12,20 @@ import {
   Trash2,
   Users,
   AlertCircle,
-  ExternalLink,
+  Eye,
+  EyeOff,
+  X,
+  Loader2,
+  Send,
+  Radio,
 } from "lucide-react"
-import { fetchSubscribers, deleteSubscriber, type NewsletterSubscriber } from "../../api/inquiries"
+import {
+  fetchSubscribers,
+  deleteSubscriber,
+  sendSubscriberEmail,
+  broadcastSubscribersEmail,
+  type NewsletterSubscriber,
+} from "../../api/inquiries"
 import { SkeletonTable } from "../common/SkeletonTable"
 import { formatTimestamp } from "../../lib/formatters"
 
@@ -24,6 +35,16 @@ export const SubscribersTable: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<"ALL" | "CONFIRMED" | "PENDING">("ALL")
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  // Email modal state
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false)
+  const [emailMode, setEmailMode] = useState<"single" | "broadcast">("single")
+  const [targetSubscriber, setTargetSubscriber] = useState<NewsletterSubscriber | null>(null)
+  const [emailSubject, setEmailSubject] = useState("")
+  const [emailMessage, setEmailMessage] = useState("")
+  const [broadcastFilter, setBroadcastFilter] = useState<"ALL" | "CONFIRMED">("ALL")
+  const [showPreview, setShowPreview] = useState(false)
+  const [emailFeedback, setEmailFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
   const {
     data: subscribers,
@@ -36,6 +57,107 @@ export const SubscribersTable: React.FC = () => {
     queryKey: ["subscribers"],
     queryFn: fetchSubscribers,
   })
+
+  const singleEmailMutation = useMutation({
+    mutationFn: (data: { id: string; subject: string; message: string }) =>
+      sendSubscriberEmail(data.id, { subject: data.subject, message: data.message }),
+    onSuccess: (res) => {
+      setEmailFeedback({
+        type: "success",
+        text: `Email successfully dispatched to ${res.recipient} via Resend.`,
+      })
+      setTimeout(() => {
+        setIsEmailModalOpen(false)
+        setEmailFeedback(null)
+      }, 1500)
+    },
+    onError: (err: Error) => {
+      setEmailFeedback({
+        type: "error",
+        text: err.message || "Failed to dispatch email via Resend.",
+      })
+    },
+  })
+
+  const broadcastEmailMutation = useMutation({
+    mutationFn: (data: { subject: string; message: string; filter: "ALL" | "CONFIRMED" }) =>
+      broadcastSubscribersEmail({ subject: data.subject, message: data.message, filter: data.filter }),
+    onSuccess: (res) => {
+      if (res.failedCount > 0) {
+        setEmailFeedback({
+          type: "error",
+          text: `Partial delivery failure: ${res.deliveredCount} delivered, ${res.failedCount} failed of ${res.totalRecipients} subscribers.`,
+        })
+      } else {
+        setEmailFeedback({
+          type: "success",
+          text: res.message || `Dispatched to ${res.deliveredCount} of ${res.totalRecipients} subscribers via Resend.`,
+        })
+        setTimeout(() => {
+          setIsEmailModalOpen(false)
+          setEmailFeedback(null)
+        }, 1800)
+      }
+    },
+    onError: (err: Error) => {
+      setEmailFeedback({
+        type: "error",
+        text: err.message || "Failed to broadcast newsletter via Resend.",
+      })
+    },
+  })
+
+  const handleOpenSingleEmail = (sub: NewsletterSubscriber) => {
+    setTargetSubscriber(sub)
+    setEmailMode("single")
+    setEmailSubject("WavyAssets Institutional Research & Market Update")
+    setEmailMessage(
+      `Dear Subscriber,\n\nWe are pleased to provide you with the latest allocation insights and quarterly research updates from the WavyAssets Executive Desk.\n\nKey Highlights:\n- Swiss Physical Vault Inflows: Gold & Tungsten Allocation Metrics\n- Quantitative Hedge Fund Yield Performance\n- Digital Asset Settlement Infrastructure Updates\n\nWarm regards,\nWavyAssets Research & Security Desk`
+    )
+    setShowPreview(false)
+    setEmailFeedback(null)
+    setIsEmailModalOpen(true)
+  }
+
+  const handleOpenBroadcastEmail = () => {
+    setTargetSubscriber(null)
+    setEmailMode("broadcast")
+    setBroadcastFilter("ALL")
+    setEmailSubject("WavyAssets Executive Newsletter: Global Wealth & Vault Allocation")
+    setEmailMessage(
+      `Dear Subscribers,\n\nHere is your official WavyAssets research update covering institutional asset vaulting and digital treasury allocations.\n\nInstitutional Highlights:\n- Direct Swiss Bank Wire RTGS DvP Settlement active across all regional nodes\n- Cryptographic Cold Storage Vault Inflow Matrix update\n- Global Equities and Liquid Asset Rebalancing Insights\n\nWarm regards,\nWavyAssets Executive Team`
+    )
+    setShowPreview(false)
+    setEmailFeedback(null)
+    setIsEmailModalOpen(true)
+  }
+
+  const handleSendEmail = (e: React.FormEvent) => {
+    e.preventDefault()
+    setEmailFeedback(null)
+    if (!emailSubject.trim()) {
+      setEmailFeedback({ type: "error", text: "Subject line is required." })
+      return
+    }
+    if (!emailMessage.trim()) {
+      setEmailFeedback({ type: "error", text: "Message body cannot be empty." })
+      return
+    }
+
+    if (emailMode === "single" && targetSubscriber) {
+      singleEmailMutation.mutate({
+        id: targetSubscriber.id,
+        subject: emailSubject.trim(),
+        message: emailMessage.trim(),
+      })
+    } else {
+      broadcastEmailMutation.mutate({
+        subject: emailSubject.trim(),
+        message: emailMessage.trim(),
+        filter: broadcastFilter,
+      })
+    }
+  }
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteSubscriber(id),
@@ -193,6 +315,16 @@ export const SubscribersTable: React.FC = () => {
           </button>
 
           <button
+            onClick={handleOpenBroadcastEmail}
+            className="px-3 py-1.5 bg-gold-accent hover:bg-[#C5A028] text-bg-canvas font-medium text-xs rounded-[4px] flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-sm"
+            title="Broadcast newsletter email to all subscribers via Resend"
+            data-testid="broadcast-email-btn"
+          >
+            <Mail className="w-3.5 h-3.5 text-bg-canvas" />
+            <span className="font-sans font-semibold">Broadcast Email</span>
+          </button>
+
+          <button
             onClick={() => refetch()}
             className="p-1.5 bg-bg-elevated hover:bg-state-hover border border-border-subtle text-xs text-secondary hover:text-on-surface rounded-[4px] transition-colors cursor-pointer shrink-0"
             title="Refresh database records"
@@ -285,15 +417,16 @@ export const SubscribersTable: React.FC = () => {
                     {/* Action buttons */}
                     <td className="py-2.5 px-4 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1.5">
-                        <a
-                          href={`mailto:${subscriber.email}?subject=WavyAssets%20Institutional%20Research`}
-                          className="px-2 py-1 rounded-[4px] bg-bg-elevated hover:bg-state-hover border border-border-subtle text-secondary hover:text-on-surface text-xs font-mono inline-flex items-center gap-1 transition-colors cursor-pointer"
-                          title="Send direct email"
+                        <button
+                          type="button"
+                          onClick={() => handleOpenSingleEmail(subscriber)}
+                          className="px-2.5 py-1 rounded-[4px] bg-bg-elevated hover:bg-state-hover border border-border-subtle text-secondary hover:text-on-surface text-xs font-mono inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                          title="Send direct email to this subscriber via Resend"
+                          data-testid={`email-subscriber-${subscriber.id}`}
                         >
                           <Mail className="w-3 h-3 text-gold-accent" />
                           <span>Email</span>
-                          <ExternalLink className="w-2.5 h-2.5 opacity-60" />
-                        </a>
+                        </button>
                         <button
                           onClick={() => {
                             if (window.confirm(`Permanently remove subscriber '${subscriber.email}' from research newsletter database?`)) {
@@ -317,6 +450,259 @@ export const SubscribersTable: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Subscriber Email Modal (Single & Broadcast via Resend) */}
+      {isEmailModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-bg-canvas/80 backdrop-blur-[4px] flex items-center justify-center p-4 overflow-y-auto"
+          data-testid="subscriber-email-modal"
+        >
+          <div className="w-full max-w-[620px] bg-bg-panel border border-border-subtle rounded-[6px] shadow-2xl overflow-hidden my-auto flex flex-col">
+            {/* Modal Header */}
+            <div className="px-5 py-3.5 bg-bg-elevated border-b border-border-subtle flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-[4px] bg-gold-accent/15 border border-gold-accent/30 flex items-center justify-center text-gold-accent">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-on-surface">
+                    {emailMode === "single"
+                      ? "Send Subscriber Email"
+                      : "Broadcast Newsletter Email"}
+                  </h3>
+                  <p className="text-[11px] font-mono text-secondary">
+                    Transactional Gateway: Resend API &bull; Branded Template
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEmailModalOpen(false)}
+                className="text-secondary hover:text-on-surface p-1 rounded hover:bg-state-hover cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body / Form */}
+            <form onSubmit={handleSendEmail} className="p-5 flex flex-col gap-4">
+              {emailFeedback && (
+                <div
+                  className={`p-3 rounded-[4px] text-xs font-mono flex items-center gap-2 ${
+                    emailFeedback.type === "success"
+                      ? "bg-status-success/15 border border-status-success/30 text-status-success"
+                      : "bg-status-danger/15 border border-status-danger/30 text-status-danger"
+                  }`}
+                >
+                  {emailFeedback.type === "success" ? (
+                    <Check className="w-4 h-4 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                  )}
+                  <span>{emailFeedback.text}</span>
+                </div>
+              )}
+
+              {/* Target / Recipient Information */}
+              <div className="p-3 bg-bg-canvas border border-border-subtle rounded-[4px] flex flex-col gap-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-secondary">
+                    Target Recipient(s)
+                  </span>
+                  <span className="font-mono text-[10px] text-telemetry-cyan font-semibold">
+                    Resend Delivery Engine
+                  </span>
+                </div>
+                {emailMode === "single" && targetSubscriber ? (
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs text-gold-accent font-semibold bg-bg-elevated px-2.5 py-1 rounded-[3px] border border-border-subtle">
+                      {targetSubscriber.email}
+                    </span>
+                    <span className="text-[10px] font-mono text-secondary">
+                      ({targetSubscriber.isConfirmed ? "Confirmed Subscriber" : "Pending Verification"})
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Radio className="w-4 h-4 text-gold-accent shrink-0" />
+                      <span className="font-sans text-xs text-on-surface font-medium">
+                        Audience Filter:
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setBroadcastFilter("ALL")}
+                        className={`px-2.5 py-1 rounded-[3px] text-xs font-mono transition-colors cursor-pointer ${
+                          broadcastFilter === "ALL"
+                            ? "bg-gold-accent text-bg-canvas font-semibold"
+                            : "bg-bg-elevated text-secondary border border-border-subtle"
+                        }`}
+                      >
+                        All ({allItems.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBroadcastFilter("CONFIRMED")}
+                        className={`px-2.5 py-1 rounded-[3px] text-xs font-mono transition-colors cursor-pointer ${
+                          broadcastFilter === "CONFIRMED"
+                            ? "bg-gold-accent text-bg-canvas font-semibold"
+                            : "bg-bg-elevated text-secondary border border-border-subtle"
+                        }`}
+                      >
+                        Confirmed Only ({confirmedCount})
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Subject Line */}
+              <div className="space-y-1">
+                <label className="block font-mono text-[10px] uppercase tracking-wider text-secondary">
+                  Email Subject Line *
+                </label>
+                <input
+                  type="text"
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  placeholder="e.g. WavyAssets Institutional Market Update"
+                  className="w-full bg-bg-canvas border border-border-subtle rounded-[4px] px-3 py-1.5 text-xs text-on-surface placeholder:text-secondary/60 focus:border-gold-accent focus:outline-none"
+                  required
+                  data-testid="email-subject-input"
+                />
+              </div>
+
+              {/* Message Body or Live Preview Toggle */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="block font-mono text-[10px] uppercase tracking-wider text-secondary">
+                    Message Content &amp; Briefing Text *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowPreview(!showPreview)}
+                    className="text-[11px] font-mono text-gold-accent hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    {showPreview ? (
+                      <>
+                        <EyeOff className="w-3 h-3" />
+                        <span>Edit Raw Text</span>
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="w-3 h-3" />
+                        <span>Preview with Logo &amp; Favicon</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {showPreview ? (
+                  /* Live Branded Email Preview Rendering */
+                  <div
+                    className="bg-[#08090B] border border-border-subtle rounded-[4px] p-4 text-xs font-sans max-h-64 overflow-y-auto"
+                    data-testid="email-brand-preview"
+                  >
+                    <div className="bg-[#0F131A] border border-[#1F2937] rounded-[6px] p-4 flex flex-col gap-3">
+                      {/* Brand Header with Logo and Favicon */}
+                      <div className="flex items-center gap-3 pb-3 border-b border-[#1F2937]">
+                        {/* Official WavyAssets Favicon Squircle Emblem */}
+                        <div className="w-8 h-8 rounded-[7px] shrink-0 bg-[#08090B] border border-gold-accent/50 p-1 flex items-center justify-center">
+                          <svg viewBox="0 0 64 64" fill="none" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="64" height="64" rx="14" fill="#08090B" />
+                            <rect x="1" y="1" width="62" height="62" rx="13" stroke="#D4AF37" strokeWidth="2.5" strokeOpacity="0.8" />
+                            <circle cx="32" cy="32" r="18" fill="#D4AF37" fillOpacity="0.15" />
+                            <path d="M 12 33 C 18 19, 26 19, 32 33 C 38 47, 46 47, 52 33" stroke="#D4AF37" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M 12 42 C 18 28, 26 28, 32 42 C 38 56, 46 56, 52 42" stroke="#00C288" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.95" />
+                            <circle cx="32" cy="17" r="3.2" fill="#D4AF37" />
+                          </svg>
+                        </div>
+                        {/* Brand Logo Typography */}
+                        <div className="flex items-center text-sm font-bold tracking-wider">
+                          <span className="text-white">WAVY</span>
+                          <span className="text-gold-accent font-semibold ml-0.5">ASSETS</span>
+                          <span className="ml-2 px-1.5 py-0.2 bg-[#00C288]/15 border border-[#00C288]/30 text-[#00C288] text-[8px] font-mono font-bold rounded-[2px]">
+                            ● SECURED
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Preview Subject */}
+                      <h4 className="font-bold text-sm text-on-surface">
+                        {emailSubject || "Email Subject"}
+                      </h4>
+
+                      {/* Preview Message */}
+                      <div className="text-secondary whitespace-pre-wrap leading-relaxed text-xs">
+                        {emailMessage || "Enter message content above to view preview."}
+                      </div>
+
+                      {/* Preview Footer */}
+                      <div className="pt-3 border-t border-[#1F2937] text-[10px] text-secondary/60 text-center font-mono">
+                        &copy; {new Date().getFullYear()} WavyAssets AG &bull; Zurich FreePort &bull; FinSA / AMLA Compliant
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <textarea
+                    rows={6}
+                    value={emailMessage}
+                    onChange={(e) => setEmailMessage(e.target.value)}
+                    placeholder="Enter email content..."
+                    className="w-full bg-bg-canvas border border-border-subtle rounded-[4px] px-3 py-2 text-xs text-on-surface placeholder:text-secondary/60 focus:border-gold-accent focus:outline-none leading-relaxed font-sans"
+                    required
+                    data-testid="email-message-textarea"
+                  />
+                )}
+                <span className="text-[10px] text-secondary font-mono block">
+                  All dispatches automatically embed the official project SVG Favicon and Logo in the email template.
+                </span>
+              </div>
+
+              {/* Modal Footer / Actions */}
+              <div className="flex items-center justify-between pt-2 border-t border-border-subtle">
+                <div className="flex items-center gap-1.5 text-[10px] font-mono text-secondary">
+                  <span className="w-1.5 h-1.5 rounded-full bg-status-success animate-pulse" />
+                  <span>Resend Email Gateway Ready</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEmailModalOpen(false)}
+                    className="px-3.5 py-1.5 rounded-[4px] border border-border-subtle bg-bg-canvas hover:bg-state-hover text-on-surface text-xs font-medium cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={singleEmailMutation.isPending || broadcastEmailMutation.isPending}
+                    className="px-4 py-1.5 rounded-[4px] bg-gold-accent hover:bg-[#C5A028] text-bg-canvas text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-60"
+                    data-testid="send-email-submit-btn"
+                  >
+                    {singleEmailMutation.isPending || broadcastEmailMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Dispatching via Resend...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5" />
+                        <span>
+                          {emailMode === "single"
+                            ? "Send Email"
+                            : `Broadcast to ${broadcastFilter === "ALL" ? allItems.length : confirmedCount} Subscribers`}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

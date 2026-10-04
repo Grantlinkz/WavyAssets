@@ -41,7 +41,20 @@ export interface DepositRailsData {
 }
 
 export async function fetchDepositRails(): Promise<DepositRailsData> {
-  return apiClient<DepositRailsData>("/deposit-rails")
+  const res = await apiClient<Record<string, unknown>>("/deposit-rails")
+  const fiatRail = (res.fiatRail || res.fiat) as FiatDepositRailConfig | undefined
+  const cryptoRails = (res.cryptoRails || res.crypto) as CryptoDepositRailConfig[] | undefined
+  const telemetry = res.telemetry as DepositRailsTelemetry | undefined
+
+  if (!fiatRail || !telemetry) {
+    throw new Error("Deposit rails configuration or telemetry unavailable from server")
+  }
+
+  return {
+    fiatRail,
+    cryptoRails: cryptoRails || [],
+    telemetry,
+  }
 }
 
 export async function updateFiatRail(
@@ -59,11 +72,31 @@ export async function updateFiatRail(
 export async function updateCryptoRail(
   payload: CryptoDepositRailConfig
 ): Promise<{ success: boolean; cryptoRail: CryptoDepositRailConfig; message: string }> {
+  const cleanPayload = {
+    id: payload.id || undefined,
+    asset: payload.asset,
+    network: payload.network,
+    vaultAddress: payload.vaultAddress,
+    minDepositUsd: payload.minDepositUsd,
+    confirmations: payload.confirmations,
+    isActive: payload.isActive,
+  }
   return apiClient<{ success: boolean; cryptoRail: CryptoDepositRailConfig; message: string }>(
     "/deposit-rails/crypto",
     {
       method: "PUT",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(cleanPayload),
+    }
+  )
+}
+
+export async function deleteCryptoRail(
+  id: string
+): Promise<{ success: boolean; message: string }> {
+  return apiClient<{ success: boolean; message: string }>(
+    `/deposit-rails/crypto/${encodeURIComponent(id)}`,
+    {
+      method: "DELETE",
     }
   )
 }
@@ -86,12 +119,14 @@ export async function testClientMeshConnection(): Promise<{
 
 export async function flushInvalidationCache(): Promise<{
   success: boolean
-  flushedNodesCount: number
+  propagatedRailsCount: number
+  flushedNodesCount?: number
   message: string
 }> {
   return apiClient<{
     success: boolean
-    flushedNodesCount: number
+    propagatedRailsCount: number
+    flushedNodesCount?: number
     message: string
   }>("/deposit-rails/flush-cache", {
     method: "POST",

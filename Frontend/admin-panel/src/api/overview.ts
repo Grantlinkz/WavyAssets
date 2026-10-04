@@ -14,6 +14,7 @@ export interface OverviewMetrics {
     activeShards: number
     coldStoreActive: boolean
   }
+  badgeCounts?: BadgeCounts
 }
 
 export interface SettlementRecord {
@@ -47,6 +48,7 @@ export interface BadgeCounts {
   pendingCompliance: number
   treasurySignOffs: number
   activeCards: number
+  pendingWithdrawals?: number
 }
 
 export async function fetchBadgeCounts(): Promise<BadgeCounts> {

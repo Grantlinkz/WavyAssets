@@ -1,15 +1,14 @@
 import React from 'react';
 import { Shield, KeyRound, ArrowRight, ExternalLink } from 'lucide-react';
 import { Button } from '../ui/button';
+import { getLandingUrl } from '../../lib/utils';
 
 interface InstitutionalGateProps {
   onTicketExchangeSuccess?: () => void;
 }
 
 export const InstitutionalGate: React.FC<InstitutionalGateProps> = () => {
-  const landingUrl = typeof window !== 'undefined'
-    ? (import.meta.env.VITE_LANDING_URL || `${window.location.protocol}//${window.location.hostname}:5173`)
-    : 'http://localhost:5173';
+  const landingUrl = getLandingUrl();
 
   const handleSignInRedirect = () => {
     if (typeof window !== 'undefined') {

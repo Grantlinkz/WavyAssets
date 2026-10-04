@@ -6,6 +6,7 @@ import {
   ShieldAlert,
   FileCheck,
   CheckCircle2,
+  XCircle,
   AlertTriangle,
   ArrowRight,
   RotateCw,
@@ -15,12 +16,15 @@ import {
   CheckSquare,
   Square,
   Hash,
+  FileText,
+  ExternalLink,
 } from "lucide-react"
 import { useComplianceStore } from "../../store/useComplianceStore"
 import { useAdminAuthStore } from "../../store/useAdminAuthStore"
 import {
   elevateUserTier,
   rejectKycDossier,
+  verifyComplianceDocument,
   updateFinmaChecklist,
   type FinmaChecklist,
 } from "../../api/compliance"
@@ -51,6 +55,8 @@ export const SplitScreenDocInspector: React.FC = () => {
   const [isRejectionMode, setIsRejectionMode] = useState(false)
   const [zoomLevel, setZoomLevel] = useState(100)
   const [rotation, setRotation] = useState(0)
+  const [viewMode, setViewMode] = useState<"document" | "enclave">("document")
+  const [imgLoadFailed, setImgLoadFailed] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
@@ -73,8 +79,14 @@ export const SplitScreenDocInspector: React.FC = () => {
       setSuccessMsg(null)
       setZoomLevel(100)
       setRotation(0)
+      setViewMode("document")
+      setImgLoadFailed(false)
     }
   }, [selectedDossier])
+
+  React.useEffect(() => {
+    setImgLoadFailed(false)
+  }, [activeDocumentIndex])
 
   // Checklist toggle
   const toggleChecklistItem = async (key: keyof FinmaChecklist) => {
@@ -116,8 +128,10 @@ export const SplitScreenDocInspector: React.FC = () => {
       })
     },
     onSuccess: (data) => {
+      const targetTier =
+        data?.dossier?.requestedTier || selectedDossier?.requestedTier || "INSTITUTIONAL"
       setSuccessMsg(
-        `Dossier elevated to ${data.dossier.requestedTier}. User Ledger access elevated.`
+        `Dossier elevated to ${targetTier}. User Ledger access elevated.`
       )
       queryClient.invalidateQueries({ queryKey: ["compliance"] })
       queryClient.invalidateQueries({ queryKey: ["users"] })
@@ -150,12 +164,68 @@ export const SplitScreenDocInspector: React.FC = () => {
     onSuccess: () => {
       setSuccessMsg("Dossier has been rejected/escalated for FINMA Article 14 review.")
       queryClient.invalidateQueries({ queryKey: ["compliance"] })
+      queryClient.invalidateQueries({ queryKey: ["users"] })
       setTimeout(() => {
         closeInspector()
       }, 1500)
     },
     onError: (err: Error) => {
       setErrorMsg(err.message || "Failed to reject dossier.")
+    },
+  })
+
+  // Document verification mutation
+  const verifyDocMutation = useMutation({
+    mutationFn: async ({
+      documentId,
+      isVerified,
+      rejectionReason,
+    }: {
+      documentId: string
+      isVerified: boolean
+      rejectionReason?: string
+    }) => {
+      return verifyComplianceDocument({
+        documentId,
+        isVerified,
+        rejectionReason,
+      })
+    },
+    onSuccess: (_data, variables) => {
+      setSuccessMsg(
+        variables.isVerified
+          ? "Document verified and attested in compliance registry."
+          : "Document marked as rejected."
+      )
+      queryClient.invalidateQueries({ queryKey: ["compliance"] })
+      queryClient.invalidateQueries({ queryKey: ["users"] })
+
+      if (selectedDossier) {
+        const updatedDocs = (selectedDossier.documents || []).map((d) =>
+          d.id === variables.documentId
+            ? {
+                ...d,
+                verified: variables.isVerified,
+                status: variables.isVerified
+                  ? ("VERIFIED" as const)
+                  : ("REJECTED" as const),
+              }
+            : d
+        )
+        const allVerified = updatedDocs.every((d) => d.verified)
+        const hasPending = updatedDocs.some((d) => d.status === "PENDING")
+        const anyRejected = updatedDocs.some((d) => d.status === "REJECTED")
+        useComplianceStore.getState().setSelectedDossier({
+          ...selectedDossier,
+          documents: updatedDocs,
+          status: allVerified ? "APPROVED" : hasPending ? "PENDING_REVIEW" : anyRejected ? "REJECTED" : "PENDING_REVIEW",
+        })
+      }
+      setTimeout(() => setSuccessMsg(null), 3000)
+    },
+    onError: (err: Error) => {
+      setErrorMsg(err.message || "Failed to update document status.")
+      setTimeout(() => setErrorMsg(null), 4000)
     },
   })
 
@@ -485,7 +555,10 @@ export const SplitScreenDocInspector: React.FC = () => {
                   {(selectedDossier.documents || []).map((doc, idx) => (
                     <button
                       key={doc.id || idx}
-                      onClick={() => setActiveDocumentIndex(idx)}
+                      onClick={() => {
+                        setActiveDocumentIndex(idx)
+                        setImgLoadFailed(false)
+                      }}
                       className={`px-3 py-1.5 rounded-[2px] font-mono text-[11px] flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 border ${
                         activeDocumentIndex === idx
                           ? "bg-bg-canvas text-gold-accent border-gold-accent/40 font-semibold"
@@ -494,8 +567,12 @@ export const SplitScreenDocInspector: React.FC = () => {
                     >
                       <FileCheck className="w-3 h-3" />
                       <span>{doc.type.replace(/_/g, " ")}</span>
-                      {doc.verified && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-status-success ml-0.5" />
+                      {doc.verified ? (
+                        <span className="w-1.5 h-1.5 rounded-full bg-status-success ml-0.5" title="Verified" />
+                      ) : doc.status === "REJECTED" ? (
+                        <span className="w-1.5 h-1.5 rounded-full bg-status-danger ml-0.5" title="Rejected" />
+                      ) : (
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 ml-0.5" title="Pending Review" />
                       )}
                     </button>
                   ))}
@@ -506,119 +583,286 @@ export const SplitScreenDocInspector: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-on-surface">{activeDoc.filename}</span>
                     <span className="font-mono text-secondary">({activeDoc.fileSize})</span>
+                    {activeDoc.uploadedAt && (
+                      <span className="font-mono text-[10px] text-secondary">
+                        • {formatTimestamp(activeDoc.uploadedAt)}
+                      </span>
+                    )}
+                    {activeDoc.status === "REJECTED" || (!activeDoc.verified && activeDoc.rejectionReason) ? (
+                      <span className="px-1.5 py-0.2 rounded-[2px] font-mono text-[9px] font-bold bg-status-danger/15 text-status-danger border border-status-danger/30">
+                        REJECTED
+                      </span>
+                    ) : activeDoc.verified ? (
+                      <span className="px-1.5 py-0.2 rounded-[2px] font-mono text-[9px] font-bold bg-status-success/15 text-status-success border border-status-success/30">
+                        VERIFIED
+                      </span>
+                    ) : (
+                      <span className="px-1.5 py-0.2 rounded-[2px] font-mono text-[9px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 animate-pulse">
+                        PENDING REVIEW
+                      </span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => setZoomLevel((z) => Math.max(50, z - 15))}
-                      className="p-1 rounded-[2px] hover:bg-state-hover border border-border-subtle cursor-pointer"
-                      title="Zoom Out"
-                    >
-                      <ZoomOut className="w-3.5 h-3.5" />
-                    </button>
-                    <span className="font-mono text-[10px] px-1">{zoomLevel}%</span>
-                    <button
-                      onClick={() => setZoomLevel((z) => Math.min(200, z + 15))}
-                      className="p-1 rounded-[2px] hover:bg-state-hover border border-border-subtle cursor-pointer"
-                      title="Zoom In"
-                    >
-                      <ZoomIn className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => setRotation((r) => (r + 90) % 360)}
-                      className="p-1 rounded-[2px] hover:bg-state-hover border border-border-subtle cursor-pointer ml-1"
-                      title="Rotate 90deg"
-                    >
-                      <RotateCw className="w-3.5 h-3.5" />
-                    </button>
+
+                  <div className="flex items-center gap-2">
+                    {/* Document Level Approval / Rejection Controls */}
+                    <div className="flex items-center gap-1.5 mr-2 pr-2 border-r border-border-subtle/60">
+                      <button
+                        type="button"
+                        onClick={() => verifyDocMutation.mutate({ documentId: activeDoc.id, isVerified: true })}
+                        disabled={verifyDocMutation.isPending || activeDoc.verified}
+                        className="px-2 py-0.5 rounded-[2px] bg-status-success/15 hover:bg-status-success/25 border border-status-success/30 text-status-success font-mono text-[10px] font-semibold flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-40"
+                        title="Approve this document"
+                      >
+                        <CheckCircle2 className="w-3 h-3" />
+                        <span>Approve Doc</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const reason = window.prompt(
+                            "Reason for rejecting this document:",
+                            "Document details unverified or illegible"
+                          )
+                          if (reason && reason.trim()) {
+                            verifyDocMutation.mutate({
+                              documentId: activeDoc.id,
+                              isVerified: false,
+                              rejectionReason: reason.trim(),
+                            })
+                          }
+                        }}
+                        disabled={verifyDocMutation.isPending}
+                        className="px-2 py-0.5 rounded-[2px] bg-status-danger/15 hover:bg-status-danger/25 border border-status-danger/30 text-status-danger font-mono text-[10px] font-semibold flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-40"
+                        title="Reject this document"
+                      >
+                        <XCircle className="w-3 h-3" />
+                        <span>Reject Doc</span>
+                      </button>
+                    </div>
+
+                    {/* View Mode Switcher */}
+                    <div className="flex items-center bg-bg-panel rounded-[3px] border border-border-subtle p-0.5 font-mono text-[10px]">
+                      <button
+                        type="button"
+                        onClick={() => setViewMode("document")}
+                        className={`px-2 py-0.5 rounded-[2px] transition-colors cursor-pointer ${
+                          viewMode === "document"
+                            ? "bg-gold-accent/20 text-gold-accent font-bold"
+                            : "text-secondary hover:text-on-surface"
+                        }`}
+                      >
+                        Document Preview
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setViewMode("enclave")}
+                        className={`px-2 py-0.5 rounded-[2px] transition-colors cursor-pointer ${
+                          viewMode === "enclave"
+                            ? "bg-gold-accent/20 text-gold-accent font-bold"
+                            : "text-secondary hover:text-on-surface"
+                        }`}
+                      >
+                        Enclave Seal &amp; Checksum
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 ml-2 border-l border-border-subtle/60 pl-2">
+                      <button
+                        onClick={() => setZoomLevel((z) => Math.max(50, z - 15))}
+                        className="p-1 rounded-[2px] hover:bg-state-hover border border-border-subtle cursor-pointer"
+                        title="Zoom Out"
+                      >
+                        <ZoomOut className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="font-mono text-[10px] px-1">{zoomLevel}%</span>
+                      <button
+                        onClick={() => setZoomLevel((z) => Math.min(200, z + 15))}
+                        className="p-1 rounded-[2px] hover:bg-state-hover border border-border-subtle cursor-pointer"
+                        title="Zoom In"
+                      >
+                        <ZoomIn className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setRotation((r) => (r + 90) % 360)}
+                        className="p-1 rounded-[2px] hover:bg-state-hover border border-border-subtle cursor-pointer ml-1"
+                        title="Rotate 90deg"
+                      >
+                        <RotateCw className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
+                {/* Rejection / Replacement Banner */}
+                {activeDoc.status === "REJECTED" && (
+                  <div className="px-4 py-2 bg-status-danger/10 border-b border-status-danger/30 text-xs text-status-danger flex items-center justify-between font-mono">
+                    <div className="flex items-center gap-2">
+                      <XCircle className="w-4 h-4 shrink-0" />
+                      <span>
+                        <strong>Document Rejected:</strong> {activeDoc.rejectionReason || "Details unverified or illegible."}
+                      </span>
+                    </div>
+                    {activeDoc.rejectedAt && (
+                      <span className="text-[10px] text-secondary">
+                        Rejected at {formatTimestamp(activeDoc.rejectedAt)}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {activeDoc.status === "PENDING" && typeof activeDoc.version === "number" && activeDoc.version > 1 && (
+                  <div className="px-4 py-2 bg-amber-500/10 border-b border-amber-500/30 text-xs text-amber-400 flex items-center gap-2 font-mono">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span>
+                      <strong>Replacement Document (v{activeDoc.version}):</strong> Re-uploaded document submitted following previous rejection. Please review and verify.
+                    </span>
+                  </div>
+                )}
+
                 {/* Document Preview Canvas */}
                 <div className="flex-1 p-6 overflow-auto flex items-center justify-center bg-black/40">
-                  <div
-                    style={{
-                      transform: `scale(${zoomLevel / 100}) rotate(${rotation}deg)`,
-                      transition: "transform 0.15s ease",
-                    }}
-                    className="w-full max-w-md bg-bg-panel border border-border-subtle rounded-[4px] p-6 shadow-2xl relative text-xs flex flex-col gap-4"
-                  >
-                    {/* Visual Security Hologram Header */}
-                    <div className="flex items-center justify-between border-b border-border-subtle pb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-gold-accent/20 border border-gold-accent flex items-center justify-center text-gold-accent">
-                          <Lock className="w-3 h-3" />
+                  {viewMode === "document" ? (
+                    <div
+                      style={{
+                        transform: `scale(${zoomLevel / 100}) rotate(${rotation}deg)`,
+                        transition: "transform 0.15s ease",
+                      }}
+                      className="w-full flex items-center justify-center"
+                    >
+                      {Boolean(activeDoc.documentUrl) &&
+                      !imgLoadFailed &&
+                      (activeDoc.documentUrl.startsWith("data:image/") ||
+                        activeDoc.documentUrl.match(/\.(png|jpe?g|webp|gif|svg)($|\?)/i) ||
+                        Boolean(activeDoc.filename?.match(/\.(png|jpe?g|webp|gif|svg)$/i))) ? (
+                        <div className="max-w-xl p-2 bg-bg-panel border border-border-subtle rounded-[6px] shadow-2xl">
+                          <img
+                            src={activeDoc.documentUrl}
+                            alt={activeDoc.filename || "Uploaded KYC Document"}
+                            onError={() => setImgLoadFailed(true)}
+                            className="max-h-[500px] max-w-full rounded-[4px] object-contain shadow-inner"
+                          />
                         </div>
-                        <div>
-                          <div className="font-mono text-[10px] font-bold text-gold-accent uppercase tracking-wider">
-                            Supreme Vault Archive Encrypted Record
+                      ) : Boolean(activeDoc.documentUrl) &&
+                        !imgLoadFailed &&
+                        (activeDoc.documentUrl.startsWith("data:application/pdf") ||
+                          activeDoc.documentUrl.endsWith(".pdf") ||
+                          Boolean(activeDoc.filename?.endsWith(".pdf"))) ? (
+                        <div className="w-full max-w-2xl h-[520px] rounded-[6px] border border-border-subtle shadow-2xl bg-bg-panel overflow-hidden">
+                          <iframe
+                            src={activeDoc.documentUrl}
+                            title={activeDoc.filename || "PDF Document"}
+                            className="w-full h-full border-0"
+                            onError={() => setImgLoadFailed(true)}
+                          />
+                        </div>
+                      ) : (
+                        /* Document preview unavailable fallback */
+                        <div className="w-full max-w-md bg-bg-panel border border-border-subtle rounded-[6px] p-6 shadow-xl text-center flex flex-col items-center justify-center gap-3">
+                          <FileText className="w-10 h-10 text-secondary opacity-50" />
+                          <div>
+                            <h4 className="text-sm font-semibold text-on-surface">Document preview unavailable</h4>
+                            <p className="text-xs text-secondary mt-1 font-mono break-all">{activeDoc.filename || "Unknown file"}</p>
                           </div>
-                          <div className="text-[9px] text-secondary">
-                            FINMA Verification Enclave Zurich Shard #04
+                          {activeDoc.documentUrl ? (
+                            <a
+                              href={activeDoc.documentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-bg-elevated hover:bg-state-hover border border-border-subtle text-gold-accent text-xs font-medium transition-colors"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              <span>Open raw document</span>
+                            </a>
+                          ) : null}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    /* Enclave Cryptographic Seal Archive View */
+                    <div
+                      style={{
+                        transform: `scale(${zoomLevel / 100}) rotate(${rotation}deg)`,
+                        transition: "transform 0.15s ease",
+                      }}
+                      className="w-full max-w-md bg-bg-panel border border-border-subtle rounded-[4px] p-6 shadow-2xl relative text-xs flex flex-col gap-4"
+                    >
+                      {/* Visual Security Hologram Header */}
+                      <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-gold-accent/20 border border-gold-accent flex items-center justify-center text-gold-accent">
+                            <Lock className="w-3 h-3" />
+                          </div>
+                          <div>
+                            <div className="font-mono text-[10px] font-bold text-gold-accent uppercase tracking-wider">
+                              Supreme Vault Archive Encrypted Record
+                            </div>
+                            <div className="text-[9px] text-secondary">
+                              FINMA Verification Enclave Zurich Shard #04
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <span
-                        className={`px-1.5 py-0.5 rounded-[2px] font-mono text-[9px] font-bold border ${
-                          activeDoc.verified
-                            ? "bg-status-success/20 text-status-success border-status-success/40"
-                            : "bg-status-warning/20 text-status-warning border-status-warning/40"
-                        }`}
-                      >
-                        {activeDoc.verified ? "VERIFIED ENCLAVE" : "UNVERIFIED"}
-                      </span>
-                    </div>
-
-                    {/* Simulated Document Details */}
-                    <div className="space-y-2 py-2">
-                      <div className="p-3 bg-bg-canvas/80 rounded-[2px] border border-border-subtle">
-                        <div className="text-[10px] text-secondary uppercase font-mono mb-1">
-                          Document Classification
-                        </div>
-                        <div className="text-sm font-semibold text-on-surface">
-                          {activeDoc.type.replace(/_/g, " ")}
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-[11px]">
-                        <div className="p-2 bg-bg-canvas/80 rounded-[2px] border border-border-subtle">
-                          <div className="text-[9px] text-secondary">Subject Entity</div>
-                          <div className="font-semibold text-on-surface truncate">{selectedDossier.userName}</div>
-                        </div>
-                        <div className="p-2 bg-bg-canvas/80 rounded-[2px] border border-border-subtle">
-                          <div className="text-[9px] text-secondary">Jurisdiction</div>
-                          <div className="font-semibold text-on-surface">{selectedDossier.country}</div>
-                        </div>
-                      </div>
-
-                      {/* Hash Integrity Box */}
-                      <div className="p-2.5 bg-bg-canvas/80 rounded-[2px] border border-border-subtle font-mono text-[10px]">
-                        <div className="text-secondary flex items-center gap-1 mb-1">
-                          <Hash className="w-3 h-3 text-telemetry-cyan" />
-                          <span>SHA-256 Checksum:</span>
-                        </div>
-                        <div className="text-telemetry-cyan break-all">
-                          {activeDoc.sha256Hash || "Verification pending"}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Watermark Footer */}
-                    <div className="pt-2 border-t border-border-subtle/50 flex justify-between items-center text-[10px] text-secondary">
-                      <span>Audit Timestamp: {formatTimestamp(selectedDossier.submittedAt)}</span>
-                      <span
-                        className={`flex items-center gap-1 ${
-                          activeDoc.verified ? "text-status-success" : "text-status-warning"
-                        }`}
-                      >
-                        <CheckCircle2 className="w-3 h-3" />
-                        <span>
-                          {activeDoc.verified
-                            ? "Cryptographic Seal Intact"
-                            : "Pending Cryptographic Seal"}
+                        <span
+                          className={`px-1.5 py-0.5 rounded-[2px] font-mono text-[9px] font-bold border ${
+                            activeDoc.verified
+                              ? "bg-status-success/20 text-status-success border-status-success/40"
+                              : "bg-status-warning/20 text-status-warning border-status-warning/40"
+                          }`}
+                        >
+                          {activeDoc.verified ? "VERIFIED ENCLAVE" : "UNVERIFIED"}
                         </span>
-                      </span>
+                      </div>
+
+                      {/* Simulated Document Details */}
+                      <div className="space-y-2 py-2">
+                        <div className="p-3 bg-bg-canvas/80 rounded-[2px] border border-border-subtle">
+                          <div className="text-[10px] text-secondary uppercase font-mono mb-1">
+                            Document Classification
+                          </div>
+                          <div className="text-sm font-semibold text-on-surface">
+                            {activeDoc.type.replace(/_/g, " ")}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-[11px]">
+                          <div className="p-2 bg-bg-canvas/80 rounded-[2px] border border-border-subtle">
+                            <div className="text-[9px] text-secondary">Subject Entity</div>
+                            <div className="font-semibold text-on-surface truncate">{selectedDossier.userName}</div>
+                          </div>
+                          <div className="p-2 bg-bg-canvas/80 rounded-[2px] border border-border-subtle">
+                            <div className="text-[9px] text-secondary">Jurisdiction</div>
+                            <div className="font-semibold text-on-surface">{selectedDossier.country}</div>
+                          </div>
+                        </div>
+
+                        {/* Hash Integrity Box */}
+                        <div className="p-2.5 bg-bg-canvas/80 rounded-[2px] border border-border-subtle font-mono text-[10px]">
+                          <div className="text-secondary flex items-center gap-1 mb-1">
+                            <Hash className="w-3 h-3 text-telemetry-cyan" />
+                            <span>SHA-256 Checksum:</span>
+                          </div>
+                          <div className="text-telemetry-cyan break-all">
+                            {activeDoc.sha256Hash || "Verification pending"}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Watermark Footer */}
+                      <div className="pt-2 border-t border-border-subtle/50 flex justify-between items-center text-[10px] text-secondary">
+                        <span>Audit Timestamp: {formatTimestamp(selectedDossier.submittedAt)}</span>
+                        <span
+                          className={`flex items-center gap-1 ${
+                            activeDoc.verified ? "text-status-success" : "text-status-warning"
+                          }`}
+                        >
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>
+                            {activeDoc.verified
+                              ? "Cryptographic Seal Intact"
+                              : "Pending Cryptographic Seal"}
+                          </span>
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </>
             )}

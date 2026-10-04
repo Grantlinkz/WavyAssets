@@ -43,6 +43,13 @@ describe("Immutable Audit Trail & Diff Inspector Integration", () => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
+    queryClient.setQueryData(["audit-telemetry"], {
+      totalLogEntries: 14892,
+      todayExecutions: 38,
+      merkleBlock: 19842109,
+      merkleRoot: "0x7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
+      retentionYears: 10,
+    })
     useAuditStore.setState({
       searchQuery: "",
       selectedCategory: "ALL",
@@ -79,6 +86,7 @@ describe("Immutable Audit Trail & Diff Inspector Integration", () => {
     expect(html).toContain("Today")
     expect(html).toContain("Past 7 Days")
     expect(html).toContain("Past 30 Days")
+    expect(html).toContain("All")
     expect(html).toContain("All Actions")
     expect(html).toContain("Balance Credits")
     expect(html).toContain("User Locks")

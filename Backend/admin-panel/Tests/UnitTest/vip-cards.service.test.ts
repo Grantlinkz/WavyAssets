@@ -135,7 +135,7 @@ describe('VipCardsService (Unit)', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should reject minting if user already has an active Supreme card', async () => {
+    it('should upgrade/re-issue VIP card if user already has an active card', async () => {
       mockPrisma.user.findUnique.mockResolvedValueOnce({
         id: 'usr-1',
         email: 'alice@vault.ch',
@@ -143,14 +143,44 @@ describe('VipCardsService (Unit)', () => {
       mockPrisma.vipCard.findUnique.mockResolvedValueOnce({
         id: 'existing-card-1',
         userId: 'usr-1',
+        tier: 'OBSIDIAN',
+        cardNumberLast4: '1234',
+        cardType: 'PHYSICAL',
+        dailySpendLimit: 50000,
+        shippingStatus: 'DELIVERED',
+        isFrozen: false,
+      });
+      mockPrisma.vipCard.update.mockResolvedValueOnce({
+        id: 'existing-card-1',
+        userId: 'usr-1',
+        cardNumberLast4: '9901',
+        cardType: 'PHYSICAL',
+        tier: 'CELEBRITY',
+        isFrozen: false,
+        dailySpendLimit: 0,
+        pinEncrypted: 'mocked_encrypted',
+        shippingStatus: 'IN_TRANSIT',
+        user: { id: 'usr-1', fullName: 'Alice Vault', email: 'alice@vault.ch' },
       });
 
-      await expect(
-        service.mintCard('admin-1', {
-          userId: 'usr-1',
-          temporaryPin: '8492',
+      const card = await service.mintCard('admin-1', {
+        userId: 'usr-1',
+        temporaryPin: '9942',
+        cardNumberLast4: '9901',
+        tier: VipCardTier.CELEBRITY,
+      });
+
+      expect(card.id).toBe('existing-card-1');
+      expect(mockPrisma.vipCard.update).toHaveBeenCalled();
+      expect(mockPrisma.adminAuditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            action: 'VIP_CARD_MINT',
+            targetEntity: 'VipCard',
+            targetId: 'existing-card-1',
+          }),
         }),
-      ).rejects.toThrow(ConflictException);
+      );
     });
 
     it('should encrypt temporary PIN with AES-256-GCM and create VIP card', async () => {

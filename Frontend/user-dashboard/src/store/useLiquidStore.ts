@@ -13,6 +13,7 @@ import {
   fetchUserStockOrders,
   submitStockOrder,
   cancelStockOrderApi,
+  fetchUserTransactions,
 } from '../lib/api';
 import { isSsrOrTestEnv } from '../lib/calculations';
 
@@ -22,7 +23,7 @@ export interface ActiveOrder {
   type: 'BUY_LIMIT' | 'SELL_LIMIT' | 'STOP_LOSS';
   shares: number;
   limitPrice: number;
-  status: 'PENDING' | 'ROUTING' | 'CANCELLED';
+  status: 'Active' | 'Cancelled' | 'Expired' | 'PENDING' | 'ROUTING' | 'CANCELLED';
   expires: string;
 }
 
@@ -58,7 +59,9 @@ interface LiquidState {
   sweepThreshold: number;
   transactions: WalletTransaction[];
   filterVertical: string;
+  loadTransactions: (userId?: string) => Promise<void>;
   addTransaction: (tx: WalletTransaction) => void;
+  removeTransaction: (id: string) => void;
   toggleAutoSweep: () => void;
   setSweepThreshold: (amount: number) => void;
   setFilterVertical: (v: string) => void;
@@ -79,19 +82,19 @@ export const useLiquidStore = create<LiquidState>((set) => ({
   loadUserDcaSchedules: async () => {
     if (isSsrOrTestEnv()) return;
     try {
-      const data = await fetchUserDcaSchedules<any[]>([]);
+      const data = await fetchUserDcaSchedules<Record<string, unknown>[]>([]);
       if (Array.isArray(data)) {
         const mapped: DcaScheduleItem[] = data.map((d) => ({
-          id: d.id,
-          asset: d.symbol || d.asset || 'BTC',
-          amountUsd: Number(d.amountUsd),
-          frequency: (d.frequency || 'DAILY') as DcaScheduleItem['frequency'],
-          sourceAccount: d.sourceAccount || 'USD Operating Balance',
+          id: String(d.id || ''),
+          asset: String(d.symbol || d.asset || 'BTC'),
+          amountUsd: Number(d.amountUsd || 0),
+          frequency: (String(d.frequency || 'DAILY').toUpperCase()) as DcaScheduleItem['frequency'],
+          sourceAccount: String(d.sourceAccount || 'USD Operating Balance'),
           active: d.isActive !== undefined ? Boolean(d.isActive) : Boolean(d.active),
           nextExecution: d.nextRunAt
-            ? new Date(d.nextRunAt).toLocaleString()
+            ? new Date(String(d.nextRunAt)).toLocaleString()
             : d.nextExecution
-            ? new Date(d.nextExecution).toLocaleString()
+            ? new Date(String(d.nextExecution)).toLocaleString()
             : 'In 24h',
         }));
         set({ dcaSchedules: mapped });
@@ -121,26 +124,47 @@ export const useLiquidStore = create<LiquidState>((set) => ({
       ...schedule,
       id: tempId,
     };
+    const tx: WalletTransaction = {
+      id: `tx-dca-${Date.now()}`,
+      timestamp: 'Today, Just now',
+      vertical: 'CRYPTO',
+      type: 'SWAP',
+      description: `DCA Recurring Buy Reservation: ${schedule.asset} ($${schedule.amountUsd.toLocaleString()})`,
+      amountUsd: schedule.amountUsd,
+      status: 'CLEARED',
+      reference: `DCA-${schedule.asset}-${Date.now().toString().slice(-4)}`,
+      dcaScheduleId: tempId,
+    };
     set((state) => ({
       dcaSchedules: [...state.dcaSchedules, newSchedule],
+      transactions: [tx, ...state.transactions],
     }));
     if (isSsrOrTestEnv()) return;
     try {
       const frequencyPayload =
         schedule.frequency === 'BI_WEEKLY' ? 'BIWEEKLY' : schedule.frequency;
-      const res: any = await createDcaScheduleApi({
+      const res = (await createDcaScheduleApi({
         symbol: schedule.asset,
         amountUsd: schedule.amountUsd,
         frequency: frequencyPayload,
-      });
+      })) as { schedule?: { id: string }; id?: string } | undefined;
       const serverId = res?.schedule?.id ?? res?.id;
       if (serverId) {
         set((state) => ({
           dcaSchedules: state.dcaSchedules.map((s) => (s.id === tempId ? { ...s, id: serverId } : s)),
+          transactions: state.transactions.map((t) =>
+            t.dcaScheduleId === tempId ? { ...t, dcaScheduleId: serverId } : t
+          ),
         }));
       }
     } catch (err) {
       console.error('Failed to create DCA schedule in DB', err);
+      // Revert optimistic schedule on network/server failure so ghost item doesn't linger
+      set((state) => ({
+        dcaSchedules: state.dcaSchedules.filter((s) => s.id !== tempId),
+        transactions: state.transactions.filter((t) => t.id !== tx.id),
+      }));
+      throw err;
     }
   },
 
@@ -187,16 +211,18 @@ export const useLiquidStore = create<LiquidState>((set) => ({
   loadUserOrders: async () => {
     if (isSsrOrTestEnv()) return;
     try {
-      const data = await fetchUserStockOrders<any[]>([]);
+      const data = await fetchUserStockOrders<Record<string, unknown>[]>([]);
       if (Array.isArray(data)) {
         const mapped: ActiveOrder[] = data.map((o) => ({
-          id: o.id,
-          symbol: o.symbol,
+          id: String(o.id || ''),
+          symbol: String(o.symbol || ''),
           type: o.orderType === 'LIMIT' ? (o.side === 'BUY' ? 'BUY_LIMIT' : 'SELL_LIMIT') : 'BUY_LIMIT',
-          shares: Number(o.shares),
+          shares: Number(o.shares || 0),
           limitPrice: Number(o.limitPrice || 0),
-          status: o.status === 'FILLED' ? 'ROUTING' : (o.status || 'PENDING'),
-          expires: o.createdAt ? new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'DAY',
+          status: o.status === 'FILLED' ? 'ROUTING' : ((o.status as ActiveOrder['status']) || 'PENDING'),
+          expires: o.createdAt
+            ? new Date(String(o.createdAt)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : 'DAY',
         }));
         set({ activeOrders: mapped });
       }
@@ -217,13 +243,13 @@ export const useLiquidStore = create<LiquidState>((set) => ({
     if (isSsrOrTestEnv()) return;
     try {
       const side = order.type.startsWith('BUY') ? 'BUY' : 'SELL';
-      const res: any = await submitStockOrder({
+      const res = (await submitStockOrder({
         symbol: order.symbol,
         orderType: 'LIMIT',
         side,
         shares: order.shares,
         limitPrice: order.limitPrice,
-      });
+      })) as { order?: { id: string }; id?: string } | undefined;
       const serverId = res?.order?.id ?? res?.id;
       if (serverId) {
         set((state) => ({
@@ -253,9 +279,82 @@ export const useLiquidStore = create<LiquidState>((set) => ({
   transactions: WALLET_TRANSACTIONS_DATA,
   filterVertical: 'ALL',
 
+  loadTransactions: async () => {
+    if (isSsrOrTestEnv()) return;
+    try {
+      const data = await fetchUserTransactions<Record<string, unknown> | Array<Record<string, unknown>>>(50, { transactions: [] });
+      const rawList = Array.isArray(data)
+        ? data
+        : Array.isArray((data as Record<string, unknown>)?.transactions)
+        ? ((data as Record<string, unknown>).transactions as Array<Record<string, unknown>>)
+        : [];
+      if (Array.isArray(rawList)) {
+        const mapped: WalletTransaction[] = rawList.map((t) => {
+          const desc = String(t.description || '');
+          const isCrypto =
+            t.accountType === 'INVESTED_CAPITAL' ||
+            desc.toLowerCase().includes('dca') ||
+            desc.toLowerCase().includes('crypto') ||
+            desc.toLowerCase().includes('swap') ||
+            desc.toLowerCase().includes('btc') ||
+            desc.toLowerCase().includes('eth') ||
+            desc.toLowerCase().includes('sol') ||
+            desc.toLowerCase().includes('link');
+          const isStock =
+            desc.toLowerCase().includes('stock') ||
+            desc.toLowerCase().includes('nvda') ||
+            desc.toLowerCase().includes('msft') ||
+            desc.toLowerCase().includes('dividend');
+          const isRe =
+            desc.toLowerCase().includes('prime') ||
+            desc.toLowerCase().includes('commercial') ||
+            desc.toLowerCase().includes('rental');
+
+          let vertical: WalletTransaction['vertical'] = 'CASH';
+          if (isCrypto) vertical = 'CRYPTO';
+          else if (isStock) vertical = 'STOCKS';
+          else if (isRe) vertical = 'REAL_ESTATE';
+
+          let txType: WalletTransaction['type'] = 'SWEEP';
+          if (isCrypto) txType = 'SWAP';
+          else if (t.type === 'DEPOSIT') txType = 'DEPOSIT';
+          else if (t.type === 'WITHDRAWAL') txType = 'WITHDRAWAL';
+          else if (t.type === 'DIVIDEND' || desc.toLowerCase().includes('dividend')) txType = 'DIVIDEND';
+
+          return {
+            id: String(t.id || `tx-${t.referenceId || Date.now()}`),
+            timestamp: t.createdAt
+              ? new Date(String(t.createdAt)).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
+              : 'Today',
+            vertical,
+            type: txType,
+            description: desc || 'Vault Transaction',
+            amountUsd: Math.abs(Number(t.amount || 0)),
+            status: (t.status === 'CLEARED' || t.status === 'PENDING' || t.status === 'SETTLING') ? t.status : 'CLEARED',
+            reference: String(t.referenceId || `TX-${String(t.id || '').slice(-4)}`),
+          };
+        });
+
+        set((state) => {
+          const mappedIds = new Set(mapped.map((m) => m.id));
+          const pendingLocal = state.transactions.filter(
+            (t) => !mappedIds.has(t.id) && t.status === 'PENDING'
+          );
+          return { transactions: [...mapped, ...pendingLocal] };
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load user transactions from DB', err);
+    }
+  },
+
   addTransaction: (tx) =>
     set((state) => ({
       transactions: [tx, ...state.transactions],
+    })),
+  removeTransaction: (id) =>
+    set((state) => ({
+      transactions: state.transactions.filter((tx) => tx.id !== id),
     })),
   toggleAutoSweep: () => set((state) => ({ autoSweepEnabled: !state.autoSweepEnabled })),
   setSweepThreshold: (amount) => set({ sweepThreshold: amount }),

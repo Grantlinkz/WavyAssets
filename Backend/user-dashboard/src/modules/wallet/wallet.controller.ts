@@ -11,7 +11,13 @@ import {
 import { WalletService } from './wallet.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
-import { FiatRampDto, CashSweepDto, FxConvertDto } from './dto/wallet.dto';
+import {
+  FiatRampDto,
+  CashSweepDto,
+  FxConvertDto,
+  WithdrawalRequestDto,
+  DepositReceiptDto,
+} from './dto/wallet.dto';
 
 @Controller('api/v1/wallet')
 @UseGuards(JwtAuthGuard)
@@ -36,6 +42,29 @@ export class WalletController {
   ) {
     return this.walletService.initiateFiatRamp(user.id, dto);
   }
+
+  /**
+   * Institutional Withdrawal Request (Bank Wire or Web3 Crypto) - Queued for Treasury Co-Sign
+   */
+  @Post(['withdrawal-request', 'request-withdrawal'])
+  async requestWithdrawal(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: WithdrawalRequestDto,
+  ) {
+    return this.walletService.requestWithdrawal(user.id, dto);
+  }
+
+  /**
+   * Deposit Receipt Upload (Bank Wire or Web3 Crypto Proof)
+   */
+  @Post(['deposit-receipt', 'receipt-upload'])
+  async uploadDepositReceipt(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: DepositReceiptDto,
+  ) {
+    return this.walletService.uploadDepositReceipt(user.id, dto);
+  }
+
 
 
   /**
@@ -70,5 +99,23 @@ export class WalletController {
     @Body() dto: FxConvertDto,
   ) {
     return this.walletService.convertFx(user.id, dto);
+  }
+
+  /**
+   * Deposit Rails (Institutional Fiat Wire Coordinates & Cryptographic Vault Matrix)
+   */
+  @Get('deposit-rails')
+  async getDepositRails() {
+    return this.walletService.getDepositRails();
+  }
+}
+
+@Controller(['api/v1/deposit-rails', 'deposit-rails'])
+export class PublicDepositRailsController {
+  constructor(private readonly walletService: WalletService) {}
+
+  @Get()
+  async getPublicDepositRails() {
+    return this.walletService.getDepositRails();
   }
 }

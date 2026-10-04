@@ -1,31 +1,57 @@
+# ==============================================================================
+# WavyAssets Global User Dashboard Backend — Standalone Docker Compose
+# ==============================================================================
+
 services:
   backend-user-dashboard:
     build:
       context: .
       dockerfile: Dockerfile
+      target: runner
+    image: wavyassets/user-dashboard-backend:1.0.0
     container_name: wavyassets-backend-user-dashboard
     restart: unless-stopped
+    # Production Hardening: Bind internal API ports to host loopback (127.0.0.1) only
     ports:
-      - "4001:4000"
+      - "${BACKEND_BIND_IP:-127.0.0.1}:${USER_DASHBOARD_BACKEND_PORT:-4001}:4000"
+    env_file:
+      - .env
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=4000
-      - DATABASE_URL=${DATABASE_URL:-file:./dev.db}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/wavyassets?schema=public}
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - HANDOFF_TICKET_SECRET=${HANDOFF_TICKET_SECRET}
       - ENCRYPTION_KEY_HEX=${ENCRYPTION_KEY_HEX}
       - FRONTEND_ORIGINS=${FRONTEND_ORIGINS:-http://localhost:5173,http://localhost:5174}
-    command: sh -c "npx prisma db push --skip-generate && node dist/src/main.js"
+    # Production Hardening: exec ensures tini directly supervises node for immediate SIGTERM handling
+    command: sh -c "npx prisma db push --skip-generate && exec node dist/src/main.js"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - wavyassets-dashboard-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:4000/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:$${PORT:-4000}/health || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 15s
-    volumes:
-      - dashboard_data:/app/prisma
+    deploy:
+      resources:
+        limits:
+          cpus: "1.50"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-volumes:
-  dashboard_data:
-
+networks:
+  wavyassets-dashboard-network:
+    name: wavyassets_dashboard_network
+    driver: bridge

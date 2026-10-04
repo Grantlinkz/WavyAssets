@@ -21,6 +21,10 @@ export class CryptoService {
     SOL: { price: 145.5, name: 'Solana' },
     LINK: { price: 16.8, name: 'Chainlink' },
     AVAX: { price: 28.5, name: 'Avalanche' },
+    USDC: { price: 1.0, name: 'USD Coin' },
+    BNB: { price: 620.4, name: 'Binance Coin' },
+    XRP: { price: 0.54, name: 'Ripple' },
+    USDT: { price: 1.0, name: 'Tether USD' },
   };
 
   constructor(
@@ -187,11 +191,14 @@ export class CryptoService {
     const now = new Date();
     let nextRunAt = new Date(now.getTime() + 24 * 3600 * 1000); // Default daily
 
-    if (dto.frequency === 'WEEKLY') {
+    const normalizedFrequency =
+      dto.frequency === 'BI_WEEKLY' ? 'BIWEEKLY' : dto.frequency;
+
+    if (normalizedFrequency === 'WEEKLY') {
       nextRunAt = new Date(now.getTime() + 7 * 24 * 3600 * 1000);
-    } else if (dto.frequency === 'BIWEEKLY') {
+    } else if (normalizedFrequency === 'BIWEEKLY') {
       nextRunAt = new Date(now.getTime() + 14 * 24 * 3600 * 1000);
-    } else if (dto.frequency === 'MONTHLY') {
+    } else if (normalizedFrequency === 'MONTHLY') {
       const targetMonth = now.getMonth() + 1;
       const targetYear = now.getFullYear() + Math.floor(targetMonth / 12);
       const normalizedMonth = targetMonth % 12;
@@ -206,11 +213,24 @@ export class CryptoService {
         userId,
         symbol: dto.symbol,
         amountUsd: dto.amountUsd,
-        frequency: dto.frequency,
+        frequency: normalizedFrequency,
         isActive: true,
         nextRunAt,
       },
     });
+
+    this.dashboardService?.invalidateCache(userId);
+    if (this.walletService) {
+      this.walletService
+        .getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD')
+        .then((cash) => {
+          this.portfolioGateway?.broadcastBalanceUpdated(userId, {
+            availableCash: Number(cash.balance),
+            currency: 'USD',
+          });
+        })
+        .catch(() => {});
+    }
 
     return {
       success: true,
@@ -278,6 +298,19 @@ export class CryptoService {
     await this.prisma.dcaSchedule.delete({
       where: { id },
     });
+
+    this.dashboardService?.invalidateCache(userId);
+    if (this.walletService) {
+      this.walletService
+        .getOrCreateAccount(userId, 'AVAILABLE_CASH', 'USD')
+        .then((cash) => {
+          this.portfolioGateway?.broadcastBalanceUpdated(userId, {
+            availableCash: Number(cash.balance),
+            currency: 'USD',
+          });
+        })
+        .catch(() => {});
+    }
 
     return {
       success: true,

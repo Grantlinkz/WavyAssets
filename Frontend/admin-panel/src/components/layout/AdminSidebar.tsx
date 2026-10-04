@@ -10,6 +10,7 @@ import {
   CreditCard,
   History,
   CheckCircle2,
+  UserCog,
 } from "lucide-react"
 import { useAdminNavStore, type AdminRoute } from "../../store/useAdminNavStore"
 import { fetchBadgeCounts } from "../../api/overview"
@@ -34,7 +35,7 @@ export const AdminSidebar: React.FC = () => {
     queryKey: ["admin-badge-counts"],
     queryFn: fetchBadgeCounts,
     enabled: isAuthenticated,
-    refetchInterval: 10000,
+    refetchInterval: 3000,
   })
 
   // Synchronize incoming badge telemetry with global nav store
@@ -46,6 +47,9 @@ export const AdminSidebar: React.FC = () => {
       updateBadgeCount("pendingCompliance", serverBadgeCounts.pendingCompliance)
       updateBadgeCount("treasurySignOffs", serverBadgeCounts.treasurySignOffs)
       updateBadgeCount("activeCards", serverBadgeCounts.activeCards)
+      if (serverBadgeCounts.pendingWithdrawals !== undefined) {
+        updateBadgeCount("pendingWithdrawals", serverBadgeCounts.pendingWithdrawals)
+      }
     }
   }, [serverBadgeCounts, updateBadgeCount])
 
@@ -54,6 +58,7 @@ export const AdminSidebar: React.FC = () => {
   const usersCount = serverBadgeCounts?.totalUsers ?? badgeCounts.totalUsers ?? 0
   const complianceCount = serverBadgeCounts?.pendingCompliance ?? badgeCounts.pendingCompliance ?? 0
   const treasuryCount = serverBadgeCounts?.treasurySignOffs ?? badgeCounts.treasurySignOffs ?? 0
+  const pendingWithdrawalsCount = serverBadgeCounts?.pendingWithdrawals ?? badgeCounts.pendingWithdrawals ?? 0
   const cardsCount = serverBadgeCounts?.activeCards ?? badgeCounts.activeCards ?? 0
 
   const navItems: NavItem[] = [
@@ -100,7 +105,9 @@ export const AdminSidebar: React.FC = () => {
       badge:
         treasuryCount > 0
           ? { text: `${treasuryCount} Sign-Offs`, variant: "warning" }
-          : { text: "Live", variant: "success" },
+          : pendingWithdrawalsCount > 0
+            ? { text: `${pendingWithdrawalsCount} Pending`, variant: "warning" }
+            : { text: "Live", variant: "success" },
     },
     {
       id: "deposit-rails",
@@ -121,6 +128,12 @@ export const AdminSidebar: React.FC = () => {
       id: "audit-log",
       label: "Audit Log",
       icon: History,
+    },
+    {
+      id: "admin-directory",
+      label: "Admin Directory",
+      icon: UserCog,
+      badge: { text: "RBAC", variant: "cyan" },
     },
   ]
 

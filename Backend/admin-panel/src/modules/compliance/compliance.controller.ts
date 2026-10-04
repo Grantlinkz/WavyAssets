@@ -28,8 +28,9 @@ export class ComplianceController {
   async getQueue(
     @Query('search') search?: string,
     @Query('tier') tier?: string,
+    @Query('status') status?: string,
   ) {
-    return this.complianceService.getQueue({ search, tier });
+    return this.complianceService.getQueue({ search, tier, status });
   }
 
   @Get('dossiers/:dossierId')
@@ -66,7 +67,7 @@ export class ComplianceController {
     if (!rawUserId) {
       throw new BadRequestException('userId or dossierId is required in payload');
     }
-    return this.complianceService.upgradeTier(
+    const result = await this.complianceService.upgradeTier(
       rawUserId,
       {
         targetTier: dto.targetTier || 'INSTITUTIONAL',
@@ -75,6 +76,13 @@ export class ComplianceController {
       } as any,
       admin?.id,
     );
+    const dossier = await this.complianceService.getDossierById(rawUserId).catch(() => null);
+    return {
+      ...result,
+      success: true,
+      message: `Tier elevated successfully`,
+      dossier: dossier || result,
+    };
   }
 
   @Post(':id/upgrade-tier')

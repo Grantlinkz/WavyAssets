@@ -5,6 +5,7 @@ import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { usePortfolioStore } from '../../../store/usePortfolioStore';
 import { useLiquidStore } from '../../../store/useLiquidStore';
+import { useGovernanceStore } from '../../../store/useGovernanceStore';
 import { updateCardSpendingLimitApi } from '../../../lib/api';
 
 interface CardSpendingLimitsProps {
@@ -25,6 +26,8 @@ export const CardSpendingLimits: React.FC<CardSpendingLimitsProps> = ({ maskBala
   const storeUser = useAuthStore((s) => s.user);
   const storeAvailableCash = usePortfolioStore((s) => s.availableCash);
   const storeTransactions = useLiquidStore((s) => s.transactions);
+  const cardMode = useGovernanceStore((s) => s.cardMode);
+  const isMembership = cardMode === 'membership';
 
   const user = isSsr ? useAuthStore.getState().user : storeUser;
   const availableCash = isSsr ? usePortfolioStore.getState().availableCash : storeAvailableCash;
@@ -84,7 +87,9 @@ export const CardSpendingLimits: React.FC<CardSpendingLimitsProps> = ({ maskBala
   return (
     <div
       data-testid="card-spending-limits-panel"
-      className="bg-surface-container-lowest border border-border-hairline rounded-DEFAULT p-5 flex flex-col justify-between space-y-5"
+      className={`bg-surface-container-lowest border border-border-hairline rounded-DEFAULT p-5 flex flex-col justify-between space-y-5 transition-all duration-200 relative ${
+        isMembership ? 'opacity-40 grayscale pointer-events-none select-none cursor-not-allowed' : ''
+      }`}
     >
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-border-hairline">
@@ -96,13 +101,30 @@ export const CardSpendingLimits: React.FC<CardSpendingLimitsProps> = ({ maskBala
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-mono text-primary bg-primary/10 border border-primary/30 px-2 py-0.5 rounded-DEFAULT uppercase font-semibold">
-            {tierConfig.label}
+            {isMembership ? 'Celebrity Access Pass' : tierConfig.label}
           </span>
           <span className="text-[10px] font-mono text-tertiary bg-tertiary/10 border border-tertiary/30 px-2 py-0.5 rounded-DEFAULT">
-            COLLATERALIZED 1:1
+            {isMembership ? 'ENCLAVE PASS' : 'COLLATERALIZED 1:1'}
           </span>
         </div>
       </div>
+
+      {isMembership && (
+        <div
+          data-testid="membership-spending-lockout-notice"
+          className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-DEFAULT text-amber-400 font-mono text-xs flex items-start gap-2"
+        >
+          <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
+          <div>
+            <div className="font-bold uppercase tracking-wider text-[11px]">
+              Celebrity Event Access Pass • Special Membership
+            </div>
+            <div className="text-[10px] text-amber-200/80 mt-0.5 leading-relaxed">
+              The celebrity membership card is engineered strictly for accredited event admission and enclave privileges. No transactional daily spend limit, settlement debit, or credit threshold is applicable.
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 3 Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">

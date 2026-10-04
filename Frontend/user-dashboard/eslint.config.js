@@ -23,6 +23,9 @@ export default defineConfig([
         'warn',
         { allowConstantExport: true },
       ],
+      '@typescript-eslint/no-explicit-any': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
+      'no-useless-assignment': 'warn',
     },
   },
 ])

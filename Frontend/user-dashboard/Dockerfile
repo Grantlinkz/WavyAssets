@@ -48,6 +48,9 @@ ENV PORT=80
 ENV BACKEND_HOST=wavyassets-backend-user-dashboard
 ENV BACKEND_PORT=4000
 
+# Critical: Filter envsubst to prevent wiping out Nginx variables ($host, $uri, etc.)
+ENV NGINX_ENVSUBST_FILTER="PORT|BACKEND_HOST|BACKEND_PORT"
+
 # Expose HTTP port
 EXPOSE 80
 

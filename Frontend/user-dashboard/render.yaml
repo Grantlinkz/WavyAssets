@@ -31,3 +31,5 @@ services:
         value: https://wavyassets-backend-userdashboard.onrender.com/api
       - key: VITE_BACKEND_ORIGIN
         value: https://wavyassets-backend-userdashboard.onrender.com
+      - key: VITE_LANDING_URL
+        value: https://wavy-assets.vercel.app

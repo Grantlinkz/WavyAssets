@@ -92,6 +92,7 @@ export const OverviewModule: React.FC = () => {
   ];
 
   const transactions = useLiquidStore((s) => s.transactions);
+  const dcaSchedules = useLiquidStore((s) => s.dcaSchedules);
   const userRealEstateHoldings = useAlternativeStore((s) => s.userRealEstateHoldings);
   const userVehicleHoldings = useAlternativeStore((s) => s.userVehicleHoldings);
 
@@ -111,6 +112,7 @@ export const OverviewModule: React.FC = () => {
       venue: string;
       status: string;
       time: string;
+      dcaScheduleId?: string;
     }> = [];
 
     // Map real liquid transactions
@@ -131,7 +133,29 @@ export const OverviewModule: React.FC = () => {
         venue,
         status: tx.status,
         time: tx.timestamp,
+        dcaScheduleId: tx.dcaScheduleId,
       });
+    });
+
+    // Active crypto DCA execution schedules (ensure immediate appearance on refresh)
+    dcaSchedules.forEach((dca) => {
+      const alreadyInBlotter = list.some(
+        (item) => item.dcaScheduleId === dca.id || item.id === dca.id || item.id === `tx-${dca.id}`
+      );
+      if (!alreadyInBlotter) {
+        list.push({
+          id: `dca-pos-${dca.id}`,
+          asset: `DCA Buy: ${dca.asset} (${dca.frequency})`,
+          side: 'SWAP',
+          size: formatMaskedCurrency(dca.amountUsd, maskBalances),
+          price: formatMaskedCurrency(dca.amountUsd, maskBalances),
+          numericPrice: dca.amountUsd,
+          venue: 'Geneva OTC Bunker',
+          status: dca.active ? 'CLEARED' : 'PAUSED',
+          time: dca.nextExecution || 'Active Schedule',
+          dcaScheduleId: dca.id,
+        });
+      }
     });
 
     // Active real estate holdings
@@ -180,7 +204,7 @@ export const OverviewModule: React.FC = () => {
       const cmp = a.time.localeCompare(b.time);
       return blotterSortOrder === 'asc' ? cmp : -cmp;
     });
-  }, [transactions, userRealEstateHoldings, userVehicleHoldings, blotterSortField, blotterSortOrder, maskBalances]);
+  }, [transactions, dcaSchedules, userRealEstateHoldings, userVehicleHoldings, blotterSortField, blotterSortOrder, maskBalances]);
 
   const totalBlotterPages = Math.max(1, Math.ceil(dynamicBlotter.length / BLOTTER_PAGE_SIZE));
   const safeBlotterPage = Math.min(blotterPage, totalBlotterPages);
