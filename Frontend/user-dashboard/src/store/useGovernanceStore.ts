@@ -154,70 +154,58 @@ export const useGovernanceStore = create<GovernanceState>((set, get) => ({
   },
 
   toggleFreezeCard: (cardId?: string) => {
-    const activeCard = get().vipCard;
+    const { vipCards, vipCard, isCardFrozen } = get();
+    const targetCard = cardId ? vipCards.find((c) => c.id === cardId) || vipCard : vipCard;
+    const isTargetPrimary = !targetCard || !vipCard || targetCard.id === vipCard.id;
 
     // Requirement 5: If frozen by admin, prevent user from unfreezing and notify
-    if (activeCard?.frozenByAdmin) {
+    if (targetCard?.frozenByAdmin) {
       set({
         adminFreezeNotice: 'Card has been frozen by Admin. Contact support!',
-        isCardFrozen: true,
+        ...(isTargetPrimary ? { isCardFrozen: true } : {}),
       });
       return;
     }
 
-    const prevFrozen = get().isCardFrozen;
+    const prevFrozen = targetCard ? targetCard.isFrozen : isCardFrozen;
     const nextFrozen = !prevFrozen;
+
     set((state) => ({
-      isCardFrozen: nextFrozen,
-      vipCard: state.vipCard ? { ...state.vipCard, isFrozen: nextFrozen } : null,
+      ...(isTargetPrimary
+        ? {
+            isCardFrozen: nextFrozen,
+            vipCard: state.vipCard ? { ...state.vipCard, isFrozen: nextFrozen } : null,
+          }
+        : {}),
       vipCards: state.vipCards.map((c) =>
-        c.id === (cardId || state.vipCard?.id) ? { ...c, isFrozen: nextFrozen } : c
+        c.id === (targetCard?.id || cardId) ? { ...c, isFrozen: nextFrozen } : c
       ),
     }));
 
     // Persist freeze toggle to backend enclave
-    if (activeCard?.id) {
-      updateCardControlsApi({ isFrozen: nextFrozen, cardId: cardId || activeCard.id }).catch((err) => {
+    if (targetCard?.id) {
+      updateCardControlsApi({ isFrozen: nextFrozen, cardId: targetCard.id }).catch((err) => {
         console.warn('Failed to commit card freeze status to backend:', err);
         const isForbidden =
           err?.message?.includes('frozen by Admin') ||
           err?.response?.data?.message?.includes('frozen by Admin');
         set((state) => ({
-          isCardFrozen: isForbidden ? true : prevFrozen,
-          adminFreezeNotice: isForbidden ? 'Card has been frozen by Admin. Contact support!' : null,
-          vipCard: state.vipCard ? { ...state.vipCard, isFrozen: isForbidden ? true : prevFrozen } : null,
+          ...(isTargetPrimary
+            ? {
+                isCardFrozen: isForbidden ? true : prevFrozen,
+                adminFreezeNotice: isForbidden ? 'Card has been frozen by Admin. Contact support!' : null,
+                vipCard: state.vipCard ? { ...state.vipCard, isFrozen: isForbidden ? true : prevFrozen } : null,
+              }
+            : {}),
+          vipCards: state.vipCards.map((c) =>
+            c.id === targetCard.id ? { ...c, isFrozen: isForbidden ? true : prevFrozen } : c
+          ),
         }));
       });
     }
   },
 
-  setCardMode: (mode) => {
-    const prevMode = get().cardMode;
-    const prevCardType = get().vipCard?.cardType;
-    set((state) => ({
-      cardMode: mode,
-      vipCard: state.vipCard
-        ? {
-            ...state.vipCard,
-            cardType: mode === 'membership' || mode === 'virtual' ? 'VIRTUAL' : 'PHYSICAL',
-          }
-        : null,
-    }));
-    updateCardControlsApi({
-      cardType: mode === 'membership' || mode === 'virtual' ? 'VIRTUAL' : 'PHYSICAL',
-    }).catch((err) => {
-      console.warn('Failed to commit card mode to backend:', err);
-      set((state) => ({
-        cardMode: prevMode,
-        vipCard: state.vipCard
-          ? {
-              ...state.vipCard,
-              cardType: prevCardType ?? (prevMode === 'membership' || prevMode === 'virtual' ? 'VIRTUAL' : 'PHYSICAL'),
-            }
-          : null,
-      }));
-    });
-  },
+  setCardMode: (mode) => set({ cardMode: mode }),
 
   openBiometricModal: () => set({ isBiometricModalOpen: true }),
   closeBiometricModal: () => set({ isBiometricModalOpen: false }),

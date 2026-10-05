@@ -284,7 +284,7 @@ export const ObsidianMetalCard: React.FC<ObsidianMetalCardProps> = ({ maskBalanc
       </div>
 
       {/* Requirement 5: Prominent Admin Freeze Notification Banner */}
-      {(isCurrentlyFrozen || isFrozenByAdmin || adminFreezeNotice) && (
+      {currentCard && isFrozenByAdmin && (
         <div
           data-testid="admin-freeze-notification"
           className="mb-4 w-full bg-error/15 border border-error/40 text-error px-4 py-2.5 rounded-[4px] shadow-sm flex items-center justify-between gap-3 animate-fade-in"
@@ -304,6 +304,21 @@ export const ObsidianMetalCard: React.FC<ObsidianMetalCardProps> = ({ maskBalanc
               Dismiss
             </button>
           )}
+        </div>
+      )}
+
+      {/* User-Initiated Freeze Banner */}
+      {currentCard && isCurrentlyFrozen && !isFrozenByAdmin && (
+        <div
+          data-testid="user-freeze-notification"
+          className="mb-4 w-full bg-amber-500/10 border border-amber-500/30 text-amber-400 px-4 py-2.5 rounded-[4px] shadow-sm flex items-center justify-between gap-3 animate-fade-in"
+        >
+          <div className="flex items-center gap-2.5">
+            <Lock className="w-4 h-4 shrink-0 text-amber-400" />
+            <span className="font-mono text-xs font-semibold tracking-wide">
+              Card is temporarily frozen by cardholder. Unfreeze anytime to resume transactions.
+            </span>
+          </div>
         </div>
       )}
 

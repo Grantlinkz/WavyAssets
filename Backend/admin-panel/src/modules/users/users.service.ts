@@ -110,6 +110,8 @@ export class UsersService {
           include: {
             ledgerAccounts: true,
             vipCards: {
+              take: 1,
+              orderBy: { createdAt: "desc" },
               select: {
                 cardNumberLast4: true,
                 tier: true,
@@ -201,7 +203,9 @@ export class UsersService {
         kycDocuments: {
           orderBy: { uploadedAt: "desc" },
         },
-        vipCards: true,
+        vipCards: {
+          orderBy: { createdAt: "desc" },
+        },
         sessions: {
           select: {
             id: true,
