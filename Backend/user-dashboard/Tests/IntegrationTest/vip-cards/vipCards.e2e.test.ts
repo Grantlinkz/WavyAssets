@@ -40,6 +40,8 @@ describe('E2E Integration — VIP & Metal Membership Cards API (/api/v1/vip-card
     webAuthnCredential: { count: vi.fn().mockResolvedValue(1) },
     vipCard: {
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
     },
@@ -94,18 +96,23 @@ describe('E2E Integration — VIP & Metal Membership Cards API (/api/v1/vip-card
     });
 
     it('returns card details, masked PAN, and tier progression with valid bearer token', async () => {
-      mockPrisma.vipCard.findUnique.mockResolvedValue({
+      const mockCard = {
         id: 'card-black-001',
         userId: testUser.id,
         cardNumberLast4: '8842',
         cardType: 'PHYSICAL',
         tier: 'BLACK',
+        substrate: 'Obsidian 42g Tungsten',
         isFrozen: false,
+        frozenByAdmin: false,
         dailySpendLimit: 250000.0,
         pinEncrypted: 'mock-pin',
         shippingStatus: 'DELIVERED',
         updatedAt: new Date(),
-      });
+      };
+      mockPrisma.vipCard.findMany.mockResolvedValue([mockCard]);
+      mockPrisma.vipCard.findFirst.mockResolvedValue(mockCard);
+      mockPrisma.vipCard.findUnique.mockResolvedValue(mockCard);
 
       const response = await request(app.getHttpServer())
         .get('/api/v1/vip-cards/status')
@@ -121,13 +128,18 @@ describe('E2E Integration — VIP & Metal Membership Cards API (/api/v1/vip-card
 
   describe('PATCH /api/v1/vip-cards/controls', () => {
     it('updates card freeze status and spend limits', async () => {
-      mockPrisma.vipCard.findUnique.mockResolvedValue({
+      const mockCard = {
         id: 'card-black-001',
         userId: testUser.id,
         tier: 'BLACK',
+        substrate: 'Obsidian 42g Tungsten',
         isFrozen: false,
+        frozenByAdmin: false,
         dailySpendLimit: 250000.0,
-      });
+      };
+      mockPrisma.vipCard.findMany.mockResolvedValue([mockCard]);
+      mockPrisma.vipCard.findFirst.mockResolvedValue(mockCard);
+      mockPrisma.vipCard.findUnique.mockResolvedValue(mockCard);
 
       mockPrisma.vipCard.update.mockResolvedValue({
         id: 'card-black-001',
@@ -163,11 +175,14 @@ describe('E2E Integration — VIP & Metal Membership Cards API (/api/v1/vip-card
         passphraseHash,
       });
 
-      mockPrisma.vipCard.findUnique.mockResolvedValue({
+      const mockCard = {
         id: 'card-black-001',
         userId: testUser.id,
         pinEncrypted,
-      });
+      };
+      mockPrisma.vipCard.findMany.mockResolvedValue([mockCard]);
+      mockPrisma.vipCard.findFirst.mockResolvedValue(mockCard);
+      mockPrisma.vipCard.findUnique.mockResolvedValue(mockCard);
 
       const response = await request(app.getHttpServer())
         .post('/api/v1/vip-cards/reveal-sensitive')
@@ -186,11 +201,14 @@ describe('E2E Integration — VIP & Metal Membership Cards API (/api/v1/vip-card
 
   describe('GET /api/v1/vip-cards/privileges & shipping-tracker', () => {
     it('returns fee schedule and courier tracking information', async () => {
-      mockPrisma.vipCard.findUnique.mockResolvedValue({
+      const mockCard = {
         userId: testUser.id,
         tier: 'BLACK',
         shippingStatus: 'DELIVERED',
-      });
+      };
+      mockPrisma.vipCard.findMany.mockResolvedValue([mockCard]);
+      mockPrisma.vipCard.findFirst.mockResolvedValue(mockCard);
+      mockPrisma.vipCard.findUnique.mockResolvedValue(mockCard);
 
       const privResponse = await request(app.getHttpServer())
         .get('/api/v1/vip-cards/privileges')

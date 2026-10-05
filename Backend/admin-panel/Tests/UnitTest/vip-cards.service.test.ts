@@ -23,6 +23,7 @@ describe('VipCardsService (Unit)', () => {
         findUniqueOrThrow: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
+        delete: vi.fn(),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       user: {
@@ -135,23 +136,13 @@ describe('VipCardsService (Unit)', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should upgrade/re-issue VIP card if user already has an active card', async () => {
+    it('should create a new VIP card without interfering with existing cards', async () => {
       mockPrisma.user.findUnique.mockResolvedValueOnce({
         id: 'usr-1',
         email: 'alice@vault.ch',
       });
-      mockPrisma.vipCard.findUnique.mockResolvedValueOnce({
-        id: 'existing-card-1',
-        userId: 'usr-1',
-        tier: 'OBSIDIAN',
-        cardNumberLast4: '1234',
-        cardType: 'PHYSICAL',
-        dailySpendLimit: 50000,
-        shippingStatus: 'DELIVERED',
-        isFrozen: false,
-      });
-      mockPrisma.vipCard.update.mockResolvedValueOnce({
-        id: 'existing-card-1',
+      mockPrisma.vipCard.create.mockResolvedValueOnce({
+        id: 'new-card-2',
         userId: 'usr-1',
         cardNumberLast4: '9901',
         cardType: 'PHYSICAL',
@@ -170,14 +161,14 @@ describe('VipCardsService (Unit)', () => {
         tier: VipCardTier.CELEBRITY,
       });
 
-      expect(card.id).toBe('existing-card-1');
-      expect(mockPrisma.vipCard.update).toHaveBeenCalled();
+      expect(card.id).toBe('new-card-2');
+      expect(mockPrisma.vipCard.create).toHaveBeenCalled();
       expect(mockPrisma.adminAuditLog.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             action: 'VIP_CARD_MINT',
             targetEntity: 'VipCard',
-            targetId: 'existing-card-1',
+            targetId: 'new-card-2',
           }),
         }),
       );
@@ -264,7 +255,7 @@ describe('VipCardsService (Unit)', () => {
           data: expect.objectContaining({
             action: 'VIP_CARD_FREEZE_TOGGLE',
             diffBefore: JSON.stringify({ isFrozen: false }),
-            diffAfter: JSON.stringify({ isFrozen: true }),
+            diffAfter: JSON.stringify({ isFrozen: true, frozenByAdmin: true }),
           }),
         }),
       );
@@ -332,6 +323,44 @@ describe('VipCardsService (Unit)', () => {
             action: 'VIP_CARD_PARAMETERS_UPDATE',
           }),
         }),
+      );
+    });
+  });
+
+  describe('deleteCard', () => {
+    it('should delete VIP card and create audit log', async () => {
+      mockPrisma.vipCard.findUnique.mockResolvedValueOnce({
+        id: 'card-to-delete',
+        userId: 'usr-1',
+        cardNumberLast4: '4321',
+        tier: 'OBSIDIAN',
+        user: { id: 'usr-1', email: 'alice@vault.ch' },
+      });
+      mockPrisma.vipCard.delete.mockResolvedValueOnce({ id: 'card-to-delete' });
+
+      const res = await service.deleteCard('card-to-delete', 'admin-1');
+
+      expect(res.success).toBe(true);
+      expect(res.deletedCardId).toBe('card-to-delete');
+      expect(mockPrisma.vipCard.delete).toHaveBeenCalledWith({
+        where: { id: 'card-to-delete' },
+      });
+      expect(mockPrisma.adminAuditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            action: 'VIP_CARD_DELETE',
+            targetEntity: 'VipCard',
+            targetId: 'card-to-delete',
+          }),
+        }),
+      );
+    });
+
+    it('should throw NotFoundException if card does not exist on delete', async () => {
+      mockPrisma.vipCard.findUnique.mockResolvedValueOnce(null);
+
+      await expect(service.deleteCard('non-existent', 'admin-1')).rejects.toThrow(
+        NotFoundException,
       );
     });
   });

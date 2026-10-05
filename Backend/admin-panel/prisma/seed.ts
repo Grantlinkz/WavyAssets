@@ -546,21 +546,29 @@ async function main() {
     });
 
     if (client.cardLast4) {
-      await prisma.vipCard.upsert({
+      const existingCard = await prisma.vipCard.findFirst({
         where: { userId: user.id },
-        update: {
-          cardNumberLast4: client.cardLast4,
-          tier: client.cardTier || 'OBSIDIAN',
-        },
-        create: {
-          userId: user.id,
-          cardNumberLast4: client.cardLast4,
-          tier: client.cardTier || 'OBSIDIAN',
-          dailySpendLimit: 50000.0,
-          pinEncrypted: encryptField('1234'),
-          shippingStatus: 'DELIVERED',
-        },
       });
+      if (existingCard) {
+        await prisma.vipCard.update({
+          where: { id: existingCard.id },
+          data: {
+            cardNumberLast4: client.cardLast4,
+            tier: client.cardTier || 'OBSIDIAN',
+          },
+        });
+      } else {
+        await prisma.vipCard.create({
+          data: {
+            userId: user.id,
+            cardNumberLast4: client.cardLast4,
+            tier: client.cardTier || 'OBSIDIAN',
+            dailySpendLimit: 50000.0,
+            pinEncrypted: encryptField('1234'),
+            shippingStatus: 'DELIVERED',
+          },
+        });
+      }
     }
 
     for (const doc of client.docs) {

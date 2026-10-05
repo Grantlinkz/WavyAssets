@@ -322,20 +322,25 @@ async function main() {
   });
 
   // 9. Create VIP Obsidian Card (without cvvEncrypted; CVVs are never persisted)
-  await prisma.vipCard.upsert({
+  const existingVipCard = await prisma.vipCard.findFirst({
     where: { userId: user.id },
-    update: {},
-    create: {
-      userId: user.id,
-      cardNumberLast4: '8842',
-      cardType: 'PHYSICAL',
-      tier: 'BLACK',
-      isFrozen: false,
-      dailySpendLimit: 250000.0,
-      pinEncrypted: 'mock_aes256_pin_encrypted_payload',
-      shippingStatus: 'DELIVERED',
-    } as any,
   });
+  if (!existingVipCard) {
+    await prisma.vipCard.create({
+      data: {
+        userId: user.id,
+        cardNumberLast4: '8842',
+        cardType: 'PHYSICAL',
+        tier: 'BLACK',
+        substrate: 'Obsidian 42g Tungsten',
+        isFrozen: false,
+        frozenByAdmin: false,
+        dailySpendLimit: 250000.0,
+        pinEncrypted: 'mock_aes256_pin_encrypted_payload',
+        shippingStatus: 'DELIVERED',
+      },
+    });
+  }
 
   // 10. Seed Default AI Rationale Logs
   const existingRationaleCount = await prisma.aiRationaleLog.count();

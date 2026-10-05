@@ -141,7 +141,7 @@ model User {
   realEstateShares   RealEstateShare[]
   carShares          CarShare[]
   driveBookings      DriveBooking[]
-  vipCard            VipCard?
+  vipCards           VipCard[]
   auditLogs          AuditLog[]
 }
 
@@ -333,8 +333,10 @@ model StockPosition {
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   symbol       String
+  exchange     String?  @default("NASDAQ")
   shares       Float
   avgCostBasis Float
+  dripEnabled  Boolean  @default(false)
   updatedAt    DateTime @updatedAt
 }
 
@@ -346,7 +348,8 @@ model StockOrder {
   orderType     String
   side          String
   shares        Float
-  triggerPrice  Float
+  limitPrice    Float?
+  triggerPrice  Float?
   status        String   @default("OPEN")
   twapBatchSize Float?
   twapInterval  Int?
@@ -361,7 +364,7 @@ model AiFundPosition {
   id              String   @id @default(uuid())
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  strategyTier    String
+  strategyTier    String   @default("balanced")
   allocatedUsd    Float
   unrealizedAlpha Float    @default(0.0)
   circuitBreaker  Boolean  @default(false)
@@ -466,17 +469,26 @@ model DriveBooking {
 // ------------------------------------------------------------------------------
 
 model VipCard {
-  id              String   @id @default(uuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  cardNumberLast4 String
-  cardType        String   @default("PHYSICAL")
-  tier            String   @default("OBSIDIAN")
-  isFrozen        Boolean  @default(false)
-  dailySpendLimit Float    @default(50000.0)
-  pinEncrypted    String
-  shippingStatus  String?
-  updatedAt       DateTime @updatedAt
+  id                       String   @id @default(uuid())
+  userId                   String
+  user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cardNumberLast4          String
+  cardType                 String   @default("PHYSICAL")
+  tier                     String   @default("OBSIDIAN")
+  substrate                String?
+  cardholderName           String?
+  celebrityCardholderLabel String?
+  validDate                String?
+  isFrozen                 Boolean  @default(false)
+  frozenByAdmin            Boolean  @default(false)
+  dailySpendLimit          Float    @default(50000.0)
+  pinEncrypted             String
+  shippingStatus           String?
+  destination              String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // ------------------------------------------------------------------------------

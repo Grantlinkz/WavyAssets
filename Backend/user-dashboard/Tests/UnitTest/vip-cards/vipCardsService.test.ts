@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VipCardsService } from '../../../src/modules/vip-cards/vip-cards.service';
 import { PrismaService } from '../../../src/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
-import { NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { CryptoUtils } from '../../../src/common/utils/crypto.utils';
 import { CardTier, CardType, ConciergeCategory, ConciergeUrgency } from '../../../src/modules/vip-cards/dto/vip-cards.dto';
@@ -19,6 +19,8 @@ describe('VipCardsService — Card Status, Tier Progression, Ephemeral CVV & Con
     mockPrisma = {
       vipCard: {
         findUnique: vi.fn(),
+        findMany: vi.fn(),
+        findFirst: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
       },
@@ -58,18 +60,27 @@ describe('VipCardsService — Card Status, Tier Progression, Ephemeral CVV & Con
 
   describe('getCardStatus', () => {
     it('returns card status, masked number, and computes tier progression towards next tier', async () => {
-      mockPrisma.vipCard.findUnique.mockResolvedValue({
-        id: 'card-obsidian-001',
-        userId: testUserId,
-        cardNumberLast4: '8842',
-        cardType: 'PHYSICAL',
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: testUserId,
+        fullName: 'VIP Member',
+        email: 'vip@wavyassets.com',
         tier: 'OBSIDIAN',
-        isFrozen: false,
-        dailySpendLimit: 100000.0,
-        pinEncrypted: 'mock:enc:pin',
-        shippingStatus: 'DELIVERED',
-        updatedAt: new Date('2026-09-01T12:00:00.000Z'),
       });
+      mockPrisma.vipCard.findMany.mockResolvedValue([
+        {
+          id: 'card-obsidian-001',
+          userId: testUserId,
+          cardNumberLast4: '8842',
+          cardType: 'PHYSICAL',
+          tier: 'OBSIDIAN',
+          isFrozen: false,
+          frozenByAdmin: false,
+          dailySpendLimit: 100000.0,
+          pinEncrypted: 'mock:enc:pin',
+          shippingStatus: 'DELIVERED',
+          updatedAt: new Date('2026-09-01T12:00:00.000Z'),
+        },
+      ]);
 
       mockPrisma.ledgerAccount.findMany.mockResolvedValue([
         { balance: 500000.0 },
@@ -83,9 +94,11 @@ describe('VipCardsService — Card Status, Tier Progression, Ephemeral CVV & Con
 
       const result = await vipCardsService.getCardStatus(testUserId);
 
-      expect(result.id).toBe('card-obsidian-001');
-      expect(result.cardNumberMasked).toBe('•••• •••• •••• 8842');
-      expect(result.tier).toBe('OBSIDIAN');
+      expect(result.hasAssignedCard).toBe(true);
+      expect(result.cards).toHaveLength(1);
+      expect((result as any).id).toBe('card-obsidian-001');
+      expect((result as any).cardNumberMasked).toBe('•••• •••• •••• 8842');
+      expect((result as any).tier).toBe('OBSIDIAN');
       expect(result.tierProgression.currentTier).toBe('OBSIDIAN');
       expect(result.tierProgression.nextTier).toBe('BLACK');
       expect(result.tierProgression.nextTierThreshold).toBe(10000000);
@@ -93,34 +106,33 @@ describe('VipCardsService — Card Status, Tier Progression, Ephemeral CVV & Con
       expect(result.tierProgression.progressPercentage).toBe(22);
     });
 
-    it('auto-provisions a default card if none exists for the user', async () => {
-      mockPrisma.vipCard.findUnique.mockResolvedValue(null);
-      mockPrisma.vipCard.create.mockImplementation((args: any) =>
-        Promise.resolve({
-          id: 'card-new-001',
-          ...args.data,
-          updatedAt: new Date(),
-        }),
-      );
+    it('returns hasAssignedCard false without auto-provisioning when no card exists', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: testUserId,
+        fullName: 'New User',
+        tier: 'OBSIDIAN',
+      });
+      mockPrisma.vipCard.findMany.mockResolvedValue([]);
       mockPrisma.ledgerAccount.findMany.mockResolvedValue([]);
       mockPrisma.cryptoHolding.findMany.mockResolvedValue([]);
       mockPrisma.stockPosition.findMany.mockResolvedValue([]);
 
       const result = await vipCardsService.getCardStatus(testUserId);
 
-      expect(mockPrisma.vipCard.create).toHaveBeenCalled();
-      expect(result.cardNumberLast4).toBe('8842');
-      expect(result.tier).toBe(CardTier.OBSIDIAN);
+      expect(result.hasAssignedCard).toBe(false);
+      expect(result.cards).toEqual([]);
+      expect(mockPrisma.vipCard.create).not.toHaveBeenCalled();
     });
   });
 
   describe('updateCardControls', () => {
     it('updates freeze status and spending limits within tier boundary', async () => {
-      mockPrisma.vipCard.findUnique.mockResolvedValue({
+      mockPrisma.vipCard.findFirst.mockResolvedValue({
         id: 'card-obsidian-001',
         userId: testUserId,
         tier: 'OBSIDIAN',
         isFrozen: false,
+        frozenByAdmin: false,
         dailySpendLimit: 50000.0,
       });
 
@@ -144,12 +156,30 @@ describe('VipCardsService — Card Status, Tier Progression, Ephemeral CVV & Con
       expect(mockPrisma.auditLog.create).toHaveBeenCalled();
     });
 
+    it('prevents user from unfreezing when card is frozen by admin', async () => {
+      mockPrisma.vipCard.findFirst.mockResolvedValue({
+        id: 'card-obsidian-001',
+        userId: testUserId,
+        tier: 'OBSIDIAN',
+        isFrozen: true,
+        frozenByAdmin: true,
+        dailySpendLimit: 50000.0,
+      });
+
+      await expect(
+        vipCardsService.updateCardControls(testUserId, {
+          isFrozen: false,
+        }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
     it('rejects daily spend limit exceeding the tier maximum', async () => {
-      mockPrisma.vipCard.findUnique.mockResolvedValue({
+      mockPrisma.vipCard.findFirst.mockResolvedValue({
         id: 'card-silver-001',
         userId: testUserId,
         tier: 'SILVER',
         isFrozen: false,
+        frozenByAdmin: false,
         dailySpendLimit: 10000.0,
       });
 
@@ -161,7 +191,7 @@ describe('VipCardsService — Card Status, Tier Progression, Ephemeral CVV & Con
     });
 
     it('throws NotFoundException if user has no card to update', async () => {
-      mockPrisma.vipCard.findUnique.mockResolvedValue(null);
+      mockPrisma.vipCard.findFirst.mockResolvedValue(null);
 
       await expect(
         vipCardsService.updateCardControls('unknown-user', { isFrozen: true }),
@@ -180,7 +210,7 @@ describe('VipCardsService — Card Status, Tier Progression, Ephemeral CVV & Con
         passphraseHash,
       });
 
-      mockPrisma.vipCard.findUnique.mockResolvedValue({
+      mockPrisma.vipCard.findFirst.mockResolvedValue({
         id: 'card-obsidian-001',
         userId: testUserId,
         pinEncrypted: encryptedPin,
@@ -216,7 +246,7 @@ describe('VipCardsService — Card Status, Tier Progression, Ephemeral CVV & Con
     it('rejects reveal attempt if stored encrypted PIN has invalid format without fallback suppression', async () => {
       const passphraseHash = await argon2.hash('SecretPassphrase2026!');
       mockPrisma.user.findUnique.mockResolvedValue({ id: testUserId, passphraseHash });
-      mockPrisma.vipCard.findUnique.mockResolvedValue({
+      mockPrisma.vipCard.findFirst.mockResolvedValue({
         id: 'card-obsidian-001',
         userId: testUserId,
         pinEncrypted: 'corrupted_pin_no_colon',
@@ -230,7 +260,7 @@ describe('VipCardsService — Card Status, Tier Progression, Ephemeral CVV & Con
 
   describe('getPrivileges & getShippingTracker', () => {
     it('returns bespoke fee schedule and VIP tier perks', async () => {
-      mockPrisma.vipCard.findUnique.mockResolvedValue({
+      mockPrisma.vipCard.findFirst.mockResolvedValue({
         userId: testUserId,
         tier: 'BLACK',
       });
@@ -242,7 +272,7 @@ describe('VipCardsService — Card Status, Tier Progression, Ephemeral CVV & Con
     });
 
     it('returns shipping tracker status and courier milestones', async () => {
-      mockPrisma.vipCard.findUnique.mockResolvedValue({
+      mockPrisma.vipCard.findFirst.mockResolvedValue({
         userId: testUserId,
         cardNumberLast4: '8842',
         shippingStatus: 'DELIVERED',

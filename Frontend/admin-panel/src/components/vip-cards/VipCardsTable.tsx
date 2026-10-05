@@ -1,8 +1,8 @@
 import React, { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Search, RefreshCw, Lock, Unlock, CreditCard, AlertCircle } from "lucide-react"
+import { Search, RefreshCw, Lock, Unlock, CreditCard, AlertCircle, Trash2 } from "lucide-react"
 import { useVipCardsStore } from "../../store/useVipCardsStore"
-import { fetchVipCards, toggleVipCardFreeze, type VipCardItem } from "../../api/vipCards"
+import { fetchVipCards, toggleVipCardFreeze, deleteVipCard, type VipCardItem } from "../../api/vipCards"
 import { SkeletonTable } from "../common/SkeletonTable"
 import { formatCurrency } from "../../lib/formatters"
 
@@ -54,6 +54,30 @@ export const VipCardsTable: React.FC = () => {
 
   const handleToggleFreeze = (card: VipCardItem) => {
     toggleMutation.mutate({ id: card.id, isFrozen: !card.isFrozen })
+  }
+
+  const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null)
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteVipCard(id),
+    onMutate: (id) => {
+      setDeleteLoadingId(id)
+    },
+    onSettled: () => {
+      setDeleteLoadingId(null)
+      queryClient.invalidateQueries({ queryKey: ["vip-cards"] })
+      queryClient.invalidateQueries({ queryKey: ["vip-cards-telemetry"] })
+    },
+  })
+
+  const handleDeleteCard = (card: VipCardItem) => {
+    if (
+      window.confirm(
+        `Are you sure you want to delete VIP card ending in ${card.cardNumberLast4} for ${card.userName}?`
+      )
+    ) {
+      deleteMutation.mutate(card.id)
+    }
   }
 
   const { data: allCardsData } = useQuery({
@@ -326,30 +350,42 @@ export const VipCardsTable: React.FC = () => {
                       )}
                     </td>
 
-                    {/* Actions: 1-Click Killswitch Toggle */}
+                    {/* Actions: 1-Click Killswitch Toggle & Delete */}
                     <td className="py-2.5 px-4 text-right">
-                      <button
-                        onClick={() => handleToggleFreeze(card)}
-                        disabled={isMutating}
-                        className={`px-2.5 py-1 rounded-[4px] text-xs font-semibold flex items-center gap-1.5 ml-auto transition-colors cursor-pointer border ${
-                          card.isFrozen
-                            ? "bg-status-success/10 border-status-success/40 text-status-success hover:bg-status-success hover:text-bg-canvas"
-                            : "bg-status-danger/10 border-status-danger/40 text-status-danger hover:bg-status-danger hover:text-white"
-                        }`}
-                        data-testid={`freeze-toggle-${card.id}`}
-                      >
-                        {card.isFrozen ? (
-                          <>
-                            <Unlock className="w-3 h-3" />
-                            <span>Unlock Terminal</span>
-                          </>
-                        ) : (
-                          <>
-                            <Lock className="w-3 h-3" />
-                            <span>Instant Freeze</span>
-                          </>
-                        )}
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleToggleFreeze(card)}
+                          disabled={isMutating}
+                          className={`px-2.5 py-1 rounded-[4px] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border ${
+                            card.isFrozen
+                              ? "bg-status-success/10 border-status-success/40 text-status-success hover:bg-status-success hover:text-bg-canvas"
+                              : "bg-status-danger/10 border-status-danger/40 text-status-danger hover:bg-status-danger hover:text-white"
+                          }`}
+                          data-testid={`freeze-toggle-${card.id}`}
+                        >
+                          {card.isFrozen ? (
+                            <>
+                              <Unlock className="w-3 h-3" />
+                              <span>Unlock Terminal</span>
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="w-3 h-3" />
+                              <span>Instant Freeze</span>
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteCard(card)}
+                          disabled={deleteLoadingId === card.id}
+                          title="Delete Card"
+                          className="p-1 rounded-[4px] text-secondary hover:text-status-danger hover:bg-status-danger/10 border border-transparent hover:border-status-danger/30 transition-colors cursor-pointer"
+                          data-testid={`delete-card-${card.id}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )

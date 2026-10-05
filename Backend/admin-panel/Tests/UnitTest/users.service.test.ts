@@ -71,7 +71,7 @@ describe('UsersService (Unit)', () => {
             { accountType: 'AVAILABLE_CASH', currency: 'USD', balance: 50000.0 },
             { accountType: 'INVESTED_CAPITAL', currency: 'USD', balance: 150000.0 },
           ],
-          vipCard: { cardNumberLast4: '9921', tier: 'OBSIDIAN', isFrozen: false },
+          vipCards: [{ cardNumberLast4: '9921', tier: 'OBSIDIAN', isFrozen: false }],
           _count: { sessions: 2, kycDocuments: 1 },
           createdAt: new Date(),
           updatedAt: new Date(),

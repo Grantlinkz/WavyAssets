@@ -22,6 +22,9 @@ export interface VipCardItem {
   destination: string
   issuedAt: string
   updatedAt: string
+  validDate?: string
+  celebrityCardholderLabel?: string | null
+  frozenByAdmin?: boolean
 }
 
 export interface VipCardsTelemetry {
@@ -79,6 +82,9 @@ function normalizeVipCard(raw: Record<string, unknown>): VipCardItem {
     destination: (raw.destination as string) || (raw.cardType === "VIRTUAL" ? "Digital NFC Enclave" : "Vault Custody / Registered Address"),
     issuedAt: String(raw.issuedAt || raw.createdAt || raw.updatedAt || new Date().toISOString()),
     updatedAt: String(raw.updatedAt || new Date().toISOString()),
+    validDate: (raw.validDate as string) || "12/29",
+    celebrityCardholderLabel: (raw.celebrityCardholderLabel as string) || null,
+    frozenByAdmin: Boolean(raw.frozenByAdmin ?? raw.isFrozen),
   }
 }
 
@@ -137,4 +143,15 @@ export async function updateVipCardLimit(
     method: "PATCH",
     body: JSON.stringify({ dailySpendLimit }),
   })
+}
+
+export async function deleteVipCard(
+  id: string
+): Promise<{ success: boolean; deletedCardId: string }> {
+  return apiClient<{ success: boolean; deletedCardId: string }>(
+    `/vip-cards/${encodeURIComponent(id)}`,
+    {
+      method: "DELETE",
+    }
+  )
 }
