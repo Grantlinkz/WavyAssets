@@ -1,6 +1,24 @@
 import { io, Socket } from 'socket.io-client';
-import { getStoredToken } from './api';
+import { getStoredToken, refreshSessionToken } from './api';
 import { useLiquidStore } from '../store/useLiquidStore';
+
+function getSocketBaseUrl(): string {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_WS_URL) {
+    return import.meta.env.VITE_WS_URL;
+  }
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_BACKEND_URL) {
+    return import.meta.env.VITE_BACKEND_URL;
+  }
+  if (typeof window !== 'undefined') {
+    // When running on Vercel deployment, connect directly to backend origin
+    if (window.location.hostname.includes('vercel.app')) {
+      return 'https://wavyassets-backend-userdashboard.onrender.com';
+    }
+    // Development and containerized proxy use current origin
+    return window.location.origin;
+  }
+  return 'http://localhost:5174';
+}
 
 class PortfolioSocketService {
   private socket: Socket | null = null;
@@ -16,12 +34,13 @@ class PortfolioSocketService {
     if (this.socket?.connected || this.isConnecting) return;
     this.isConnecting = true;
 
-    // Use the current origin for the WS connection, which the Vite proxy routes to port 4001
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5174';
+    const baseUrl = getSocketBaseUrl();
 
     this.socket = io(`${baseUrl}/ws/portfolio`, {
-      auth: { token },
-      transports: ['websocket'],
+      auth: (cb: (data: Record<string, unknown>) => void) => {
+        cb({ token: getStoredToken() || '' });
+      },
+      transports: ['websocket', 'polling'],
       reconnectionDelayMax: 10000,
     });
 
@@ -32,9 +51,28 @@ class PortfolioSocketService {
       this.socket?.emit('portfolio:subscribe', {});
     });
 
-    this.socket.on('connect_error', (err) => {
+    this.socket.on('connect_error', async (err) => {
       console.error('Portfolio WebSocket connection error:', err.message);
       this.isConnecting = false;
+
+      // Handle server authentication rejection by reconnecting after credentials are renewed
+      const isAuthError =
+        err.message?.toLowerCase().includes('auth') ||
+        err.message?.toLowerCase().includes('unauthorized') ||
+        err.message?.toLowerCase().includes('token') ||
+        err.message?.toLowerCase().includes('jwt');
+
+      if (isAuthError) {
+        try {
+          const renewed = await refreshSessionToken();
+          if (renewed && this.socket) {
+            console.log('Credentials renewed following auth rejection; reconnecting WebSocket...');
+            this.socket.connect();
+          }
+        } catch (refreshErr) {
+          console.error('Credential renewal failed following WebSocket auth rejection:', refreshErr);
+        }
+      }
     });
 
     this.socket.on('disconnect', (reason) => {
@@ -44,8 +82,7 @@ class PortfolioSocketService {
 
     // Real-time Event Handlers
     this.socket.on('portfolio:tick', () => {
-      // You can update the store here. For instance, livePrices or a new consolidated state.
-      // console.log('Portfolio Tick:', _data);
+      // Real-time tick updates
     });
 
     this.socket.on('balance:updated', (data) => {

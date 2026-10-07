@@ -11,9 +11,13 @@ The WavyAssets Admin Panel uses a **Modular Monolith Architecture** with **NestJ
 ```
 Client Request
     ↓
-Controller (routes request)
+Guards (Authentication/Authorization)
     ↓
-DTO Validation (automatic)
+Interceptors (Request Transform)
+    ↓
+Pipes (DTO Validation & Transformation)
+    ↓
+Controller (routes request)
     ↓
 Service (business logic)
     ↓
@@ -23,9 +27,12 @@ Service returns data
     ↓
 Controller returns response
     ↓
-Interceptor wraps response
+Interceptors (Response Envelope)
     ↓
 Client receives response
+
+[Exception Path (on error at any stage)]:
+Unhandled Exception → Exception Filters (GlobalExceptionFilter) → Error Response
 ```
 
 ---
@@ -166,9 +173,11 @@ export class AdminAuthController {
 The application uses NestJS's **aspect-oriented programming** concepts:
 
 ```
-Request Flow:
-Request → Guard (Auth) → Interceptor (Transform) → Controller →
-Service → Interceptor (Response) → Filter (Error) → Response
+Successful Response Flow:
+Request → Guard (Auth) → Interceptor (Transform) → Pipe (Validation) → Controller → Service → Interceptor (Response) → Response
+
+Exception Flow (on error):
+Any Stage / Unhandled Exception → Exception Filter (Error) → Formatted Error Response
 ```
 
 ### Guards (Authentication/Authorization)
@@ -179,12 +188,15 @@ Service → Interceptor (Response) → Filter (Error) → Response
 
 ### Interceptors (Cross-cutting)
 
-- **ResponseEnvelopeInterceptor**: Wraps responses in standard format
-- Global validation pipe transforms data
+- **ResponseEnvelopeInterceptor**: Wraps successful responses in standard format
+
+### Pipes (Validation & Transformation)
+
+- **ValidationPipe**: Global validation pipe transforms and validates request DTOs
 
 ### Filters (Error Handling)
 
-- **GlobalExceptionFilter**: Catches and formats errors
+- **GlobalExceptionFilter**: Catches unhandled exceptions on the separate exception path and formats error responses
 
 ---
 

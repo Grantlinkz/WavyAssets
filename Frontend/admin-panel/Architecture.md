@@ -363,8 +363,9 @@ Real-time updates via WebSocket for:
 
 ```typescript
 // api/websocket.ts
-export function connectWebSocket(token: string): WebSocket {
-  const ws = new WebSocket(`${WS_BASE_URL}?token=${token}`)
+// Uses a short-lived, single-use ticket instead of exposing admin JWT in URL query parameters
+export function connectWebSocket(ticket: string): WebSocket {
+  const ws = new WebSocket(`${WS_BASE_URL}?ticket=${ticket}`)
   // Handle messages, reconnection, etc.
   return ws
 }
@@ -460,16 +461,25 @@ components/
 For critical operations (treasury withdrawals, high spend limits):
 
 ```typescript
+const [secondaryOfficerId, setSecondaryOfficerId] = useState("")
 const [secondaryOfficerToken, setSecondaryOfficerToken] = useState("")
 
-if (amount > 500000 && !secondaryOfficerToken) {
-  setFormError("Secondary Officer authorization required")
-  return
+// Dual approval required for withdrawals strictly above $100,000
+if (amount > 100000) {
+  if (!secondaryOfficerToken) {
+    setFormError("Secondary Officer authorization required for amounts > $100,000")
+    return
+  }
+  if (secondaryOfficerId === currentOfficer.id) {
+    setFormError("Secondary approval must be granted by an officer distinct from the initiator prior to settlement")
+    return
+  }
 }
 
 mutation.mutate({
   ...data,
-  secondaryOfficerToken
+  secondaryOfficerToken,
+  secondaryOfficerId
 })
 ```
 
@@ -551,12 +561,28 @@ const handleVerifyMerkle = () => {
   const hasInvalidHashes = logs.some(
     (l) => !l.sha256Hash || !l.merkleBlock
   )
-  setVerificationResult({
-    verified: !hasInvalidHashes,
-    message: hasInvalidHashes
-      ? "Cryptographic anomaly detected"
-      : "All entries verified"
-  })
+
+  if (hasInvalidHashes) {
+    setVerificationResult({
+      verified: false,
+      message: "Cryptographic anomaly: Missing required hash or Merkle block fields"
+    })
+    return
+  }
+
+  // Set verified only after entries are validated against a trusted Merkle root;
+  // if trusted root validation is unavailable, describe as a field-presence check
+  if (trustedRoot && validateMerkleProof(logs, trustedRoot)) {
+    setVerificationResult({
+      verified: true,
+      message: "All entries cryptographically validated against trusted root"
+    })
+  } else {
+    setVerificationResult({
+      verified: false,
+      message: "Field-presence check passed: hashes and blocks present, but trusted root validation unavailable"
+    })
+  }
 }
 ```
 

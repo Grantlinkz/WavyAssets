@@ -237,7 +237,7 @@ Located in `src/store/useTerminalStore.ts`, the Zustand store manages:
 
 ### Client-Side Hash Routing
 
-The application uses hash-based routing for SPA navigation without full page reloads:
+The application uses hash-based routing for SPA navigation without full-page reloads:
 
 - **Base Path**: `/` or `/research`
 - **Asset Routes**: `#/services/:assetId`
@@ -370,7 +370,7 @@ User clicks "Sign In" / "Get Mandate"
 ## Performance Optimizations
 
 ### 1. Sub-50ms Panel Transitions
-- Client-side hash routing avoids full page reloads
+- Client-side hash routing avoids full-page reloads
 - Framer Motion AnimatePresence with optimized transitions
 - Minimal state updates via Zustand
 - Pre-dimensioned containers prevent layout shifts
@@ -461,7 +461,7 @@ User clicks "Sign In" / "Get Mandate"
 
 ### 4. Input Validation
 - TypeScript interfaces validate API payloads
-- Form validation on client side
+- Client-side form validation
 - Honeypot field for bot detection in lead forms
 - OTP length validation (6 digits)
 
@@ -595,7 +595,7 @@ npm run test -- --coverage # Generate coverage report
 ## Future Extensibility
 
 ### Planned Enhancements
-1. **WebSocket Integration**: Real-time streaming quotes instead of polling
+1. **WebSocket Integration**: Connect the displayed ticker to the existing WebSocket client for live quote streaming (ticker currently uses REST polling; real-time streaming integration remains planned)
 2. **Additional Asset Verticals**: New asset classes can be added to panels/views
 3. **Advanced Analytics**: Enhanced telemetry tracking and reporting
 4. **A/B Testing Framework**: Support for feature flags and experiments

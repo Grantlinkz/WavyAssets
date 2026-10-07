@@ -603,11 +603,12 @@ Dual-tier sliding window rate limiting:
 
 **Implementation**: `ThrottlerModule` in `app.module.ts`
 
-### 9. CORS Whitelisting
+### 9. CORS Policy
 
-Strict origin whitelisting with allowed origins for client, dashboard, and production frontend.
+- **HTTP Endpoints**: Strict origin whitelisting configured via `app.enableCors()` in `main.ts`, restricting HTTP access to allowed origins for client, dashboard, and production frontends.
+- **WebSocket Gateway (`/ws/ticker`)**: The ticker gateway’s `cors.origin` policy is unrestricted (`*`) in `TickerGateway` to facilitate public real-time market data streaming across any client without requiring HTTP allowlisting.
 
-**Implementation**: `app.enableCors()` in `main.ts`
+**Implementation**: `app.enableCors()` in `main.ts` (HTTP) and `@WebSocketGateway({ cors: { origin: '*' } })` in `ticker.gateway.ts` (WebSocket)
 
 ### 10. Security Headers
 

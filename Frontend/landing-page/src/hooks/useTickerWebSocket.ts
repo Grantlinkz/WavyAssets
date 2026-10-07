@@ -4,7 +4,8 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { websocketService, TickerResponseData, AssetQuote } from '../lib/websocket';
+import { websocketService } from '../lib/websocket';
+import type { TickerResponseData, AssetQuote } from '../lib/websocket';
 
 interface UseTickerWebSocketOptions {
   autoConnect?: boolean;
@@ -15,10 +16,13 @@ interface UseTickerWebSocketReturn {
   quotes: AssetQuote[];
   feedStatus: 'OPTIMAL' | 'STALE' | 'FALLBACK' | null;
   isConnected: boolean;
+  isError: boolean;
+  error: Error | null;
   lastUpdate: string | null;
   connect: () => void;
   disconnect: () => void;
   subscribe: () => void;
+  retry: () => void;
 }
 
 export function useTickerWebSocket(
@@ -29,9 +33,11 @@ export function useTickerWebSocket(
   const [quotes, setQuotes] = useState<AssetQuote[]>([]);
   const [feedStatus, setFeedStatus] = useState<'OPTIMAL' | 'STALE' | 'FALLBACK' | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
 
-  const isConnectedRef = useRef(false);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
   const handleQuotes = useCallback((data: TickerResponseData) => {
     setQuotes(data.quotes || []);
@@ -42,7 +48,8 @@ export function useTickerWebSocket(
   const handleConnect = useCallback(() => {
     console.log('[useTickerWebSocket] Connected');
     setIsConnected(true);
-    isConnectedRef.current = true;
+    setIsError(false);
+    setError(null);
 
     if (autoSubscribe) {
       websocketService.subscribe();
@@ -52,17 +59,30 @@ export function useTickerWebSocket(
   const handleDisconnect = useCallback(() => {
     console.log('[useTickerWebSocket] Disconnected');
     setIsConnected(false);
-    isConnectedRef.current = false;
   }, []);
 
-  const handleError = useCallback((error: Error) => {
-    console.error('[useTickerWebSocket] Error:', error);
+  const handleError = useCallback((err: Error) => {
+    console.error('[useTickerWebSocket] Error:', err);
     setIsConnected(false);
-    isConnectedRef.current = false;
+    setIsError(true);
+    setError(err);
+  }, []);
+
+  const disconnect = useCallback(() => {
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+    setIsConnected(false);
   }, []);
 
   const connect = useCallback(() => {
-    websocketService.connect({
+    setIsError(false);
+    setError(null);
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+    }
+    unsubscribeRef.current = websocketService.connect({
       onQuotes: handleQuotes,
       onConnect: handleConnect,
       onDisconnect: handleDisconnect,
@@ -70,9 +90,9 @@ export function useTickerWebSocket(
     });
   }, [handleQuotes, handleConnect, handleDisconnect, handleError]);
 
-  const disconnect = useCallback(() => {
-    websocketService.disconnect();
-  }, []);
+  const retry = useCallback(() => {
+    connect();
+  }, [connect]);
 
   const subscribe = useCallback(() => {
     websocketService.subscribe();
@@ -92,9 +112,12 @@ export function useTickerWebSocket(
     quotes,
     feedStatus,
     isConnected,
+    isError,
+    error,
     lastUpdate,
     connect,
     disconnect,
     subscribe,
+    retry,
   };
 }

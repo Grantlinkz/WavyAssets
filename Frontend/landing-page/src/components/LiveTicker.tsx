@@ -8,12 +8,29 @@ import { useTickerWebSocket } from '../hooks/useTickerWebSocket';
 import { TrendingUp, TrendingDown, Activity, Wifi, WifiOff } from 'lucide-react';
 
 export const LiveTicker: React.FC = () => {
-  const { quotes, feedStatus, isConnected, lastUpdate } = useTickerWebSocket({
+  const { quotes, feedStatus, isConnected, isError, retry, lastUpdate } = useTickerWebSocket({
     autoConnect: true,
     autoSubscribe: true,
   });
 
   if (quotes.length === 0) {
+    if (isError) {
+      return (
+        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-surface-container-low rounded-sm border border-error/30 text-xs">
+          <div className="flex items-center gap-2 text-error">
+            <WifiOff className="w-4 h-4 text-error" />
+            <span>Connection failed. Unable to load market data.</span>
+          </div>
+          <button
+            onClick={retry}
+            className="px-2.5 py-1 text-[11px] font-mono bg-error/15 hover:bg-error/25 text-error rounded-sm border border-error/30 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
+
     return (
       <div className="flex items-center gap-2 px-4 py-2 bg-surface-container-low rounded-sm border border-outline/20">
         <Activity className="w-4 h-4 text-outline animate-pulse" />

@@ -40,45 +40,63 @@ class WebSocketService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000; // Start with 1 second
-  private callbacks: TickerCallbacks = {};
+  private subscribers = new Map<number, TickerCallbacks>();
+  private nextSubscriberId = 1;
 
   /**
-   * Connect to the ticker WebSocket gateway
+   * Register subscriber callbacks and connect to ticker gateway if not connected.
+   * Returns an unsubscribe function to remove the subscriber.
    */
-  connect(callbacks: TickerCallbacks = {}): void {
-    if (this.socket?.connected) {
-      console.log('[WebSocket] Already connected');
-      return;
+  connect(callbacks: TickerCallbacks = {}): () => void {
+    const subscriberId = this.nextSubscriberId++;
+    this.subscribers.set(subscriberId, callbacks);
+
+    // Reuse or preserve existing socket if already connected or handshake is pending
+    if (this.socket && (this.socket.connected || !this.socket.disconnected)) {
+      if (this.socket.connected) {
+        callbacks.onConnect?.();
+      }
+      return () => this.unsubscribe(subscriberId);
     }
 
-    this.callbacks = callbacks;
-
-    // Get WebSocket URL from environment or default to localhost
     const wsUrl = this.getWebSocketUrl();
-
     console.log('[WebSocket] Connecting to:', wsUrl);
 
     this.socket = io(wsUrl, {
       path: '/ws/ticker',
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionDelay: this.reconnectDelay,
       reconnectionAttempts: this.maxReconnectAttempts,
     });
 
     this.setupEventListeners();
+
+    return () => this.unsubscribe(subscriberId);
   }
 
   /**
-   * Disconnect from the WebSocket gateway
+   * Unsubscribe a subscriber by ID; disconnect only when last subscriber leaves
+   */
+  unsubscribe(subscriberId: number): void {
+    this.subscribers.delete(subscriberId);
+    if (this.subscribers.size === 0) {
+      this.disconnect();
+    }
+  }
+
+  /**
+   * Disconnect from the WebSocket gateway and clean up all listeners
    */
   disconnect(): void {
     if (this.socket) {
       console.log('[WebSocket] Disconnecting');
+      this.socket.removeAllListeners();
       this.socket.disconnect();
       this.socket = null;
       this.reconnectAttempts = 0;
     }
+    this.subscribers.clear();
   }
 
   /**
@@ -106,13 +124,16 @@ class WebSocketService {
     if (envUrl) {
       return envUrl;
     }
-    // Fallback to backend origin
+    // Fallback to backend origin if explicitly configured
     const backendUrl = typeof import.meta !== 'undefined' && import.meta.env?.VITE_BACKEND_ORIGIN;
     if (backendUrl) {
       return backendUrl;
     }
-    // Default to localhost for development
-    return 'http://localhost:4000';
+    // Use page origin to preserve same-origin routing through configured proxy
+    if (typeof window !== 'undefined' && window.location?.origin) {
+      return window.location.origin;
+    }
+    return '';
   }
 
   /**
@@ -124,12 +145,12 @@ class WebSocketService {
     this.socket.on('connect', () => {
       console.log('[WebSocket] Connected');
       this.reconnectAttempts = 0;
-      this.callbacks.onConnect?.();
+      this.subscribers.forEach((cb) => cb.onConnect?.());
     });
 
     this.socket.on('disconnect', (reason) => {
       console.log('[WebSocket] Disconnected:', reason);
-      this.callbacks.onDisconnect?.();
+      this.subscribers.forEach((cb) => cb.onDisconnect?.());
     });
 
     this.socket.on('connect_error', (error) => {
@@ -138,18 +159,18 @@ class WebSocketService {
 
       if (this.reconnectAttempts >= this.maxReconnectAttempts) {
         console.error('[WebSocket] Max reconnection attempts reached');
-        this.callbacks.onError?.(error);
       }
+      this.subscribers.forEach((cb) => cb.onError?.(error));
     });
 
     this.socket.on('ticker:quotes', (data: TickerResponseData) => {
       console.log('[WebSocket] Received ticker quotes:', data.quotes?.length || 0, 'assets');
-      this.callbacks.onQuotes?.(data);
+      this.subscribers.forEach((cb) => cb.onQuotes?.(data));
     });
 
     this.socket.on('error', (error) => {
       console.error('[WebSocket] Error:', error);
-      this.callbacks.onError?.(error);
+      this.subscribers.forEach((cb) => cb.onError?.(error));
     });
   }
 }
