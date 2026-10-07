@@ -381,3 +381,9 @@ export const telemetryApi = {
     });
   },
 };
+
+// -------------------------------------------------------------
+// WebSocket Service Export
+// -------------------------------------------------------------
+export { websocketService } from './websocket';
+export type { TickerCallbacks } from './websocket';
