@@ -27,6 +27,7 @@ import { usePortfolioStore } from './store/usePortfolioStore';
 import { useLiquidStore } from './store/useLiquidStore';
 import { useAlternativeStore } from './store/useAlternativeStore';
 import { refreshSessionToken, fetchCommandBarData, fetchUserProfile } from './lib/api';
+import { portfolioSocketService } from './lib/socket';
 import { calculateStocksEquitiesNav } from './lib/liquidAssetData';
 import { FaviconSpinner } from './components/ui/FaviconSpinner';
 import type { AssetVertical } from './store/useDashboardStore';
@@ -120,6 +121,10 @@ export const App: React.FC<AppProps> = ({
     let isCancelled = false;
 
     const loadData = async () => {
+      if (user?.id) {
+        portfolioSocketService.connect();
+      }
+
       await Promise.all([
         useLiquidStore.getState().loadUserDcaSchedules(user?.id),
         useLiquidStore.getState().loadUserOrders(user?.id),
@@ -142,6 +147,7 @@ export const App: React.FC<AppProps> = ({
 
     return () => {
       isCancelled = true;
+      portfolioSocketService.disconnect();
     };
   }, [user?.id]);
 
