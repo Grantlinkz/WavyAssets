@@ -51,12 +51,19 @@ class WebSocketService {
     const subscriberId = this.nextSubscriberId++;
     this.subscribers.set(subscriberId, callbacks);
 
-    // Reuse or preserve existing socket if already connected or handshake is pending
-    if (this.socket && (this.socket.connected || !this.socket.disconnected)) {
-      if (this.socket.connected) {
-        callbacks.onConnect?.();
+    // Reuse or preserve existing socket if connected or actively reconnecting
+    if (this.socket) {
+      if (this.socket.connected || this.socket.active) {
+        if (this.socket.connected) {
+          callbacks.onConnect?.();
+        }
+        return () => this.unsubscribe(subscriberId);
       }
-      return () => this.unsubscribe(subscriberId);
+
+      // Remove listeners and disconnect inactive socket before creating a replacement
+      this.socket.removeAllListeners();
+      this.socket.disconnect();
+      this.socket = null;
     }
 
     const wsUrl = this.getWebSocketUrl();

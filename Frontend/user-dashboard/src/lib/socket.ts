@@ -55,12 +55,15 @@ class PortfolioSocketService {
       console.error('Portfolio WebSocket connection error:', err.message);
       this.isConnecting = false;
 
-      // Handle server authentication rejection by reconnecting after credentials are renewed
+      // Match precise authentication failure error patterns
+      const msg = err.message?.trim().toLowerCase() || '';
       const isAuthError =
-        err.message?.toLowerCase().includes('auth') ||
-        err.message?.toLowerCase().includes('unauthorized') ||
-        err.message?.toLowerCase().includes('token') ||
-        err.message?.toLowerCase().includes('jwt');
+        msg === 'unauthorized' ||
+        msg === 'authentication error' ||
+        msg === 'jwt expired' ||
+        msg === 'invalid token' ||
+        msg.startsWith('unauthorized:') ||
+        msg.startsWith('authentication failed');
 
       if (isAuthError) {
         try {
@@ -75,9 +78,22 @@ class PortfolioSocketService {
       }
     });
 
-    this.socket.on('disconnect', (reason) => {
+    this.socket.on('disconnect', async (reason) => {
       console.log('Disconnected from Portfolio WebSocket:', reason);
       this.isConnecting = false;
+
+      // Handle server-initiated disconnection (e.g. session kick or invalidated auth credentials)
+      if (reason === 'io server disconnect') {
+        try {
+          const renewed = await refreshSessionToken();
+          if (renewed && this.socket) {
+            console.log('Credentials renewed after io server disconnect; reconnecting WebSocket...');
+            this.socket.connect();
+          }
+        } catch (refreshErr) {
+          console.error('Credential renewal failed after io server disconnect:', refreshErr);
+        }
+      }
     });
 
     // Real-time Event Handlers
